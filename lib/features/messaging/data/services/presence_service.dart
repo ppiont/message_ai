@@ -16,10 +16,9 @@ class PresenceService {
 
   // State
   Timer? _heartbeatTimer;
-  String? _currentUserId;
 
   PresenceService({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _firestore = firestore ?? FirebaseFirestore.instance;
 
   // ============================================================================
   // Public API
@@ -32,14 +31,8 @@ class PresenceService {
     required String userId,
     required String userName,
   }) async {
-    _currentUserId = userId;
-
     // Update presence document
-    await _updatePresence(
-      userId: userId,
-      userName: userName,
-      isOnline: true,
-    );
+    await _updatePresence(userId: userId, userName: userName, isOnline: true);
 
     // Start heartbeat to maintain online status
     _startHeartbeat(userId: userId, userName: userName);
@@ -56,26 +49,16 @@ class PresenceService {
     _stopHeartbeat();
 
     // Update presence document
-    await _updatePresence(
-      userId: userId,
-      userName: userName,
-      isOnline: false,
-    );
-
-    _currentUserId = null;
+    await _updatePresence(userId: userId, userName: userName, isOnline: false);
   }
 
   /// Watches presence status for a specific user.
   ///
   /// Returns a stream of presence updates.
-  Stream<UserPresence?> watchUserPresence({
-    required String userId,
-  }) {
-    return _firestore
-        .collection('presence')
-        .doc(userId)
-        .snapshots()
-        .map((snapshot) {
+  Stream<UserPresence?> watchUserPresence({required String userId}) {
+    return _firestore.collection('presence').doc(userId).snapshots().map((
+      snapshot,
+    ) {
       if (!snapshot.exists) return null;
       return UserPresence.fromFirestore(snapshot);
     });
@@ -100,14 +83,14 @@ class PresenceService {
         .where(FieldPath.documentId, whereIn: limitedUserIds)
         .snapshots()
         .map((snapshot) {
-      final presenceMap = <String, UserPresence>{};
+          final presenceMap = <String, UserPresence>{};
 
-      for (final doc in snapshot.docs) {
-        presenceMap[doc.id] = UserPresence.fromFirestore(doc);
-      }
+          for (final doc in snapshot.docs) {
+            presenceMap[doc.id] = UserPresence.fromFirestore(doc);
+          }
 
-      return presenceMap;
-    });
+          return presenceMap;
+        });
   }
 
   /// Disposes the service and stops heartbeat.
@@ -136,10 +119,7 @@ class PresenceService {
   }
 
   /// Starts periodic heartbeat to maintain online status.
-  void _startHeartbeat({
-    required String userId,
-    required String userName,
-  }) {
+  void _startHeartbeat({required String userId, required String userName}) {
     // Cancel existing timer
     _stopHeartbeat();
 
@@ -163,11 +143,7 @@ class PresenceService {
     required String userId,
     required String userName,
   }) async {
-    await _updatePresence(
-      userId: userId,
-      userName: userName,
-      isOnline: true,
-    );
+    await _updatePresence(userId: userId, userName: userName, isOnline: true);
   }
 }
 
@@ -240,8 +216,7 @@ class UserPresence {
   }
 
   @override
-  int get hashCode =>
-      userId.hashCode ^ userName.hashCode ^ isOnline.hashCode;
+  int get hashCode => userId.hashCode ^ userName.hashCode ^ isOnline.hashCode;
 
   @override
   String toString() =>
