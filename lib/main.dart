@@ -1,20 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'app.dart';
 
-void main() {
-  runApp(const MainApp());
-}
+/// Application entry point
+///
+/// Initializes Firebase and the Flutter application.
+/// Sets up error handling and runs the root App widget.
+void main() async {
+  // Ensure Flutter bindings are initialized
+  WidgetsFlutterBinding.ensureInitialized();
 
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
+  // Initialize Firebase
+  await Firebase.initializeApp();
 
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Text('Hello World!'),
-        ),
-      ),
-    );
-  }
+  // Run the app
+  runApp(const App());
 }
