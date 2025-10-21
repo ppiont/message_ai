@@ -109,6 +109,8 @@ dev_dependencies:
 ### Firebase Projects
 Two environments:
 1. **message-ai**: Development/testing
+   - **Phone Auth**: Enabled ✅
+   - **Test Phone**: +1 650-555-3434 (code: 123456)
 2. **message-ai-prod**: Production
 
 ### Flutter Flavors
