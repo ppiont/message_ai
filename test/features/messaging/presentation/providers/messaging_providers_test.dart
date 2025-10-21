@@ -10,7 +10,7 @@ import 'package:message_ai/features/messaging/domain/usecases/watch_conversation
 import 'package:message_ai/features/messaging/domain/usecases/watch_messages.dart';
 import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:riverpod/riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Mocks
 class MockWatchConversations extends Mock implements WatchConversations {}
