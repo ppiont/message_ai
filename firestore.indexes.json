@@ -41,16 +41,6 @@
                     "order": "DESCENDING"
                 }
             ]
-        },
-        {
-            "collectionGroup": "messages",
-            "queryScope": "COLLECTION_GROUP",
-            "fields": [
-                {
-                    "fieldPath": "timestamp",
-                    "order": "ASCENDING"
-                }
-            ]
         }
     ],
     "fieldOverrides": [
