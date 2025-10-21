@@ -46,10 +46,10 @@ class ServerFailure extends Failure {
   final int? statusCode;
 
   const ServerFailure({
-    String message = 'Server error occurred. Please try again later.',
+    super.message = 'Server error occurred. Please try again later.',
     super.code,
     this.statusCode,
-  }) : super(message: message);
+  });
 
   @override
   List<Object?> get props => [message, code, statusCode];
@@ -79,8 +79,8 @@ class UnauthenticatedFailure extends Failure {
 /// Failure when user lacks permission
 class UnauthorizedFailure extends Failure {
   const UnauthorizedFailure({
-    String message = 'You do not have permission to perform this action.',
-  }) : super(message: message, code: 'UNAUTHORIZED');
+    super.message = 'You do not have permission to perform this action.',
+  }) : super(code: 'UNAUTHORIZED');
 }
 
 /// Failure when email is already in use
@@ -118,9 +118,9 @@ class UserDisabledFailure extends Failure {
 /// Failure when a database operation fails
 class DatabaseFailure extends Failure {
   const DatabaseFailure({
-    String message = 'Database error occurred',
+    super.message = 'Database error occurred',
     super.code,
-  }) : super(message: message);
+  });
 }
 
 /// Failure when a record is not found
@@ -140,8 +140,8 @@ class RecordNotFoundFailure extends Failure {
 /// Failure when a database constraint is violated
 class ConstraintViolationFailure extends Failure {
   const ConstraintViolationFailure({
-    String message = 'This operation violates a database constraint.',
-  }) : super(message: message, code: 'CONSTRAINT_VIOLATION');
+    super.message = 'This operation violates a database constraint.',
+  }) : super(code: 'CONSTRAINT_VIOLATION');
 }
 
 // ============================================================================
@@ -153,9 +153,9 @@ class ValidationFailure extends Failure {
   final Map<String, String>? fieldErrors;
 
   const ValidationFailure({
-    String message = 'Please correct the errors and try again.',
+    super.message = 'Please correct the errors and try again.',
     this.fieldErrors,
-  }) : super(message: message, code: 'VALIDATION_ERROR');
+  }) : super(code: 'VALIDATION_ERROR');
 
   @override
   List<Object?> get props => [message, code, fieldErrors];
@@ -189,15 +189,15 @@ class InvalidFormatFailure extends Failure {
 /// Failure when file upload fails
 class FileUploadFailure extends Failure {
   const FileUploadFailure({
-    String message = 'Failed to upload file. Please try again.',
-  }) : super(message: message, code: 'FILE_UPLOAD_ERROR');
+    super.message = 'Failed to upload file. Please try again.',
+  }) : super(code: 'FILE_UPLOAD_ERROR');
 }
 
 /// Failure when file download fails
 class FileDownloadFailure extends Failure {
   const FileDownloadFailure({
-    String message = 'Failed to download file. Please try again.',
-  }) : super(message: message, code: 'FILE_DOWNLOAD_ERROR');
+    super.message = 'Failed to download file. Please try again.',
+  }) : super(code: 'FILE_DOWNLOAD_ERROR');
 }
 
 /// Failure when storage quota is exceeded
@@ -216,23 +216,23 @@ class StorageQuotaExceededFailure extends Failure {
 /// Failure when a message operation fails
 class MessageFailure extends Failure {
   const MessageFailure({
-    String message = 'Message operation failed',
+    super.message = 'Message operation failed',
     super.code,
-  }) : super(message: message);
+  });
 }
 
 /// Failure when message sending fails
 class MessageSendFailure extends Failure {
   const MessageSendFailure({
-    String message = 'Failed to send message. Please try again.',
-  }) : super(message: message, code: 'MESSAGE_SEND_FAILED');
+    super.message = 'Failed to send message. Please try again.',
+  }) : super(code: 'MESSAGE_SEND_FAILED');
 }
 
 /// Failure when message deletion fails
 class MessageDeleteFailure extends Failure {
   const MessageDeleteFailure({
-    String message = 'Failed to delete message. Please try again.',
-  }) : super(message: message, code: 'MESSAGE_DELETE_FAILED');
+    super.message = 'Failed to delete message. Please try again.',
+  }) : super(code: 'MESSAGE_DELETE_FAILED');
 }
 
 // ============================================================================
@@ -242,17 +242,17 @@ class MessageDeleteFailure extends Failure {
 /// Failure when AI/translation service fails
 class AIServiceFailure extends Failure {
   const AIServiceFailure({
-    String message = 'AI service temporarily unavailable. Please try again.',
+    super.message = 'AI service temporarily unavailable. Please try again.',
     super.code,
-  }) : super(message: message);
+  });
 }
 
 /// Failure when translation fails
 class TranslationFailure extends Failure {
   const TranslationFailure({
-    String message =
+    super.message =
         'Translation failed. The message will be shown in its original language.',
-  }) : super(message: message, code: 'TRANSLATION_FAILED');
+  }) : super(code: 'TRANSLATION_FAILED');
 }
 
 /// Failure when rate limit is exceeded
@@ -276,15 +276,15 @@ class RateLimitExceededFailure extends Failure {
 /// Failure for unknown/unexpected errors
 class UnknownFailure extends Failure {
   const UnknownFailure({
-    String message =
+    super.message =
         'An unexpected error occurred. Please try again or contact support.',
-  }) : super(message: message, code: 'UNKNOWN_ERROR');
+  }) : super(code: 'UNKNOWN_ERROR');
 }
 
 /// Failure when a feature is not implemented
 class NotImplementedFailure extends Failure {
-  const NotImplementedFailure({String message = 'This feature is coming soon!'})
-    : super(message: message, code: 'NOT_IMPLEMENTED');
+  const NotImplementedFailure({super.message = 'This feature is coming soon!'})
+    : super(code: 'NOT_IMPLEMENTED');
 }
 
 /// Failure when operation is cancelled

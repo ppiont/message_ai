@@ -189,7 +189,7 @@ class ErrorLogger {
   /// [parameters] - Optional event parameters
   static void logEvent(String event, {Map<String, dynamic>? parameters}) {
     if (kDebugMode) {
-      debugPrint('📊 Event: $event ${parameters != null ? parameters : ''}');
+      debugPrint('📊 Event: $event ${parameters ?? ''}');
       return;
     }
 

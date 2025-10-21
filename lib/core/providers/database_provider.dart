@@ -16,7 +16,7 @@ part 'database_provider.g.dart';
 /// final database = ref.watch(databaseProvider);
 /// ```
 @Riverpod(keepAlive: true)
-AppDatabase database(DatabaseRef ref) {
+AppDatabase database(Ref ref) {
   final db = AppDatabase();
 
   // Clean up database when provider is disposed
@@ -37,7 +37,7 @@ AppDatabase database(DatabaseRef ref) {
 /// final messages = await messageDao.getMessagesForConversation('conv-1');
 /// ```
 @riverpod
-MessageDao messageDao(MessageDaoRef ref) {
+MessageDao messageDao(Ref ref) {
   final db = ref.watch(databaseProvider);
   return db.messageDao;
 }
@@ -52,7 +52,7 @@ MessageDao messageDao(MessageDaoRef ref) {
 /// final conversations = await conversationDao.getAllConversations();
 /// ```
 @riverpod
-ConversationDao conversationDao(ConversationDaoRef ref) {
+ConversationDao conversationDao(Ref ref) {
   final db = ref.watch(databaseProvider);
   return db.conversationDao;
 }
@@ -67,7 +67,7 @@ ConversationDao conversationDao(ConversationDaoRef ref) {
 /// final user = await userDao.getUserByUid('user-123');
 /// ```
 @riverpod
-UserDao userDao(UserDaoRef ref) {
+UserDao userDao(Ref ref) {
   final db = ref.watch(databaseProvider);
   return db.userDao;
 }

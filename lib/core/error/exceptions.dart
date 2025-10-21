@@ -2,6 +2,7 @@
 ///
 /// These exceptions are thrown by data sources (API, database, etc.)
 /// and should be caught and converted to [Failure] objects by repositories.
+library;
 
 /// Base exception class for all custom exceptions
 abstract class AppException implements Exception {
@@ -69,8 +70,8 @@ class UnauthenticatedException extends AppException {
 /// Exception thrown when user doesn't have permission
 class UnauthorizedException extends AppException {
   const UnauthorizedException({
-    String message = 'You do not have permission to perform this action',
-  }) : super(message: message, code: 'UNAUTHORIZED');
+    super.message = 'You do not have permission to perform this action',
+  }) : super(code: 'UNAUTHORIZED');
 }
 
 /// Exception thrown when email is already in use
@@ -127,9 +128,9 @@ class RecordNotFoundException extends AppException {
 /// Exception thrown when a database constraint is violated
 class ConstraintViolationException extends AppException {
   const ConstraintViolationException({
-    required super.message,
+    required String message,
     super.originalError,
-  }) : super(code: 'CONSTRAINT_VIOLATION');
+  }) : super(message: message, code: 'CONSTRAINT_VIOLATION');
 }
 
 // ============================================================================
@@ -158,8 +159,8 @@ class InvalidFormatException extends AppException {
 
   const InvalidFormatException({
     required this.fieldName,
-    required super.message,
-  }) : super(code: 'INVALID_FORMAT');
+    required String message,
+  }) : super(message: message, code: 'INVALID_FORMAT');
 
   @override
   String toString() => 'InvalidFormatException: $fieldName - $message';
@@ -203,17 +204,17 @@ class MessageException extends AppException {
 /// Exception thrown when message sending fails
 class MessageSendFailedException extends AppException {
   const MessageSendFailedException({
-    String message = 'Failed to send message',
+    super.message = 'Failed to send message',
     super.originalError,
-  }) : super(message: message, code: 'MESSAGE_SEND_FAILED');
+  }) : super(code: 'MESSAGE_SEND_FAILED');
 }
 
 /// Exception thrown when message deletion fails
 class MessageDeleteFailedException extends AppException {
   const MessageDeleteFailedException({
-    String message = 'Failed to delete message',
+    super.message = 'Failed to delete message',
     super.originalError,
-  }) : super(message: message, code: 'MESSAGE_DELETE_FAILED');
+  }) : super(code: 'MESSAGE_DELETE_FAILED');
 }
 
 // ============================================================================
@@ -232,9 +233,9 @@ class AIServiceException extends AppException {
 /// Exception thrown when translation fails
 class TranslationException extends AppException {
   const TranslationException({
-    String message = 'Translation failed',
+    super.message = 'Translation failed',
     super.originalError,
-  }) : super(message: message, code: 'TRANSLATION_FAILED');
+  }) : super(code: 'TRANSLATION_FAILED');
 }
 
 /// Exception thrown when AI rate limit is exceeded
