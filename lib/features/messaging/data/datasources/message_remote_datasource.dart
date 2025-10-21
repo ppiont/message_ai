@@ -8,7 +8,10 @@ import 'package:message_ai/features/messaging/data/models/message_model.dart';
 /// Abstract interface for remote message data operations.
 abstract class MessageRemoteDataSource {
   /// Creates a new message in a conversation
-  Future<MessageModel> createMessage(String conversationId, MessageModel message);
+  Future<MessageModel> createMessage(
+    String conversationId,
+    MessageModel message,
+  );
 
   /// Retrieves a message by ID from a conversation
   Future<MessageModel> getMessageById(String conversationId, String messageId);
@@ -21,7 +24,10 @@ abstract class MessageRemoteDataSource {
   });
 
   /// Updates an existing message
-  Future<MessageModel> updateMessage(String conversationId, MessageModel message);
+  Future<MessageModel> updateMessage(
+    String conversationId,
+    MessageModel message,
+  );
 
   /// Deletes a message (or marks as deleted)
   Future<void> deleteMessage(String conversationId, String messageId);
@@ -44,13 +50,15 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
   final FirebaseFirestore _firestore;
 
   MessageRemoteDataSourceImpl({required FirebaseFirestore firestore})
-      : _firestore = firestore;
+    : _firestore = firestore;
 
   static const String _conversationsCollection = 'conversations';
   static const String _messagesSubcollection = 'messages';
 
   /// Helper to get messages collection reference for a conversation
-  CollectionReference<Map<String, dynamic>> _messagesRef(String conversationId) {
+  CollectionReference<Map<String, dynamic>> _messagesRef(
+    String conversationId,
+  ) {
     return _firestore
         .collection(_conversationsCollection)
         .doc(conversationId)
@@ -96,10 +104,15 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     String messageId,
   ) async {
     try {
-      final docSnapshot = await _messagesRef(conversationId).doc(messageId).get();
+      final docSnapshot = await _messagesRef(
+        conversationId,
+      ).doc(messageId).get();
 
       if (!docSnapshot.exists) {
-        throw RecordNotFoundException(recordType: 'Message', recordId: messageId);
+        throw RecordNotFoundException(
+          recordType: 'Message',
+          recordId: messageId,
+        );
       }
 
       return MessageModel.fromJson(docSnapshot.data()!);
@@ -121,9 +134,9 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     DateTime? before,
   }) async {
     try {
-      Query<Map<String, dynamic>> query = _messagesRef(conversationId)
-          .orderBy('timestamp', descending: true)
-          .limit(limit);
+      Query<Map<String, dynamic>> query = _messagesRef(
+        conversationId,
+      ).orderBy('timestamp', descending: true).limit(limit);
 
       // Add pagination if before timestamp is provided
       if (before != null) {
@@ -157,7 +170,10 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
       // Check if message exists
       final docSnapshot = await docRef.get();
       if (!docSnapshot.exists) {
-        throw RecordNotFoundException(recordType: 'Message', recordId: message.id);
+        throw RecordNotFoundException(
+          recordType: 'Message',
+          recordId: message.id,
+        );
       }
 
       // Update the message document
@@ -204,10 +220,10 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
           .limit(limit)
           .snapshots()
           .map((snapshot) {
-        return snapshot.docs
-            .map((doc) => MessageModel.fromJson(doc.data()))
-            .toList();
-      });
+            return snapshot.docs
+                .map((doc) => MessageModel.fromJson(doc.data()))
+                .toList();
+          });
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
@@ -222,9 +238,9 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
   @override
   Future<void> markAsDelivered(String conversationId, String messageId) async {
     try {
-      await _messagesRef(conversationId).doc(messageId).update({
-        'status': 'delivered',
-      });
+      await _messagesRef(
+        conversationId,
+      ).doc(messageId).update({'status': 'delivered'});
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
@@ -239,9 +255,9 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
   @override
   Future<void> markAsRead(String conversationId, String messageId) async {
     try {
-      await _messagesRef(conversationId).doc(messageId).update({
-        'status': 'read',
-      });
+      await _messagesRef(
+        conversationId,
+      ).doc(messageId).update({'status': 'read'});
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {

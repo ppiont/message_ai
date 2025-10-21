@@ -91,6 +91,7 @@ class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
+      if (e is AppException) rethrow;
       throw UnknownException(
         message: 'Failed to create conversation',
         originalError: e,
@@ -114,6 +115,7 @@ class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
+      if (e is AppException) rethrow;
       throw UnknownException(
         message: 'Failed to get conversation',
         originalError: e,
@@ -146,6 +148,7 @@ class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
+      if (e is AppException) rethrow;
       throw UnknownException(
         message: 'Failed to get conversations',
         originalError: e,
@@ -177,6 +180,7 @@ class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
+      if (e is AppException) rethrow;
       throw UnknownException(
         message: 'Failed to update conversation',
         originalError: e,
@@ -193,6 +197,7 @@ class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
+      if (e is AppException) rethrow;
       throw UnknownException(
         message: 'Failed to delete conversation',
         originalError: e,
@@ -219,6 +224,7 @@ class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
+      if (e is AppException) rethrow;
       throw UnknownException(
         message: 'Failed to watch conversations',
         originalError: e,
@@ -254,6 +260,7 @@ class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
+      if (e is AppException) rethrow;
       throw UnknownException(
         message: 'Failed to find direct conversation',
         originalError: e,
@@ -283,6 +290,7 @@ class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
+      if (e is AppException) rethrow;
       throw UnknownException(
         message: 'Failed to update last message',
         originalError: e,
@@ -303,6 +311,7 @@ class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
+      if (e is AppException) rethrow;
       throw UnknownException(
         message: 'Failed to update unread count',
         originalError: e,
