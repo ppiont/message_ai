@@ -240,3 +240,252 @@ Load message history on scroll, not all at once
 - Translation unavailable (show original)
 - AI feature timeout (fallback to manual)
 - No internet (clear offline indicator)
+
+## Test-Driven Development (TDD) Approach
+
+### Testing Philosophy
+**ALL code follows Test-Driven Development**
+- Write tests BEFORE or DURING implementation
+- Never skip tests for "simple" code
+- Tests are part of the feature, not optional
+
+### RED-GREEN-REFACTOR Cycle
+```
+1. RED:    Write failing test first
+2. GREEN:  Write minimum code to pass
+3. REFACTOR: Clean up while keeping tests green
+```
+
+### Test Hierarchy
+
+#### 1. Unit Tests (Domain & Data Layers)
+**What to test:**
+- Entities, models, use cases, repositories
+- Business logic and data transformations
+- Exception handling and validation
+- Edge cases and boundary conditions
+
+**Pattern:**
+```dart
+group('UseCase', () {
+  group('validation', () {
+    test('should fail when input invalid', () { ... });
+  });
+
+  group('success cases', () {
+    test('should return expected result', () { ... });
+  });
+
+  group('error cases', () {
+    test('should handle exceptions', () { ... });
+  });
+});
+```
+
+#### 2. Widget Tests (Presentation Layer)
+**What to test:**
+- Widget rendering and state
+- User interactions (tap, scroll, input)
+- Navigation flows
+- Error display
+
+**Pattern:**
+```dart
+testWidgets('should show error when login fails', (tester) async {
+  // Arrange: Mock dependencies
+  // Act: Pump widget, interact
+  // Assert: Verify UI state
+});
+```
+
+#### 3. Integration Tests (Optional for MVP)
+**What to test:**
+- Complete feature flows end-to-end
+- Real Firebase interactions (emulator)
+- Cross-layer data flow
+
+### Testing Tools & Frameworks
+
+#### Core Dependencies
+```yaml
+dev_dependencies:
+  flutter_test: sdk: flutter
+  mocktail: ^1.0.4                    # Mocking
+  fake_cloud_firestore: ^3.0.3       # Firestore mocking
+  firebase_auth_mocks: ^0.14.1       # Auth mocking
+```
+
+#### Tool Usage
+- **Mocktail**: Mock repositories, use cases, external services
+- **fake_cloud_firestore**: Mock Firestore (realistic behavior)
+- **firebase_auth_mocks**: Mock Firebase Auth
+- **ProviderContainer**: Test Riverpod providers
+
+### Test Patterns
+
+#### AAA Pattern (Arrange-Act-Assert)
+```dart
+test('should create user successfully', () async {
+  // Arrange
+  const email = 'test@test.com';
+  const password = 'password123';
+
+  // Act
+  final result = await useCase(email: email, password: password);
+
+  // Assert
+  expect(result.isRight(), true);
+});
+```
+
+#### Mocking with Mocktail
+```dart
+class MockRepository extends Mock implements UserRepository {}
+
+setUp(() {
+  mockRepo = MockRepository();
+  when(() => mockRepo.getUser(any()))
+      .thenAnswer((_) async => Right(testUser));
+});
+```
+
+#### Firestore Testing
+```dart
+setUp(() {
+  fakeFirestore = FakeFirebaseFirestore();
+  datasource = UserRemoteDataSourceImpl(fakeFirestore);
+});
+
+test('should create document', () async {
+  await datasource.createUser(testUser);
+
+  final doc = await fakeFirestore
+      .collection('users')
+      .doc(testUser.uid)
+      .get();
+
+  expect(doc.exists, true);
+});
+```
+
+#### Stream Testing
+```dart
+test('should emit messages', () async {
+  when(() => repo.watchMessages(any(), limit: any(named: 'limit')))
+      .thenAnswer((_) => Stream.value(Right([message1, message2])));
+
+  final stream = useCase(conversationId: 'conv-123');
+
+  await expectLater(
+    stream.first,
+    completion(predicate<Either<Failure, List<Message>>>((result) {
+      return result.isRight() &&
+             result.fold((l) => null, (r) => r)!.length == 2;
+    })),
+  );
+});
+```
+
+### Coverage Goals
+
+#### By Layer
+- **Domain Layer**: 100% (pure business logic)
+- **Data Layer**: 90%+ (I/O operations)
+- **Presentation Layer**: 80%+ (UI logic)
+- **Overall Project**: 85%+ minimum
+
+#### Checking Coverage
+```bash
+flutter test --coverage
+genhtml coverage/lcov.info -o coverage/html
+open coverage/html/index.html
+```
+
+### Test Organization
+```
+test/
+├── features/
+│   ├── authentication/
+│   │   ├── domain/
+│   │   │   ├── entities/
+│   │   │   └── usecases/
+│   │   ├── data/
+│   │   │   ├── models/
+│   │   │   ├── datasources/
+│   │   │   └── repositories/
+│   │   └── presentation/
+│   │       ├── pages/
+│   │       └── widgets/
+│   └── messaging/
+│       └── ... (same structure)
+├── core/
+│   ├── error/
+│   └── network/
+└── helpers/
+    ├── test_helpers.dart
+    └── mock_data.dart
+```
+
+### When to Write Tests
+
+#### ✅ ALWAYS Test Before Implementation
+- **New Features**: Write use case tests → repository tests → datasource tests → widget tests → implement
+- **Bug Fixes**: Write test that reproduces bug (fails) → fix bug → verify test passes
+- **Refactoring**: Ensure existing tests cover behavior → refactor with green tests
+
+#### ✅ NEVER Skip Tests For
+- Domain entities and value objects
+- Use cases (business logic)
+- Repositories (data orchestration)
+- Data sources (external I/O)
+- Complex widgets with state
+- Data models (serialization/deserialization)
+
+#### ⚠️ Optional Tests (but recommended)
+- Simple stateless widgets (pure UI)
+- Generated code (providers, models)
+- Configuration files
+
+### Testing Anti-Patterns to Avoid
+
+#### ❌ DON'T: Test Implementation Details
+```dart
+// Bad: Testing private methods
+test('should call _privateMethod', () { ... });
+
+// Good: Test observable behavior
+test('should return correct result', () { ... });
+```
+
+#### ❌ DON'T: Write Tests After Implementation
+This leads to:
+- Untestable code
+- Missing edge cases
+- Incomplete coverage
+- False sense of security
+
+#### ❌ DON'T: Mock Everything
+```dart
+// Bad: Over-mocking makes tests brittle
+final mockString = MockString();
+
+// Good: Use real objects when simple
+final string = 'hello';
+```
+
+### Current Test Status
+
+#### Completed (92 tests passing)
+- ✅ Auth use cases: 20 tests
+- ✅ Auth datasource: 17 tests
+- ✅ Auth repository: 22 tests
+- ✅ Messaging use cases: 33 tests
+
+#### In Progress
+- 🚧 Messaging datasources: ~30-40 tests
+- 🚧 Messaging repositories: ~30-40 tests
+- 🚧 Widget tests: ~15-20 tests
+
+#### Target
+- 📊 Total: ~150 tests
+- 📊 Coverage: 85%+

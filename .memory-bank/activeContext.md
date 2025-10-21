@@ -1,157 +1,283 @@
 # Active Context
 
-## Current Status
-**Project: Day 0 - Foundation Complete + Auth Ready**
-**Sprint Timeline: 7 Days Total**
-**Curriculum: GauntletAI**
+## Current Focus: Test Coverage Sprint (Day 1)
+**Status**: Following Test-Driven Development (TDD) Guidelines
+**Goal**: Achieve 85%+ test coverage before moving to AI features
 
-Foundation phase is complete! We have:
-- ✅ Flutter project structure with clean architecture
-- ✅ Firebase integration (dev environment: message-ai)
-- ✅ Environment configuration (dev/prod flavors working on iOS & Android)
-- ✅ Comprehensive testing infrastructure (238 tests passing)
-- ✅ Drift database with complete DAOs (75+ methods)
-- ✅ Riverpod 3.0 state management setup
-- ✅ Core error handling infrastructure (Crashlytics integration)
-- ✅ Network connectivity monitoring
-- ✅ **Firebase Authentication (Email + Phone)**
-  - Email auth: Sign up/in, password reset, verification
-  - Phone auth: Ready for device testing
-  - 29 comprehensive tests (all passing)
-  - Works perfectly in emulators
+## What We're Working On Right Now
 
-**Ready for**: Task 27 - Repository layer (message/conversation/user)
+### Testing Progress (92/~150 tests complete - 61%)
 
-## Current Work Focus
+#### ✅ Completed Testing (59 tests)
+**Authentication Layer - COMPLETE**
+1. ✅ Auth Use Cases (20 tests):
+   - SignInWithEmail, SignUpWithEmail, SignOut
+   - GetCurrentUser, SendPasswordResetEmail
+   - UpdateUserProfile
 
-### Sprint Timeline
-- **MVP Deadline**: 24 hours (Tuesday)
-- **Early Submission**: 4 days (Friday)
-- **Final Submission**: 7 days (Sunday 10:59 PM CT)
+2. ✅ User Firestore Datasource (17 tests):
+   - CRUD operations, queries, streams
+   - Exception handling and validation
+   - Uses fake_cloud_firestore
 
-### Immediate Next Steps (Day 0 → Day 1 MVP)
-1. **Set up Flutter project** with basic structure
-2. **Initialize Firebase** (single project for now, can add environments later)
-3. **Configure authentication** (phone or email - whatever's fastest)
-4. **Build basic messaging UI** (chat screen, conversation list)
-5. **Implement real-time sync** (Firestore listeners)
-6. **Add local persistence** (drift or simpler solution)
-7. **Create group chat** (3+ users)
-8. **Add read receipts** and delivery states
-9. **Test on 2 devices** (real-time messaging working)
+3. ✅ User Repository (22 tests):
+   - Repository implementation
+   - Exception → Failure mapping
+   - Stream testing
 
-### MVP Requirements (Must Have in 24 Hours)
-- [ ] One-on-one chat functionality
-- [ ] Real-time message delivery between 2+ users
-- [ ] Message persistence (survives app restarts)
-- [ ] Optimistic UI updates
-- [ ] Online/offline status indicators
-- [ ] Message timestamps
-- [ ] User authentication
-- [ ] Basic group chat (3+ users)
-- [ ] Message read receipts
-- [ ] Push notifications (foreground at minimum)
-- [ ] Deployed backend + running on emulator
+#### ✅ Completed Testing (33 tests)
+**Messaging Use Cases - COMPLETE**
+1. ✅ SendMessage (6 tests): validation, success, non-critical conversation update failure
+2. ✅ WatchMessages (5 tests): validation, streams, empty states
+3. ✅ MarkMessageAsRead (5 tests): validation, success, errors
+4. ✅ FindOrCreateDirectConversation (7 tests): validation, find/create logic, errors
+5. ✅ WatchConversations (5 tests): validation, streams, empty states
+6. ✅ GetConversationById (5 tests): validation, success, errors
 
-## Recent Changes
-- **2024-10-21**: **Email authentication added** - Sign up/in, password reset, verification (29 tests)
-- **2024-10-21**: Task 15 completed - Firebase Authentication (Email + Phone) with full exception mapping
-- **2024-10-21**: Task 13 completed - Network connectivity monitoring (19 tests)
-- **2024-10-21**: Task 26 completed - Conversation entity/model (46 tests)
-- **2024-10-21**: Task 25 completed - Message entity/model (20 tests)
-- **2024-10-21**: Task 12 completed - Core error handling (exceptions, failures, mapper, logger, 55 tests)
-- **2024-10-21**: Task 11 completed - Riverpod providers (8 tests)
-- **2024-10-21**: Tasks 8-10 completed - DAOs with 75+ methods (85 tests)
-- **2024-10-21**: Tasks 4-7 completed - Drift database fully implemented and tested (65 tests)
-- **2024-10-21**: Tasks 1-3 completed - Flutter project structure, Firebase, flavors working
-- **2024-10-21**: Created Drift and Dart/Flutter MCP documentation rules
-- **2024-10-21**: Dependency updates - All Firebase packages updated to latest versions
-- **2024-10-21**: Environment simplification - Removed staging, using dev/prod only
-- **2024-10-21**: Taskmaster-ai initialization - 120 atomic tasks generated
-- **2024-10-21**: Memory Bank initialized and PRD documented
+#### 🚧 In Progress
+**Messaging Datasources (0 tests)**
+- [ ] message_remote_datasource_impl_test.dart (~15-20 tests)
+  - createMessage, getMessages, watchMessages
+  - markAsRead, markAsDelivered
+  - Firestore exception mapping
+  - fake_cloud_firestore mocking
 
-## Active Decisions
+- [ ] conversation_remote_datasource_impl_test.dart (~15-20 tests)
+  - CRUD operations
+  - findDirectConversation
+  - watchConversationsForUser
+  - updateLastMessage, unread counts
 
-### Architecture Decisions Made
-✅ **Persona**: International Communicator (language barriers, translation, cultural context)
-✅ **Platform**: Flutter (cross-platform)
-✅ **Database**: Cloud Firestore (real-time sync + offline support)
-✅ **State Management**: Riverpod 3.0 (compile-time safety, streams)
-✅ **Local Storage**: drift (type-safe SQL ORM)
-✅ **AI Model**: OpenAI GPT-4o-mini (via Cloud Functions)
-✅ **Architecture**: Clean Architecture with feature-first (but simplified for 7-day sprint)
-✅ **Auth Method**: Email (emulator testing) + Phone (device testing) via Firebase Auth
+#### ⏳ Next Up
+**Messaging Repositories (~30-40 tests)**
+- message_repository_impl_test.dart
+- conversation_repository_impl_test.dart
 
-### Pending Decisions
-❓ **Translation Service**: Google Cloud Translation vs. DeepL vs. GPT-4o-mini for translation
-❓ **Advanced AI Feature**: Context-aware smart replies OR intelligent data extraction (must choose 1)
-❓ **Navigation**: go_router vs. simple Navigator (keep it simple for now)
+**Widget Tests (~15-20 tests)**
+- Auth UI: sign_up_page, sign_in_page, profile_setup_page
+- Messaging UI: conversation_list_page, chat_page, user_selection_page
 
-## Key Considerations
+**Coverage Verification**
+- Run `flutter test --coverage`
+- Generate HTML report
+- Verify 85%+ overall coverage
 
-### For 7-Day Sprint
-- **Vertical Slices**: Finish messaging completely before adding AI features
-- **Real Device Testing**: Test on physical devices, not just simulators
-- **Firebase First**: Use Firebase for quick setup (Firestore, Auth, Functions, FCM)
-- **Simplify Where Possible**: Clean Architecture is great but don't over-engineer for 7 days
+## Recent Changes (Last Session)
 
-### Critical Path
-Day 1: **Messaging must work** (this is the hard gate)
-Days 2-5: **5 Required AI features** for International Communicator
-Days 5-6: **1 Advanced AI capability**
-Day 7: **Polish, demo video, deployment**
+### Bug Fixes
+1. **Firestore Timestamp Casting Issue**:
+   - Problem: `Timestamp` vs `String` type mismatch in ConversationModel
+   - Fix: Updated `updateLastMessage` to use `Timestamp.fromDate()`
+   - Added `type: 'text'` field to lastMessage
 
-### Technical Debt to Avoid
-- Don't skip offline scenarios (offline-first is a requirement)
-- Don't hardcode API keys (use Cloud Functions + Secret Manager)
-- Don't ignore app lifecycle (background/foreground/force quit must work)
-- Don't overbuild for scale (2-10 users is fine, not 1M users)
+2. **Error Mapper Missing Exception**:
+   - Problem: `RecordAlreadyExistsException` not mapped
+   - Fix: Added mapping to `DatabaseFailure` in error_mapper.dart
 
-## Dependencies & Blockers
+3. **AppException Wrapping Bug**:
+   - Problem: `createUser` wrapped `RecordAlreadyExistsException` in `UnknownException`
+   - Fix: Added `if (e is AppException) rethrow;` before wrapping
+
+### Tests Written (Today)
+- user_remote_datasource_impl_test.dart (17 tests)
+- user_repository_impl_test.dart (22 tests)
+- send_message_test.dart (6 tests)
+- watch_messages_test.dart (5 tests)
+- mark_message_as_read_test.dart (5 tests)
+- find_or_create_direct_conversation_test.dart (7 tests)
+- watch_conversations_test.dart (5 tests)
+- get_conversation_by_id_test.dart (5 tests)
+
+### Documentation Created
+- `.cursor/rules/testing.mdc`: Comprehensive TDD guidelines
+  - RED-GREEN-REFACTOR cycle
+  - Test hierarchy (unit, widget, integration)
+  - Coverage goals by layer
+  - Testing tools and patterns
+  - When to write tests (always!)
+
+## Next Actions (Immediate)
+
+### 1. Complete Messaging Datasource Tests
+**File**: `test/features/messaging/domain/usecases/message_remote_datasource_impl_test.dart`
+
+Test cases needed:
+```dart
+- createMessage: success, validation, FirebaseException
+- getMessages: success, empty list, pagination
+- watchMessages: stream emissions, errors
+- markAsRead: success, not found
+- markAsDelivered: success, not found
+- updateMessage: success, not found
+- deleteMessage: success, not found
+- Firestore exception mapping
+```
+
+### 2. Complete Conversation Datasource Tests
+**File**: `test/features/messaging/domain/usecases/conversation_remote_datasource_impl_test.dart`
+
+Test cases needed:
+```dart
+- createConversation: success, already exists
+- getConversationById: success, not found
+- findDirectConversation: found, not found, null
+- watchConversationsForUser: stream, multiple, empty
+- updateConversation: success, not found
+- updateLastMessage: success, proper Timestamp handling
+- updateUnreadCount: increment, decrement
+- deleteConversation: success (soft delete)
+- Firestore exception mapping
+```
+
+### 3. Write Repository Tests
+Follow the same pattern as `user_repository_impl_test.dart`:
+- Mock the datasource
+- Test all repository methods
+- Verify exception → failure mapping
+- Test stream transformations
+
+### 4. Write Critical Widget Tests
+Focus on key user flows:
+- Sign up flow
+- Sign in flow
+- Start new conversation
+- Send message
+- Display conversation list
+
+### 5. Verify Coverage
+```bash
+flutter test --coverage
+genhtml coverage/lcov.info -o coverage/html
+open coverage/html/index.html
+```
+
+Check that:
+- Domain layer: 100%
+- Data layer: 90%+
+- Presentation layer: 80%+
+- Overall: 85%+
+
+## Key Technical Decisions
+
+### Testing Approach
+- **TDD**: Write tests before/during implementation
+- **fake_cloud_firestore**: Use for Firestore testing (not mocks)
+- **Mocktail**: Use for mocking repositories and use cases
+- **AAA Pattern**: Arrange-Act-Assert for all tests
+- **Comprehensive Coverage**: Validation, success, error cases
+
+### Test File Organization
+```
+test/
+├── features/
+│   ├── authentication/
+│   │   ├── domain/usecases/
+│   │   ├── data/datasources/
+│   │   ├── data/repositories/
+│   │   └── presentation/pages/
+│   └── messaging/
+│       ├── domain/usecases/
+│       ├── data/datasources/
+│       ├── data/repositories/
+│       └── presentation/widgets/
+```
+
+### Dependencies for Testing
+```yaml
+dev_dependencies:
+  flutter_test: sdk: flutter
+  mocktail: ^1.0.4
+  fake_cloud_firestore: ^3.0.3
+  firebase_auth_mocks: ^0.14.1
+```
+
+## Current Architecture State
+
+### Fully Implemented & Tested
+- ✅ Authentication domain layer (entities, use cases, repositories)
+- ✅ Authentication data layer (models, datasources, repositories)
+- ✅ Authentication presentation layer (pages, providers)
+- ✅ Messaging domain layer (entities, use cases)
+- ✅ User Firestore integration (datasource + repository)
+
+### Partially Tested
+- 🚧 Messaging data layer (models exist, tests needed)
+- 🚧 Messaging presentation layer (UI exists, widget tests needed)
+
+### Not Yet Started
+- ⏳ Group chat feature
+- ⏳ Offline support (Drift integration)
+- ⏳ Message delivery status
+- ⏳ Push notifications
+- ⏳ AI features (all 5 + advanced)
+
+## Blockers & Decisions Needed
 
 ### Current Blockers
-- None (project just starting)
+- None (all tests passing, clear path forward)
 
-### External Dependencies
-- **Firebase account** (free tier is fine)
-- **OpenAI API key** (for AI features Days 2+)
-- **Physical devices** for testing (iOS + Android or 2x same platform)
-- **TestFlight/Google Play** accounts (for final deployment)
+### Upcoming Decisions
+1. **Group Chat Model**: How to structure participants list?
+2. **Offline Queue**: How to handle message retry logic?
+3. **AI Integration**: Which Cloud Functions framework to use?
+4. **Advanced Feature**: Smart replies or data extraction?
 
-## Notes for Future Me
+## Context for Next Session
 
-### Important Context
-- This is a **7-day curriculum project** for GauntletAI, not a production app
-- **MVP in 24 hours** is a hard gate - messaging must work reliably
-- **Persona**: International Communicator (focus on translation/language features)
-- **5 required AI features + 1 advanced** must be functional
-- **Security**: Never expose API keys to client (use Cloud Functions)
+### When Resuming
+1. **Current Task**: Writing messaging datasource tests
+2. **Files to Focus On**:
+   - `test/features/messaging/data/datasources/message_remote_datasource_impl_test.dart`
+   - `test/features/messaging/data/datasources/conversation_remote_datasource_impl_test.dart`
+3. **Reference Files**:
+   - `test/features/authentication/data/datasources/user_remote_datasource_impl_test.dart` (pattern)
+   - `.cursor/rules/testing.mdc` (guidelines)
+4. **Goal**: Complete all datasource tests, then move to repositories
 
-### Things to Remember
-- **Messaging first**: Don't touch AI until messaging works end-to-end
-- **Test scenarios**: 2 devices, offline mode, app lifecycle, rapid messages, group chat
-- **Firestore indexes**: Create them as needed for queries
-- **Optimistic UI**: Messages appear instantly, then confirm
-- **Cloud Functions**: AI proxy for security + cost control
+### Test Patterns to Follow
+1. Use `fake_cloud_firestore` for Firestore mocking
+2. Set up test data in `setUp()`
+3. Group tests by method and by case type (validation, success, errors)
+4. Test all exception mappings
+5. Verify stream behavior with `expectLater`
+6. Check that proper Firestore queries are constructed
 
-### Watch Out For
-- Don't over-engineer for scale (2-10 users is fine)
-- iOS push notifications can be tricky (start simple with foreground)
-- Test on real devices, not just simulators
-- Keep AI costs reasonable during development
-- Translation caching helps with costs and speed
+### Known Gotchas
+- Firestore Timestamp serialization (use `Timestamp.fromDate()`)
+- lastMessage needs `type` field
+- RecordAlreadyExistsException needs explicit handling
+- Stream tests need named parameter mocking
 
-## Context for AI Agent
+## Success Criteria for This Phase
 
-When I return to this project after a memory reset, I should:
-1. **Read activeContext.md FIRST** - understand it's a 7-day sprint
-2. **Check progress.md** - see what phase we're in (MVP → AI features → Polish)
-3. **Review projectbrief.md** - remember the International Communicator persona
-4. **Look at systemPatterns.md** - architectural decisions
-5. **Reference techContext.md** - technical setup details
+### Testing Complete When:
+- [ ] All datasource tests written and passing (~30-40 tests)
+- [ ] All repository tests written and passing (~30-40 tests)
+- [ ] Critical widget tests written and passing (~15-20 tests)
+- [ ] Coverage report shows 85%+ overall
+- [ ] Domain layer at 100%
+- [ ] No failing tests
+- [ ] All linter warnings resolved
 
-**Key Reminder**: This is a **7-day curriculum project**, not a production app for millions of users. Focus on:
-- Getting messaging working reliably (MVP = hard gate)
-- Implementing 5 required + 1 advanced AI feature
-- Keeping it simple enough to finish in 7 days
-- Making it deployable (TestFlight/APK/Expo Go)
+### Ready to Move On When:
+- [ ] All above criteria met
+- [ ] Tests committed to git
+- [ ] Memory bank updated
+- [ ] Ready to implement MVP polish (delivery status, offline, groups)
+
+## Links & References
+
+### Documentation
+- `.cursor/rules/testing.mdc` - TDD guidelines
+- `.cursor/rules/drift.mdc` - Drift ORM patterns
+- `.cursor/rules/dart_flutter_mcp.mdc` - Dart MCP usage
+
+### Key Files
+- `lib/core/error/error_mapper.dart` - Exception mapping
+- `lib/core/error/failures.dart` - Failure types
+- `lib/core/error/exceptions.dart` - Exception types
+
+### Test Examples
+- `test/features/authentication/data/datasources/user_remote_datasource_impl_test.dart` - Firestore testing pattern
+- `test/features/authentication/data/repositories/user_repository_impl_test.dart` - Repository testing pattern
+- `test/features/messaging/domain/usecases/send_message_test.dart` - Use case testing pattern
