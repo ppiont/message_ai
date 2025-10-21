@@ -19,8 +19,7 @@ class UserSelectionPage extends ConsumerStatefulWidget {
   const UserSelectionPage({super.key});
 
   @override
-  ConsumerState<UserSelectionPage> createState() =>
-      _UserSelectionPageState();
+  ConsumerState<UserSelectionPage> createState() => _UserSelectionPageState();
 }
 
 class _UserSelectionPageState extends ConsumerState<UserSelectionPage> {
@@ -46,9 +45,7 @@ class _UserSelectionPageState extends ConsumerState<UserSelectionPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('New Conversation'),
-      ),
+      appBar: AppBar(title: const Text('New Conversation')),
       body: Column(
         children: [
           // Search bar
@@ -82,9 +79,7 @@ class _UserSelectionPageState extends ConsumerState<UserSelectionPage> {
             ),
           ),
           // User list
-          Expanded(
-            child: _buildUserList(currentUser),
-          ),
+          Expanded(child: _buildUserList(currentUser)),
           // Loading overlay
           if (_isCreatingConversation)
             Container(
@@ -183,26 +178,22 @@ class _UserSelectionPageState extends ConsumerState<UserSelectionPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.people_outline,
-            size: 80,
-            color: Colors.grey[400],
-          ),
+          Icon(Icons.people_outline, size: 80, color: Colors.grey[400]),
           const SizedBox(height: 24),
           Text(
             _searchQuery.isEmpty ? 'No users found' : 'No matching users',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: Colors.grey[600],
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(color: Colors.grey[600]),
           ),
           const SizedBox(height: 8),
           Text(
             _searchQuery.isEmpty
                 ? 'Users will appear here once they sign up'
                 : 'Try a different search term',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[500],
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[500]),
           ),
         ],
       ),
@@ -254,7 +245,9 @@ class _UserSelectionPageState extends ConsumerState<UserSelectionPage> {
         (failure) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Failed to create conversation: ${failure.message}'),
+              content: Text(
+                'Failed to create conversation: ${failure.message}',
+              ),
               backgroundColor: Colors.red,
             ),
           );

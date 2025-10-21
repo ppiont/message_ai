@@ -121,12 +121,21 @@ Stream<List<Map<String, dynamic>>> userConversationsStream(
         return [];
       },
       (conversations) {
-        return conversations.map((conv) => {
-          'id': conv.documentId,
-          'participants': conv.participants,
-          'lastMessage': conv.lastMessage,
-          'lastUpdatedAt': conv.lastUpdatedAt,
-          'unreadCount': conv.getUnreadCountForUser(userId),
+        return conversations.map((conv) {
+          return {
+            'id': conv.documentId,
+            'participants': conv.participants
+                .map((p) => {
+                      'uid': p.uid,
+                      'name': p.name,
+                      'imageUrl': p.imageUrl,
+                      'preferredLanguage': p.preferredLanguage,
+                    })
+                .toList(),
+            'lastMessage': conv.lastMessage,
+            'lastUpdatedAt': conv.lastUpdatedAt,
+            'unreadCount': conv.getUnreadCountForUser(userId),
+          };
         }).toList();
       },
     );
