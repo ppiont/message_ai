@@ -2,7 +2,6 @@ import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:message_ai/core/database/app_database.dart';
-import 'package:message_ai/core/database/tables/users_table.dart';
 
 void main() {
   late AppDatabase database;
@@ -31,43 +30,52 @@ void main() {
       final columns = database.users.$columns;
       final columnNames = columns.map((c) => c.$name).toList();
 
-      expect(columnNames, containsAll([
-        'uid',
-        'email',
-        'phone_number',
-        'name',
-        'image_url',
-        'fcm_token',
-        'preferred_language',
-        'created_at',
-        'last_seen',
-        'is_online',
-      ]));
+      expect(
+        columnNames,
+        containsAll([
+          'uid',
+          'email',
+          'phone_number',
+          'name',
+          'image_url',
+          'fcm_token',
+          'preferred_language',
+          'created_at',
+          'last_seen',
+          'is_online',
+        ]),
+      );
     });
 
     test('uid column is non-nullable text', () {
-      final uidColumn = database.users.$columns
-          .firstWhere((c) => c.$name == 'uid') as GeneratedColumn<String>;
+      final uidColumn =
+          database.users.$columns.firstWhere((c) => c.$name == 'uid')
+              as GeneratedColumn<String>;
       expect(uidColumn.$nullable, isFalse);
       expect(uidColumn.type, equals(DriftSqlType.string));
     });
 
     test('email column is nullable text', () {
-      final emailColumn = database.users.$columns
-          .firstWhere((c) => c.$name == 'email') as GeneratedColumn<String>;
+      final emailColumn =
+          database.users.$columns.firstWhere((c) => c.$name == 'email')
+              as GeneratedColumn<String>;
       expect(emailColumn.$nullable, isTrue);
       expect(emailColumn.type, equals(DriftSqlType.string));
     });
 
     test('preferred_language has default value', () {
-      final langColumn = database.users.$columns
-          .firstWhere((c) => c.$name == 'preferred_language') as GeneratedColumn<String>;
+      final langColumn =
+          database.users.$columns.firstWhere(
+                (c) => c.$name == 'preferred_language',
+              )
+              as GeneratedColumn<String>;
       expect(langColumn.defaultValue, isNotNull);
     });
 
     test('is_online has default value of false', () {
-      final onlineColumn = database.users.$columns
-          .firstWhere((c) => c.$name == 'is_online') as GeneratedColumn<bool>;
+      final onlineColumn =
+          database.users.$columns.firstWhere((c) => c.$name == 'is_online')
+              as GeneratedColumn<bool>;
       expect(onlineColumn.defaultValue, isNotNull);
     });
   });
@@ -107,9 +115,9 @@ void main() {
 
       await database.into(database.users).insert(user);
 
-      final result = await (database.select(database.users)
-            ..where((tbl) => tbl.uid.equals('test-uid-456')))
-          .getSingle();
+      final result = await (database.select(
+        database.users,
+      )..where((tbl) => tbl.uid.equals('test-uid-456'))).getSingle();
 
       expect(result.email, equals('john@example.com'));
       expect(result.phoneNumber, equals('+1234567890'));
@@ -137,9 +145,9 @@ void main() {
       await database.into(database.users).insert(user1);
       await database.into(database.users).insert(user2);
 
-      final result = await (database.select(database.users)
-            ..where((tbl) => tbl.uid.equals('user-2')))
-          .getSingle();
+      final result = await (database.select(
+        database.users,
+      )..where((tbl) => tbl.uid.equals('user-2'))).getSingle();
 
       expect(result.uid, equals('user-2'));
       expect(result.name, equals('User Two'));
@@ -157,16 +165,18 @@ void main() {
       await database.into(database.users).insert(user);
 
       // Update the user
-      await (database.update(database.users)
-            ..where((tbl) => tbl.uid.equals('user-update')))
-          .write(const UsersCompanion(
-        name: Value('Updated Name'),
-        isOnline: Value(true),
-      ));
+      await (database.update(
+        database.users,
+      )..where((tbl) => tbl.uid.equals('user-update'))).write(
+        const UsersCompanion(
+          name: Value('Updated Name'),
+          isOnline: Value(true),
+        ),
+      );
 
-      final updated = await (database.select(database.users)
-            ..where((tbl) => tbl.uid.equals('user-update')))
-          .getSingle();
+      final updated = await (database.select(
+        database.users,
+      )..where((tbl) => tbl.uid.equals('user-update'))).getSingle();
 
       expect(updated.name, equals('Updated Name'));
       expect(updated.isOnline, isTrue);
@@ -188,9 +198,9 @@ void main() {
       expect(allUsers.length, equals(1));
 
       // Delete the user
-      await (database.delete(database.users)
-            ..where((tbl) => tbl.uid.equals('user-delete')))
-          .go();
+      await (database.delete(
+        database.users,
+      )..where((tbl) => tbl.uid.equals('user-delete'))).go();
 
       // Verify user is deleted
       allUsers = await database.select(database.users).get();
@@ -225,35 +235,47 @@ void main() {
       final now = DateTime.now();
 
       // Insert online users
-      await database.into(database.users).insert(UsersCompanion.insert(
-        uid: 'online-1',
-        name: 'Online User 1',
-        createdAt: now,
-        lastSeen: now,
-        isOnline: const Value(true),
-      ));
+      await database
+          .into(database.users)
+          .insert(
+            UsersCompanion.insert(
+              uid: 'online-1',
+              name: 'Online User 1',
+              createdAt: now,
+              lastSeen: now,
+              isOnline: const Value(true),
+            ),
+          );
 
-      await database.into(database.users).insert(UsersCompanion.insert(
-        uid: 'online-2',
-        name: 'Online User 2',
-        createdAt: now,
-        lastSeen: now,
-        isOnline: const Value(true),
-      ));
+      await database
+          .into(database.users)
+          .insert(
+            UsersCompanion.insert(
+              uid: 'online-2',
+              name: 'Online User 2',
+              createdAt: now,
+              lastSeen: now,
+              isOnline: const Value(true),
+            ),
+          );
 
       // Insert offline user
-      await database.into(database.users).insert(UsersCompanion.insert(
-        uid: 'offline-1',
-        name: 'Offline User',
-        createdAt: now,
-        lastSeen: now,
-        isOnline: const Value(false),
-      ));
+      await database
+          .into(database.users)
+          .insert(
+            UsersCompanion.insert(
+              uid: 'offline-1',
+              name: 'Offline User',
+              createdAt: now,
+              lastSeen: now,
+              isOnline: const Value(false),
+            ),
+          );
 
       // Query online users
-      final onlineUsers = await (database.select(database.users)
-            ..where((tbl) => tbl.isOnline.equals(true)))
-          .get();
+      final onlineUsers = await (database.select(
+        database.users,
+      )..where((tbl) => tbl.isOnline.equals(true))).get();
 
       expect(onlineUsers.length, equals(2));
       expect(onlineUsers.every((u) => u.isOnline), isTrue);
@@ -262,25 +284,33 @@ void main() {
     test('can query users by preferred language', () async {
       final now = DateTime.now();
 
-      await database.into(database.users).insert(UsersCompanion.insert(
-        uid: 'spanish-user',
-        name: 'Spanish User',
-        preferredLanguage: const Value('es'),
-        createdAt: now,
-        lastSeen: now,
-      ));
+      await database
+          .into(database.users)
+          .insert(
+            UsersCompanion.insert(
+              uid: 'spanish-user',
+              name: 'Spanish User',
+              preferredLanguage: const Value('es'),
+              createdAt: now,
+              lastSeen: now,
+            ),
+          );
 
-      await database.into(database.users).insert(UsersCompanion.insert(
-        uid: 'french-user',
-        name: 'French User',
-        preferredLanguage: const Value('fr'),
-        createdAt: now,
-        lastSeen: now,
-      ));
+      await database
+          .into(database.users)
+          .insert(
+            UsersCompanion.insert(
+              uid: 'french-user',
+              name: 'French User',
+              preferredLanguage: const Value('fr'),
+              createdAt: now,
+              lastSeen: now,
+            ),
+          );
 
-      final spanishUsers = await (database.select(database.users)
-            ..where((tbl) => tbl.preferredLanguage.equals('es')))
-          .get();
+      final spanishUsers = await (database.select(
+        database.users,
+      )..where((tbl) => tbl.preferredLanguage.equals('es'))).get();
 
       expect(spanishUsers.length, equals(1));
       expect(spanishUsers.first.preferredLanguage, equals('es'));
@@ -300,9 +330,9 @@ void main() {
 
       await database.into(database.users).insert(user);
 
-      final result = await (database.select(database.users)
-            ..where((tbl) => tbl.uid.equals('minimal-user')))
-          .getSingle();
+      final result = await (database.select(
+        database.users,
+      )..where((tbl) => tbl.uid.equals('minimal-user'))).getSingle();
 
       expect(result.email, isNull);
       expect(result.phoneNumber, isNull);
@@ -322,13 +352,12 @@ void main() {
 
       await database.into(database.users).insert(user);
 
-      final result = await (database.select(database.users)
-            ..where((tbl) => tbl.uid.equals('default-values')))
-          .getSingle();
+      final result = await (database.select(
+        database.users,
+      )..where((tbl) => tbl.uid.equals('default-values'))).getSingle();
 
       expect(result.preferredLanguage, equals('en')); // Default value
       expect(result.isOnline, isFalse); // Default value
     });
   });
 }
-

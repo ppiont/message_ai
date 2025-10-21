@@ -29,51 +29,66 @@ void main() {
       final columns = database.conversations.$columns;
       final columnNames = columns.map((c) => c.$name).toList();
 
-      expect(columnNames, containsAll([
-        'document_id',
-        'conversation_type',
-        'group_name',
-        'group_image',
-        'participant_ids',
-        'participants',
-        'admin_ids',
-        'last_message_text',
-        'last_message_sender_id',
-        'last_message_sender_name',
-        'last_message_timestamp',
-        'last_message_type',
-        'last_message_translations',
-        'last_updated_at',
-        'initiated_at',
-        'unread_count',
-        'translation_enabled',
-        'auto_detect_language',
-      ]));
+      expect(
+        columnNames,
+        containsAll([
+          'document_id',
+          'conversation_type',
+          'group_name',
+          'group_image',
+          'participant_ids',
+          'participants',
+          'admin_ids',
+          'last_message_text',
+          'last_message_sender_id',
+          'last_message_sender_name',
+          'last_message_timestamp',
+          'last_message_type',
+          'last_message_translations',
+          'last_updated_at',
+          'initiated_at',
+          'unread_count',
+          'translation_enabled',
+          'auto_detect_language',
+        ]),
+      );
     });
 
     test('documentId column is non-nullable text', () {
-      final docIdColumn = database.conversations.$columns
-          .firstWhere((c) => c.$name == 'document_id') as GeneratedColumn<String>;
+      final docIdColumn =
+          database.conversations.$columns.firstWhere(
+                (c) => c.$name == 'document_id',
+              )
+              as GeneratedColumn<String>;
       expect(docIdColumn.$nullable, isFalse);
       expect(docIdColumn.type, equals(DriftSqlType.string));
     });
 
     test('conversationType column is non-nullable text', () {
-      final typeColumn = database.conversations.$columns
-          .firstWhere((c) => c.$name == 'conversation_type') as GeneratedColumn<String>;
+      final typeColumn =
+          database.conversations.$columns.firstWhere(
+                (c) => c.$name == 'conversation_type',
+              )
+              as GeneratedColumn<String>;
       expect(typeColumn.$nullable, isFalse);
       expect(typeColumn.type, equals(DriftSqlType.string));
     });
 
     test('translation_enabled has default value of true', () {
-      final translationColumn = database.conversations.$columns
-          .firstWhere((c) => c.$name == 'translation_enabled') as GeneratedColumn<bool>;
+      final translationColumn =
+          database.conversations.$columns.firstWhere(
+                (c) => c.$name == 'translation_enabled',
+              )
+              as GeneratedColumn<bool>;
       expect(translationColumn.defaultValue, isNotNull);
     });
 
     test('auto_detect_language has default value of true', () {
-      final autoDetectColumn = database.conversations.$columns
-          .firstWhere((c) => c.$name == 'auto_detect_language') as GeneratedColumn<bool>;
+      final autoDetectColumn =
+          database.conversations.$columns.firstWhere(
+                (c) => c.$name == 'auto_detect_language',
+              )
+              as GeneratedColumn<bool>;
       expect(autoDetectColumn.defaultValue, isNotNull);
     });
   });
@@ -93,7 +108,9 @@ void main() {
 
       await database.into(database.conversations).insert(conversation);
 
-      final allConversations = await database.select(database.conversations).get();
+      final allConversations = await database
+          .select(database.conversations)
+          .get();
       expect(allConversations.length, equals(1));
       expect(allConversations.first.documentId, equals('conv-123'));
       expect(allConversations.first.conversationType, equals('direct'));
@@ -124,9 +141,9 @@ void main() {
 
       await database.into(database.conversations).insert(conversation);
 
-      final result = await (database.select(database.conversations)
-            ..where((tbl) => tbl.documentId.equals('group-456')))
-          .getSingle();
+      final result = await (database.select(
+        database.conversations,
+      )..where((tbl) => tbl.documentId.equals('group-456'))).getSingle();
 
       expect(result.conversationType, equals('group'));
       expect(result.groupName, equals('Engineering Team'));
@@ -137,30 +154,38 @@ void main() {
 
     test('can read a specific conversation by documentId', () async {
       final now = DateTime.now();
-      
-      await database.into(database.conversations).insert(ConversationsCompanion.insert(
-        documentId: 'conv-1',
-        conversationType: 'direct',
-        participantIds: '["user1", "user2"]',
-        participants: '[]',
-        unreadCount: '{}',
-        lastUpdatedAt: now,
-        initiatedAt: now,
-      ));
 
-      await database.into(database.conversations).insert(ConversationsCompanion.insert(
-        documentId: 'conv-2',
-        conversationType: 'group',
-        participantIds: '["user1", "user2", "user3"]',
-        participants: '[]',
-        unreadCount: '{}',
-        lastUpdatedAt: now,
-        initiatedAt: now,
-      ));
+      await database
+          .into(database.conversations)
+          .insert(
+            ConversationsCompanion.insert(
+              documentId: 'conv-1',
+              conversationType: 'direct',
+              participantIds: '["user1", "user2"]',
+              participants: '[]',
+              unreadCount: '{}',
+              lastUpdatedAt: now,
+              initiatedAt: now,
+            ),
+          );
 
-      final result = await (database.select(database.conversations)
-            ..where((tbl) => tbl.documentId.equals('conv-2')))
-          .getSingle();
+      await database
+          .into(database.conversations)
+          .insert(
+            ConversationsCompanion.insert(
+              documentId: 'conv-2',
+              conversationType: 'group',
+              participantIds: '["user1", "user2", "user3"]',
+              participants: '[]',
+              unreadCount: '{}',
+              lastUpdatedAt: now,
+              initiatedAt: now,
+            ),
+          );
+
+      final result = await (database.select(
+        database.conversations,
+      )..where((tbl) => tbl.documentId.equals('conv-2'))).getSingle();
 
       expect(result.documentId, equals('conv-2'));
       expect(result.conversationType, equals('group'));
@@ -170,32 +195,38 @@ void main() {
       final now = DateTime.now();
       final later = now.add(const Duration(minutes: 5));
 
-      await database.into(database.conversations).insert(ConversationsCompanion.insert(
-        documentId: 'conv-update',
-        conversationType: 'direct',
-        participantIds: '["user1", "user2"]',
-        participants: '[]',
-        unreadCount: '{"user1": 0, "user2": 0}',
-        lastUpdatedAt: now,
-        initiatedAt: now,
-      ));
+      await database
+          .into(database.conversations)
+          .insert(
+            ConversationsCompanion.insert(
+              documentId: 'conv-update',
+              conversationType: 'direct',
+              participantIds: '["user1", "user2"]',
+              participants: '[]',
+              unreadCount: '{"user1": 0, "user2": 0}',
+              lastUpdatedAt: now,
+              initiatedAt: now,
+            ),
+          );
 
       // Update the conversation with a new message
-      await (database.update(database.conversations)
-            ..where((tbl) => tbl.documentId.equals('conv-update')))
-          .write(ConversationsCompanion(
-        lastMessageText: const Value('New message'),
-        lastMessageSenderId: const Value('user1'),
-        lastMessageSenderName: const Value('Alice'),
-        lastMessageTimestamp: Value(later),
-        lastMessageType: const Value('text'),
-        lastUpdatedAt: Value(later),
-        unreadCount: const Value('{"user1": 0, "user2": 1}'),
-      ));
+      await (database.update(
+        database.conversations,
+      )..where((tbl) => tbl.documentId.equals('conv-update'))).write(
+        ConversationsCompanion(
+          lastMessageText: const Value('New message'),
+          lastMessageSenderId: const Value('user1'),
+          lastMessageSenderName: const Value('Alice'),
+          lastMessageTimestamp: Value(later),
+          lastMessageType: const Value('text'),
+          lastUpdatedAt: Value(later),
+          unreadCount: const Value('{"user1": 0, "user2": 1}'),
+        ),
+      );
 
-      final updated = await (database.select(database.conversations)
-            ..where((tbl) => tbl.documentId.equals('conv-update')))
-          .getSingle();
+      final updated = await (database.select(
+        database.conversations,
+      )..where((tbl) => tbl.documentId.equals('conv-update'))).getSingle();
 
       expect(updated.lastMessageText, equals('New message'));
       expect(updated.lastMessageSenderId, equals('user1'));
@@ -204,23 +235,29 @@ void main() {
 
     test('can delete a conversation', () async {
       final now = DateTime.now();
-      
-      await database.into(database.conversations).insert(ConversationsCompanion.insert(
-        documentId: 'conv-delete',
-        conversationType: 'direct',
-        participantIds: '["user1", "user2"]',
-        participants: '[]',
-        unreadCount: '{}',
-        lastUpdatedAt: now,
-        initiatedAt: now,
-      ));
 
-      var allConversations = await database.select(database.conversations).get();
+      await database
+          .into(database.conversations)
+          .insert(
+            ConversationsCompanion.insert(
+              documentId: 'conv-delete',
+              conversationType: 'direct',
+              participantIds: '["user1", "user2"]',
+              participants: '[]',
+              unreadCount: '{}',
+              lastUpdatedAt: now,
+              initiatedAt: now,
+            ),
+          );
+
+      var allConversations = await database
+          .select(database.conversations)
+          .get();
       expect(allConversations.length, equals(1));
 
-      await (database.delete(database.conversations)
-            ..where((tbl) => tbl.documentId.equals('conv-delete')))
-          .go();
+      await (database.delete(
+        database.conversations,
+      )..where((tbl) => tbl.documentId.equals('conv-delete'))).go();
 
       allConversations = await database.select(database.conversations).get();
       expect(allConversations.length, equals(0));
@@ -261,43 +298,58 @@ void main() {
       final now = DateTime.now();
 
       // Insert direct conversations
-      await database.into(database.conversations).insert(ConversationsCompanion.insert(
-        documentId: 'direct-1',
-        conversationType: 'direct',
-        participantIds: '[]',
-        participants: '[]',
-        unreadCount: '{}',
-        lastUpdatedAt: now,
-        initiatedAt: now,
-      ));
+      await database
+          .into(database.conversations)
+          .insert(
+            ConversationsCompanion.insert(
+              documentId: 'direct-1',
+              conversationType: 'direct',
+              participantIds: '[]',
+              participants: '[]',
+              unreadCount: '{}',
+              lastUpdatedAt: now,
+              initiatedAt: now,
+            ),
+          );
 
-      await database.into(database.conversations).insert(ConversationsCompanion.insert(
-        documentId: 'direct-2',
-        conversationType: 'direct',
-        participantIds: '[]',
-        participants: '[]',
-        unreadCount: '{}',
-        lastUpdatedAt: now,
-        initiatedAt: now,
-      ));
+      await database
+          .into(database.conversations)
+          .insert(
+            ConversationsCompanion.insert(
+              documentId: 'direct-2',
+              conversationType: 'direct',
+              participantIds: '[]',
+              participants: '[]',
+              unreadCount: '{}',
+              lastUpdatedAt: now,
+              initiatedAt: now,
+            ),
+          );
 
       // Insert group conversation
-      await database.into(database.conversations).insert(ConversationsCompanion.insert(
-        documentId: 'group-1',
-        conversationType: 'group',
-        participantIds: '[]',
-        participants: '[]',
-        unreadCount: '{}',
-        lastUpdatedAt: now,
-        initiatedAt: now,
-      ));
+      await database
+          .into(database.conversations)
+          .insert(
+            ConversationsCompanion.insert(
+              documentId: 'group-1',
+              conversationType: 'group',
+              participantIds: '[]',
+              participants: '[]',
+              unreadCount: '{}',
+              lastUpdatedAt: now,
+              initiatedAt: now,
+            ),
+          );
 
-      final directConversations = await (database.select(database.conversations)
-            ..where((tbl) => tbl.conversationType.equals('direct')))
-          .get();
+      final directConversations = await (database.select(
+        database.conversations,
+      )..where((tbl) => tbl.conversationType.equals('direct'))).get();
 
       expect(directConversations.length, equals(2));
-      expect(directConversations.every((c) => c.conversationType == 'direct'), isTrue);
+      expect(
+        directConversations.every((c) => c.conversationType == 'direct'),
+        isTrue,
+      );
     });
 
     test('can query conversations ordered by lastUpdatedAt', () async {
@@ -305,39 +357,51 @@ void main() {
       final earlier = now.subtract(const Duration(hours: 1));
       final latest = now.add(const Duration(hours: 1));
 
-      await database.into(database.conversations).insert(ConversationsCompanion.insert(
-        documentId: 'conv-old',
-        conversationType: 'direct',
-        participantIds: '[]',
-        participants: '[]',
-        unreadCount: '{}',
-        lastUpdatedAt: earlier,
-        initiatedAt: earlier,
-      ));
+      await database
+          .into(database.conversations)
+          .insert(
+            ConversationsCompanion.insert(
+              documentId: 'conv-old',
+              conversationType: 'direct',
+              participantIds: '[]',
+              participants: '[]',
+              unreadCount: '{}',
+              lastUpdatedAt: earlier,
+              initiatedAt: earlier,
+            ),
+          );
 
-      await database.into(database.conversations).insert(ConversationsCompanion.insert(
-        documentId: 'conv-newest',
-        conversationType: 'direct',
-        participantIds: '[]',
-        participants: '[]',
-        unreadCount: '{}',
-        lastUpdatedAt: latest,
-        initiatedAt: now,
-      ));
+      await database
+          .into(database.conversations)
+          .insert(
+            ConversationsCompanion.insert(
+              documentId: 'conv-newest',
+              conversationType: 'direct',
+              participantIds: '[]',
+              participants: '[]',
+              unreadCount: '{}',
+              lastUpdatedAt: latest,
+              initiatedAt: now,
+            ),
+          );
 
-      await database.into(database.conversations).insert(ConversationsCompanion.insert(
-        documentId: 'conv-middle',
-        conversationType: 'direct',
-        participantIds: '[]',
-        participants: '[]',
-        unreadCount: '{}',
-        lastUpdatedAt: now,
-        initiatedAt: now,
-      ));
+      await database
+          .into(database.conversations)
+          .insert(
+            ConversationsCompanion.insert(
+              documentId: 'conv-middle',
+              conversationType: 'direct',
+              participantIds: '[]',
+              participants: '[]',
+              unreadCount: '{}',
+              lastUpdatedAt: now,
+              initiatedAt: now,
+            ),
+          );
 
-      final sortedConversations = await (database.select(database.conversations)
-            ..orderBy([(t) => OrderingTerm.desc(t.lastUpdatedAt)]))
-          .get();
+      final sortedConversations = await (database.select(
+        database.conversations,
+      )..orderBy([(t) => OrderingTerm.desc(t.lastUpdatedAt)])).get();
 
       expect(sortedConversations.length, equals(3));
       expect(sortedConversations[0].documentId, equals('conv-newest'));
@@ -348,34 +412,45 @@ void main() {
     test('can query conversations with translation enabled', () async {
       final now = DateTime.now();
 
-      await database.into(database.conversations).insert(ConversationsCompanion.insert(
-        documentId: 'translation-on',
-        conversationType: 'direct',
-        participantIds: '[]',
-        participants: '[]',
-        unreadCount: '{}',
-        translationEnabled: const Value(true),
-        lastUpdatedAt: now,
-        initiatedAt: now,
-      ));
+      await database
+          .into(database.conversations)
+          .insert(
+            ConversationsCompanion.insert(
+              documentId: 'translation-on',
+              conversationType: 'direct',
+              participantIds: '[]',
+              participants: '[]',
+              unreadCount: '{}',
+              translationEnabled: const Value(true),
+              lastUpdatedAt: now,
+              initiatedAt: now,
+            ),
+          );
 
-      await database.into(database.conversations).insert(ConversationsCompanion.insert(
-        documentId: 'translation-off',
-        conversationType: 'direct',
-        participantIds: '[]',
-        participants: '[]',
-        unreadCount: '{}',
-        translationEnabled: const Value(false),
-        lastUpdatedAt: now,
-        initiatedAt: now,
-      ));
+      await database
+          .into(database.conversations)
+          .insert(
+            ConversationsCompanion.insert(
+              documentId: 'translation-off',
+              conversationType: 'direct',
+              participantIds: '[]',
+              participants: '[]',
+              unreadCount: '{}',
+              translationEnabled: const Value(false),
+              lastUpdatedAt: now,
+              initiatedAt: now,
+            ),
+          );
 
-      final translatedConversations = await (database.select(database.conversations)
-            ..where((tbl) => tbl.translationEnabled.equals(true)))
-          .get();
+      final translatedConversations = await (database.select(
+        database.conversations,
+      )..where((tbl) => tbl.translationEnabled.equals(true))).get();
 
       expect(translatedConversations.length, equals(1));
-      expect(translatedConversations.first.documentId, equals('translation-on'));
+      expect(
+        translatedConversations.first.documentId,
+        equals('translation-on'),
+      );
     });
   });
 
@@ -394,9 +469,9 @@ void main() {
 
       await database.into(database.conversations).insert(conversation);
 
-      final result = await (database.select(database.conversations)
-            ..where((tbl) => tbl.documentId.equals('minimal-conv')))
-          .getSingle();
+      final result = await (database.select(
+        database.conversations,
+      )..where((tbl) => tbl.documentId.equals('minimal-conv'))).getSingle();
 
       expect(result.groupName, isNull);
       expect(result.groupImage, isNull);
@@ -420,9 +495,9 @@ void main() {
 
       await database.into(database.conversations).insert(conversation);
 
-      final result = await (database.select(database.conversations)
-            ..where((tbl) => tbl.documentId.equals('default-values')))
-          .getSingle();
+      final result = await (database.select(
+        database.conversations,
+      )..where((tbl) => tbl.documentId.equals('default-values'))).getSingle();
 
       expect(result.translationEnabled, isTrue); // Default value
       expect(result.autoDetectLanguage, isTrue); // Default value
@@ -430,7 +505,8 @@ void main() {
 
     test('JSON fields can store complex data', () async {
       final now = DateTime.now();
-      final participants = '[{"uid":"user1","name":"Alice"},{"uid":"user2","name":"Bob"}]';
+      final participants =
+          '[{"uid":"user1","name":"Alice"},{"uid":"user2","name":"Bob"}]';
       final unreadCount = '{"user1": 0, "user2": 5}';
       final translations = '{"es":"Hola","fr":"Bonjour"}';
 
@@ -447,9 +523,9 @@ void main() {
 
       await database.into(database.conversations).insert(conversation);
 
-      final result = await (database.select(database.conversations)
-            ..where((tbl) => tbl.documentId.equals('json-data')))
-          .getSingle();
+      final result = await (database.select(
+        database.conversations,
+      )..where((tbl) => tbl.documentId.equals('json-data'))).getSingle();
 
       expect(result.participants, equals(participants));
       expect(result.unreadCount, equals(unreadCount));
@@ -457,4 +533,3 @@ void main() {
     });
   });
 }
-
