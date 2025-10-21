@@ -137,7 +137,7 @@ void main() {
       // Arrange - Start with empty
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(body: TypingIndicator(typingUserNames: const [])),
+          home: Scaffold(body: TypingIndicator(typingUserNames: [])),
         ),
       );
 
@@ -146,9 +146,7 @@ void main() {
       // Act - Add user
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: TypingIndicator(typingUserNames: const ['Alice']),
-          ),
+          home: Scaffold(body: TypingIndicator(typingUserNames: ['Alice'])),
         ),
       );
 
@@ -160,9 +158,7 @@ void main() {
       // Arrange - Start with user
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: TypingIndicator(typingUserNames: const ['Alice']),
-          ),
+          home: Scaffold(body: TypingIndicator(typingUserNames: ['Alice'])),
         ),
       );
 
@@ -171,7 +167,7 @@ void main() {
       // Act - Clear users
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(body: TypingIndicator(typingUserNames: const [])),
+          home: Scaffold(body: TypingIndicator(typingUserNames: [])),
         ),
       );
       await tester.pump();
