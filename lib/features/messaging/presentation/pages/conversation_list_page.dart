@@ -4,6 +4,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
+import 'package:message_ai/features/messaging/presentation/pages/chat_page.dart';
 import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:message_ai/features/messaging/presentation/widgets/conversation_list_item.dart';
 
@@ -120,19 +121,32 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
             separatorBuilder: (context, index) => const Divider(height: 1),
             itemBuilder: (context, index) {
               final conversation = filteredConversations[index];
+              final conversationId = conversation['id'] as String;
+              final participants =
+                  conversation['participants'] as List<Map<String, dynamic>>;
+
+              // Get the other participant's name
+              final otherParticipant = participants.firstWhere(
+                (p) => p['uid'] != userId,
+                orElse: () => participants.first,
+              );
+              final otherParticipantName =
+                  otherParticipant['name'] as String? ?? 'Unknown';
+
               return ConversationListItem(
-                conversationId: conversation['id'] as String,
-                participants:
-                    conversation['participants'] as List<Map<String, dynamic>>,
+                conversationId: conversationId,
+                participants: participants,
                 lastMessage: conversation['lastMessage'] as String?,
                 lastUpdatedAt: conversation['lastUpdatedAt'] as DateTime,
                 unreadCount: conversation['unreadCount'] as int,
                 currentUserId: userId,
                 onTap: () {
-                  // TODO: Navigate to chat screen
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Chat screen coming next!'),
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => ChatPage(
+                        conversationId: conversationId,
+                        otherParticipantName: otherParticipantName,
+                      ),
                     ),
                   );
                 },
