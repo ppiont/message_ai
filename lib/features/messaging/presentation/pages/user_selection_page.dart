@@ -130,7 +130,8 @@ class _UserSelectionPageState extends ConsumerState<UserSelectionPage> {
               final displayName = data['displayName'] as String? ?? '';
               final email = data['email'] as String? ?? '';
               final photoURL = data['photoURL'] as String?;
-              final preferredLanguage = data['preferredLanguage'] as String? ?? 'en';
+              final preferredLanguage =
+                  data['preferredLanguage'] as String? ?? 'en';
 
               // Skip users with missing required fields
               if (uid == null || uid.isEmpty) {

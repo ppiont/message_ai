@@ -275,9 +275,10 @@ class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
           'text': messageText,
           'senderId': senderId,
           'senderName': senderName,
-          'timestamp': timestamp,
+          'timestamp': Timestamp.fromDate(timestamp),
+          'type': 'text', // Required field for LastMessageModel.fromJson()
         },
-        'lastUpdatedAt': timestamp,
+        'lastUpdatedAt': Timestamp.fromDate(timestamp),
       });
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
