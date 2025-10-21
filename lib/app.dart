@@ -4,7 +4,7 @@ import 'package:message_ai/config/env_config.dart';
 import 'package:message_ai/features/authentication/presentation/pages/auth_page.dart';
 import 'package:message_ai/features/authentication/presentation/pages/profile_setup_page.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
-import 'package:message_ai/features/home/presentation/pages/home_page.dart';
+import 'package:message_ai/features/messaging/presentation/pages/conversation_list_page.dart';
 
 /// Root application widget
 ///
@@ -53,7 +53,7 @@ class App extends ConsumerWidget {
             if (user.displayName.isEmpty) {
               return const ProfileSetupPage();
             }
-            return const HomePage();
+            return const ConversationListPage();
           } else {
             return const AuthPage();
           }
