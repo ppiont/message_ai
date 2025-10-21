@@ -155,6 +155,9 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             final messageId = message['id'] as String;
             final status = message['status'] as String? ?? 'sent';
 
+            // DEBUG: Print status to console
+            print('Message $messageId: status="$status", isMe=$isMe');
+
             // Mark incoming messages as read (only once)
             if (!isMe && status != 'read' && !_markedAsRead.contains(messageId)) {
               _markMessageAsRead(messageId);

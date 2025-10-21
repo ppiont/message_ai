@@ -44,8 +44,7 @@ class _MessageInputState extends ConsumerState<MessageInput> {
   void dispose() {
     _controller.removeListener(_onTextChanged);
     _controller.dispose();
-    // Clear typing status when leaving
-    _clearTypingStatus();
+    // Note: Don't use ref in dispose - typing will auto-clear after timeout
     super.dispose();
   }
 
