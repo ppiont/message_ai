@@ -2,7 +2,6 @@
 library;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:message_ai/features/authentication/data/datasources/user_remote_datasource.dart';
 import 'package:message_ai/features/authentication/data/repositories/user_repository_impl.dart';
 import 'package:message_ai/features/authentication/domain/repositories/user_repository.dart';

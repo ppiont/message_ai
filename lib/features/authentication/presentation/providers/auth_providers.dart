@@ -1,5 +1,4 @@
-import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth hide User;
 import 'package:message_ai/features/authentication/data/datasources/auth_remote_datasource.dart';
 import 'package:message_ai/features/authentication/data/repositories/auth_repository_impl.dart';
 import 'package:message_ai/features/authentication/domain/entities/user.dart';

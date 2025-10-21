@@ -1,5 +1,4 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:message_ai/core/database/app_database.dart';
 import 'package:message_ai/core/database/daos/message_dao.dart';
 import 'package:message_ai/core/database/daos/conversation_dao.dart';

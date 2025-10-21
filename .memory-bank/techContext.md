@@ -17,9 +17,9 @@
 - **Google Secret Manager**: API key storage
 
 ### State Management & DI
-- **flutter_riverpod**: ^2.4.9
-- **riverpod_annotation**: ^2.3.3
-- **riverpod_generator**: ^2.3.9
+- **flutter_riverpod**: ^3.0.3 (upgraded from 2.4.9)
+- **riverpod_annotation**: ^3.0.3 (upgraded from 2.3.3)
+- **riverpod_generator**: ^3.0.2 (upgraded from 2.3.9)
 
 ### Local Database
 - **drift**: ^2.14.0 (type-safe SQLite ORM)
@@ -44,11 +44,11 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # State Management (to be added)
-  # flutter_riverpod: ^2.4.9
-  # riverpod_annotation: ^2.3.3
+  # State Management ✅
+  flutter_riverpod: ^3.0.3
+  riverpod_annotation: ^3.0.3
 
-  # Firebase (latest versions - updated)
+  # Firebase (latest versions)
   firebase_core: ^4.2.0
   firebase_auth: ^6.1.1
   cloud_firestore: ^6.0.3
@@ -57,39 +57,36 @@ dependencies:
   firebase_crashlytics: ^5.0.3
   cloud_functions: ^6.0.3
 
-  # Local Storage (to be added)
-  # drift: ^2.14.0
-  # sqlite3_flutter_libs: ^0.5.0
+  # Local Storage ✅
+  drift: ^2.14.0
+  sqlite3_flutter_libs: ^0.5.0
 
-  # UI (to be added)
-  # cached_network_image: ^3.3.0
-  # flutter_cache_manager: ^3.3.1
+  # UI ✅
+  image_picker: ^1.0.4
 
-  # Language (to be added)
-  # google_mlkit_language_id: ^0.10.0
-  # intl: ^0.18.1
-
-  # Utilities (to be added)
-  # uuid: ^4.2.2
-  # equatable: ^2.0.5
-  # connectivity_plus: ^5.0.2
-  # workmanager: ^0.5.2
+  # Utilities ✅
+  uuid: ^4.2.2
+  equatable: ^2.0.5
+  connectivity_plus: ^5.0.2
+  dartz: ^0.10.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
 
-  # Build tools (to be added)
-  # build_runner: ^2.4.6
-  # riverpod_generator: ^2.3.9
-  # drift_dev: ^2.14.0
+  # Build tools ✅
+  build_runner: ^2.4.13
+  riverpod_generator: ^3.0.2
+  drift_dev: ^2.14.0
 
-  # Testing (latest versions - updated)
-  # mocktail: ^1.0.1
-  fake_cloud_firestore: ^4.0.0
-  firebase_auth_mocks: ^0.15.1
+  # Testing ✅
+  mocktail: ^1.0.4
+  fake_cloud_firestore: ^3.0.3
+  firebase_auth_mocks: ^0.14.1
 ```
+
+**Note**: `build_runner` downgraded to 2.4.13 for compatibility with `flutter_test` and Riverpod 3.x
 
 ## Development Environment
 

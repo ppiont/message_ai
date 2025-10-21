@@ -2,7 +2,6 @@
 library;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:message_ai/features/messaging/data/datasources/conversation_remote_datasource.dart';
 import 'package:message_ai/features/messaging/data/datasources/message_remote_datasource.dart';
 import 'package:message_ai/features/messaging/data/repositories/conversation_repository_impl.dart';
@@ -87,7 +86,9 @@ MarkMessageAsRead markMessageAsReadUseCase(Ref ref) {
 /// Provides the [FindOrCreateDirectConversation] use case.
 @riverpod
 FindOrCreateDirectConversation findOrCreateDirectConversationUseCase(Ref ref) {
-  return FindOrCreateDirectConversation(ref.watch(conversationRepositoryProvider));
+  return FindOrCreateDirectConversation(
+    ref.watch(conversationRepositoryProvider),
+  );
 }
 
 /// Provides the [WatchConversations] use case.
@@ -125,12 +126,14 @@ Stream<List<Map<String, dynamic>>> userConversationsStream(
           return {
             'id': conv.documentId,
             'participants': conv.participants
-                .map((p) => {
-                      'uid': p.uid,
-                      'name': p.name,
-                      'imageUrl': p.imageUrl,
-                      'preferredLanguage': p.preferredLanguage,
-                    })
+                .map(
+                  (p) => {
+                    'uid': p.uid,
+                    'name': p.name,
+                    'imageUrl': p.imageUrl,
+                    'preferredLanguage': p.preferredLanguage,
+                  },
+                )
                 .toList(),
             'lastMessage': conv.lastMessage,
             'lastUpdatedAt': conv.lastUpdatedAt,
@@ -159,14 +162,18 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
         return [];
       },
       (messages) {
-        return messages.map((msg) => {
-          'id': msg.id,
-          'text': msg.text,
-          'senderId': msg.senderId,
-          'senderName': msg.senderName,
-          'timestamp': msg.timestamp,
-          'status': msg.status,
-        }).toList();
+        return messages
+            .map(
+              (msg) => {
+                'id': msg.id,
+                'text': msg.text,
+                'senderId': msg.senderId,
+                'senderName': msg.senderName,
+                'timestamp': msg.timestamp,
+                'status': msg.status,
+              },
+            )
+            .toList();
       },
     );
   }

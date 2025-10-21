@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:message_ai/core/error/failures.dart';
 import 'package:message_ai/features/authentication/domain/entities/user.dart';
+import 'package:message_ai/features/authentication/domain/usecases/ensure_user_exists_in_firestore.dart';
 import 'package:message_ai/features/authentication/domain/usecases/sign_in_with_email.dart';
 import 'package:message_ai/features/authentication/presentation/pages/password_reset_page.dart';
 import 'package:message_ai/features/authentication/presentation/pages/sign_in_page.dart';
@@ -12,11 +13,22 @@ import 'package:mocktail/mocktail.dart';
 
 class MockSignInWithEmail extends Mock implements SignInWithEmail {}
 
+class MockEnsureUserExistsInFirestore extends Mock
+    implements EnsureUserExistsInFirestore {}
+
+class FakeUser extends Fake implements User {}
+
 void main() {
   late MockSignInWithEmail mockSignInUseCase;
+  late MockEnsureUserExistsInFirestore mockEnsureUserExistsUseCase;
+
+  setUpAll(() {
+    registerFallbackValue(FakeUser());
+  });
 
   setUp(() {
     mockSignInUseCase = MockSignInWithEmail();
+    mockEnsureUserExistsUseCase = MockEnsureUserExistsInFirestore();
   });
 
   final testUser = User(
@@ -34,10 +46,11 @@ void main() {
     return ProviderScope(
       overrides: [
         signInWithEmailUseCaseProvider.overrideWithValue(mockSignInUseCase),
+        ensureUserExistsInFirestoreUseCaseProvider.overrideWithValue(
+          mockEnsureUserExistsUseCase,
+        ),
       ],
-      child: const MaterialApp(
-        home: SignInPage(),
-      ),
+      child: const MaterialApp(home: Scaffold(body: SignInPage())),
     );
   }
 
@@ -65,8 +78,9 @@ void main() {
       expect(find.text('Please enter your email'), findsOneWidget);
     });
 
-    testWidgets('should show validation error for invalid email',
-        (tester) async {
+    testWidgets('should show validation error for invalid email', (
+      tester,
+    ) async {
       await tester.pumpWidget(createWidgetUnderTest());
 
       // Enter invalid email
@@ -77,8 +91,9 @@ void main() {
       expect(find.text('Please enter a valid email'), findsOneWidget);
     });
 
-    testWidgets('should show validation error for empty password',
-        (tester) async {
+    testWidgets('should show validation error for empty password', (
+      tester,
+    ) async {
       await tester.pumpWidget(createWidgetUnderTest());
 
       // Enter email only
@@ -108,14 +123,19 @@ void main() {
       expect(find.byIcon(Icons.visibility_off), findsOneWidget);
     });
 
-    testWidgets('should call sign in use case with valid credentials',
-        (tester) async {
+    testWidgets('should call sign in use case with valid credentials', (
+      tester,
+    ) async {
       when(
         () => mockSignInUseCase(
           email: any(named: 'email'),
           password: any(named: 'password'),
         ),
       ).thenAnswer((_) async => Right(testUser));
+
+      when(
+        () => mockEnsureUserExistsUseCase(any()),
+      ).thenAnswer((_) async => const Right(null));
 
       await tester.pumpWidget(createWidgetUnderTest());
 
@@ -139,14 +159,19 @@ void main() {
       ).called(1);
     });
 
-    testWidgets('should show success message on successful sign in',
-        (tester) async {
+    testWidgets('should show success message on successful sign in', (
+      tester,
+    ) async {
       when(
         () => mockSignInUseCase(
           email: any(named: 'email'),
           password: any(named: 'password'),
         ),
       ).thenAnswer((_) async => Right(testUser));
+
+      when(
+        () => mockEnsureUserExistsUseCase(any()),
+      ).thenAnswer((_) async => const Right(null));
 
       await tester.pumpWidget(createWidgetUnderTest());
 
@@ -190,19 +215,22 @@ void main() {
       expect(find.text('Invalid credentials'), findsAtLeastNWidgets(1));
     });
 
-    testWidgets('should show loading indicator while signing in',
-        (tester) async {
+    testWidgets('should show loading indicator while signing in', (
+      tester,
+    ) async {
       when(
         () => mockSignInUseCase(
           email: any(named: 'email'),
           password: any(named: 'password'),
         ),
       ).thenAnswer(
-        (_) => Future.delayed(
-          const Duration(seconds: 1),
-          () => Right(testUser),
-        ),
+        (_) =>
+            Future.delayed(const Duration(seconds: 1), () => Right(testUser)),
       );
+
+      when(
+        () => mockEnsureUserExistsUseCase(any()),
+      ).thenAnswer((_) async => const Right(null));
 
       await tester.pumpWidget(createWidgetUnderTest());
 
@@ -217,6 +245,9 @@ void main() {
 
       // Should show loading indicator
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+      // Clean up: wait for the async operation to complete
+      await tester.pumpAndSettle();
     });
 
     testWidgets('should navigate to password reset page', (tester) async {
@@ -237,11 +268,13 @@ void main() {
           password: any(named: 'password'),
         ),
       ).thenAnswer(
-        (_) => Future.delayed(
-          const Duration(seconds: 1),
-          () => Right(testUser),
-        ),
+        (_) =>
+            Future.delayed(const Duration(seconds: 1), () => Right(testUser)),
       );
+
+      when(
+        () => mockEnsureUserExistsUseCase(any()),
+      ).thenAnswer((_) async => const Right(null));
 
       await tester.pumpWidget(createWidgetUnderTest());
 

@@ -34,13 +34,14 @@ group-conversations/{groupId}
   └─ messages/{messageId}
 ```
 
-### 2. State Management: Riverpod 3.0
-**Why Riverpod:**
+### 2. State Management: Riverpod 3.x
+**Why Riverpod 3.x:**
 - Compile-time safety (no runtime DI errors)
 - StreamProvider with autoDispose for real-time data
 - No BuildContext dependency
 - Excellent testability with overrides
 - Built-in dependency injection
+- Improved async handling and lifecycle management
 
 **Pattern:**
 ```dart
@@ -48,6 +49,14 @@ group-conversations/{groupId}
 Stream<List<Message>> conversationMessages(ref, String conversationId) {
   return repository.watchMessages(conversationId);
 }
+```
+
+**Import Pattern (avoiding conflicts):**
+```dart
+// When using firebase_auth, hide User to avoid conflicts with domain User
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth hide User;
+// Domain User is now the default
+import 'package:message_ai/features/authentication/domain/entities/user.dart';
 ```
 
 ### 3. Local Storage: drift
