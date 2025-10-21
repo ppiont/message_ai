@@ -110,6 +110,40 @@ Always run code generation after table changes:
 flutter pub run build_runner build --delete-conflicting-outputs
 ```
 
+## Testing
+
+### Import Conflicts
+Drift exports `isNull` and `isNotNull` which conflict with flutter_test matchers. Hide them:
+
+```dart
+import 'package:drift/drift.dart' hide isNull, isNotNull;
+import 'package:drift/native.dart';
+import 'package:flutter_test/flutter_test.dart';
+```
+
+### In-Memory Database for Tests
+```dart
+late AppDatabase database;
+
+setUp(() {
+  database = AppDatabase.forTesting(NativeDatabase.memory());
+});
+
+tearDown(() async {
+  await database.close();
+});
+```
+
+### Testing Constructor
+Add to your database class:
+```dart
+class AppDatabase extends _$AppDatabase {
+  AppDatabase() : super(_openConnection());
+  
+  /// For testing with custom executor
+  AppDatabase.forTesting(super.e);
+}
+
 ## Common Patterns
 
 ### JSON Storage

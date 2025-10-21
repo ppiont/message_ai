@@ -26,6 +26,9 @@ class AppDatabase extends _$AppDatabase {
   /// Create database instance
   AppDatabase() : super(_openConnection());
 
+  /// Create database instance for testing with custom executor
+  AppDatabase.forTesting(super.e);
+
   @override
   int get schemaVersion => 1;
 
