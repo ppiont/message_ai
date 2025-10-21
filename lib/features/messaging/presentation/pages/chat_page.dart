@@ -7,6 +7,7 @@ import 'package:message_ai/features/authentication/presentation/providers/auth_p
 import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:message_ai/features/messaging/presentation/widgets/message_bubble.dart';
 import 'package:message_ai/features/messaging/presentation/widgets/message_input.dart';
+import 'package:message_ai/features/messaging/presentation/widgets/typing_indicator.dart';
 
 /// Main chat screen for displaying and sending messages.
 ///
@@ -74,6 +75,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           Expanded(
             child: _buildMessageList(currentUser.uid),
           ),
+          _buildTypingIndicator(currentUser.uid),
           MessageInput(
             conversationId: widget.conversationId,
             currentUserId: currentUser.uid,
@@ -82,6 +84,24 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildTypingIndicator(String currentUserId) {
+    final typingUsersAsync = ref.watch(
+      conversationTypingUsersProvider(
+        widget.conversationId,
+        currentUserId,
+      ),
+    );
+
+    return typingUsersAsync.when(
+      data: (typingUsers) {
+        final typingNames = typingUsers.map((u) => u.userName).toList();
+        return TypingIndicator(typingUserNames: typingNames);
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
     );
   }
 

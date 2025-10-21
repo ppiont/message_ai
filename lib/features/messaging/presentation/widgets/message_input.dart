@@ -34,9 +34,40 @@ class _MessageInputState extends ConsumerState<MessageInput> {
   bool _isSending = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Listen to text changes for typing indicator
+    _controller.addListener(_onTextChanged);
+  }
+
+  @override
   void dispose() {
+    _controller.removeListener(_onTextChanged);
     _controller.dispose();
+    // Clear typing status when leaving
+    _clearTypingStatus();
     super.dispose();
+  }
+
+  void _onTextChanged() {
+    final text = _controller.text;
+    final typingService = ref.read(typingIndicatorServiceProvider);
+
+    typingService.setTyping(
+      conversationId: widget.conversationId,
+      userId: widget.currentUserId,
+      userName: widget.currentUserName,
+      isTyping: text.isNotEmpty,
+    );
+  }
+
+  void _clearTypingStatus() {
+    final typingService = ref.read(typingIndicatorServiceProvider);
+    typingService.clearTyping(
+      conversationId: widget.conversationId,
+      userId: widget.currentUserId,
+      userName: widget.currentUserName,
+    );
   }
 
   @override
@@ -154,8 +185,9 @@ class _MessageInputState extends ConsumerState<MessageInput> {
           );
         },
         (sentMessage) {
-          // Clear input and notify
+          // Clear input and typing status
           _controller.clear();
+          _clearTypingStatus();
           widget.onMessageSent?.call();
         },
       );

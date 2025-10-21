@@ -654,7 +654,7 @@ final class UserConversationsStreamProvider
 }
 
 String _$userConversationsStreamHash() =>
-    r'5ffe44e5f7e3dc42e9462ebf9c8e5977a105a8fe';
+    r'f08df48edec293a86a3b8c7f38a68ee527f2f634';
 
 /// Stream provider for watching user's conversations in real-time.
 ///
@@ -752,7 +752,7 @@ final class ConversationMessagesStreamProvider
 }
 
 String _$conversationMessagesStreamHash() =>
-    r'2d7ccec530050d7159ed36bb19be47c7e72f82ac';
+    r'8bbc529177f3080a40ffbb8b07113d2bd20a9059';
 
 /// Stream provider for watching messages in a conversation in real-time.
 ///
@@ -781,4 +781,148 @@ final class ConversationMessagesStreamFamily extends $Family
 
   @override
   String toString() => r'conversationMessagesStreamProvider';
+}
+
+/// Provides the [TypingIndicatorService] instance.
+
+@ProviderFor(typingIndicatorService)
+const typingIndicatorServiceProvider = TypingIndicatorServiceProvider._();
+
+/// Provides the [TypingIndicatorService] instance.
+
+final class TypingIndicatorServiceProvider
+    extends
+        $FunctionalProvider<
+          TypingIndicatorService,
+          TypingIndicatorService,
+          TypingIndicatorService
+        >
+    with $Provider<TypingIndicatorService> {
+  /// Provides the [TypingIndicatorService] instance.
+  const TypingIndicatorServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'typingIndicatorServiceProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$typingIndicatorServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<TypingIndicatorService> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  TypingIndicatorService create(Ref ref) {
+    return typingIndicatorService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(TypingIndicatorService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<TypingIndicatorService>(value),
+    );
+  }
+}
+
+String _$typingIndicatorServiceHash() =>
+    r'45cdd079e3cb4d9c74a2b184b234a6d7aa384aec';
+
+/// Watches typing users for a specific conversation.
+
+@ProviderFor(conversationTypingUsers)
+const conversationTypingUsersProvider = ConversationTypingUsersFamily._();
+
+/// Watches typing users for a specific conversation.
+
+final class ConversationTypingUsersProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<TypingUser>>,
+          List<TypingUser>,
+          Stream<List<TypingUser>>
+        >
+    with $FutureModifier<List<TypingUser>>, $StreamProvider<List<TypingUser>> {
+  /// Watches typing users for a specific conversation.
+  const ConversationTypingUsersProvider._({
+    required ConversationTypingUsersFamily super.from,
+    required (String, String) super.argument,
+  }) : super(
+         retry: null,
+         name: r'conversationTypingUsersProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$conversationTypingUsersHash();
+
+  @override
+  String toString() {
+    return r'conversationTypingUsersProvider'
+        ''
+        '$argument';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<List<TypingUser>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<TypingUser>> create(Ref ref) {
+    final argument = this.argument as (String, String);
+    return conversationTypingUsers(ref, argument.$1, argument.$2);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is ConversationTypingUsersProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$conversationTypingUsersHash() =>
+    r'e44bf7227cb75dbf07b826d8c34689c7589d1dd5';
+
+/// Watches typing users for a specific conversation.
+
+final class ConversationTypingUsersFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<List<TypingUser>>, (String, String)> {
+  const ConversationTypingUsersFamily._()
+    : super(
+        retry: null,
+        name: r'conversationTypingUsersProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Watches typing users for a specific conversation.
+
+  ConversationTypingUsersProvider call(
+    String conversationId,
+    String currentUserId,
+  ) => ConversationTypingUsersProvider._(
+    argument: (conversationId, currentUserId),
+    from: this,
+  );
+
+  @override
+  String toString() => r'conversationTypingUsersProvider';
 }

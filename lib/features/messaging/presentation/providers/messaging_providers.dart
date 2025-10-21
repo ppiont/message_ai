@@ -14,6 +14,7 @@ import 'package:message_ai/features/messaging/domain/usecases/mark_message_as_re
 import 'package:message_ai/features/messaging/domain/usecases/send_message.dart';
 import 'package:message_ai/features/messaging/domain/usecases/watch_conversations.dart';
 import 'package:message_ai/features/messaging/domain/usecases/watch_messages.dart';
+import 'package:message_ai/features/messaging/data/services/typing_indicator_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'messaging_providers.g.dart';
@@ -178,4 +179,35 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
       },
     );
   }
+}
+
+// ========== Typing Indicator Providers ==========
+
+/// Provides the [TypingIndicatorService] instance.
+@riverpod
+TypingIndicatorService typingIndicatorService(Ref ref) {
+  final service = TypingIndicatorService(
+    firestore: ref.watch(messagingFirestoreProvider),
+  );
+
+  // Dispose when provider is disposed
+  ref.onDispose(() {
+    service.dispose();
+  });
+
+  return service;
+}
+
+/// Watches typing users for a specific conversation.
+@riverpod
+Stream<List<TypingUser>> conversationTypingUsers(
+  Ref ref,
+  String conversationId,
+  String currentUserId,
+) {
+  final service = ref.watch(typingIndicatorServiceProvider);
+  return service.watchTypingUsers(
+    conversationId: conversationId,
+    currentUserId: currentUserId,
+  );
 }
