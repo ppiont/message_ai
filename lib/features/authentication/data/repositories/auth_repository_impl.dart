@@ -4,7 +4,6 @@ import 'package:message_ai/core/error/error_mapper.dart';
 import 'package:message_ai/core/error/exceptions.dart';
 import 'package:message_ai/core/error/failures.dart';
 import 'package:message_ai/features/authentication/data/datasources/auth_remote_datasource.dart';
-import 'package:message_ai/features/authentication/data/models/user_model.dart';
 import 'package:message_ai/features/authentication/domain/entities/user.dart';
 import 'package:message_ai/features/authentication/domain/repositories/auth_repository.dart';
 

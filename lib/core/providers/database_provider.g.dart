@@ -6,7 +6,7 @@ part of 'database_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$databaseHash() => r'ca312e004122d72908cbe3ea01f6b32ea7385150';
+String _$databaseHash() => r'c246ee79f92b36699e5f12fedc074f40524f2015';
 
 /// Provides the application database instance
 ///
@@ -33,7 +33,7 @@ final databaseProvider = Provider<AppDatabase>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef DatabaseRef = ProviderRef<AppDatabase>;
-String _$messageDaoHash() => r'2ca3b0ca914830edaa8bdeb3363967f0089f1416';
+String _$messageDaoHash() => r'08898cb424ee723668cf2356098fd99f6a9c7f3f';
 
 /// Provides access to the MessageDao
 ///
@@ -60,7 +60,7 @@ final messageDaoProvider = AutoDisposeProvider<MessageDao>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef MessageDaoRef = AutoDisposeProviderRef<MessageDao>;
-String _$conversationDaoHash() => r'38595f8d3d0bb360e7e762f0d4b3ccdf2c4c55b9';
+String _$conversationDaoHash() => r'9533bb0c147b85bbd8b064734aed948c243d106f';
 
 /// Provides access to the ConversationDao
 ///
@@ -87,7 +87,7 @@ final conversationDaoProvider = AutoDisposeProvider<ConversationDao>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef ConversationDaoRef = AutoDisposeProviderRef<ConversationDao>;
-String _$userDaoHash() => r'09296b0f23da62b8ca871122b328dbf5e42685d2';
+String _$userDaoHash() => r'1f5bcc38defbf22a77df27fccff0ae4d120b87e9';
 
 /// Provides access to the UserDao
 ///
