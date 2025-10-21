@@ -9,6 +9,12 @@ import 'package:message_ai/features/messaging/data/repositories/conversation_rep
 import 'package:message_ai/features/messaging/data/repositories/message_repository_impl.dart';
 import 'package:message_ai/features/messaging/domain/repositories/conversation_repository.dart';
 import 'package:message_ai/features/messaging/domain/repositories/message_repository.dart';
+import 'package:message_ai/features/messaging/domain/usecases/find_or_create_direct_conversation.dart';
+import 'package:message_ai/features/messaging/domain/usecases/get_conversation_by_id.dart';
+import 'package:message_ai/features/messaging/domain/usecases/mark_message_as_read.dart';
+import 'package:message_ai/features/messaging/domain/usecases/send_message.dart';
+import 'package:message_ai/features/messaging/domain/usecases/watch_conversations.dart';
+import 'package:message_ai/features/messaging/domain/usecases/watch_messages.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'messaging_providers.g.dart';
@@ -56,7 +62,103 @@ ConversationRepository conversationRepository(Ref ref) {
 }
 
 // ========== Use Case Providers ==========
-// Will be added as we create use cases
+
+/// Provides the [SendMessage] use case.
+@riverpod
+SendMessage sendMessageUseCase(Ref ref) {
+  return SendMessage(
+    messageRepository: ref.watch(messageRepositoryProvider),
+    conversationRepository: ref.watch(conversationRepositoryProvider),
+  );
+}
+
+/// Provides the [WatchMessages] use case.
+@riverpod
+WatchMessages watchMessagesUseCase(Ref ref) {
+  return WatchMessages(ref.watch(messageRepositoryProvider));
+}
+
+/// Provides the [MarkMessageAsRead] use case.
+@riverpod
+MarkMessageAsRead markMessageAsReadUseCase(Ref ref) {
+  return MarkMessageAsRead(ref.watch(messageRepositoryProvider));
+}
+
+/// Provides the [FindOrCreateDirectConversation] use case.
+@riverpod
+FindOrCreateDirectConversation findOrCreateDirectConversationUseCase(Ref ref) {
+  return FindOrCreateDirectConversation(ref.watch(conversationRepositoryProvider));
+}
+
+/// Provides the [WatchConversations] use case.
+@riverpod
+WatchConversations watchConversationsUseCase(Ref ref) {
+  return WatchConversations(ref.watch(conversationRepositoryProvider));
+}
+
+/// Provides the [GetConversationById] use case.
+@riverpod
+GetConversationById getConversationByIdUseCase(Ref ref) {
+  return GetConversationById(ref.watch(conversationRepositoryProvider));
+}
 
 // ========== State Providers ==========
-// Will be added for UI state management (e.g., active conversation, typing indicators)
+
+/// Stream provider for watching user's conversations in real-time.
+///
+/// Automatically updates when conversations change in Firestore.
+@riverpod
+Stream<List<Map<String, dynamic>>> userConversationsStream(
+  Ref ref,
+  String userId,
+) async* {
+  final watchUseCase = ref.watch(watchConversationsUseCaseProvider);
+
+  await for (final result in watchUseCase(userId: userId)) {
+    yield result.fold(
+      (failure) {
+        // Log error but return empty list to keep UI functional
+        return [];
+      },
+      (conversations) {
+        return conversations.map((conv) => {
+          'id': conv.documentId,
+          'participants': conv.participants,
+          'lastMessage': conv.lastMessage,
+          'lastUpdatedAt': conv.lastUpdatedAt,
+          'unreadCount': conv.getUnreadCountForUser(userId),
+        }).toList();
+      },
+    );
+  }
+}
+
+/// Stream provider for watching messages in a conversation in real-time.
+///
+/// Automatically updates when messages change in Firestore.
+@riverpod
+Stream<List<Map<String, dynamic>>> conversationMessagesStream(
+  Ref ref,
+  String conversationId,
+) async* {
+  final watchUseCase = ref.watch(watchMessagesUseCaseProvider);
+
+  await for (final result in watchUseCase(conversationId: conversationId)) {
+    yield result.fold(
+      (failure) {
+        // Log error but return empty list to keep UI functional
+        return [];
+      },
+      (messages) {
+        return messages.map((msg) => {
+          'id': msg.id,
+          'text': msg.text,
+          'senderId': msg.senderId,
+          'senderName': msg.senderName,
+          'timestamp': msg.timestamp,
+          'status': msg.status,
+        }).toList();
+      },
+    );
+  }
+}
