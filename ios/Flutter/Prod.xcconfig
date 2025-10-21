@@ -1,0 +1,12 @@
+// Production flavor configuration
+#include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.prod.xcconfig"
+#include "Generated.xcconfig"
+
+// App configuration
+PRODUCT_BUNDLE_IDENTIFIER = com.gauntlet.messageAi
+PRODUCT_NAME = MessageAI
+ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon
+
+// Firebase configuration file (if different for dev/prod)
+// GOOGLE_SERVICE_INFO_PLIST_PATH = $(PROJECT_DIR)/Runner/Firebase/Prod/GoogleService-Info.plist
+
