@@ -617,7 +617,7 @@
         "dependencies": [
           38
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": []
       },
       {
@@ -630,7 +630,7 @@
         "dependencies": [
           38
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": []
       },
       {
@@ -1693,11 +1693,27 @@
         ],
         "status": "pending",
         "subtasks": []
+      },
+      {
+        "id": 121,
+        "title": "Implement User Selection Screen for New Conversations",
+        "description": "Create a user selection screen that allows users to search for and select other users to start a new 1-to-1 conversation, with functionality to navigate to the chat screen after selection.",
+        "details": "Create a new file `user_selection_page.dart` in the `features/messaging/presentation/pages` directory. This page will allow users to find and start conversations with other users.\n\nKey implementation steps:\n1. Create the `UserSelectionPage` widget with a search bar at the top and a scrollable list of users below.\n2. Implement the `UserListItem` widget to display each user's avatar, display name, and email.\n3. Add search functionality that filters users in real-time based on email or display name.\n4. Query the Firestore users collection to fetch all available users, filtering out the current user.\n5. Implement loading state with a shimmer effect while users are being fetched.\n6. Create an empty state view for when no users match the search criteria.\n7. Implement the tap handler for each user item that:\n   - Calls the `FindOrCreateDirectConversation` use case\n   - Navigates to the chat screen with the selected user once the conversation is created/found\n8. Add error handling for failed user fetches or conversation creation.\n9. Implement pull-to-refresh functionality to reload the user list.\n10. Ensure the UI follows the app's design system for consistency.\n\nCode structure:\n```dart\nclass UserSelectionPage extends ConsumerStatefulWidget {\n  const UserSelectionPage({Key? key}) : super(key: key);\n  \n  @override\n  ConsumerState<UserSelectionPage> createState() => _UserSelectionPageState();\n}\n\nclass _UserSelectionPageState extends ConsumerState<UserSelectionPage> {\n  final TextEditingController _searchController = TextEditingController();\n  String _searchQuery = '';\n  \n  @override\n  void dispose() {\n    _searchController.dispose();\n    super.dispose();\n  }\n  \n  @override\n  Widget build(BuildContext context) {\n    final usersAsyncValue = ref.watch(filteredUsersProvider(_searchQuery));\n    final currentUser = ref.watch(currentUserProvider);\n    \n    return Scaffold(\n      appBar: AppBar(\n        title: const Text('New Conversation'),\n      ),\n      body: Column(\n        children: [\n          // Search bar implementation\n          Padding(\n            padding: const EdgeInsets.all(16.0),\n            child: TextField(\n              controller: _searchController,\n              decoration: InputDecoration(\n                hintText: 'Search by name or email',\n                prefixIcon: const Icon(Icons.search),\n                border: OutlineInputBorder(\n                  borderRadius: BorderRadius.circular(10),\n                ),\n              ),\n              onChanged: (value) {\n                setState(() {\n                  _searchQuery = value;\n                });\n              },\n            ),\n          ),\n          \n          // User list implementation with loading, empty, and error states\n          Expanded(\n            child: usersAsyncValue.when(\n              data: (users) => users.isEmpty\n                  ? const EmptyUserListView()\n                  : ListView.builder(\n                      itemCount: users.length,\n                      itemBuilder: (context, index) {\n                        final user = users[index];\n                        return UserListItem(\n                          user: user,\n                          onTap: () => _handleUserSelection(user),\n                        );\n                      },\n                    ),\n              loading: () => const LoadingUserListView(),\n              error: (error, stackTrace) => ErrorView(\n                message: 'Failed to load users',\n                onRetry: () => ref.refresh(filteredUsersProvider(_searchQuery)),\n              ),\n            ),\n          ),\n        ],\n      ),\n    );\n  }\n  \n  void _handleUserSelection(User selectedUser) async {\n    final conversationAsyncValue = await ref.read(\n      findOrCreateDirectConversationProvider(selectedUser.id).future,\n    );\n    \n    conversationAsyncValue.when(\n      data: (conversation) {\n        // Navigate to chat screen with the conversation\n        Navigator.of(context).pushNamed(\n          '/chat',\n          arguments: ChatPageArguments(conversationId: conversation.id),\n        );\n      },\n      error: (error, stackTrace) {\n        ScaffoldMessenger.of(context).showSnackBar(\n          SnackBar(content: Text('Failed to create conversation: $error')),\n        );\n      },\n      loading: () {\n        // Show loading indicator\n      },\n    );\n  }\n}",
+        "testStrategy": "1. **Unit Tests**:\n   - Test the user filtering logic to ensure it correctly filters by email and display name.\n   - Test the FindOrCreateDirectConversation use case integration.\n   - Verify that the current user is properly excluded from the results.\n\n2. **Widget Tests**:\n   - Test the UserSelectionPage widget with various mock data scenarios:\n     - With multiple users\n     - With no users\n     - With loading state\n     - With error state\n   - Test the search functionality by entering text and verifying filtered results.\n   - Test the UserListItem widget to ensure it displays user information correctly.\n   - Verify that tapping a user correctly triggers the conversation creation flow.\n   - Test empty state and loading state widgets.\n\n3. **Integration Tests**:\n   - Test the complete flow from opening the user selection screen to selecting a user and navigating to the chat screen.\n   - Verify that the correct conversation is created or retrieved when selecting a user.\n   - Test the search functionality with real-time filtering against a test database.\n   - Verify that the UI correctly updates as search queries change.\n\n4. **Manual Testing**:\n   - Verify the UI matches design specifications.\n   - Test with a large number of users to ensure performance.\n   - Test with various screen sizes to ensure responsive design.\n   - Verify accessibility features work correctly.\n   - Test edge cases like selecting a user with whom a conversation already exists.",
+        "status": "done",
+        "dependencies": [
+          19,
+          36,
+          37,
+          38
+        ],
+        "priority": "high",
+        "subtasks": []
       }
     ],
     "metadata": {
       "created": "2025-10-20T21:03:23.979Z",
-      "updated": "2025-10-21T18:17:12.264Z",
+      "updated": "2025-10-21T18:35:14.630Z",
       "description": "Tasks for master context"
     }
   }

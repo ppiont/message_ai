@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
 import 'package:message_ai/features/messaging/presentation/pages/chat_page.dart';
+import 'package:message_ai/features/messaging/presentation/pages/user_selection_page.dart';
 import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:message_ai/features/messaging/presentation/widgets/conversation_list_item.dart';
 
@@ -57,26 +58,18 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
               }
             },
             itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'logout',
-                child: Text('Sign Out'),
-              ),
+              const PopupMenuItem(value: 'logout', child: Text('Sign Out')),
             ],
           ),
         ],
       ),
       body: currentUser == null
-          ? const Center(
-              child: Text('Please sign in to view conversations'),
-            )
+          ? const Center(child: Text('Please sign in to view conversations'))
           : _buildConversationList(currentUser.uid),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // TODO: Navigate to user selection screen to start new conversation
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('New conversation feature coming soon!'),
-            ),
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (context) => const UserSelectionPage()),
           );
         },
         child: const Icon(Icons.edit),
@@ -99,9 +92,9 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
                     conv['participants'] as List<Map<String, dynamic>>;
                 return participants.any((p) {
                   final name = p['name'] as String? ?? '';
-                  return name
-                      .toLowerCase()
-                      .contains(_searchQuery.toLowerCase());
+                  return name.toLowerCase().contains(
+                    _searchQuery.toLowerCase(),
+                  );
                 });
               }).toList();
 
@@ -180,28 +173,24 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.chat_bubble_outline,
-            size: 80,
-            color: Colors.grey[400],
-          ),
+          Icon(Icons.chat_bubble_outline, size: 80, color: Colors.grey[400]),
           const SizedBox(height: 24),
           Text(
             _searchQuery.isEmpty
                 ? 'No conversations yet'
                 : 'No conversations found',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: Colors.grey[600],
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(color: Colors.grey[600]),
           ),
           const SizedBox(height: 8),
           Text(
             _searchQuery.isEmpty
                 ? 'Start a new conversation to get started'
                 : 'Try a different search term',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[500],
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[500]),
           ),
         ],
       ),
