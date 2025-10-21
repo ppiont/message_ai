@@ -90,7 +90,7 @@ class MessageModel extends Message {
       'text': text,
       'senderId': senderId,
       'senderName': senderName,
-      'timestamp': timestamp.toIso8601String(),
+      'timestamp': Timestamp.fromDate(timestamp), // Use Firestore Timestamp
       'type': type,
       'status': status,
       if (detectedLanguage != null) 'detectedLanguage': detectedLanguage,
