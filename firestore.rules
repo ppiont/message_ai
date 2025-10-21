@@ -1,0 +1,59 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Users collection rules
+    match /users/{userId} {
+      // Users can read their own document completely
+      // Other authenticated users can only read public fields
+      allow read: if isAuthenticated();
+
+      // Only the user can create/update their own document
+      allow create: if isOwner(userId) &&
+                       request.resource.data.uid == userId &&
+                       request.resource.data.keys().hasAll(['uid', 'email', 'createdAt']);
+
+      allow update: if isOwner(userId) &&
+                       // Prevent changing immutable fields
+                       request.resource.data.uid == resource.data.uid &&
+                       request.resource.data.createdAt == resource.data.createdAt;
+
+      // Users cannot delete their own documents (use soft delete with account deactivation)
+      allow delete: if false;
+    }
+
+    // Conversations collection rules (placeholder for future tasks)
+    match /conversations/{conversationId} {
+      allow read, write: if false; // Will be implemented in Task 23
+
+      // Messages subcollection (placeholder for future tasks)
+      match /messages/{messageId} {
+        allow read, write: if false; // Will be implemented in Task 24
+      }
+    }
+
+    // Group conversations collection rules (placeholder for future tasks)
+    match /group-conversations/{groupId} {
+      allow read, write: if false; // Will be implemented later
+
+      match /messages/{messageId} {
+        allow read, write: if false; // Will be implemented later
+      }
+    }
+
+    // Default deny all other collections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

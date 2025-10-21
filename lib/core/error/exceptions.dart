@@ -125,6 +125,23 @@ class RecordNotFoundException extends AppException {
   }
 }
 
+/// Exception thrown when a record already exists
+class RecordAlreadyExistsException extends AppException {
+  final String recordType;
+  final String? recordId;
+
+  const RecordAlreadyExistsException({required this.recordType, this.recordId})
+    : super(message: 'Record already exists', code: 'RECORD_ALREADY_EXISTS');
+
+  @override
+  String toString() {
+    if (recordId != null) {
+      return 'RecordAlreadyExistsException: $recordType with id $recordId already exists';
+    }
+    return 'RecordAlreadyExistsException: $recordType already exists';
+  }
+}
+
 /// Exception thrown when a database constraint is violated
 class ConstraintViolationException extends AppException {
   const ConstraintViolationException({

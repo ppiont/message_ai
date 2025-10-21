@@ -334,8 +334,65 @@
         "dependencies": [
           2
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Add cloud_firestore dependency to pubspec.yaml",
+            "description": "Add the cloud_firestore package to the project dependencies and configure initial Firebase setup",
+            "dependencies": [],
+            "details": "Add cloud_firestore: ^latest_version to pubspec.yaml. Run flutter pub get to install the dependency. Ensure Firebase core is properly initialized in the main.dart file with Firebase.initializeApp() before using Firestore.",
+            "status": "done",
+            "testStrategy": "Verify the dependency is correctly added and the app builds without errors. Check Firebase initialization in debug logs."
+          },
+          {
+            "id": 2,
+            "title": "Create Firestore indexes for users collection",
+            "description": "Set up the necessary indexes for the users collection as specified in the PRD",
+            "dependencies": [
+              1
+            ],
+            "details": "Review the PRD for required indexes. Create composite indexes for frequently queried fields in the users collection. Configure indexes for efficient querying by email, displayName, and lastActive fields. Deploy the indexes using Firebase CLI or Firebase console.",
+            "status": "done",
+            "testStrategy": "Test query performance with the created indexes. Verify that queries using these indexes execute efficiently without index warnings in the Firebase console."
+          },
+          {
+            "id": 3,
+            "title": "Implement security rules for users collection",
+            "description": "Create and deploy Firestore security rules to ensure proper access control for user data",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Write security rules that restrict read access to user documents based on authentication. Allow users to read only their own documents or specific fields of other users. Implement write rules that prevent unauthorized modifications. Test rules in the Firebase emulator before deployment.",
+            "status": "done",
+            "testStrategy": "Use Firebase emulator to test security rules. Write tests that verify authorized and unauthorized access patterns. Ensure rules prevent unauthorized reads and writes while allowing legitimate operations."
+          },
+          {
+            "id": 4,
+            "title": "Create user document model and CRUD operations",
+            "description": "Implement the User model class and utility functions for user document operations",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "Create a User model class that maps to Firestore document structure. Implement toJson() and fromJson() methods for serialization. Create utility functions for creating, reading, updating, and deleting user documents. Include methods for handling user profile updates and user status changes.",
+            "status": "done",
+            "testStrategy": "Write unit tests using fake_cloud_firestore to test CRUD operations. Verify that data is correctly serialized and deserialized. Test edge cases like handling missing fields or invalid data."
+          },
+          {
+            "id": 5,
+            "title": "Implement user data service and repository",
+            "description": "Create a service layer and repository for managing user data operations",
+            "dependencies": [
+              4
+            ],
+            "details": "Implement a UserRepository class that handles all Firestore operations for users. Create a UserService that uses the repository and provides business logic. Implement methods for user registration, profile updates, and user queries. Add error handling and logging for Firestore operations. Ensure proper cleanup of listeners when not needed.",
+            "status": "done",
+            "testStrategy": "Write unit tests for the repository and service layers. Mock dependencies to isolate testing. Test error handling and edge cases. Verify that listeners are properly managed and cleaned up."
+          }
+        ]
       },
       {
         "id": 23,
@@ -1640,7 +1697,7 @@
     ],
     "metadata": {
       "created": "2025-10-20T21:03:23.979Z",
-      "updated": "2025-10-21T15:13:38.693Z",
+      "updated": "2025-10-21T16:29:40.813Z",
       "description": "Tasks for master context"
     }
   }
