@@ -125,14 +125,28 @@ class _UserSelectionPageState extends ConsumerState<UserSelectionPage> {
         final users = snapshot.data!.docs
             .map((doc) {
               final data = doc.data() as Map<String, dynamic>;
+              // Extract fields with proper null handling
+              final uid = data['uid'] as String?;
+              final displayName = data['displayName'] as String? ?? '';
+              final email = data['email'] as String? ?? '';
+              final photoURL = data['photoURL'] as String?;
+              final preferredLanguage = data['preferredLanguage'] as String? ?? 'en';
+
+              // Skip users with missing required fields
+              if (uid == null || uid.isEmpty) {
+                return null;
+              }
+
               return {
-                'uid': data['uid'],
-                'displayName': data['displayName'] ?? '',
-                'email': data['email'],
-                'photoURL': data['photoURL'],
-                'preferredLanguage': data['preferredLanguage'],
+                'uid': uid,
+                'displayName': displayName,
+                'email': email,
+                'photoURL': photoURL,
+                'preferredLanguage': preferredLanguage,
               };
             })
+            .where((user) => user != null)
+            .cast<Map<String, dynamic>>()
             .where((user) => user['uid'] != currentUser.uid)
             .where((user) {
               if (_searchQuery.isEmpty) return true;
@@ -164,7 +178,7 @@ class _UserSelectionPageState extends ConsumerState<UserSelectionPage> {
                 user['displayName'] as String,
                 user['email'] as String,
                 user['photoURL'] as String?,
-                user['preferredLanguage'] as String?,
+                user['preferredLanguage'] as String,
               ),
             );
           },
@@ -206,7 +220,7 @@ class _UserSelectionPageState extends ConsumerState<UserSelectionPage> {
     String otherUserName,
     String otherUserEmail,
     String? otherUserPhotoURL,
-    String? otherUserPreferredLanguage,
+    String otherUserPreferredLanguage,
   ) async {
     setState(() {
       _isCreatingConversation = true;
@@ -223,9 +237,11 @@ class _UserSelectionPageState extends ConsumerState<UserSelectionPage> {
 
       final otherUserParticipant = Participant(
         uid: otherUserId,
-        name: otherUserName.isEmpty ? otherUserEmail : otherUserName,
+        name: otherUserName.isNotEmpty
+            ? otherUserName
+            : (otherUserEmail.isNotEmpty ? otherUserEmail : 'Unknown User'),
         imageUrl: otherUserPhotoURL,
-        preferredLanguage: otherUserPreferredLanguage ?? 'en',
+        preferredLanguage: otherUserPreferredLanguage,
       );
 
       // Find or create conversation
