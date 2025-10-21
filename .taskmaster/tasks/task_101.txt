@@ -1,0 +1,11 @@
+# Task ID: 101
+# Title: Implement OpenAI API caching
+# Status: pending
+# Dependencies: 59
+# Priority: high
+# Description: Add caching for OpenAI API calls to reduce costs
+# Details:
+Implement caching strategy for different AI features as described in the PRD. Use Firestore for long-lived caches (summaries, decisions). Implement Redis or in-memory cache for short-lived data (smart replies). Add cache invalidation based on conversation updates.
+
+# Test Strategy:
+Write unit tests for caching logic. Test cache hit rates. Verify cache invalidation works correctly. Test with different cache durations.

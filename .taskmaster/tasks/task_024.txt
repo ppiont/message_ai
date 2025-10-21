@@ -1,0 +1,11 @@
+# Task ID: 24
+# Title: Set up Firestore for messages subcollection
+# Status: pending
+# Dependencies: 2, 23
+# Priority: high
+# Description: Configure Firestore for storing message data
+# Details:
+Create Firestore indexes for messages subcollection as specified in the PRD, especially for timestamp. Implement security rules for messages subcollection to ensure only conversation participants can access messages. Create utility functions for message document operations.
+
+# Test Strategy:
+Write unit tests with fake_cloud_firestore. Test CRUD operations on messages subcollection. Verify that security rules work as expected using Firebase emulator.

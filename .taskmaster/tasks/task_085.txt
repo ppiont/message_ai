@@ -1,0 +1,11 @@
+# Task ID: 85
+# Title: Implement language settings UI
+# Status: pending
+# Dependencies: 83
+# Priority: medium
+# Description: Create the UI for managing language preferences
+# Details:
+Create language_settings_page.dart in features/translation/presentation/pages directory. Implement UI for selecting preferred language. Add option for automatic language detection. Implement UI for managing translation settings. Store user language preferences.
+
+# Test Strategy:
+Write widget tests for UI components. Test language selection. Verify preference storage works correctly. Test automatic detection option.

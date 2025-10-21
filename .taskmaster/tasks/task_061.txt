@@ -1,0 +1,11 @@
+# Task ID: 61
+# Title: Implement action item extraction Cloud Function
+# Status: pending
+# Dependencies: 59
+# Priority: medium
+# Description: Create the Cloud Function for extracting action items from conversations
+# Details:
+Implement the extractActionItems function as described in the PRD. Configure the function to return structured JSON output. Implement the system prompt for identifying tasks, assignees, deadlines, and status. Add error handling and validation of the returned JSON.
+
+# Test Strategy:
+Test the function with sample conversation data. Verify JSON structure is correct. Test error handling. Evaluate extraction quality with different conversation types.

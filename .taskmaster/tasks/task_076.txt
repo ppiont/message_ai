@@ -1,0 +1,11 @@
+# Task ID: 76
+# Title: Integrate smart search in chat UI
+# Status: pending
+# Dependencies: 71, 38
+# Priority: medium
+# Description: Add smart search functionality to the chat screen
+# Details:
+Add search bar to chat_page.dart. Implement search functionality using the smart search Cloud Function. Display search results with highlighting. Add functionality to jump to specific messages from search results. Handle empty results and loading state.
+
+# Test Strategy:
+Write widget tests for search functionality. Test result display and highlighting. Verify jump-to-message works correctly. Test empty results and loading state.

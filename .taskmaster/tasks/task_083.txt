@@ -1,0 +1,11 @@
+# Task ID: 83
+# Title: Create translation providers
+# Status: pending
+# Dependencies: 11, 82
+# Priority: medium
+# Description: Implement Riverpod providers for translation state
+# Details:
+Create translation_provider.dart in features/translation/presentation/providers directory. Implement providers for language detection and translation. Use riverpod_annotation for code generation. Handle loading, error, and success states. Implement caching for improved performance.
+
+# Test Strategy:
+Write unit tests with provider overrides. Test state changes for translation operations. Verify caching works correctly. Test error handling.

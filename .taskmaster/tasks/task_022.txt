@@ -1,0 +1,11 @@
+# Task ID: 22
+# Title: Set up Firestore for users collection
+# Status: pending
+# Dependencies: 2
+# Priority: high
+# Description: Configure Firestore for storing user data
+# Details:
+Add cloud_firestore dependency to pubspec.yaml. Create Firestore indexes for users collection as specified in the PRD. Implement security rules for users collection to ensure proper access control. Create utility functions for user document operations.
+
+# Test Strategy:
+Write unit tests with fake_cloud_firestore. Test CRUD operations on users collection. Verify that security rules work as expected using Firebase emulator.

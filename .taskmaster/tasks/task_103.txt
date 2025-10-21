@@ -1,0 +1,11 @@
+# Task ID: 103
+# Title: Implement token limiting for OpenAI
+# Status: pending
+# Dependencies: 59
+# Priority: medium
+# Description: Add token limiting for OpenAI API calls to reduce costs
+# Details:
+Implement token counting and limiting for OpenAI API calls. Set appropriate max_tokens for different features. Add context truncation for long conversations. Implement sliding window approach for thread summarization. Balance between quality and cost.
+
+# Test Strategy:
+Write unit tests for token counting and limiting. Test with different input sizes. Verify context truncation works correctly. Test quality impact of token limiting.

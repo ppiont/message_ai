@@ -1,0 +1,11 @@
+# Task ID: 115
+# Title: Set up analytics
+# Status: pending
+# Dependencies: 2
+# Priority: medium
+# Description: Configure analytics for user behavior tracking
+# Details:
+Add firebase_analytics dependency to pubspec.yaml. Configure analytics in the Firebase console. Implement screen tracking. Add custom events for important user actions. Implement user property tracking. Add conversion tracking for key actions.
+
+# Test Strategy:
+Test analytics with sample user actions. Verify that events are recorded correctly. Test screen tracking. Verify user property tracking.

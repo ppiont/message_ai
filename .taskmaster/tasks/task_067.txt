@@ -1,0 +1,11 @@
+# Task ID: 67
+# Title: Create AI feature entities and models
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Define the domain entities and data models for AI features
+# Details:
+Create entities and models in the features/ai_features/domain/entities and features/ai_features/data/models directories. Define models for thread summaries, action items, smart replies, and decisions. Implement serialization and deserialization methods.
+
+# Test Strategy:
+Write unit tests for serialization and deserialization. Test conversion between entities and models. Verify equality comparison works correctly.

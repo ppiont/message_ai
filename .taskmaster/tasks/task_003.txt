@@ -1,0 +1,11 @@
+# Task ID: 3
+# Title: Set up Flutter flavors
+# Status: pending
+# Dependencies: 1, 2
+# Priority: high
+# Description: Configure Flutter flavors for development, staging, and production environments
+# Details:
+Create flavor-specific entry points (main_dev.dart, main_staging.dart, main_prod.dart). Configure Android build.gradle and iOS project settings to support multiple flavors. Set up flavor-specific app IDs, app names, and icons. Create environment-specific configuration files to store environment variables.
+
+# Test Strategy:
+Verify that the app can be built and run with each flavor using the commands specified in the PRD. Ensure that the correct Firebase project is used for each flavor.

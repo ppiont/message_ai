@@ -1,0 +1,11 @@
+# Task ID: 70
+# Title: Implement AI feature use cases
+# Status: pending
+# Dependencies: 69
+# Priority: medium
+# Description: Create use cases for AI feature operations
+# Details:
+Create generate_smart_replies.dart, summarize_thread.dart, extract_action_items.dart, detect_priority.dart, and track_decisions.dart in features/ai_features/domain/usecases directory. Implement the use cases using the AI repository. Handle input validation and error cases. Return appropriate results or failures.
+
+# Test Strategy:
+Write unit tests with mocked repositories. Test success and failure scenarios. Verify input validation works correctly.

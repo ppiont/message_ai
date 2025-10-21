@@ -1,0 +1,11 @@
+# Task ID: 104
+# Title: Implement PII detection
+# Status: pending
+# Dependencies: 59
+# Priority: high
+# Description: Add PII detection before sending data to OpenAI
+# Details:
+Implement PII detection for sensitive information like phone numbers, emails, and addresses. Add redaction or masking of detected PII. Implement allowlist for certain types of PII that can be sent. Add user control for PII handling.
+
+# Test Strategy:
+Write unit tests for PII detection. Test with different types of PII. Verify redaction works correctly. Test allowlist functionality.

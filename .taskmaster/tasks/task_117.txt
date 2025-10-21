@@ -1,0 +1,11 @@
+# Task ID: 117
+# Title: Implement app review prompts
+# Status: pending
+# Dependencies: 115
+# Priority: low
+# Description: Add prompts for app store reviews
+# Details:
+Add in_app_review dependency to pubspec.yaml. Implement logic for determining when to show review prompts. Add user action tracking to identify satisfied users. Implement frequency limiting for prompts. Add analytics for prompt effectiveness.
+
+# Test Strategy:
+Test review prompt logic with different scenarios. Verify that frequency limiting works correctly. Test analytics integration. Verify prompt UI.

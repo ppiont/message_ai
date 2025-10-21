@@ -1,0 +1,11 @@
+# Task ID: 100
+# Title: Optimize Firestore listeners
+# Status: pending
+# Dependencies: 27, 29
+# Priority: high
+# Description: Improve Firestore listener efficiency
+# Details:
+Implement scoped Firestore listeners as described in the PRD. Use array-contains queries for participant filtering. Add limit to reduce unnecessary document listening. Implement listener cleanup when not needed. Add listener pause/resume functionality based on app state.
+
+# Test Strategy:
+Write unit tests for listener management. Test with different query patterns. Verify listener cleanup works correctly. Test pause/resume functionality.

@@ -1,0 +1,11 @@
+# Task ID: 109
+# Title: Implement batch translation
+# Status: pending
+# Dependencies: 78
+# Priority: medium
+# Description: Add batch translation for group chats
+# Details:
+Implement batch translation for multiple messages in group chats. Combine translation requests to reduce API calls. Add queue for collecting translation requests. Implement timeout-based flushing for the queue. Balance between latency and efficiency.
+
+# Test Strategy:
+Write unit tests for batch translation. Test with different batch sizes. Verify timeout-based flushing works correctly. Test efficiency improvement.
