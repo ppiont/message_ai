@@ -128,9 +128,9 @@ class RecordNotFoundException extends AppException {
 /// Exception thrown when a database constraint is violated
 class ConstraintViolationException extends AppException {
   const ConstraintViolationException({
-    required String message,
+    required super.message,
     super.originalError,
-  }) : super(message: message, code: 'CONSTRAINT_VIOLATION');
+  }) : super(code: 'CONSTRAINT_VIOLATION');
 }
 
 // ============================================================================
@@ -159,8 +159,8 @@ class InvalidFormatException extends AppException {
 
   const InvalidFormatException({
     required this.fieldName,
-    required String message,
-  }) : super(message: message, code: 'INVALID_FORMAT');
+    required super.message,
+  }) : super(code: 'INVALID_FORMAT');
 
   @override
   String toString() => 'InvalidFormatException: $fieldName - $message';
@@ -261,16 +261,16 @@ class RateLimitExceededException extends AppException {
 /// Exception thrown for unknown/unexpected errors
 class UnknownException extends AppException {
   const UnknownException({
-    String message = 'An unexpected error occurred',
+    super.message = 'An unexpected error occurred',
     super.originalError,
-  }) : super(message: message, code: 'UNKNOWN_ERROR');
+  }) : super(code: 'UNKNOWN_ERROR');
 }
 
 /// Exception thrown when a feature is not implemented
 class NotImplementedException extends AppException {
   const NotImplementedException({
-    String message = 'This feature is not yet implemented',
-  }) : super(message: message, code: 'NOT_IMPLEMENTED');
+    super.message = 'This feature is not yet implemented',
+  }) : super(code: 'NOT_IMPLEMENTED');
 }
 
 /// Exception thrown when operation is cancelled
