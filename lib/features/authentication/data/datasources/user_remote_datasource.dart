@@ -45,9 +45,8 @@ abstract class UserRemoteDataSource {
 class UserRemoteDataSourceImpl implements UserRemoteDataSource {
   final FirebaseFirestore _firestore;
 
-  UserRemoteDataSourceImpl({
-    required FirebaseFirestore firestore,
-  }) : _firestore = firestore;
+  UserRemoteDataSourceImpl({required FirebaseFirestore firestore})
+    : _firestore = firestore;
 
   static const String _usersCollection = 'users';
 
@@ -90,10 +89,7 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
       final docSnapshot = await _usersRef.doc(userId).get();
 
       if (!docSnapshot.exists) {
-        throw RecordNotFoundException(
-          recordType: 'User',
-          recordId: userId,
-        );
+        throw RecordNotFoundException(recordType: 'User', recordId: userId);
       }
 
       return UserModel.fromJson(docSnapshot.data()!);
@@ -101,10 +97,7 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
       throw _mapFirestoreException(e);
     } catch (e) {
       if (e is AppException) rethrow;
-      throw UnknownException(
-        message: 'Failed to get user',
-        originalError: e,
-      );
+      throw UnknownException(message: 'Failed to get user', originalError: e);
     }
   }
 
@@ -162,10 +155,7 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
       // Check if user exists
       final docSnapshot = await docRef.get();
       if (!docSnapshot.exists) {
-        throw RecordNotFoundException(
-          recordType: 'User',
-          recordId: user.uid,
-        );
+        throw RecordNotFoundException(recordType: 'User', recordId: user.uid);
       }
 
       // Update the user document
@@ -256,20 +246,14 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
     try {
       return _usersRef.doc(userId).snapshots().map((docSnapshot) {
         if (!docSnapshot.exists) {
-          throw RecordNotFoundException(
-            recordType: 'User',
-            recordId: userId,
-          );
+          throw RecordNotFoundException(recordType: 'User', recordId: userId);
         }
         return UserModel.fromJson(docSnapshot.data()!);
       });
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
-      throw UnknownException(
-        message: 'Failed to watch user',
-        originalError: e,
-      );
+      throw UnknownException(message: 'Failed to watch user', originalError: e);
     }
   }
 
@@ -296,13 +280,9 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
           message: 'You do not have permission to access this resource',
         );
       case 'not-found':
-        return const RecordNotFoundException(
-          recordType: 'Document',
-        );
+        return const RecordNotFoundException(recordType: 'Document');
       case 'already-exists':
-        return const RecordAlreadyExistsException(
-          recordType: 'Document',
-        );
+        return const RecordAlreadyExistsException(recordType: 'Document');
       case 'resource-exhausted':
         return const RateLimitExceededException();
       case 'failed-precondition':
@@ -327,9 +307,7 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
       case 'deadline-exceeded':
         return const NetworkTimeoutException();
       default:
-        return ServerException(
-          message: 'Firestore error: ${e.message}',
-        );
+        return ServerException(message: 'Firestore error: ${e.message}');
     }
   }
 }

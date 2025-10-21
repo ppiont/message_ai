@@ -62,8 +62,13 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
           ),
         );
       },
-      (user) {
+      (user) async {
+        // Sync user to Firestore
+        final syncUseCase = ref.read(syncUserToFirestoreUseCaseProvider);
+        await syncUseCase(user);
+
         // Navigation will be handled by auth state listener in main app
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Welcome, ${user.email}!'),

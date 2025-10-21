@@ -128,10 +128,15 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
           SnackBar(content: Text(failure.message), backgroundColor: Colors.red),
         );
       },
-      (user) {
+      (user) async {
+        // Sync user to Firestore
+        final syncUseCase = ref.read(syncUserToFirestoreUseCaseProvider);
+        await syncUseCase(user);
+
         // Profile updated successfully - invalidate auth state to trigger re-route
         ref.invalidate(authStateProvider);
 
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Welcome, ${user.displayName}!'),

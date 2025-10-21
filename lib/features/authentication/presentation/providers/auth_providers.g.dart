@@ -212,6 +212,28 @@ final updateUserProfileUseCaseProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef UpdateUserProfileUseCaseRef = AutoDisposeProviderRef<UpdateUserProfile>;
+String _$syncUserToFirestoreUseCaseHash() =>
+    r'e6a796754bcf8a348b142c49a6a5f13eff9d5093';
+
+/// Provider for sync user to Firestore use case
+///
+/// Copied from [syncUserToFirestoreUseCase].
+@ProviderFor(syncUserToFirestoreUseCase)
+final syncUserToFirestoreUseCaseProvider =
+    AutoDisposeProvider<SyncUserToFirestore>.internal(
+      syncUserToFirestoreUseCase,
+      name: r'syncUserToFirestoreUseCaseProvider',
+      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$syncUserToFirestoreUseCaseHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef SyncUserToFirestoreUseCaseRef =
+    AutoDisposeProviderRef<SyncUserToFirestore>;
 String _$authStateHash() => r'89b1b3ab6a1d599da3cec3b546172497b9bd5ace';
 
 /// Provider for current authenticated user

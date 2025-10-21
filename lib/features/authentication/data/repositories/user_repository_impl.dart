@@ -14,9 +14,8 @@ import 'package:message_ai/features/authentication/domain/repositories/user_repo
 class UserRepositoryImpl implements UserRepository {
   final UserRemoteDataSource _remoteDataSource;
 
-  UserRepositoryImpl({
-    required UserRemoteDataSource remoteDataSource,
-  }) : _remoteDataSource = remoteDataSource;
+  UserRepositoryImpl({required UserRemoteDataSource remoteDataSource})
+    : _remoteDataSource = remoteDataSource;
 
   @override
   Future<Either<Failure, User>> createUser(User user) async {
@@ -50,7 +49,9 @@ class UserRepositoryImpl implements UserRepository {
   }
 
   @override
-  Future<Either<Failure, User?>> getUserByPhoneNumber(String phoneNumber) async {
+  Future<Either<Failure, User?>> getUserByPhoneNumber(
+    String phoneNumber,
+  ) async {
     try {
       final result = await _remoteDataSource.getUserByPhoneNumber(phoneNumber);
       return Right(result?.toEntity());
@@ -122,9 +123,9 @@ class UserRepositoryImpl implements UserRepository {
   @override
   Stream<Either<Failure, User>> watchUser(String userId) {
     try {
-      return _remoteDataSource.watchUser(userId).map(
-            (userModel) => Right<Failure, User>(userModel.toEntity()),
-          );
+      return _remoteDataSource
+          .watchUser(userId)
+          .map((userModel) => Right<Failure, User>(userModel.toEntity()));
     } on AppException catch (e) {
       return Stream.value(Left(ErrorMapper.mapExceptionToFailure(e)));
     }

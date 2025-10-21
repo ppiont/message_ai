@@ -9,8 +9,10 @@ import 'package:message_ai/features/authentication/domain/usecases/send_password
 import 'package:message_ai/features/authentication/domain/usecases/sign_in_with_email.dart';
 import 'package:message_ai/features/authentication/domain/usecases/sign_out.dart';
 import 'package:message_ai/features/authentication/domain/usecases/sign_up_with_email.dart';
+import 'package:message_ai/features/authentication/domain/usecases/sync_user_to_firestore.dart';
 import 'package:message_ai/features/authentication/domain/usecases/update_user_profile.dart';
 import 'package:message_ai/features/authentication/domain/usecases/watch_auth_state.dart';
+import 'package:message_ai/features/authentication/presentation/providers/user_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'auth_providers.g.dart';
@@ -88,6 +90,13 @@ WatchAuthState watchAuthStateUseCase(Ref ref) {
 UpdateUserProfile updateUserProfileUseCase(Ref ref) {
   final repository = ref.watch(authRepositoryProvider);
   return UpdateUserProfile(repository);
+}
+
+/// Provider for sync user to Firestore use case
+@riverpod
+SyncUserToFirestore syncUserToFirestoreUseCase(Ref ref) {
+  final repository = ref.watch(userRepositoryProvider);
+  return SyncUserToFirestore(repository);
 }
 
 // ========== State Providers ==========
