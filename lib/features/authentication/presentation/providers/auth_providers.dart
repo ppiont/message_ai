@@ -4,6 +4,7 @@ import 'package:message_ai/features/authentication/data/datasources/auth_remote_
 import 'package:message_ai/features/authentication/data/repositories/auth_repository_impl.dart';
 import 'package:message_ai/features/authentication/domain/entities/user.dart';
 import 'package:message_ai/features/authentication/domain/repositories/auth_repository.dart';
+import 'package:message_ai/features/authentication/domain/usecases/ensure_user_exists_in_firestore.dart';
 import 'package:message_ai/features/authentication/domain/usecases/get_current_user.dart';
 import 'package:message_ai/features/authentication/domain/usecases/send_password_reset_email.dart';
 import 'package:message_ai/features/authentication/domain/usecases/sign_in_with_email.dart';
@@ -71,9 +72,7 @@ GetCurrentUser getCurrentUserUseCase(Ref ref) {
 
 /// Provider for send password reset email use case
 @riverpod
-SendPasswordResetEmail sendPasswordResetEmailUseCase(
-  Ref ref,
-) {
+SendPasswordResetEmail sendPasswordResetEmailUseCase(Ref ref) {
   final repository = ref.watch(authRepositoryProvider);
   return SendPasswordResetEmail(repository);
 }
@@ -92,11 +91,18 @@ UpdateUserProfile updateUserProfileUseCase(Ref ref) {
   return UpdateUserProfile(repository);
 }
 
-/// Provider for sync user to Firestore use case
+/// Provider for sync user to Firestore use case (creates OR updates)
 @riverpod
 SyncUserToFirestore syncUserToFirestoreUseCase(Ref ref) {
   final repository = ref.watch(userRepositoryProvider);
   return SyncUserToFirestore(repository);
+}
+
+/// Provider for ensure user exists in Firestore use case (creates only if missing)
+@riverpod
+EnsureUserExistsInFirestore ensureUserExistsInFirestoreUseCase(Ref ref) {
+  final repository = ref.watch(userRepositoryProvider);
+  return EnsureUserExistsInFirestore(repository);
 }
 
 // ========== State Providers ==========

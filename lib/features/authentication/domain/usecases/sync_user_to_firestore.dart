@@ -6,10 +6,17 @@ import 'package:message_ai/core/error/failures.dart';
 import 'package:message_ai/features/authentication/domain/entities/user.dart';
 import 'package:message_ai/features/authentication/domain/repositories/user_repository.dart';
 
-/// Syncs a Firebase Auth user to Firestore users collection
+/// Syncs a Firebase Auth user to Firestore users collection.
 ///
-/// Creates a new user document in Firestore or updates an existing one
-/// with data from Firebase Auth.
+/// **This use case ALWAYS updates the Firestore document**, creating it if missing.
+///
+/// Use cases:
+/// - Sign up: Create initial Firestore document ✅
+/// - Profile updates: Update existing Firestore document ✅
+/// - Manual profile edits: Update display name, photo, etc. ✅
+///
+/// **Do NOT use for sign-in flows** - use [EnsureUserExistsInFirestore] instead,
+/// which only creates if missing (avoids unnecessary writes).
 class SyncUserToFirestore {
   final UserRepository _userRepository;
 
@@ -23,17 +30,14 @@ class SyncUserToFirestore {
     // Check if user already exists in Firestore
     final existsResult = await _userRepository.userExists(user.uid);
 
-    return existsResult.fold(
-      (failure) => Left(failure),
-      (exists) async {
-        if (exists) {
-          // Update existing user
-          return await _userRepository.updateUser(user);
-        } else {
-          // Create new user
-          return await _userRepository.createUser(user);
-        }
-      },
-    );
+    return existsResult.fold((failure) => Left(failure), (exists) async {
+      if (exists) {
+        // Update existing user
+        return await _userRepository.updateUser(user);
+      } else {
+        // Create new user
+        return await _userRepository.createUser(user);
+      }
+    });
   }
 }

@@ -113,14 +113,19 @@ Two environments:
    - **Test Phone**: +1 650-555-3434 (code: 123456)
 2. **message-ai-prod**: Production
 
-### Flutter Flavors
+### Flutter Flavors & Run Commands
 ```bash
-# Development
-flutter run --flavor dev -t lib/main_dev.dart
+# Development (Android Emulator)
+flutter run --flavor dev -t lib/main_dev.dart -d emulator-5554
+
+# Development (iOS Simulator)
+flutter run --flavor dev -t lib/main_dev.dart -d <ios-simulator-id>
 
 # Production
 flutter run --flavor prod -t lib/main_prod.dart
 ```
+
+**⚠️ CRITICAL**: Always use `--flavor dev -t lib/main_dev.dart` for development builds!
 
 ## Project Structure
 

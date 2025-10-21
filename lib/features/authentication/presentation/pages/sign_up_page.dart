@@ -56,10 +56,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
           _errorMessage = failure.message;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(failure.message),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text(failure.message), backgroundColor: Colors.red),
         );
       },
       (user) async {
@@ -90,11 +87,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // App Logo/Title
-            const Icon(
-              Icons.message,
-              size: 80,
-              color: Colors.blue,
-            ),
+            const Icon(Icons.message, size: 80, color: Colors.blue),
             const SizedBox(height: 16),
             Text(
               'Create Account',
@@ -104,9 +97,9 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
             const SizedBox(height: 8),
             Text(
               'Sign up to get started',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[600],
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 48),
@@ -243,19 +236,16 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                       width: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text(
-                      'Sign Up',
-                      style: TextStyle(fontSize: 16),
-                    ),
+                  : const Text('Sign Up', style: TextStyle(fontSize: 16)),
             ),
             const SizedBox(height: 16),
 
             // Terms and Privacy
             Text(
               'By signing up, you agree to our Terms of Service and Privacy Policy',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey[600],
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
           ],
