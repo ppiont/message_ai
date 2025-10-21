@@ -76,6 +76,7 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
+      if (e is AppException) rethrow;
       throw UnknownException(
         message: 'Failed to create user',
         originalError: e,
