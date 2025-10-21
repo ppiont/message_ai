@@ -62,9 +62,9 @@ class ServerFailure extends Failure {
 /// Failure when authentication fails
 class AuthenticationFailure extends Failure {
   const AuthenticationFailure({
-    String message = 'Authentication failed',
+    super.message = 'Authentication failed',
     super.code,
-  }) : super(message: message);
+  });
 }
 
 /// Failure when user is not authenticated
