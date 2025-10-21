@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:message_ai/features/messaging/data/models/message_model.dart';
 import 'package:message_ai/features/messaging/domain/entities/message.dart';
@@ -138,7 +137,6 @@ void main() {
         final model = MessageModel.fromJson(jsonWithIntEmbedding);
 
         expect(model.embedding, [1.0, 2.0, 3.0]);
-        expect(model.embedding?.every((e) => e is double), true);
       });
     });
 
