@@ -3,8 +3,51 @@ import 'package:message_ai/core/error/exceptions.dart';
 
 /// Remote datasource for Firebase Authentication operations
 ///
-/// Handles phone authentication, verification, and auth state management.
+/// Handles email and phone authentication, verification, and auth state management.
 abstract class AuthRemoteDataSource {
+  // ========== Email Authentication ==========
+
+  /// Creates a new user account with email and password
+  ///
+  /// [email] must be a valid email address
+  /// [password] must be at least 6 characters
+  /// Returns the authenticated [User] on success
+  /// Throws [AuthException] on failure
+  Future<User> signUpWithEmail({
+    required String email,
+    required String password,
+  });
+
+  /// Signs in an existing user with email and password
+  ///
+  /// [email] user's email address
+  /// [password] user's password
+  /// Returns the authenticated [User] on success
+  /// Throws [AuthException] on failure
+  Future<User> signInWithEmail({
+    required String email,
+    required String password,
+  });
+
+  /// Sends a password reset email to the provided email address
+  ///
+  /// [email] user's email address
+  /// Throws [AuthException] if email is not registered
+  Future<void> sendPasswordResetEmail({required String email});
+
+  /// Sends an email verification link to the current user
+  ///
+  /// Must be called when a user is signed in
+  /// Throws [UnauthorizedException] if no user is signed in
+  Future<void> sendEmailVerification();
+
+  /// Checks if the current user's email is verified
+  ///
+  /// Returns false if no user is signed in
+  Future<bool> isEmailVerified();
+
+  // ========== Phone Authentication ==========
+
   /// Sends a verification code to the provided phone number
   ///
   /// [phoneNumber] must be in E.164 format (e.g., +1234567890)
@@ -65,6 +108,104 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   final FirebaseAuth _firebaseAuth;
 
   AuthRemoteDataSourceImpl(this._firebaseAuth);
+
+  // ========== Email Authentication Implementation ==========
+
+  @override
+  Future<User> signUpWithEmail({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      if (userCredential.user == null) {
+        throw const UnauthorizedException(
+          message: 'Sign up failed - no user returned',
+        );
+      }
+
+      return userCredential.user!;
+    } on FirebaseAuthException catch (e) {
+      throw _mapAuthException(e);
+    } catch (e) {
+      if (e is AppException) rethrow;
+      throw ServerException(message: 'Failed to sign up: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<User> signInWithEmail({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final userCredential = await _firebaseAuth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      if (userCredential.user == null) {
+        throw const UnauthorizedException(
+          message: 'Sign in failed - no user returned',
+        );
+      }
+
+      return userCredential.user!;
+    } on FirebaseAuthException catch (e) {
+      throw _mapAuthException(e);
+    } catch (e) {
+      if (e is AppException) rethrow;
+      throw ServerException(message: 'Failed to sign in: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<void> sendPasswordResetEmail({required String email}) async {
+    try {
+      await _firebaseAuth.sendPasswordResetEmail(email: email);
+    } on FirebaseAuthException catch (e) {
+      throw _mapAuthException(e);
+    } catch (e) {
+      throw ServerException(
+        message: 'Failed to send password reset email: ${e.toString()}',
+      );
+    }
+  }
+
+  @override
+  Future<void> sendEmailVerification() async {
+    try {
+      final user = _firebaseAuth.currentUser;
+      if (user == null) {
+        throw const UnauthorizedException(message: 'No user signed in');
+      }
+
+      await user.sendEmailVerification();
+    } on FirebaseAuthException catch (e) {
+      throw _mapAuthException(e);
+    } catch (e) {
+      if (e is AppException) rethrow;
+      throw ServerException(
+        message: 'Failed to send email verification: ${e.toString()}',
+      );
+    }
+  }
+
+  @override
+  Future<bool> isEmailVerified() async {
+    final user = _firebaseAuth.currentUser;
+    if (user == null) return false;
+
+    // Reload user to get fresh email verification status
+    await user.reload();
+    return _firebaseAuth.currentUser?.emailVerified ?? false;
+  }
+
+  // ========== Phone Authentication Implementation ==========
 
   @override
   Future<void> verifyPhoneNumber({
@@ -197,6 +338,39 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   /// Maps Firebase Auth exceptions to our app exceptions
   AppException _mapAuthException(FirebaseAuthException e) {
     switch (e.code) {
+      // Email-specific errors
+      case 'email-already-in-use':
+        return const ValidationException(
+          message: 'Email address is already in use',
+          fieldErrors: {'email': 'This email is already registered'},
+        );
+      case 'invalid-email':
+        return const ValidationException(
+          message: 'Invalid email address',
+          fieldErrors: {'email': 'Please enter a valid email address'},
+        );
+      case 'weak-password':
+        return const ValidationException(
+          message: 'Password is too weak',
+          fieldErrors: {'password': 'Password must be at least 6 characters'},
+        );
+      case 'wrong-password':
+        return const ValidationException(
+          message: 'Incorrect password',
+          fieldErrors: {'password': 'The password is incorrect'},
+        );
+      case 'user-not-found':
+        return const ValidationException(
+          message: 'No user found with this email',
+          fieldErrors: {'email': 'This email is not registered'},
+        );
+      case 'too-many-requests':
+        return const ServerException(
+          message: 'Too many failed attempts. Please try again later.',
+          statusCode: 429,
+        );
+
+      // Phone-specific errors
       case 'invalid-phone-number':
         return const ValidationException(
           message: 'Invalid phone number format',
@@ -215,11 +389,6 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       case 'session-expired':
         return const UnauthorizedException(
           message: 'Verification session expired. Please request a new code.',
-        );
-      case 'too-many-requests':
-        return const ServerException(
-          message: 'Too many requests. Please try again later.',
-          statusCode: 429,
         );
       case 'user-disabled':
         return const UnauthorizedException(

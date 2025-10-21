@@ -21,6 +21,144 @@ void main() {
   });
 
   group('AuthRemoteDataSource', () {
+    group('Email Authentication', () {
+      group('signUpWithEmail', () {
+        test('should create user with email and password', () async {
+          const email = 'test@example.com';
+          const password = 'password123';
+
+          final user = await dataSource.signUpWithEmail(
+            email: email,
+            password: password,
+          );
+
+          expect(user, isNotNull);
+          expect(mockFirebaseAuth.currentUser, isNotNull);
+          expect(mockFirebaseAuth.currentUser?.email, email);
+        });
+
+        test('should sign in user after successful sign up', () async {
+          await dataSource.signUpWithEmail(
+            email: 'test@example.com',
+            password: 'password123',
+          );
+
+          expect(mockFirebaseAuth.currentUser, isNotNull);
+          expect(mockFirebaseAuth.currentUser?.email, 'test@example.com');
+        });
+      });
+
+      group('signInWithEmail', () {
+        test('should sign in existing user with email and password', () async {
+          const email = 'test@example.com';
+          const password = 'password123';
+
+          // Create user first
+          await mockFirebaseAuth.createUserWithEmailAndPassword(
+            email: email,
+            password: password,
+          );
+
+          // Sign out
+          await mockFirebaseAuth.signOut();
+
+          // Sign in
+          final user = await dataSource.signInWithEmail(
+            email: email,
+            password: password,
+          );
+
+          expect(user, isNotNull);
+          expect(user.email, email);
+          expect(mockFirebaseAuth.currentUser, isNotNull);
+        });
+
+        test('should successfully sign in with any credentials', () async {
+          // Note: MockFirebaseAuth doesn't validate credentials
+          // In real Firebase, this would throw an error
+          final user = await dataSource.signInWithEmail(
+            email: 'any@example.com',
+            password: 'anypassword',
+          );
+
+          expect(user, isNotNull);
+        });
+      });
+
+      group('sendPasswordResetEmail', () {
+        test('should send password reset email', () async {
+          const email = 'test@example.com';
+
+          // Create user first
+          await mockFirebaseAuth.createUserWithEmailAndPassword(
+            email: email,
+            password: 'password123',
+          );
+
+          // Should not throw
+          await dataSource.sendPasswordResetEmail(email: email);
+
+          expect(true, isTrue);
+        });
+
+        test('should complete for non-existent email', () async {
+          // MockFirebaseAuth doesn't validate email existence for password reset
+          await dataSource.sendPasswordResetEmail(
+            email: 'nonexistent@example.com',
+          );
+
+          expect(true, isTrue);
+        });
+      });
+
+      group('sendEmailVerification', () {
+        test('should send verification email to signed in user', () async {
+          // Sign up user
+          await dataSource.signUpWithEmail(
+            email: 'test@example.com',
+            password: 'password123',
+          );
+
+          // Should not throw
+          await dataSource.sendEmailVerification();
+
+          expect(true, isTrue);
+        });
+
+        test(
+          'should throw UnauthorizedException when no user signed in',
+          () async {
+            expect(
+              () => dataSource.sendEmailVerification(),
+              throwsA(isA<UnauthorizedException>()),
+            );
+          },
+        );
+      });
+
+      group('isEmailVerified', () {
+        test('should check email verification status', () async {
+          // Sign up user
+          await dataSource.signUpWithEmail(
+            email: 'test@example.com',
+            password: 'password123',
+          );
+
+          final isVerified = await dataSource.isEmailVerified();
+
+          // MockFirebaseAuth automatically verifies emails
+          // In real Firebase, this would be false until verified
+          expect(isVerified, isA<bool>());
+        });
+
+        test('should return false when no user signed in', () async {
+          final isVerified = await dataSource.isEmailVerified();
+
+          expect(isVerified, false);
+        });
+      });
+    });
+
     group('getCurrentUser', () {
       test('should return null when no user is signed in', () {
         final user = dataSource.getCurrentUser();
@@ -239,7 +377,46 @@ void main() {
     });
 
     group('Integration Scenarios', () {
-      test('complete authentication flow', () async {
+      test('complete email authentication flow', () async {
+        const email = 'test@example.com';
+        const password = 'password123';
+
+        // 1. Initially no user
+        expect(dataSource.getCurrentUser(), isNull);
+
+        // 2. Sign up
+        final signUpUser = await dataSource.signUpWithEmail(
+          email: email,
+          password: password,
+        );
+
+        expect(signUpUser, isNotNull);
+        expect(signUpUser.email, email);
+        expect(dataSource.getCurrentUser(), isNotNull);
+
+        // 3. Check email verification status
+        final isVerified = await dataSource.isEmailVerified();
+        expect(isVerified, isA<bool>());
+
+        // 4. Send verification email
+        await dataSource.sendEmailVerification();
+
+        // 5. Sign out
+        await dataSource.signOut();
+        expect(dataSource.getCurrentUser(), isNull);
+
+        // 6. Sign in again
+        final signInUser = await dataSource.signInWithEmail(
+          email: email,
+          password: password,
+        );
+
+        expect(signInUser, isNotNull);
+        expect(signInUser.email, email);
+        expect(dataSource.getCurrentUser(), isNotNull);
+      });
+
+      test('complete phone authentication flow', () async {
         // 1. Initially no user
         expect(dataSource.getCurrentUser(), isNull);
 
