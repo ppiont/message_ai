@@ -119,10 +119,17 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
                   conversation['participants'] as List<Map<String, dynamic>>;
 
               // Get the other participant's name
-              final otherParticipant = participants.firstWhere(
-                (p) => p['uid'] != userId,
-                orElse: () => participants.first,
-              );
+              Map<String, dynamic> otherParticipant;
+              try {
+                otherParticipant = participants.firstWhere(
+                  (p) => p['uid'] != userId,
+                );
+              } catch (e) {
+                // Fallback to first participant if not found
+                otherParticipant = participants.isNotEmpty
+                    ? participants.first
+                    : {'name': 'Unknown', 'uid': ''};
+              }
               final otherParticipantName =
                   otherParticipant['name'] as String? ?? 'Unknown';
 

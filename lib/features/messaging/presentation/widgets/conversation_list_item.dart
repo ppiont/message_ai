@@ -30,10 +30,17 @@ class ConversationListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Get the other participant (for 1-to-1 conversations)
-    final otherParticipant = participants.firstWhere(
-      (p) => p['uid'] != currentUserId,
-      orElse: () => participants.first, // Fallback to first if not found
-    );
+    Map<String, dynamic> otherParticipant;
+    try {
+      otherParticipant = participants.firstWhere(
+        (p) => p['uid'] != currentUserId,
+      );
+    } catch (e) {
+      // Fallback to first participant if not found
+      otherParticipant = participants.isNotEmpty
+          ? participants.first
+          : {'name': 'Unknown', 'uid': '', 'imageUrl': null};
+    }
 
     final name = otherParticipant['name'] as String? ?? 'Unknown';
     final imageUrl = otherParticipant['imageUrl'] as String?;
@@ -73,7 +80,9 @@ class ConversationListItem extends StatelessWidget {
               lastMessage ?? 'No messages yet',
               style: TextStyle(
                 color: lastMessage == null ? Colors.grey : Colors.grey[700],
-                fontWeight: unreadCount > 0 ? FontWeight.w500 : FontWeight.normal,
+                fontWeight: unreadCount > 0
+                    ? FontWeight.w500
+                    : FontWeight.normal,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,

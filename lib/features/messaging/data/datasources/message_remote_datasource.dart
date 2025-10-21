@@ -216,7 +216,10 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
   }) {
     try {
       return _messagesRef(conversationId)
-          .orderBy('timestamp', descending: true)
+          .orderBy(
+            'timestamp',
+            descending: false,
+          ) // Oldest first (standard chat order)
           .limit(limit)
           .snapshots()
           .map((snapshot) {

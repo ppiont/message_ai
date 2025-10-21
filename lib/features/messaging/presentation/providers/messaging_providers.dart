@@ -135,7 +135,7 @@ Stream<List<Map<String, dynamic>>> userConversationsStream(
                   },
                 )
                 .toList(),
-            'lastMessage': conv.lastMessage,
+            'lastMessage': conv.lastMessage?.text,
             'lastUpdatedAt': conv.lastUpdatedAt,
             'unreadCount': conv.getUnreadCountForUser(userId),
           };
@@ -171,6 +171,7 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
                 'senderName': msg.senderName,
                 'timestamp': msg.timestamp,
                 'status': msg.status,
+                'type': msg.type,
               },
             )
             .toList();
