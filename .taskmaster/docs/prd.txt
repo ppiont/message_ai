@@ -363,11 +363,11 @@ Stream<List<Message>> conversationMessages(
 // Usage in widget
 class ChatPage extends ConsumerWidget {
   final String conversationId;
-  
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final messagesAsync = ref.watch(conversationMessagesProvider(conversationId));
-    
+
     return messagesAsync.when(
       data: (messages) => MessageList(messages: messages),
       loading: () => CircularProgressIndicator(),
@@ -382,9 +382,9 @@ class ChatPage extends ConsumerWidget {
 ```dart
 class MessageNotifier extends StateNotifier<AsyncValue<List<Message>>> {
   final MessageRepository _repository;
-  
+
   MessageNotifier(this._repository) : super(const AsyncValue.loading());
-  
+
   Future<void> sendMessage(String text, String conversationId) async {
     // 1. Create optimistic message
     final optimisticMessage = Message(
@@ -394,19 +394,19 @@ class MessageNotifier extends StateNotifier<AsyncValue<List<Message>>> {
       status: MessageStatus.sending,
       timestamp: DateTime.now(),
     );
-    
+
     // 2. Update UI immediately
     state.whenData((messages) {
       state = AsyncValue.data([...messages, optimisticMessage]);
     });
-    
+
     try {
       // 3. Send to Firebase
       final sentMessage = await _repository.sendMessage(optimisticMessage);
-      
+
       // 4. Replace with server message
       state.whenData((messages) {
-        final updated = messages.map((m) => 
+        final updated = messages.map((m) =>
           m.id == optimisticMessage.id ? sentMessage : m
         ).toList();
         state = AsyncValue.data(updated);
@@ -415,7 +415,7 @@ class MessageNotifier extends StateNotifier<AsyncValue<List<Message>>> {
       // 5. Mark failed, allow retry
       state.whenData((messages) {
         final updated = messages.map((m) =>
-          m.id == optimisticMessage.id 
+          m.id == optimisticMessage.id
             ? m.copyWith(status: MessageStatus.failed)
             : m
         ).toList();
@@ -433,8 +433,8 @@ class MessageNotifier extends StateNotifier<AsyncValue<List<Message>>> {
 ### Offline-First Flow
 
 ```
-User Action → Local DB (immediate) → UI Update → 
-Queue for Sync → Firestore (when online) → 
+User Action → Local DB (immediate) → UI Update →
+Queue for Sync → Firestore (when online) →
 Update Local DB → UI Update
 ```
 
@@ -445,7 +445,7 @@ class MessageSyncService {
   Future<void> syncMessages(String conversationId) async {
     // 1. Send local unsynced messages
     final localUnsynced = await localDB.getUnsyncedMessages(conversationId);
-    
+
     for (var msg in localUnsynced) {
       final serverDoc = await firestore.collection('messages').add({
         'content': msg.text,
@@ -453,11 +453,11 @@ class MessageSyncService {
         'timestamp': FieldValue.serverTimestamp(),
         'tempId': msg.tempId,
       });
-      
+
       // Update local with server ID
       await localDB.updateMessage(msg.tempId, id: serverDoc.id);
     }
-    
+
     // 2. Fetch new server messages
     final lastSync = await localDB.getLastSyncTime(conversationId);
     final serverMsgs = await firestore
@@ -465,7 +465,7 @@ class MessageSyncService {
       .where('conversationId', isEqualTo: conversationId)
       .where('timestamp', isGreaterThan: Timestamp.fromDate(lastSync))
       .get();
-    
+
     // 3. Merge with deduplication
     for (var doc in serverMsgs.docs) {
       final existing = await localDB.findByTempId(doc['tempId']);
@@ -485,7 +485,7 @@ class MessageSyncService {
 class MessageQueue {
   Future<void> processQueue() async {
     final pending = await localDB.getPendingMessages();
-    
+
     for (var message in pending) {
       try {
         await _sendWithRetry(message);
@@ -501,7 +501,7 @@ class MessageQueue {
       }
     }
   }
-  
+
   Duration _calculateBackoff(int retryCount) {
     final baseDelay = min(pow(2, retryCount).toInt(), 60);
     final jitter = Random().nextDouble() * 0.3 - 0.15;
@@ -546,13 +546,13 @@ exports.processAIRequest = functions.https.onCall(async (data, context) => {
       'Must be called from verified app'
     );
   }
-  
+
   const apiKey = await getOpenAIKey();
   const openai = new OpenAI({ apiKey });
-  
+
   // Rate limiting
   await checkRateLimit(context.auth.uid, 100); // 100 requests/hour
-  
+
   return await openai.chat.completions.create({
     model: data.model || 'gpt-4o-mini',
     messages: data.messages,
@@ -568,13 +568,13 @@ exports.processAIRequest = functions.https.onCall(async (data, context) => {
 ```javascript
 exports.summarizeThread = functions.https.onCall(async (data, context) => {
   const { threadId } = data;
-  
+
   // Check cache
   const cached = await getFromCache('summary', threadId);
   if (cached) return cached;
-  
+
   const messages = await getThreadMessages(threadId);
-  
+
   const response = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [{
@@ -586,7 +586,7 @@ exports.summarizeThread = functions.https.onCall(async (data, context) => {
     }],
     temperature: 0.3
   });
-  
+
   const result = response.choices[0].message.content;
   await cacheResult('summary', threadId, result, 3600); // 1 hour TTL
   return result;
@@ -599,7 +599,7 @@ exports.summarizeThread = functions.https.onCall(async (data, context) => {
 exports.extractActionItems = functions.https.onCall(async (data, context) => {
   const { threadId } = data;
   const messages = await getThreadMessages(threadId);
-  
+
   const response = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [{
@@ -613,7 +613,7 @@ exports.extractActionItems = functions.https.onCall(async (data, context) => {
     response_format: { type: "json_object" },
     temperature: 0.2
   });
-  
+
   return JSON.parse(response.choices[0].message.content);
 });
 ```
@@ -623,13 +623,13 @@ exports.extractActionItems = functions.https.onCall(async (data, context) => {
 ```javascript
 exports.smartSearch = functions.https.onCall(async (data, context) => {
   const { query, userId } = data;
-  
+
   // Generate embedding
   const queryEmbedding = await openai.embeddings.create({
     model: 'text-embedding-3-small',
     input: query
   });
-  
+
   // Vector search in Firestore
   const results = await admin.firestore()
     .collection('messages')
@@ -638,7 +638,7 @@ exports.smartSearch = functions.https.onCall(async (data, context) => {
       limit: 10,
       distanceMeasure: 'COSINE'
     }).get();
-  
+
   return results.docs.map(d => d.data());
 });
 ```
@@ -650,7 +650,7 @@ exports.detectPriority = functions.firestore
   .document('messages/{messageId}')
   .onCreate(async (snap, context) => {
     const message = snap.data();
-    
+
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [{
@@ -663,10 +663,10 @@ exports.detectPriority = functions.firestore
       response_format: { type: "json_object" },
       temperature: 0.1
     });
-    
+
     const priority = JSON.parse(response.choices[0].message.content);
     await snap.ref.update({ priority: priority.priority });
-    
+
     if (['urgent', 'high'].includes(priority.priority)) {
       await sendPriorityNotification(message);
     }
@@ -679,7 +679,7 @@ exports.detectPriority = functions.firestore
 exports.trackDecisions = functions.https.onCall(async (data, context) => {
   const { threadId } = data;
   const messages = await getThreadMessages(threadId);
-  
+
   const response = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [{
@@ -693,7 +693,7 @@ exports.trackDecisions = functions.https.onCall(async (data, context) => {
     response_format: { type: "json_object" },
     temperature: 0.2
   });
-  
+
   const decisions = JSON.parse(response.choices[0].message.content);
   await storeDecisions(threadId, decisions);
   return decisions;
@@ -705,11 +705,11 @@ exports.trackDecisions = functions.https.onCall(async (data, context) => {
 ```javascript
 exports.generateSmartReplies = functions.https.onCall(async (data, context) => {
   const { messageId, threadId } = data;
-  
+
   // Get recent context
   const recentMessages = await getRecentMessages(threadId, 10);
   const currentMessage = await getMessage(messageId);
-  
+
   const response = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [{
@@ -725,7 +725,7 @@ exports.generateSmartReplies = functions.https.onCall(async (data, context) => {
     temperature: 0.8,
     max_tokens: 300
   });
-  
+
   const suggestions = JSON.parse(response.choices[0].message.content);
   await cacheSmartReplies(messageId, suggestions, 120); // 2 min cache
   return suggestions.replies;
@@ -740,13 +740,13 @@ exports.indexMessage = functions.firestore
   .document('messages/{messageId}')
   .onCreate(async (snap, context) => {
     const message = snap.data();
-    
+
     const embedding = await openai.embeddings.create({
       model: 'text-embedding-3-small',
       input: `${message.text}\nContext: ${message.threadTitle}`,
       dimensions: 1536
     });
-    
+
     await snap.ref.update({
       embedding: admin.firestore.FieldValue.vector(embedding.data[0].embedding)
     });
@@ -797,24 +797,24 @@ class TranslationService {
     List<String> targetLanguages,
   ) async {
     final translations = <String, String>{};
-    
+
     for (var targetLang in targetLanguages) {
       final cached = await getFromCache(text, targetLang);
       if (cached != null) {
         translations[targetLang] = cached;
         continue;
       }
-      
+
       final translated = await googleTranslate.translate(
         text,
         from: sourceLanguage,
         to: targetLang,
       );
-      
+
       translations[targetLang] = translated;
       await cacheTranslation(text, targetLang, translated);
     }
-    
+
     return translations;
   }
 }
@@ -843,7 +843,7 @@ Messages store original + translations:
 ```javascript
 exports.detectFormality = functions.https.onCall(async (data, context) => {
   const { text, language } = data;
-  
+
   const response = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [{
@@ -856,7 +856,7 @@ exports.detectFormality = functions.https.onCall(async (data, context) => {
     response_format: { type: "json_object" },
     temperature: 0.1
   });
-  
+
   return JSON.parse(response.choices[0].message.content);
 });
 ```
@@ -914,19 +914,19 @@ void main() {
   group('MessageRepository', () {
     late FakeFirebaseFirestore fakeFirestore;
     late MessageRepository repository;
-    
+
     setUp(() {
       fakeFirestore = FakeFirebaseFirestore();
       repository = MessageRepositoryImpl(
         remoteDataSource: MessageRemoteDataSourceImpl(fakeFirestore),
       );
     });
-    
+
     test('should send message successfully', () async {
       final message = Message(text: 'Hello', senderId: 'user1');
-      
+
       await repository.sendMessage(message);
-      
+
       final snapshot = await fakeFirestore.collection('messages').get();
       expect(snapshot.docs.length, 1);
       expect(snapshot.docs.first.data()['text'], 'Hello');
@@ -944,7 +944,7 @@ testWidgets('displays messages correctly', (tester) async {
       child: MaterialApp(home: ChatScreen(conversationId: 'test')),
     ),
   );
-  
+
   expect(find.text('Hello'), findsOneWidget);
   expect(find.byType(MessageBubble), findsWidgets);
 });
@@ -988,28 +988,28 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-      
+
       - name: Get dependencies
         run: flutter pub get
-      
+
       - name: Run tests
         run: flutter test --coverage
-      
+
       - name: Check coverage
         run: |
           dart pub global activate coverage
           dart pub global run coverage:test_with_coverage --min-coverage 80
-  
+
   deploy_ios:
     needs: test
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
       - uses: subosito/flutter-action@v2
-      
+
       - name: Install Fastlane
         run: gem install fastlane
-      
+
       - name: Deploy to TestFlight
         run: |
           cd ios
@@ -1177,11 +1177,11 @@ end
 dependencies:
   flutter:
     sdk: flutter
-  
+
   # State Management
   flutter_riverpod: ^2.4.9
   riverpod_annotation: ^2.3.3
-  
+
   # Firebase
   firebase_core: ^2.24.2
   firebase_auth: ^4.15.3
@@ -1190,19 +1190,19 @@ dependencies:
   firebase_messaging: ^14.7.9
   firebase_crashlytics: ^3.4.8
   cloud_functions: ^4.5.11
-  
+
   # Local Storage
   drift: ^2.14.0
   sqlite3_flutter_libs: ^0.5.0
-  
+
   # UI
   cached_network_image: ^3.3.0
   flutter_cache_manager: ^3.3.1
-  
+
   # Language
   google_mlkit_language_id: ^0.10.0
   intl: ^0.18.1
-  
+
   # Utilities
   uuid: ^4.2.2
   equatable: ^2.0.5

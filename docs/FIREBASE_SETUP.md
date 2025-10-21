@@ -267,4 +267,3 @@ After you complete the Firebase Console setup:
 ---
 
 **Ready?** Let me know when you've completed Steps 1-4, and I'll handle the rest! 🚀
-

@@ -129,7 +129,7 @@ flutter run --flavor dev -t lib/main_dev.dart
 # - Bundle ID: com.gauntlet.messageAi.dev
 # - Environment: dev
 
-# Prod flavor  
+# Prod flavor
 flutter run --flavor prod -t lib/main_prod.dart
 
 # Should show:
@@ -166,4 +166,3 @@ If iOS scheme setup is confusing or time-consuming:
 3. Come back to iOS schemes before final deployment
 
 The important part (entry points and config system) is already done! ✅
-

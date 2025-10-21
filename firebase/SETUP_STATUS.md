@@ -142,4 +142,3 @@ Once setup is complete:
 ---
 
 **Current Status**: ⏸️ Waiting for user to complete Firebase Console setup
-

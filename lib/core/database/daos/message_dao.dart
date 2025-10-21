@@ -329,4 +329,3 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
         .watch();
   }
 }
-

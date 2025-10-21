@@ -12,7 +12,7 @@ People with friends/family/colleagues speaking different languages face:
 
 ### The Solution
 A 7-day sprint to build a messaging app that combines WhatsApp-like reliability with AI-powered international communication features:
-- **Real-time inline translation** 
+- **Real-time inline translation**
 - **Language detection & auto-translate**
 - **Cultural context hints**
 - **Formality level adjustment**
@@ -101,4 +101,3 @@ All 5 must be implemented for International Communicator:
 - Typing indicators
 - Background push notifications
 - Polish UI/animations
-

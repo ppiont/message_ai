@@ -24,4 +24,3 @@ Follow the instructions in `docs/FIREBASE_SETUP.md`
 - [ ] google-services.json added
 - [ ] GoogleService-Info.plist added
 - [ ] Files copied to correct locations
-

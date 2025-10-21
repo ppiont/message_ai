@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app.dart';
 import 'config/env_config.dart';
 
@@ -19,6 +20,10 @@ void main() async {
   // Initialize Firebase with prod project (when available)
   await Firebase.initializeApp();
 
-  // Run the app
-  runApp(const App());
+  // Run the app with Riverpod's ProviderScope
+  runApp(
+    const ProviderScope(
+      child: App(),
+    ),
+  );
 }

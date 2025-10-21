@@ -31,7 +31,7 @@ android {
     }
 
     flavorDimensions += "environment"
-    
+
     productFlavors {
         create("dev") {
             dimension = "environment"
@@ -39,7 +39,7 @@ android {
             versionNameSuffix = "-dev"
             resValue("string", "app_name", "MessageAI (Dev)")
         }
-        
+
         create("prod") {
             dimension = "environment"
             resValue("string", "app_name", "MessageAI")

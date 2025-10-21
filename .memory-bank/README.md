@@ -152,4 +152,3 @@ Organize in subdirectories as needed:
 - **Updated**: Keep current as project evolves
 
 This is not documentation for users—it's documentation **for future me**.
-

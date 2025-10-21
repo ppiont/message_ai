@@ -152,7 +152,7 @@ Production builds don't show these logs.
 # Quick dev run
 flutter run --flavor dev -t lib/main_dev.dart
 
-# Quick prod run  
+# Quick prod run
 flutter run --flavor prod -t lib/main_prod.dart
 
 # Build release APK (dev)
@@ -230,4 +230,3 @@ See `docs/IOS_FLAVORS_SETUP.md` for Xcode scheme configuration.
 ---
 
 Happy coding! 🚀
-

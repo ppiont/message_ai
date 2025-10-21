@@ -19,19 +19,19 @@ class MyTable extends Table {
   IntColumn get age => integer()();
   DateTimeColumn get createdAt => dateTime()();
   BoolColumn get isActive => boolean()();
-  
+
   // Nullable columns - modifiers before final ()
   TextColumn get name => text().nullable()();
   IntColumn get count => integer().nullable()();
-  
+
   // With default values - modifiers before final ()
   TextColumn get status => text().withDefault(const Constant('pending'))();
   BoolColumn get enabled => boolean().withDefault(const Constant(true))();
   IntColumn get retryCount => integer().withDefault(const Constant(0))();
-  
+
   // Combined modifiers
   TextColumn get description => text().nullable().withLength(min: 1, max: 500)();
-  
+
   // Primary key
   @override
   Set<Column> get primaryKey => {id};
@@ -82,10 +82,10 @@ TextColumn get userId => text().references(Users, #uid)();
 @DriftDatabase(tables: [Users, Messages], daos: [UserDao])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
-  
+
   @override
   int get schemaVersion => 1;
-  
+
   @override
   MigrationStrategy get migration {
     return MigrationStrategy(
@@ -139,7 +139,7 @@ Add to your database class:
 ```dart
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
-  
+
   /// For testing with custom executor
   AppDatabase.forTesting(super.e);
 }

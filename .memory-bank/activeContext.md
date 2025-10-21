@@ -21,7 +21,7 @@ Foundation + Database phase complete! We have successfully set up:
 
 ### Sprint Timeline
 - **MVP Deadline**: 24 hours (Tuesday)
-- **Early Submission**: 4 days (Friday) 
+- **Early Submission**: 4 days (Friday)
 - **Final Submission**: 7 days (Sunday 10:59 PM CT)
 
 ### Immediate Next Steps (Day 0 → Day 1 MVP)
@@ -144,4 +144,3 @@ When I return to this project after a memory reset, I should:
 - Implementing 5 required + 1 advanced AI feature
 - Keeping it simple enough to finish in 7 days
 - Making it deployable (TestFlight/APK/Expo Go)
-

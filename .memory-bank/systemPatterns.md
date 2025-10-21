@@ -171,13 +171,13 @@ Messaging (core)
 
 #### Read Path (Online)
 ```
-UI → Riverpod Provider → Repository → 
+UI → Riverpod Provider → Repository →
 Firestore Listener → Stream Controller → UI Update
 ```
 
 #### Read Path (Offline)
 ```
-UI → Riverpod Provider → Repository → 
+UI → Riverpod Provider → Repository →
 drift DAO → Stream Controller → UI Update
 ```
 
@@ -240,4 +240,3 @@ Load message history on scroll, not all at once
 - Translation unavailable (show original)
 - AI feature timeout (fallback to manual)
 - No internet (clear offline indicator)
-

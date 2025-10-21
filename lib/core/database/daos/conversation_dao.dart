@@ -23,9 +23,9 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
 
   /// Get a single conversation by document ID
   Future<ConversationEntity?> getConversationById(String documentId) {
-    return (select(conversations)
-          ..where((c) => c.documentId.equals(documentId)))
-        .getSingleOrNull();
+    return (select(
+      conversations,
+    )..where((c) => c.documentId.equals(documentId))).getSingleOrNull();
   }
 
   /// Get all conversations ordered by last update (newest first)
@@ -95,12 +95,14 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
     String userId1,
     String userId2,
   ) async {
-    final conversations = await (select(this.conversations)
-          ..where((c) =>
-              c.conversationType.equals('direct') &
-              c.participantIds.like('%"$userId1"%') &
-              c.participantIds.like('%"$userId2"%')))
-        .get();
+    final conversations =
+        await (select(this.conversations)..where(
+              (c) =>
+                  c.conversationType.equals('direct') &
+                  c.participantIds.like('%"$userId1"%') &
+                  c.participantIds.like('%"$userId2"%'),
+            ))
+            .get();
 
     return conversations.isEmpty ? null : conversations.first;
   }
@@ -191,11 +193,7 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
         lastMessageTimestamp: Value(timestamp),
         lastMessageType: Value(messageType),
         lastMessageTranslations: Value(
-          translations != null
-              ? translations.entries
-                  .map((e) => '"${e.key}":"${e.value}"')
-                  .join(',')
-              : null,
+          translations?.entries.map((e) => '"${e.key}":"${e.value}"').join(','),
         ),
         lastUpdatedAt: Value(timestamp),
       ),
@@ -230,13 +228,12 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
     }
 
     // Convert back to JSON string
-    final newUnreadCount = '{${unreadMap.entries.map((e) => '"${e.key}":${e.value}').join(',')}}';
+    final newUnreadCount =
+        '{${unreadMap.entries.map((e) => '"${e.key}":${e.value}').join(',')}}';
 
     return updateConversation(
       documentId,
-      ConversationsCompanion(
-        unreadCount: Value(newUnreadCount),
-      ),
+      ConversationsCompanion(unreadCount: Value(newUnreadCount)),
     );
   }
 
@@ -262,26 +259,26 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
       } else {
         final regex = RegExp('"${participantId.trim()}"\\s*:\\s*(\\d+)');
         final match = regex.firstMatch(conversation.unreadCount);
-        unreadMap[participantId.trim()] =
-            match != null ? int.tryParse(match.group(1) ?? '0') ?? 0 : 0;
+        unreadMap[participantId.trim()] = match != null
+            ? int.tryParse(match.group(1) ?? '0') ?? 0
+            : 0;
       }
     }
 
-    final newUnreadCount = '{${unreadMap.entries.map((e) => '"${e.key}":${e.value}').join(',')}}';
+    final newUnreadCount =
+        '{${unreadMap.entries.map((e) => '"${e.key}":${e.value}').join(',')}}';
 
     return updateConversation(
       documentId,
-      ConversationsCompanion(
-        unreadCount: Value(newUnreadCount),
-      ),
+      ConversationsCompanion(unreadCount: Value(newUnreadCount)),
     );
   }
 
   /// Delete a conversation
   Future<int> deleteConversation(String documentId) {
-    return (delete(conversations)
-          ..where((c) => c.documentId.equals(documentId)))
-        .go();
+    return (delete(
+      conversations,
+    )..where((c) => c.documentId.equals(documentId))).go();
   }
 
   /// Delete all conversations (use with caution!)
@@ -345,13 +342,13 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
   }
 
   /// Get group conversations where user is admin
-  Future<List<ConversationEntity>> getGroupsWhereUserIsAdmin(
-    String userId,
-  ) {
+  Future<List<ConversationEntity>> getGroupsWhereUserIsAdmin(String userId) {
     return (select(conversations)
-          ..where((c) =>
-              c.conversationType.equals('group') &
-              c.adminIds.like('%"$userId"%'))
+          ..where(
+            (c) =>
+                c.conversationType.equals('group') &
+                c.adminIds.like('%"$userId"%'),
+          )
           ..orderBy([(c) => OrderingTerm.desc(c.lastUpdatedAt)]))
         .get();
   }
@@ -379,4 +376,3 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
         .get();
   }
 }
-

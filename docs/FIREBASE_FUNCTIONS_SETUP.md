@@ -145,4 +145,3 @@ For **International Communicator** persona:
 ---
 
 **Run `firebase init` now and let me know when it's complete!** 🚀
-

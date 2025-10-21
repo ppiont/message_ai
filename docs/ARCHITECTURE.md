@@ -165,13 +165,13 @@ lib/
 
 ### Read Path (Online)
 ```
-UI → Riverpod Provider → Repository → 
+UI → Riverpod Provider → Repository →
 Remote DataSource (Firestore) → Stream → UI Update
 ```
 
 ### Read Path (Offline)
 ```
-UI → Riverpod Provider → Repository → 
+UI → Riverpod Provider → Repository →
 Local DataSource (drift) → Stream → UI Update
 ```
 
@@ -199,4 +199,3 @@ See `.taskmaster/tasks/` for complete task breakdown.
 - [Riverpod Documentation](https://riverpod.dev)
 - [drift Documentation](https://drift.simonbinder.eu)
 - [Firebase Documentation](https://firebase.google.com/docs)
-

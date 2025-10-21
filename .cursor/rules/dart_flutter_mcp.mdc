@@ -92,7 +92,7 @@ const SizedBox(height: 8);
 // ✅ Const constructors
 class MyWidget extends StatelessWidget {
   const MyWidget({super.key});
-  
+
   @override
   Widget build(BuildContext context) {
     return const Text('Hello');
@@ -123,9 +123,9 @@ extension BuildContextX on BuildContext {
 // ✅ Use StatelessWidget when no internal state
 class DisplayWidget extends StatelessWidget {
   final String title;
-  
+
   const DisplayWidget({super.key, required this.title});
-  
+
   @override
   Widget build(BuildContext context) {
     return Text(title);
@@ -135,14 +135,14 @@ class DisplayWidget extends StatelessWidget {
 // ✅ Use StatefulWidget for local UI state
 class CounterWidget extends StatefulWidget {
   const CounterWidget({super.key});
-  
+
   @override
   State<CounterWidget> createState() => _CounterWidgetState();
 }
 
 class _CounterWidgetState extends State<CounterWidget> {
   int _count = 0;
-  
+
   @override
   Widget build(BuildContext context) {
     return Text('$_count');
@@ -155,7 +155,7 @@ class _CounterWidgetState extends State<CounterWidget> {
 // ✅ Extract complex widgets to builder methods
 class ComplexWidget extends StatelessWidget {
   const ComplexWidget({super.key});
-  
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -166,15 +166,15 @@ class ComplexWidget extends StatelessWidget {
       ],
     );
   }
-  
+
   Widget _buildHeader() {
     return Container(/* ... */);
   }
-  
+
   Widget _buildContent() {
     return Expanded(child: /* ... */);
   }
-  
+
   Widget _buildFooter() {
     return Row(/* ... */);
   }

@@ -114,13 +114,13 @@ abstract class EnvConfig {
 class DevConfig implements EnvConfig {
   @override
   String get apiBaseUrl => 'https://dev-api.messageai.app';
-  
+
   @override
   bool get enableDebugLogging => true;
-  
+
   @override
   bool get enableAnalytics => false;
-  
+
   @override
   String get firebaseProjectId => 'message-ai';
 }
@@ -128,13 +128,13 @@ class DevConfig implements EnvConfig {
 class ProdConfig implements EnvConfig {
   @override
   String get apiBaseUrl => 'https://api.messageai.app';
-  
+
   @override
   bool get enableDebugLogging => false;
-  
+
   @override
   bool get enableAnalytics => true;
-  
+
   @override
   String get firebaseProjectId => 'message-ai-prod';
 }
@@ -185,12 +185,12 @@ service cloud.firestore {
       allow read: if request.auth != null;
       allow write: if request.auth.uid == userId;
     }
-    
+
     match /conversations/{conversationId} {
       allow read: if request.auth.uid in resource.data.participantIds;
       allow write: if request.auth.uid in request.resource.data.participantIds;
     }
-    
+
     match /conversations/{conversationId}/messages/{messageId} {
       allow read: if request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;
       allow create: if request.auth.uid == request.resource.data.senderId;
@@ -286,8 +286,7 @@ Add to `.vscode/launch.json`:
 
 ## Summary
 
-**Dev Environment**: Fast iteration, testing, debugging  
+**Dev Environment**: Fast iteration, testing, debugging
 **Prod Environment**: Real users, app store releases, monitored
 
 This two-environment strategy provides the right balance of simplicity and separation for a successful 7-day sprint and beyond.
-

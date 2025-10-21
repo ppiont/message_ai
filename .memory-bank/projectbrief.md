@@ -50,4 +50,3 @@ Build a **functional messaging platform** for international communicators with a
 - Complex UI animations (focus on functionality)
 - Production-scale optimization (1M+ users)
 - Extensive test coverage (focus on core paths)
-

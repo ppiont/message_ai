@@ -10,6 +10,7 @@ import 'tables/conversations_table.dart';
 import 'tables/messages_table.dart';
 import 'daos/message_dao.dart';
 import 'daos/conversation_dao.dart';
+import 'daos/user_dao.dart';
 
 part 'app_database.g.dart';
 
@@ -25,7 +26,7 @@ part 'app_database.g.dart';
 /// - Message queue for syncing
 @DriftDatabase(
   tables: [Users, Conversations, Messages],
-  daos: [MessageDao, ConversationDao],
+  daos: [MessageDao, ConversationDao, UserDao],
 )
 class AppDatabase extends _$AppDatabase {
   /// Create database instance
