@@ -82,6 +82,7 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
+      if (e is AppException) rethrow;
       throw UnknownException(
         message: 'Failed to create message',
         originalError: e,
@@ -105,6 +106,7 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
+      if (e is AppException) rethrow;
       throw UnknownException(
         message: 'Failed to get message',
         originalError: e,
@@ -136,6 +138,7 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
+      if (e is AppException) rethrow;
       throw UnknownException(
         message: 'Failed to get messages',
         originalError: e,
@@ -165,6 +168,7 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
+      if (e is AppException) rethrow;
       throw UnknownException(
         message: 'Failed to update message',
         originalError: e,
@@ -181,6 +185,7 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
+      if (e is AppException) rethrow;
       throw UnknownException(
         message: 'Failed to delete message',
         originalError: e,
@@ -206,6 +211,7 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
+      if (e is AppException) rethrow;
       throw UnknownException(
         message: 'Failed to watch messages',
         originalError: e,
@@ -222,6 +228,7 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
+      if (e is AppException) rethrow;
       throw UnknownException(
         message: 'Failed to mark message as delivered',
         originalError: e,
@@ -238,6 +245,7 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
+      if (e is AppException) rethrow;
       throw UnknownException(
         message: 'Failed to mark message as read',
         originalError: e,
