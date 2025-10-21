@@ -115,6 +115,10 @@ class ErrorMapper {
       return RecordNotFoundFailure(recordType: exception.recordType);
     }
 
+    if (exception is RecordAlreadyExistsException) {
+      return DatabaseFailure(message: exception.message);
+    }
+
     if (exception is ConstraintViolationException) {
       return ConstraintViolationFailure(message: exception.message);
     }
