@@ -23,6 +23,9 @@ dependencies:
   flutter_riverpod: ^2.6.1
   riverpod_annotation: ^2.6.1
 
+  # Utilities
+  equatable: ^2.0.7
+
   # Local Storage (drift)
   drift: ^2.20.3
   sqlite3_flutter_libs: ^0.5.24
