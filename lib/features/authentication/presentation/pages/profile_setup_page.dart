@@ -125,14 +125,13 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
           _errorMessage = failure.message;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(failure.message),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text(failure.message), backgroundColor: Colors.red),
         );
       },
       (user) {
-        // Profile updated successfully - navigation handled by auth state
+        // Profile updated successfully - invalidate auth state to trigger re-route
+        ref.invalidate(authStateProvider);
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Welcome, ${user.displayName}!'),
@@ -146,9 +145,7 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Complete Your Profile'),
-      ),
+      appBar: AppBar(title: const Text('Complete Your Profile')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Form(
@@ -165,8 +162,9 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
                     CircleAvatar(
                       radius: 60,
                       backgroundColor: Colors.grey[300],
-                      backgroundImage:
-                          _selectedImage != null ? FileImage(_selectedImage!) : null,
+                      backgroundImage: _selectedImage != null
+                          ? FileImage(_selectedImage!)
+                          : null,
                       child: _selectedImage == null
                           ? Icon(
                               Icons.person,
@@ -197,9 +195,9 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
               const SizedBox(height: 16),
               Text(
                 'Add a profile photo',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey[600],
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 48),
