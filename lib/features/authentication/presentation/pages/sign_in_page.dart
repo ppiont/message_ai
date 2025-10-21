@@ -59,7 +59,9 @@ class _SignInPageState extends ConsumerState<SignInPage> {
       },
       (user) async {
         // Ensure user exists in Firestore (creates only if missing)
-        final ensureUseCase = ref.read(ensureUserExistsInFirestoreUseCaseProvider);
+        final ensureUseCase = ref.read(
+          ensureUserExistsInFirestoreUseCaseProvider,
+        );
         final ensureResult = await ensureUseCase(user);
 
         String message = 'Welcome back, ${user.displayName}!';

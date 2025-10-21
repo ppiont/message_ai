@@ -25,21 +25,18 @@ class EnsureUserExistsInFirestore {
   Future<Either<Failure, User?>> call(User user) async {
     final existsResult = await _userRepository.userExists(user.uid);
 
-    return existsResult.fold(
-      (failure) => Left(failure),
-      (exists) async {
-        if (exists) {
-          // User already exists, no action needed
-          return const Right(null);
-        } else {
-          // Create new user document
-          final createResult = await _userRepository.createUser(user);
-          return createResult.fold(
-            (failure) => Left(failure),
-            (createdUser) => Right(createdUser),
-          );
-        }
-      },
-    );
+    return existsResult.fold((failure) => Left(failure), (exists) async {
+      if (exists) {
+        // User already exists, no action needed
+        return const Right(null);
+      } else {
+        // Create new user document
+        final createResult = await _userRepository.createUser(user);
+        return createResult.fold(
+          (failure) => Left(failure),
+          (createdUser) => Right(createdUser),
+        );
+      }
+    });
   }
 }
