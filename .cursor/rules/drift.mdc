@@ -1,0 +1,153 @@
+---
+description: Drift database ORM patterns and best practices for Flutter
+globs: lib/core/database/**/*.dart, lib/features/**/data/datasources/**/*local*.dart
+alwaysApply: false
+---
+
+# Drift Database Patterns
+
+## Column Definitions
+
+**CRITICAL**: Drift columns require **TWO sets of parentheses** `()()`
+
+### ✅ Correct Column Syntax
+
+```dart
+class MyTable extends Table {
+  // Basic columns - TWO parentheses
+  TextColumn get id => text()();
+  IntColumn get age => integer()();
+  DateTimeColumn get createdAt => dateTime()();
+  BoolColumn get isActive => boolean()();
+  
+  // Nullable columns - modifiers before final ()
+  TextColumn get name => text().nullable()();
+  IntColumn get count => integer().nullable()();
+  
+  // With default values - modifiers before final ()
+  TextColumn get status => text().withDefault(const Constant('pending'))();
+  BoolColumn get enabled => boolean().withDefault(const Constant(true))();
+  IntColumn get retryCount => integer().withDefault(const Constant(0))();
+  
+  // Combined modifiers
+  TextColumn get description => text().nullable().withLength(min: 1, max: 500)();
+  
+  // Primary key
+  @override
+  Set<Column> get primaryKey => {id};
+}
+```
+
+### ❌ Common Mistakes
+
+```dart
+// WRONG - only one ()
+TextColumn get id => text();  // Will not compile
+
+// WRONG - () after modifiers
+TextColumn get name => text().nullable();  // Will not compile
+
+// WRONG - () in middle
+TextColumn get status => text()().withDefault(const Constant('pending'));  // Will not compile
+```
+
+## Table Best Practices
+
+### Data Class Names
+Use `@DataClassName` to specify entity names:
+```dart
+@DataClassName('UserEntity')
+class Users extends Table {
+  // ...
+}
+```
+
+### Primary Keys
+```dart
+@override
+Set<Column> get primaryKey => {id};  // Single column
+
+@override
+Set<Column> get primaryKey => {userId, roleId};  // Composite key
+```
+
+### Foreign Keys
+```dart
+TextColumn get userId => text().references(Users, #uid)();
+```
+
+## Database Class
+
+```dart
+@DriftDatabase(tables: [Users, Messages], daos: [UserDao])
+class AppDatabase extends _$AppDatabase {
+  AppDatabase() : super(_openConnection());
+  
+  @override
+  int get schemaVersion => 1;
+  
+  @override
+  MigrationStrategy get migration {
+    return MigrationStrategy(
+      onCreate: (Migrator m) async {
+        await m.createAll();
+      },
+      onUpgrade: (Migrator m, int from, int to) async {
+        // Handle migrations
+      },
+      beforeOpen: (details) async {
+        await customStatement('PRAGMA foreign_keys = ON');
+      },
+    );
+  }
+}
+```
+
+## Code Generation
+
+Always run code generation after table changes:
+```bash
+flutter pub run build_runner build --delete-conflicting-outputs
+```
+
+## Common Patterns
+
+### JSON Storage
+```dart
+// Store JSON as text
+TextColumn get metadata => text()();
+
+// Use in code
+final jsonString = json.encode(myObject);
+await db.into(db.myTable).insert(MyTableCompanion(
+  metadata: Value(jsonString),
+));
+```
+
+### Timestamps
+```dart
+// Store as DateTime
+DateTimeColumn get createdAt => dateTime()();
+DateTimeColumn get updatedAt => dateTime().nullable()();
+
+// Auto-set on insert (use companion values)
+MyTableCompanion.insert(
+  createdAt: DateTime.now(),
+);
+```
+
+### Sync Status Tracking
+```dart
+class Messages extends Table {
+  // ...
+  TextColumn get syncStatus => text().withDefault(const Constant('pending'))();
+  IntColumn get retryCount => integer().withDefault(const Constant(0))();
+  DateTimeColumn get lastSyncAttempt => dateTime().nullable()();
+}
+```
+
+## References
+
+- [Drift Documentation](https://drift.simonbinder.eu/)
+- [Getting Started](https://drift.simonbinder.eu/docs/getting-started/)
+- [Table Definitions](https://drift.simonbinder.eu/docs/getting-started/advanced_dart_tables/)

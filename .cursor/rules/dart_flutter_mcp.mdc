@@ -1,0 +1,212 @@
+---
+description: Guidelines for using Dart/Flutter MCP and indexed documentation
+globs: lib/**/*.dart, test/**/*.dart
+alwaysApply: true
+---
+
+# Dart/Flutter Development with MCP
+
+## Use Indexed Documentation First
+
+When encountering unfamiliar Dart/Flutter patterns or third-party packages:
+
+### ✅ DO: Search Indexed Documentation
+```
+Use codebase_search with specific questions:
+- "How do I define nullable parameters in Dart?"
+- "What is the correct syntax for async/await in Flutter?"
+- "How do I use Riverpod providers?"
+```
+
+### ✅ DO: Leverage Package-Specific Docs
+Available indexed documentation:
+- **Drift ORM**: Database queries, table definitions, migrations
+- **Dart/Flutter Core**: Language features, Flutter widgets, patterns
+
+### 🔍 Search Strategy
+1. **Ask specific questions** in natural language
+2. **Include context** about what you're trying to accomplish
+3. **Search before implementing** to avoid anti-patterns
+
+## When to Use Documentation
+
+### Always Search For:
+- **New packages**: First time using a package in the project
+- **Complex patterns**: Advanced features or APIs
+- **Errors**: When encountering package-specific errors
+- **Best practices**: When unsure about correct approach
+
+### Examples
+
+#### ❌ Don't Guess
+```dart
+// Guessing at Drift syntax
+TextColumn get name => text(); // Wrong!
+```
+
+#### ✅ Search First
+```
+Query: "How do I define columns in Drift tables?"
+Result: TextColumn get name => text()(); // Correct!
+```
+
+## Dart/Flutter Best Practices
+
+### Null Safety
+```dart
+// ✅ Correct null safety
+String? nullableString = null;
+String nonNullableString = 'hello';
+int? maybeNull;
+final value = maybeNull ?? 0; // Null coalescing
+
+// ❌ Avoid force unwrapping unless certain
+final bad = maybeNull!; // Dangerous
+```
+
+### Async/Await
+```dart
+// ✅ Proper async handling
+Future<List<User>> fetchUsers() async {
+  try {
+    final users = await userRepository.getAll();
+    return users;
+  } catch (e) {
+    logger.error('Failed to fetch users', e);
+    rethrow;
+  }
+}
+
+// ✅ Stream handling
+Stream<List<User>> watchUsers() {
+  return userRepository.watch();
+}
+```
+
+### Const Constructors
+```dart
+// ✅ Use const when possible
+const padding = EdgeInsets.all(16);
+const SizedBox(height: 8);
+
+// ✅ Const constructors
+class MyWidget extends StatelessWidget {
+  const MyWidget({super.key});
+  
+  @override
+  Widget build(BuildContext context) {
+    return const Text('Hello');
+  }
+}
+```
+
+### Extension Methods
+```dart
+// ✅ Useful extensions
+extension StringX on String {
+  String get capitalized {
+    if (isEmpty) return this;
+    return '${this[0].toUpperCase()}${substring(1)}';
+  }
+}
+
+extension BuildContextX on BuildContext {
+  ThemeData get theme => Theme.of(this);
+  TextTheme get textTheme => theme.textTheme;
+}
+```
+
+## Flutter Widget Patterns
+
+### Stateless vs Stateful
+```dart
+// ✅ Use StatelessWidget when no internal state
+class DisplayWidget extends StatelessWidget {
+  final String title;
+  
+  const DisplayWidget({super.key, required this.title});
+  
+  @override
+  Widget build(BuildContext context) {
+    return Text(title);
+  }
+}
+
+// ✅ Use StatefulWidget for local UI state
+class CounterWidget extends StatefulWidget {
+  const CounterWidget({super.key});
+  
+  @override
+  State<CounterWidget> createState() => _CounterWidgetState();
+}
+
+class _CounterWidgetState extends State<CounterWidget> {
+  int _count = 0;
+  
+  @override
+  Widget build(BuildContext context) {
+    return Text('$_count');
+  }
+}
+```
+
+### Builder Methods
+```dart
+// ✅ Extract complex widgets to builder methods
+class ComplexWidget extends StatelessWidget {
+  const ComplexWidget({super.key});
+  
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _buildHeader(),
+        _buildContent(),
+        _buildFooter(),
+      ],
+    );
+  }
+  
+  Widget _buildHeader() {
+    return Container(/* ... */);
+  }
+  
+  Widget _buildContent() {
+    return Expanded(child: /* ... */);
+  }
+  
+  Widget _buildFooter() {
+    return Row(/* ... */);
+  }
+}
+```
+
+## Documentation Workflow
+
+1. **Encounter new pattern** → Search indexed docs
+2. **Find solution** → Implement with correct syntax
+3. **Document in rules** → Add pattern to appropriate rule file
+4. **Reference in code** → Add helpful comments with rule references
+
+## Common Documentation Queries
+
+### Drift/Database
+- "How do I write queries in Drift?"
+- "What is the syntax for migrations in Drift?"
+- "How do I use Drift DAOs?"
+
+### Flutter/Widgets
+- "How do I handle form validation in Flutter?"
+- "What is the correct way to use keys in Flutter?"
+- "How do I implement custom animations?"
+
+### State Management
+- "How do I use Riverpod providers?"
+- "What is the difference between Provider and StateProvider?"
+- "How do I handle async data with Riverpod?"
+
+## References
+
+- Use `codebase_search` tool for indexed documentation
+- [Drift Rule](mdc:.cursor/rules/drift.mdc) for database patterns
+- Search before implementing unfamiliar patterns

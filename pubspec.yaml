@@ -18,6 +18,12 @@ dependencies:
   firebase_messaging: ^16.0.3
   firebase_crashlytics: ^5.0.3
   cloud_functions: ^6.0.3
+  
+  # Local Storage (drift)
+  drift: ^2.20.3
+  sqlite3_flutter_libs: ^0.5.24
+  path_provider: ^2.1.5
+  path: ^1.9.0
 
 dev_dependencies:
   flutter_test:
@@ -27,6 +33,10 @@ dev_dependencies:
   # Firebase testing (updated to latest versions)
   fake_cloud_firestore: ^4.0.0
   firebase_auth_mocks: ^0.15.1
+  
+  # Drift code generation
+  drift_dev: ^2.20.3
+  build_runner: ^2.4.13
 
 flutter:
   uses-material-design: true
