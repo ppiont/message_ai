@@ -29,11 +29,33 @@ class ChatPage extends ConsumerStatefulWidget {
 
 class _ChatPageState extends ConsumerState<ChatPage> {
   final ScrollController _scrollController = ScrollController();
+  final Set<String> _markedAsRead = {}; // Track which messages we've marked
 
   @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
+  }
+
+  /// Marks a message as read
+  void _markMessageAsRead(String messageId) {
+    // Add to set immediately to prevent duplicate calls
+    _markedAsRead.add(messageId);
+
+    // Call use case asynchronously
+    final markAsReadUseCase = ref.read(markMessageAsReadUseCaseProvider);
+    markAsReadUseCase(widget.conversationId, messageId).then((result) {
+      result.fold(
+        (failure) {
+          // Silently fail - read receipts are not critical
+          // Remove from set so we can retry later
+          _markedAsRead.remove(messageId);
+        },
+        (_) {
+          // Success - keep in set
+        },
+      );
+    });
   }
 
   @override
@@ -130,6 +152,13 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           itemBuilder: (context, index) {
             final message = messages[index];
             final isMe = message['senderId'] == currentUserId;
+            final messageId = message['id'] as String;
+            final status = message['status'] as String? ?? 'sent';
+
+            // Mark incoming messages as read (only once)
+            if (!isMe && status != 'read' && !_markedAsRead.contains(messageId)) {
+              _markMessageAsRead(messageId);
+            }
 
             // Check if we should show timestamp
             final showTimestamp = _shouldShowTimestamp(messages, index);
@@ -140,7 +169,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
               senderName: message['senderName'] as String? ?? 'Unknown',
               timestamp: message['timestamp'] as DateTime,
               showTimestamp: showTimestamp,
-              status: message['status'] as String? ?? 'sent',
+              status: status,
             );
           },
         );
