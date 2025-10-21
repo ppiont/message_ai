@@ -468,8 +468,62 @@
           8,
           25
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create message local data source interface and implementation structure",
+            "description": "Define the interface and implementation structure for the message local data source with required methods.",
+            "dependencies": [],
+            "details": "Create message_local_datasource.dart in features/messaging/data/datasources directory. Define the interface with all required method signatures including CRUD operations, pagination, and sync status tracking. Create the implementation class that uses MessageDao. Set up dependency injection for the data source.",
+            "status": "done",
+            "testStrategy": "Write unit tests for the interface contract. Verify that all required methods are properly defined with correct signatures."
+          },
+          {
+            "id": 2,
+            "title": "Implement basic CRUD operations for messages",
+            "description": "Implement methods for storing, retrieving, updating, and deleting messages using drift.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement createMessage(), getMessage(), updateMessage(), and deleteMessage() methods using the MessageDao. Handle error cases and return appropriate results. Ensure proper data mapping between entity and domain models. Implement batch operations where appropriate for efficiency.",
+            "status": "done",
+            "testStrategy": "Write unit tests with mocked drift database to verify CRUD operations work correctly. Test success cases and error handling for each operation."
+          },
+          {
+            "id": 3,
+            "title": "Implement pagination for message retrieval",
+            "description": "Add pagination support for retrieving messages with efficient loading of large message histories.",
+            "dependencies": [
+              2
+            ],
+            "details": "Implement getMessages() method with pagination parameters (limit, offset or cursor-based). Add sorting options (by timestamp, etc.). Optimize query performance with proper indices. Support filtering by conversation ID, message status, etc. Ensure consistent ordering of messages.",
+            "status": "done",
+            "testStrategy": "Test pagination with different page sizes and offsets. Verify correct message ordering. Test edge cases like empty results and last page scenarios."
+          },
+          {
+            "id": 4,
+            "title": "Implement sync status tracking for messages",
+            "description": "Add methods for tracking message sync status and handling unsynced messages.",
+            "dependencies": [
+              2
+            ],
+            "details": "Implement methods to mark messages as synced/unsynced. Create getUnsyncedMessages() method to retrieve messages that need to be synced with the server. Add updateSyncStatus() method to update sync status after server operations. Implement optimistic updates with proper status tracking.",
+            "status": "done",
+            "testStrategy": "Test sync status tracking with various scenarios. Verify unsynced messages can be properly identified and tracked. Test status transitions through the sync lifecycle."
+          },
+          {
+            "id": 5,
+            "title": "Implement conflict resolution for message operations",
+            "description": "Add conflict resolution logic for handling concurrent updates and sync conflicts.",
+            "dependencies": [
+              4
+            ],
+            "details": "Implement conflict detection by comparing local and remote versions. Create resolveConflict() method with strategies like server-wins, client-wins, or merge-based resolution. Add version tracking for messages. Implement retry logic for failed sync operations. Create methods for handling edge cases like deleted messages that were modified remotely.",
+            "status": "done",
+            "testStrategy": "Test conflict resolution with simulated concurrent updates. Verify each resolution strategy works correctly. Test edge cases like conflicts during deletion or with missing data."
+          }
+        ]
       },
       {
         "id": 29,
@@ -496,7 +550,7 @@
           9,
           26
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": []
       },
       {
@@ -1713,7 +1767,7 @@
     ],
     "metadata": {
       "created": "2025-10-20T21:03:23.979Z",
-      "updated": "2025-10-21T18:35:14.630Z",
+      "updated": "2025-10-21T22:02:27.981Z",
       "description": "Tasks for master context"
     }
   }
