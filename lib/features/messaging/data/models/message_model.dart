@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:message_ai/features/messaging/domain/entities/message.dart';
 
 /// Data model for Message that adds serialization capabilities
@@ -47,7 +48,7 @@ class MessageModel extends Message {
       text: json['text'] as String,
       senderId: json['senderId'] as String,
       senderName: json['senderName'] as String,
-      timestamp: DateTime.parse(json['timestamp'] as String),
+      timestamp: _parseDateTime(json['timestamp']),
       type: json['type'] as String,
       status: json['status'] as String,
       detectedLanguage: json['detectedLanguage'] as String?,
@@ -69,6 +70,17 @@ class MessageModel extends Message {
             )
           : null,
     );
+  }
+
+  /// Helper method to parse DateTime from either Timestamp or String
+  static DateTime _parseDateTime(dynamic value) {
+    if (value is Timestamp) {
+      return value.toDate();
+    } else if (value is String) {
+      return DateTime.parse(value);
+    } else {
+      throw ArgumentError('Invalid datetime value: $value');
+    }
   }
 
   /// Converts this MessageModel to JSON for Firestore

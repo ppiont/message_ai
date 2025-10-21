@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:message_ai/features/messaging/domain/entities/conversation.dart';
 
 /// Data model for Conversation that adds serialization capabilities
@@ -54,8 +55,8 @@ class ConversationModel extends Conversation {
               json['lastMessage'] as Map<String, dynamic>,
             )
           : null,
-      lastUpdatedAt: DateTime.parse(json['lastUpdatedAt'] as String),
-      initiatedAt: DateTime.parse(json['initiatedAt'] as String),
+      lastUpdatedAt: _parseDateTime(json['lastUpdatedAt']),
+      initiatedAt: _parseDateTime(json['initiatedAt']),
       unreadCount: Map<String, int>.from(json['unreadCount'] as Map),
       translationEnabled: json['translationEnabled'] as bool,
       autoDetectLanguage: json['autoDetectLanguage'] as bool,
@@ -65,6 +66,17 @@ class ConversationModel extends Conversation {
           ? List<String>.from(json['adminIds'] as List)
           : null,
     );
+  }
+
+  /// Helper method to parse DateTime from either Timestamp or String
+  static DateTime _parseDateTime(dynamic value) {
+    if (value is Timestamp) {
+      return value.toDate();
+    } else if (value is String) {
+      return DateTime.parse(value);
+    } else {
+      throw ArgumentError('Invalid datetime value: $value');
+    }
   }
 
   /// Converts this ConversationModel to JSON for Firestore
@@ -222,7 +234,7 @@ class LastMessageModel extends LastMessage {
       text: json['text'] as String,
       senderId: json['senderId'] as String,
       senderName: json['senderName'] as String,
-      timestamp: DateTime.parse(json['timestamp'] as String),
+      timestamp: ConversationModel._parseDateTime(json['timestamp']),
       type: json['type'] as String,
       translations: json['translations'] != null
           ? Map<String, String>.from(json['translations'] as Map)
