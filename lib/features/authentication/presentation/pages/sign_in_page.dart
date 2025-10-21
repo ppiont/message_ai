@@ -64,7 +64,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
         // Navigation will be handled by auth state listener in main app
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Welcome back, ${user.displayName ?? user.email}!'),
+            content: Text('Welcome back, ${user.displayName}!'),
             backgroundColor: Colors.green,
           ),
         );

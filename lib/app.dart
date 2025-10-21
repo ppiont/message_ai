@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
-import 'config/env_config.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:message_ai/config/env_config.dart';
+import 'package:message_ai/features/authentication/presentation/pages/auth_page.dart';
+import 'package:message_ai/features/authentication/presentation/pages/profile_setup_page.dart';
+import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
+import 'package:message_ai/features/home/presentation/pages/home_page.dart';
 
 /// Root application widget
 ///
@@ -8,42 +13,81 @@ import 'config/env_config.dart';
 /// - Theme configuration
 /// - Routing setup
 /// - State management (Riverpod)
-/// - Localization
-class App extends StatelessWidget {
+/// - Authentication state handling
+class App extends ConsumerWidget {
   const App({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Watch authentication state
+    final authState = ref.watch(authStateProvider);
+
     return MaterialApp(
       title: envConfig.appName,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 16,
+          ),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        ),
       ),
-      home: Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                envConfig.appName,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+      home: authState.when(
+        data: (user) {
+          if (user != null) {
+            // Check if user has completed profile setup
+            if (user.displayName.isEmpty) {
+              return const ProfileSetupPage();
+            }
+            return const HomePage();
+          } else {
+            return const AuthPage();
+          }
+        },
+        loading: () => const Scaffold(
+          body: Center(
+            child: CircularProgressIndicator(),
+          ),
+        ),
+        error: (error, stack) => Scaffold(
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.error,
+                  color: Colors.red,
+                  size: 48,
                 ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Environment: ${envConfig.environment}',
-                style: const TextStyle(fontSize: 16),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Firebase: ${envConfig.firebaseProjectId}',
-                style: const TextStyle(fontSize: 14, color: Colors.grey),
-              ),
-            ],
+                const SizedBox(height: 16),
+                Text(
+                  'Error: $error',
+                  style: const TextStyle(color: Colors.red),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    // Refresh the auth state
+                    ref.invalidate(authStateProvider);
+                  },
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
           ),
         ),
       ),

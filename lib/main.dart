@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:message_ai/core/error/error_logger.dart';
 import 'app.dart';
 
 /// Application entry point
@@ -13,6 +15,13 @@ void main() async {
   // Initialize Firebase
   await Firebase.initializeApp();
 
-  // Run the app
-  runApp(const App());
+  // Initialize error logging
+  await ErrorLogger.initialize();
+
+  // Run the app with Riverpod
+  runApp(
+    const ProviderScope(
+      child: App(),
+    ),
+  );
 }

@@ -92,6 +92,14 @@ abstract class AuthRepository {
   /// Returns [Right(String)] with token or [Left(Failure)] on error
   Future<Either<Failure, String>> getIdToken();
 
+  /// Updates the current user's profile
+  ///
+  /// Returns [Right(User)] with updated user on success or [Left(Failure)] on error
+  Future<Either<Failure, User>> updateUserProfile({
+    String? displayName,
+    String? photoURL,
+  });
+
   /// Stream of authentication state changes
   ///
   /// Emits [User?] whenever the authentication state changes

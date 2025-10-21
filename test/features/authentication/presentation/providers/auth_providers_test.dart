@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:dartz/dartz.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:message_ai/core/error/failures.dart';
 import 'package:message_ai/features/authentication/data/datasources/auth_remote_datasource.dart';
@@ -13,7 +16,6 @@ import 'package:message_ai/features/authentication/domain/usecases/sign_up_with_
 import 'package:message_ai/features/authentication/domain/usecases/watch_auth_state.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:riverpod/riverpod.dart';
 
 class MockFirebaseAuth extends Mock implements firebase_auth.FirebaseAuth {}
 
@@ -182,9 +184,9 @@ void main() {
         );
         addTearDown(container.dispose);
 
-        final stream = container.read(authStateProvider.stream);
+        final asyncValue = await container.read(authStateProvider.future);
 
-        await expectLater(stream, emits(testUser));
+        expect(asyncValue, testUser);
       });
 
       test('should emit null when not authenticated', () async {
@@ -198,15 +200,15 @@ void main() {
         );
         addTearDown(container.dispose);
 
-        final stream = container.read(authStateProvider.stream);
+        final asyncValue = await container.read(authStateProvider.future);
 
-        await expectLater(stream, emits(null));
+        expect(asyncValue, null);
       });
 
       test('should emit updates when auth state changes', () async {
-        when(() => mockRepository.authStateChanges()).thenAnswer(
-          (_) => Stream.fromIterable([null, testUser, null]),
-        );
+        final streamController = StreamController<User?>();
+        when(() => mockRepository.authStateChanges())
+            .thenAnswer((_) => streamController.stream);
 
         final container = ProviderContainer(
           overrides: [
@@ -215,12 +217,25 @@ void main() {
         );
         addTearDown(container.dispose);
 
-        final stream = container.read(authStateProvider.stream);
-
-        await expectLater(
-          stream,
-          emitsInOrder([null, testUser, null]),
+        // Listen to provider changes
+        final values = <User?>[];
+        container.listen(
+          authStateProvider,
+          (previous, next) {
+            next.whenData((value) => values.add(value));
+          },
         );
+
+        // Emit values
+        streamController.add(null);
+        await Future.delayed(const Duration(milliseconds: 10));
+        streamController.add(testUser);
+        await Future.delayed(const Duration(milliseconds: 10));
+        streamController.add(null);
+        await Future.delayed(const Duration(milliseconds: 10));
+
+        expect(values, [null, testUser, null]);
+        await streamController.close();
       });
     });
 

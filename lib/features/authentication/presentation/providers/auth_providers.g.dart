@@ -6,7 +6,7 @@ part of 'auth_providers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$firebaseAuthHash() => r'2a8c8cde17aace8d2eb4885d7d9d129cb753713b';
+String _$firebaseAuthHash() => r'e323ea70909ff25727135fa5deddbce7cd1e9c07';
 
 /// Provider for Firebase Auth instance
 ///
@@ -27,7 +27,7 @@ final firebaseAuthProvider =
 // ignore: unused_element
 typedef FirebaseAuthRef = AutoDisposeProviderRef<firebase_auth.FirebaseAuth>;
 String _$authRemoteDataSourceHash() =>
-    r'9a6c08305d0fd2211ccc0e3e3a5156dfe1c9ec67';
+    r'5bf6f62826baf17f9cfd2e894daed3b4d15e00d3';
 
 /// Provider for authentication remote data source
 ///
@@ -47,7 +47,7 @@ final authRemoteDataSourceProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AuthRemoteDataSourceRef = AutoDisposeProviderRef<AuthRemoteDataSource>;
-String _$authRepositoryHash() => r'47e7f13a70a820843ed4242556697cb91432c454';
+String _$authRepositoryHash() => r'43e05b07a705006cf920b080f78421ecc8bab1d9';
 
 /// Provider for authentication repository
 ///
@@ -67,7 +67,7 @@ final authRepositoryProvider = AutoDisposeProvider<AuthRepository>.internal(
 // ignore: unused_element
 typedef AuthRepositoryRef = AutoDisposeProviderRef<AuthRepository>;
 String _$signUpWithEmailUseCaseHash() =>
-    r'7678a115bcd9d0a38b423c76a88aca9a16efa05f';
+    r'5d782fccd7952c35baefab2d32a02a2f9a78fd58';
 
 /// Provider for sign up with email use case
 ///
@@ -88,7 +88,7 @@ final signUpWithEmailUseCaseProvider =
 // ignore: unused_element
 typedef SignUpWithEmailUseCaseRef = AutoDisposeProviderRef<SignUpWithEmail>;
 String _$signInWithEmailUseCaseHash() =>
-    r'9a39e328410fb45d26fe2716d9318e5008023950';
+    r'64f1848ae888f1e6cfd3d0334bdb6b19051e82bf';
 
 /// Provider for sign in with email use case
 ///
@@ -108,7 +108,7 @@ final signInWithEmailUseCaseProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef SignInWithEmailUseCaseRef = AutoDisposeProviderRef<SignInWithEmail>;
-String _$signOutUseCaseHash() => r'9cfa29d98fbd74f5c0d5e594eab848db521cb377';
+String _$signOutUseCaseHash() => r'ac928a2ce7ed2b117473e5c7edaecede4f8e137f';
 
 /// Provider for sign out use case
 ///
@@ -128,7 +128,7 @@ final signOutUseCaseProvider = AutoDisposeProvider<SignOut>.internal(
 // ignore: unused_element
 typedef SignOutUseCaseRef = AutoDisposeProviderRef<SignOut>;
 String _$getCurrentUserUseCaseHash() =>
-    r'393424beb424e2a90a53f4816765108839f44d9f';
+    r'4df090fb839426c4252c45ef2fef4dd2d8af4591';
 
 /// Provider for get current user use case
 ///
@@ -149,7 +149,7 @@ final getCurrentUserUseCaseProvider =
 // ignore: unused_element
 typedef GetCurrentUserUseCaseRef = AutoDisposeProviderRef<GetCurrentUser>;
 String _$sendPasswordResetEmailUseCaseHash() =>
-    r'0620e886948f6f39a3f507db44acd10731b4a9ba';
+    r'f15e1b549e1ead1f3b6d5cf451801fa4c8203fb7';
 
 /// Provider for send password reset email use case
 ///
@@ -171,7 +171,7 @@ final sendPasswordResetEmailUseCaseProvider =
 typedef SendPasswordResetEmailUseCaseRef =
     AutoDisposeProviderRef<SendPasswordResetEmail>;
 String _$watchAuthStateUseCaseHash() =>
-    r'3af7a8818d546eaecfc32d200aff0af36eed02df';
+    r'7a2993a826f20989a395f8f8428fe6158b26caea';
 
 /// Provider for watch auth state use case
 ///
@@ -191,7 +191,28 @@ final watchAuthStateUseCaseProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef WatchAuthStateUseCaseRef = AutoDisposeProviderRef<WatchAuthState>;
-String _$authStateHash() => r'a9a50fe7086880013bfaa1887d09a90799719fbc';
+String _$updateUserProfileUseCaseHash() =>
+    r'25d7bb671eedfe64bd1717f693cc65227f845cdf';
+
+/// Provider for update user profile use case
+///
+/// Copied from [updateUserProfileUseCase].
+@ProviderFor(updateUserProfileUseCase)
+final updateUserProfileUseCaseProvider =
+    AutoDisposeProvider<UpdateUserProfile>.internal(
+      updateUserProfileUseCase,
+      name: r'updateUserProfileUseCaseProvider',
+      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$updateUserProfileUseCaseHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef UpdateUserProfileUseCaseRef = AutoDisposeProviderRef<UpdateUserProfile>;
+String _$authStateHash() => r'89b1b3ab6a1d599da3cec3b546172497b9bd5ace';
 
 /// Provider for current authenticated user
 ///
@@ -213,7 +234,7 @@ final authStateProvider = AutoDisposeStreamProvider<User?>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AuthStateRef = AutoDisposeStreamProviderRef<User?>;
-String _$currentUserHash() => r'6731f2c3890e13a0d5ccc95c2b632065968f9fa5';
+String _$currentUserHash() => r'0a9484b64a908e46ac7d5d011ab5da4c487e5cce';
 
 /// Provider for current user (synchronous)
 ///
@@ -235,7 +256,7 @@ final currentUserProvider = AutoDisposeProvider<User?>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef CurrentUserRef = AutoDisposeProviderRef<User?>;
-String _$isAuthenticatedHash() => r'fe6f954f2d7938a820a402d3f97973c87930d8b5';
+String _$isAuthenticatedHash() => r'ec341d95b490bda54e8278477e26f7b345844931';
 
 /// Provider to check if user is authenticated
 ///

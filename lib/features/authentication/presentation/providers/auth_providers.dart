@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:message_ai/features/authentication/data/datasources/auth_remote_datasource.dart';
 import 'package:message_ai/features/authentication/data/repositories/auth_repository_impl.dart';
 import 'package:message_ai/features/authentication/domain/entities/user.dart';
@@ -8,6 +9,7 @@ import 'package:message_ai/features/authentication/domain/usecases/send_password
 import 'package:message_ai/features/authentication/domain/usecases/sign_in_with_email.dart';
 import 'package:message_ai/features/authentication/domain/usecases/sign_out.dart';
 import 'package:message_ai/features/authentication/domain/usecases/sign_up_with_email.dart';
+import 'package:message_ai/features/authentication/domain/usecases/update_user_profile.dart';
 import 'package:message_ai/features/authentication/domain/usecases/watch_auth_state.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -17,20 +19,20 @@ part 'auth_providers.g.dart';
 
 /// Provider for Firebase Auth instance
 @riverpod
-firebase_auth.FirebaseAuth firebaseAuth(FirebaseAuthRef ref) {
+firebase_auth.FirebaseAuth firebaseAuth(Ref ref) {
   return firebase_auth.FirebaseAuth.instance;
 }
 
 /// Provider for authentication remote data source
 @riverpod
-AuthRemoteDataSource authRemoteDataSource(AuthRemoteDataSourceRef ref) {
+AuthRemoteDataSource authRemoteDataSource(Ref ref) {
   final firebaseAuth = ref.watch(firebaseAuthProvider);
   return AuthRemoteDataSourceImpl(firebaseAuth);
 }
 
 /// Provider for authentication repository
 @riverpod
-AuthRepository authRepository(AuthRepositoryRef ref) {
+AuthRepository authRepository(Ref ref) {
   final remoteDataSource = ref.watch(authRemoteDataSourceProvider);
   return AuthRepositoryImpl(remoteDataSource);
 }
@@ -39,28 +41,28 @@ AuthRepository authRepository(AuthRepositoryRef ref) {
 
 /// Provider for sign up with email use case
 @riverpod
-SignUpWithEmail signUpWithEmailUseCase(SignUpWithEmailUseCaseRef ref) {
+SignUpWithEmail signUpWithEmailUseCase(Ref ref) {
   final repository = ref.watch(authRepositoryProvider);
   return SignUpWithEmail(repository);
 }
 
 /// Provider for sign in with email use case
 @riverpod
-SignInWithEmail signInWithEmailUseCase(SignInWithEmailUseCaseRef ref) {
+SignInWithEmail signInWithEmailUseCase(Ref ref) {
   final repository = ref.watch(authRepositoryProvider);
   return SignInWithEmail(repository);
 }
 
 /// Provider for sign out use case
 @riverpod
-SignOut signOutUseCase(SignOutUseCaseRef ref) {
+SignOut signOutUseCase(Ref ref) {
   final repository = ref.watch(authRepositoryProvider);
   return SignOut(repository);
 }
 
 /// Provider for get current user use case
 @riverpod
-GetCurrentUser getCurrentUserUseCase(GetCurrentUserUseCaseRef ref) {
+GetCurrentUser getCurrentUserUseCase(Ref ref) {
   final repository = ref.watch(authRepositoryProvider);
   return GetCurrentUser(repository);
 }
@@ -68,7 +70,7 @@ GetCurrentUser getCurrentUserUseCase(GetCurrentUserUseCaseRef ref) {
 /// Provider for send password reset email use case
 @riverpod
 SendPasswordResetEmail sendPasswordResetEmailUseCase(
-  SendPasswordResetEmailUseCaseRef ref,
+  Ref ref,
 ) {
   final repository = ref.watch(authRepositoryProvider);
   return SendPasswordResetEmail(repository);
@@ -76,9 +78,16 @@ SendPasswordResetEmail sendPasswordResetEmailUseCase(
 
 /// Provider for watch auth state use case
 @riverpod
-WatchAuthState watchAuthStateUseCase(WatchAuthStateUseCaseRef ref) {
+WatchAuthState watchAuthStateUseCase(Ref ref) {
   final repository = ref.watch(authRepositoryProvider);
   return WatchAuthState(repository);
+}
+
+/// Provider for update user profile use case
+@riverpod
+UpdateUserProfile updateUserProfileUseCase(Ref ref) {
+  final repository = ref.watch(authRepositoryProvider);
+  return UpdateUserProfile(repository);
 }
 
 // ========== State Providers ==========
@@ -88,7 +97,7 @@ WatchAuthState watchAuthStateUseCase(WatchAuthStateUseCaseRef ref) {
 /// Returns [User?] - the current user if signed in, null otherwise
 /// This is a stream provider that automatically updates when auth state changes
 @riverpod
-Stream<User?> authState(AuthStateRef ref) {
+Stream<User?> authState(Ref ref) {
   final watchAuthStateUseCase = ref.watch(watchAuthStateUseCaseProvider);
   return watchAuthStateUseCase();
 }
@@ -98,7 +107,7 @@ Stream<User?> authState(AuthStateRef ref) {
 /// Returns [User?] - the current user if signed in, null otherwise
 /// This provides immediate access to the current user without waiting for a stream
 @riverpod
-User? currentUser(CurrentUserRef ref) {
+User? currentUser(Ref ref) {
   final getCurrentUserUseCase = ref.watch(getCurrentUserUseCaseProvider);
   return getCurrentUserUseCase().fold(
     (failure) => null, // Return null on failure
@@ -108,7 +117,7 @@ User? currentUser(CurrentUserRef ref) {
 
 /// Provider to check if user is authenticated
 @riverpod
-bool isAuthenticated(IsAuthenticatedRef ref) {
+bool isAuthenticated(Ref ref) {
   final user = ref.watch(currentUserProvider);
   return user != null;
 }

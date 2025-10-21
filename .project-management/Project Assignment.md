@@ -46,7 +46,7 @@ This is a hard gate. To pass the MVP checkpoint, you must have:
 * Push notifications working (at least in foreground)
 * **Deployment**: Running on local emulator/simulator with deployed backend (TestFlight/APK/Expo Go if possible, but not required for MVP)
 
-The MVP isn't about featuresâ€”it's about proving your messaging infrastructure is solid. A simple chat app with reliable message delivery is worth more than a feature-rich app with messages that don't sync reliably.
+The MVP isn't about features -- it's about proving your messaging infrastructure is solid. A simple chat app with reliable message delivery is worth more than a feature-rich app with messages that don't sync reliably.
 
 ### **Platform Requirements**
 

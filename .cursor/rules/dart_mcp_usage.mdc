@@ -1,0 +1,116 @@
+---
+description: Use Dart MCP for all Dart/Flutter development tasks
+globs: lib/**/*.dart, test/**/*.dart, pubspec.yaml
+alwaysApply: true
+---
+
+# Dart MCP Usage Guidelines
+
+## **ALWAYS Use Dart MCP for Dart/Flutter Development**
+
+For any Dart/Flutter coding tasks, you MUST use the Dart MCP tools instead of manual file editing or terminal commands when applicable.
+
+## Available Dart MCP Tools
+
+### Project Management
+- `mcp_dart_create_project`: Create new Dart/Flutter projects
+- `mcp_dart_pub`: Run pub commands (`get`, `add`, `remove`, `upgrade`)
+- `mcp_dart_add_roots`: Add project roots to the Dart Analysis Server
+- `mcp_dart_remove_roots`: Remove project roots
+
+### Code Analysis & Formatting
+- `mcp_dart_analyze_files`: Analyze the entire project for errors
+- `mcp_dart_dart_format`: Format Dart files
+- `mcp_dart_dart_fix`: Apply Dart fixes automatically
+
+### Testing
+- `mcp_dart_run_tests`: Run Dart/Flutter tests (prefer over `flutter test` CLI)
+
+### Code Navigation
+- `mcp_dart_resolve_workspace_symbol`: Look up symbols by name
+- `mcp_dart_signature_help`: Get signature help for APIs
+- `mcp_dart_hover`: Get hover information for code elements
+
+### Flutter Development Tools (when DTD connected)
+- `mcp_dart_connect_dart_tooling_daemon`: Connect to DTD
+- `mcp_dart_get_runtime_errors`: Get runtime errors from running app
+- `mcp_dart_hot_reload`: Perform hot reload
+- `mcp_dart_get_widget_tree`: Retrieve widget tree
+- `mcp_dart_get_selected_widget`: Get selected widget info
+- `mcp_dart_set_widget_selection_mode`: Enable/disable widget selection
+- `mcp_dart_get_active_location`: Get cursor position in editor
+
+### Package Discovery
+- `mcp_dart_pub_dev_search`: Search pub.dev for packages
+
+## When to Use
+
+### ✅ Always Use Dart MCP For:
+- **Testing**: Use `mcp_dart_run_tests` instead of `flutter test` or `dart test` CLI
+- **Formatting**: Use `mcp_dart_dart_format` instead of `dart format` CLI
+- **Analysis**: Use `mcp_dart_analyze_files` instead of `dart analyze` or `flutter analyze`
+- **Fixes**: Use `mcp_dart_dart_fix` instead of `dart fix --apply`
+- **Dependencies**: Use `mcp_dart_pub` instead of `flutter pub` or `dart pub` commands
+- **Code Navigation**: Use symbol resolution and hover tools
+- **Hot Reload**: Use `mcp_dart_hot_reload` when app is running
+
+### ⚠️ Still Use Terminal For:
+- `flutter run` - Starting the app
+- `flutter build` - Building releases
+- `dart run build_runner` - Code generation
+- Git operations (use GitKraken MCP)
+
+## Examples
+
+### ❌ Don't Do This:
+```bash
+flutter test test/features/auth/
+dart format lib/
+flutter pub add package_name
+```
+
+### ✅ Do This Instead:
+```
+Use mcp_dart_run_tests with paths parameter
+Use mcp_dart_dart_format with paths parameter
+Use mcp_dart_pub with command='add' and packageName='package_name'
+```
+
+## Best Practices
+
+1. **Test Execution**: Always use `mcp_dart_run_tests` for running tests
+   - Provides better output formatting for agents
+   - Handles test runner arguments properly
+   - Supports path filtering
+
+2. **Dependency Management**: Use `mcp_dart_pub` for all pub operations
+   - Ensures proper dependency resolution
+   - Handles version conflicts correctly
+
+3. **Code Quality**: Use MCP tools for analysis and formatting
+   - Integrated with Dart Analysis Server
+   - Provides structured error output
+   - Better for automated workflows
+
+4. **Hot Development**: Connect to DTD for live app debugging
+   - Real-time error monitoring
+   - Widget inspection
+   - Hot reload without full restart
+
+## Migration from CLI
+
+Replace these CLI commands with MCP equivalents:
+
+| CLI Command | MCP Tool | Parameters |
+|-------------|----------|------------|
+| `flutter test` | `mcp_dart_run_tests` | `paths`, `testRunnerArgs` |
+| `dart format .` | `mcp_dart_dart_format` | `roots` with `paths` |
+| `dart fix --apply` | `mcp_dart_dart_fix` | `roots` |
+| `flutter pub add pkg` | `mcp_dart_pub` | `command='add'`, `packageName='pkg'` |
+| `flutter pub get` | `mcp_dart_pub` | `command='get'` |
+| `flutter analyze` | `mcp_dart_analyze_files` | No parameters needed |
+
+## References
+
+- [Dart MCP Documentation](mdc:.cursor/rules/dart_flutter_mcp.mdc)
+- [Testing Guidelines](mdc:.cursor/rules/taskmaster/dev_workflow.mdc)

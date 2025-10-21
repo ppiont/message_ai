@@ -32,9 +32,11 @@ class AuthRepositoryImpl implements AuthRepository {
     } on AppException catch (e) {
       return Left(ErrorMapper.mapExceptionToFailure(e));
     } catch (e) {
-      return Left(ErrorMapper.mapExceptionToFailure(
-        UnknownException(message: e.toString()),
-      ));
+      return Left(
+        ErrorMapper.mapExceptionToFailure(
+          UnknownException(message: e.toString()),
+        ),
+      );
     }
   }
 
@@ -52,9 +54,11 @@ class AuthRepositoryImpl implements AuthRepository {
     } on AppException catch (e) {
       return Left(ErrorMapper.mapExceptionToFailure(e));
     } catch (e) {
-      return Left(ErrorMapper.mapExceptionToFailure(
-        UnknownException(message: e.toString()),
-      ));
+      return Left(
+        ErrorMapper.mapExceptionToFailure(
+          UnknownException(message: e.toString()),
+        ),
+      );
     }
   }
 
@@ -68,9 +72,11 @@ class AuthRepositoryImpl implements AuthRepository {
     } on AppException catch (e) {
       return Left(ErrorMapper.mapExceptionToFailure(e));
     } catch (e) {
-      return Left(ErrorMapper.mapExceptionToFailure(
-        UnknownException(message: e.toString()),
-      ));
+      return Left(
+        ErrorMapper.mapExceptionToFailure(
+          UnknownException(message: e.toString()),
+        ),
+      );
     }
   }
 
@@ -82,9 +88,11 @@ class AuthRepositoryImpl implements AuthRepository {
     } on AppException catch (e) {
       return Left(ErrorMapper.mapExceptionToFailure(e));
     } catch (e) {
-      return Left(ErrorMapper.mapExceptionToFailure(
-        UnknownException(message: e.toString()),
-      ));
+      return Left(
+        ErrorMapper.mapExceptionToFailure(
+          UnknownException(message: e.toString()),
+        ),
+      );
     }
   }
 
@@ -96,9 +104,11 @@ class AuthRepositoryImpl implements AuthRepository {
     } on AppException catch (e) {
       return Left(ErrorMapper.mapExceptionToFailure(e));
     } catch (e) {
-      return Left(ErrorMapper.mapExceptionToFailure(
-        UnknownException(message: e.toString()),
-      ));
+      return Left(
+        ErrorMapper.mapExceptionToFailure(
+          UnknownException(message: e.toString()),
+        ),
+      );
     }
   }
 
@@ -109,7 +119,7 @@ class AuthRepositoryImpl implements AuthRepository {
     required String phoneNumber,
     required void Function(String verificationId, int? resendToken) onCodeSent,
     required void Function(firebase_auth.PhoneAuthCredential credential)
-        onVerificationCompleted,
+    onVerificationCompleted,
     Duration timeout = const Duration(seconds: 60),
   }) async {
     try {
@@ -123,9 +133,11 @@ class AuthRepositoryImpl implements AuthRepository {
     } on AppException catch (e) {
       return Left(ErrorMapper.mapExceptionToFailure(e));
     } catch (e) {
-      return Left(ErrorMapper.mapExceptionToFailure(
-        UnknownException(message: e.toString()),
-      ));
+      return Left(
+        ErrorMapper.mapExceptionToFailure(
+          UnknownException(message: e.toString()),
+        ),
+      );
     }
   }
 
@@ -143,9 +155,11 @@ class AuthRepositoryImpl implements AuthRepository {
     } on AppException catch (e) {
       return Left(ErrorMapper.mapExceptionToFailure(e));
     } catch (e) {
-      return Left(ErrorMapper.mapExceptionToFailure(
-        UnknownException(message: e.toString()),
-      ));
+      return Left(
+        ErrorMapper.mapExceptionToFailure(
+          UnknownException(message: e.toString()),
+        ),
+      );
     }
   }
 
@@ -163,9 +177,11 @@ class AuthRepositoryImpl implements AuthRepository {
     } on AppException catch (e) {
       return Left(ErrorMapper.mapExceptionToFailure(e));
     } catch (e) {
-      return Left(ErrorMapper.mapExceptionToFailure(
-        UnknownException(message: e.toString()),
-      ));
+      return Left(
+        ErrorMapper.mapExceptionToFailure(
+          UnknownException(message: e.toString()),
+        ),
+      );
     }
   }
 
@@ -179,9 +195,11 @@ class AuthRepositoryImpl implements AuthRepository {
     } on AppException catch (e) {
       return Left(ErrorMapper.mapExceptionToFailure(e));
     } catch (e) {
-      return Left(ErrorMapper.mapExceptionToFailure(
-        UnknownException(message: e.toString()),
-      ));
+      return Left(
+        ErrorMapper.mapExceptionToFailure(
+          UnknownException(message: e.toString()),
+        ),
+      );
     }
   }
 
@@ -196,9 +214,11 @@ class AuthRepositoryImpl implements AuthRepository {
     } on AppException catch (e) {
       return Left(ErrorMapper.mapExceptionToFailure(e));
     } catch (e) {
-      return Left(ErrorMapper.mapExceptionToFailure(
-        UnknownException(message: e.toString()),
-      ));
+      return Left(
+        ErrorMapper.mapExceptionToFailure(
+          UnknownException(message: e.toString()),
+        ),
+      );
     }
   }
 
@@ -210,9 +230,34 @@ class AuthRepositoryImpl implements AuthRepository {
     } on AppException catch (e) {
       return Left(ErrorMapper.mapExceptionToFailure(e));
     } catch (e) {
-      return Left(ErrorMapper.mapExceptionToFailure(
-        UnknownException(message: e.toString()),
-      ));
+      return Left(
+        ErrorMapper.mapExceptionToFailure(
+          UnknownException(message: e.toString()),
+        ),
+      );
+    }
+  }
+
+  @override
+  Future<Either<Failure, User>> updateUserProfile({
+    String? displayName,
+    String? photoURL,
+  }) async {
+    try {
+      final firebaseUser = await _remoteDataSource.updateUserProfile(
+        displayName: displayName,
+        photoURL: photoURL,
+      );
+      final user = _mapFirebaseUserToEntity(firebaseUser);
+      return Right(user);
+    } on AppException catch (e) {
+      return Left(ErrorMapper.mapExceptionToFailure(e));
+    } catch (e) {
+      return Left(
+        ErrorMapper.mapExceptionToFailure(
+          UnknownException(message: e.toString()),
+        ),
+      );
     }
   }
 
@@ -235,8 +280,7 @@ class AuthRepositoryImpl implements AuthRepository {
       displayName: firebaseUser.displayName ?? '',
       photoURL: firebaseUser.photoURL,
       preferredLanguage: 'en', // Default, will be updated from Firestore
-      createdAt:
-          firebaseUser.metadata.creationTime ?? DateTime.now(),
+      createdAt: firebaseUser.metadata.creationTime ?? DateTime.now(),
       lastSeen: DateTime.now(),
       isOnline: true,
       fcmTokens: [], // Will be populated from Firestore

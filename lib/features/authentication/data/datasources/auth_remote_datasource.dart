@@ -94,6 +94,17 @@ abstract class AuthRemoteDataSource {
   /// Throws [UnauthorizedException] if no user is signed in
   Future<String> getIdToken();
 
+  /// Updates the current user's profile
+  ///
+  /// [displayName] optional new display name
+  /// [photoURL] optional new photo URL
+  /// Returns the updated [User]
+  /// Throws [UnauthorizedException] if no user is signed in
+  Future<User> updateUserProfile({
+    String? displayName,
+    String? photoURL,
+  });
+
   /// Re-authenticates the current user with phone credentials
   ///
   /// Used when user needs to re-verify their identity
@@ -331,6 +342,42 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       if (e is AppException) rethrow;
       throw ServerException(
         message: 'Failed to reauthenticate: ${e.toString()}',
+      );
+    }
+  }
+
+  @override
+  Future<User> updateUserProfile({
+    String? displayName,
+    String? photoURL,
+  }) async {
+    try {
+      final user = _firebaseAuth.currentUser;
+      if (user == null) {
+        throw const UnauthorizedException(message: 'No user signed in');
+      }
+
+      // Update the profile
+      await user.updateDisplayName(displayName);
+      if (photoURL != null) {
+        await user.updatePhotoURL(photoURL);
+      }
+
+      // Reload user to get updated data
+      await user.reload();
+      final updatedUser = _firebaseAuth.currentUser;
+
+      if (updatedUser == null) {
+        throw const UnauthorizedException(message: 'User session expired');
+      }
+
+      return updatedUser;
+    } on FirebaseAuthException catch (e) {
+      throw _mapAuthException(e);
+    } catch (e) {
+      if (e is AppException) rethrow;
+      throw ServerException(
+        message: 'Failed to update profile: ${e.toString()}',
       );
     }
   }
