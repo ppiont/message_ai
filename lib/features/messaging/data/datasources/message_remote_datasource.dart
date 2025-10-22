@@ -53,7 +53,7 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
   final Map<String, String> _conversationTypeCache = {};
 
   MessageRemoteDataSourceImpl({required FirebaseFirestore firestore})
-      : _firestore = firestore;
+    : _firestore = firestore;
 
   static const String _conversationsCollection = 'conversations';
   static const String _groupConversationsCollection = 'group-conversations';
@@ -165,8 +165,9 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
   }) async {
     try {
       final messagesRef = await _messagesRef(conversationId);
-      Query<Map<String, dynamic>> query =
-          messagesRef.orderBy('timestamp', descending: true).limit(limit);
+      Query<Map<String, dynamic>> query = messagesRef
+          .orderBy('timestamp', descending: true)
+          .limit(limit);
 
       // Add pagination if before timestamp is provided
       if (before != null) {
@@ -248,8 +249,9 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
   }) {
     try {
       // Convert Future to Stream, then flatten
-      return Stream.fromFuture(_messagesRef(conversationId))
-          .asyncExpand((messagesRef) {
+      return Stream.fromFuture(_messagesRef(conversationId)).asyncExpand((
+        messagesRef,
+      ) {
         return messagesRef
             .orderBy(
               'timestamp',
