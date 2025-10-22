@@ -21,29 +21,30 @@ class App extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Initialize offline-first services
-    // These are keepAlive providers, so watching them ensures they start
-    ref.watch(messageSyncServiceProvider);
-    ref.watch(messageQueueProvider);
-
-    // Initialize presence controller
-    // Automatically manages online/offline status based on auth
-    ref.watch(presenceControllerProvider);
-
-    // Watch authentication state
+    // Watch authentication state FIRST
     final authState = ref.watch(authStateProvider);
 
-    // Initialize auto delivery marker (when authenticated)
-    // Automatically marks incoming messages as delivered across all conversations
-    authState.whenData((user) {
-      if (user != null) {
-        try {
-          ref.watch(autoDeliveryMarkerProvider);
-        } catch (e) {
-          // Silently fail if marker can't be initialized
-        }
+    // Only initialize services if user is authenticated
+    // This prevents errors during logout when widget tree is unstable
+    final user = authState.value;
+    if (user != null) {
+      // Initialize offline-first services
+      // These are keepAlive providers, so watching them ensures they start
+      ref.watch(messageSyncServiceProvider);
+      ref.watch(messageQueueProvider);
+
+      // Initialize presence controller
+      // Automatically manages online/offline status based on auth
+      ref.watch(presenceControllerProvider);
+
+      // Initialize auto delivery marker
+      // Automatically marks incoming messages as delivered across all conversations
+      try {
+        ref.watch(autoDeliveryMarkerProvider);
+      } catch (e) {
+        // Silently fail if marker can't be initialized
       }
-    });
+    }
 
     return MaterialApp(
       title: envConfig.appName,
