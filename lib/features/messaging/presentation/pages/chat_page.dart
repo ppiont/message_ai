@@ -181,10 +181,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
 
   Widget _buildMessageList(String currentUserId) {
     final messagesStream = ref.watch(
-      conversationMessagesStreamProvider(
-        widget.conversationId,
-        currentUserId,
-      ),
+      conversationMessagesStreamProvider(widget.conversationId, currentUserId),
     );
 
     return messagesStream.when(

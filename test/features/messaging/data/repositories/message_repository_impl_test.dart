@@ -55,11 +55,13 @@ void main() {
     group('createMessage', () {
       test('should return Message when datasource succeeds', () async {
         // Arrange
+        when(() => mockLocalDataSource.createMessage(any(), any()))
+            .thenAnswer((_) async => testMessage.toEntity());
         when(() => mockRemoteDataSource.createMessage(any(), any()))
             .thenAnswer((_) async => testMessage);
 
         // Act
-        final result = await repository.createMessage('conv-123', testMessage);
+        final result = await repository.createMessage('conv-123', testMessage.toEntity());
 
         // Assert
         expect(result.isRight(), true);
@@ -70,18 +72,18 @@ void main() {
             expect(r.text, testMessage.text);
           },
         );
-        verify(() => mockRemoteDataSource.createMessage('conv-123', testMessage))
+        verify(() => mockLocalDataSource.createMessage('conv-123', testMessage.toEntity()))
             .called(1);
       });
 
       test('should return DatabaseFailure when datasource throws exception',
           () async {
         // Arrange
-        when(() => mockRemoteDataSource.createMessage(any(), any()))
+        when(() => mockLocalDataSource.createMessage(any(), any()))
             .thenThrow(const ServerException(message: 'Server error'));
 
         // Act
-        final result = await repository.createMessage('conv-123', testMessage);
+        final result = await repository.createMessage('conv-123', testMessage.toEntity());
 
         // Assert
         expect(result.isLeft(), true);
@@ -234,13 +236,29 @@ void main() {
       test('should return stream of Messages when datasource succeeds',
           () async {
         // Arrange
+        const currentUserId = 'user-123';
+
+        // Mock remote datasource to return test message
         when(() => mockRemoteDataSource.watchMessages(
               conversationId: any(named: 'conversationId'),
               limit: any(named: 'limit'),
             )).thenAnswer((_) => Stream.value([testMessage]));
 
+        // Mock local datasource insertMessages (called by repository)
+        when(() => mockLocalDataSource.insertMessages(any(), any()))
+            .thenAnswer((_) async {});
+
+        // Mock local datasource watchMessages to return test message
+        when(() => mockLocalDataSource.watchMessages(
+              conversationId: any(named: 'conversationId'),
+              limit: any(named: 'limit'),
+            )).thenAnswer((_) => Stream.value([testMessage.toEntity()]));
+
         // Act
-        final stream = repository.watchMessages(conversationId: 'conv-123');
+        final stream = repository.watchMessages(
+          conversationId: 'conv-123',
+          currentUserId: currentUserId,
+        );
 
         // Assert
         await expectLater(

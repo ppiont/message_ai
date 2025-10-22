@@ -24,8 +24,8 @@ class MessageRepositoryImpl implements MessageRepository {
   MessageRepositoryImpl({
     required MessageRemoteDataSource remoteDataSource,
     required MessageLocalDataSource localDataSource,
-  })  : _remoteDataSource = remoteDataSource,
-        _localDataSource = localDataSource;
+  }) : _remoteDataSource = remoteDataSource,
+       _localDataSource = localDataSource;
 
   @override
   Future<Either<Failure, Message>> createMessage(
@@ -34,8 +34,10 @@ class MessageRepositoryImpl implements MessageRepository {
   ) async {
     try {
       // Offline-first: Save to local immediately
-      final localMessage =
-          await _localDataSource.createMessage(conversationId, message);
+      final localMessage = await _localDataSource.createMessage(
+        conversationId,
+        message,
+      );
 
       // Background sync to remote (don't wait for it)
       _syncToRemote(conversationId, localMessage);
@@ -86,8 +88,10 @@ class MessageRepositoryImpl implements MessageRepository {
       }
 
       // Not in local, try remote
-      final messageModel =
-          await _remoteDataSource.getMessageById(conversationId, messageId);
+      final messageModel = await _remoteDataSource.getMessageById(
+        conversationId,
+        messageId,
+      );
       final message = messageModel.toEntity();
 
       // Save to local for future offline access
@@ -123,7 +127,6 @@ class MessageRepositoryImpl implements MessageRepository {
     }
   }
 
-
   @override
   Future<Either<Failure, Message>> updateMessage(
     String conversationId,
@@ -131,8 +134,10 @@ class MessageRepositoryImpl implements MessageRepository {
   ) async {
     try {
       // Offline-first: Update local immediately
-      final updatedMessage =
-          await _localDataSource.updateMessage(conversationId, message);
+      final updatedMessage = await _localDataSource.updateMessage(
+        conversationId,
+        message,
+      );
 
       // Background sync to remote
       _syncUpdateToRemote(conversationId, updatedMessage);
@@ -200,24 +205,26 @@ class MessageRepositoryImpl implements MessageRepository {
       _remoteDataSource
           .watchMessages(conversationId: conversationId, limit: limit)
           .listen((messageModels) async {
-        try {
-          final messages =
-              messageModels.map((model) => model.toEntity()).toList();
+            try {
+              final messages = messageModels
+                  .map((model) => model.toEntity())
+                  .toList();
 
-          // Upsert to local database (updates existing, inserts new)
-          await _localDataSource.insertMessages(conversationId, messages);
+              // Upsert to local database (updates existing, inserts new)
+              await _localDataSource.insertMessages(conversationId, messages);
 
-          // Auto-mark incoming messages as delivered (not from current user)
-          for (final message in messages) {
-            if (message.senderId != currentUserId && message.status == 'sent') {
-              // Mark as delivered in background (don't wait)
-              markAsDelivered(conversationId, message.id);
+              // Auto-mark incoming messages as delivered (not from current user)
+              for (final message in messages) {
+                if (message.senderId != currentUserId &&
+                    message.status == 'sent') {
+                  // Mark as delivered in background (don't wait)
+                  markAsDelivered(conversationId, message.id);
+                }
+              }
+            } catch (e) {
+              // Silently fail - local stream will still work
             }
-          }
-        } catch (e) {
-          // Silently fail - local stream will still work
-        }
-      });
+          });
 
       // Return local stream (which now gets updates from Firestore)
       final localStream = _localDataSource.watchMessages(
@@ -244,9 +251,7 @@ class MessageRepositoryImpl implements MessageRepository {
       // Get message from local
       final message = await _localDataSource.getMessage(messageId);
       if (message == null) {
-        return Left(
-          RecordNotFoundFailure(recordType: 'Message'),
-        );
+        return Left(RecordNotFoundFailure(recordType: 'Message'));
       }
 
       // Offline-first: Update local immediately
@@ -274,9 +279,7 @@ class MessageRepositoryImpl implements MessageRepository {
       // Get message from local
       final message = await _localDataSource.getMessage(messageId);
       if (message == null) {
-        return Left(
-          RecordNotFoundFailure(recordType: 'Message'),
-        );
+        return Left(RecordNotFoundFailure(recordType: 'Message'));
       }
 
       // Offline-first: Update local immediately
