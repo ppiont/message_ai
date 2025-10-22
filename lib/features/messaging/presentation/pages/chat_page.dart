@@ -31,8 +31,10 @@ class ChatPage extends ConsumerStatefulWidget {
 
 class _ChatPageState extends ConsumerState<ChatPage> {
   final ScrollController _scrollController = ScrollController();
-  final Set<String> _markedAsRead = {}; // Track which messages we've marked as read
-  final Set<String> _markedAsDelivered = {}; // Track which messages we've marked as delivered
+  final Set<String> _markedAsRead =
+      {}; // Track which messages we've marked as read
+  final Set<String> _markedAsDelivered =
+      {}; // Track which messages we've marked as delivered
 
   @override
   void dispose() {
@@ -46,7 +48,9 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     _markedAsDelivered.add(messageId);
 
     // Call use case asynchronously
-    final markAsDeliveredUseCase = ref.read(markMessageAsDeliveredUseCaseProvider);
+    final markAsDeliveredUseCase = ref.read(
+      markMessageAsDeliveredUseCaseProvider,
+    );
     markAsDeliveredUseCase(widget.conversationId, messageId).then((result) {
       result.fold(
         (failure) {
@@ -235,8 +239,9 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             }
 
             // Mark incoming messages as read when user sees them (only once)
+            // Only mark as read if already delivered (not sent)
             if (!isMe &&
-                status != 'read' &&
+                status == 'delivered' &&
                 !_markedAsRead.contains(messageId)) {
               _markMessageAsRead(messageId);
             }
