@@ -802,7 +802,7 @@
         "dependencies": [
           26
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": []
       },
       {
@@ -815,7 +815,7 @@
         "dependencies": [
           2
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": []
       },
       {
@@ -829,7 +829,7 @@
           50,
           49
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": []
       },
       {
@@ -843,7 +843,7 @@
           9,
           49
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": []
       },
       {
@@ -857,7 +857,7 @@
           51,
           52
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": []
       },
       {
@@ -870,7 +870,7 @@
         "dependencies": [
           53
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": []
       },
       {
@@ -884,7 +884,7 @@
           11,
           54
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": []
       },
       {
@@ -1763,11 +1763,46 @@
         ],
         "priority": "high",
         "subtasks": []
+      },
+      {
+        "id": 122,
+        "title": "Implement online/offline presence indicators",
+        "description": "Create a presence system that shows real-time online status of users in conversations and chat screens",
+        "details": "1. Create a `PresenceService` class in `features/messaging/domain/services` directory that will:\n   - Implement a heartbeat mechanism that updates user status every 30 seconds\n   - Track user online/offline state in Firestore with a dedicated `user_presence` collection\n   - Store last seen timestamp for offline users\n   - Add automatic lifecycle management that updates status on app foreground/background\n   - Include methods for manually setting status (away, busy, etc.)\n\n2. Create a `PresenceProvider` in `features/messaging/presentation/providers` that:\n   - Exposes current user's presence state\n   - Provides streams for other users' presence states\n   - Handles automatic presence updates based on app lifecycle\n   - Manages presence subscription cleanup\n\n3. Implement UI components:\n   - Create a `PresenceDot` widget that shows colored dots (green for online, gray for offline)\n   - Add presence indicators to user avatars in conversation list and chat screens\n   - Implement status text in chat headers showing \"Online\" or \"Last seen X ago\"\n   - Add presence indicators to user profiles\n\n4. Optimize for performance:\n   - Use Firestore server timestamps for accurate timing\n   - Implement efficient subscription management to limit unnecessary listeners\n   - Add debouncing for status updates to prevent excessive writes\n   - Consider batch updates for group conversations\n\n5. Handle edge cases:\n   - Account for network disconnections\n   - Implement graceful degradation when presence service is unavailable\n   - Add privacy controls to allow users to hide their online status",
+        "testStrategy": "1. Unit tests:\n   - Test `PresenceService` methods for updating and retrieving presence information\n   - Verify heartbeat mechanism functions correctly with mocked timers\n   - Test automatic lifecycle management with simulated app state changes\n   - Verify presence data is correctly formatted and stored\n\n2. Integration tests:\n   - Test real-time updates between multiple mock users\n   - Verify presence indicators update correctly when users go online/offline\n   - Test \"last seen\" timestamp calculations and formatting\n   - Verify presence subscriptions are properly cleaned up to prevent memory leaks\n\n3. UI tests:\n   - Test presence dot rendering in different states (online, offline, loading)\n   - Verify presence indicators appear correctly on avatars\n   - Test status text formatting for different time intervals\n   - Verify presence information updates reactively when underlying data changes\n\n4. Performance tests:\n   - Measure impact of presence system on battery usage and network traffic\n   - Test with large number of conversations to ensure efficient listener management\n   - Verify presence system degrades gracefully under poor network conditions\n\n5. Manual testing:\n   - Test actual online/offline transitions with multiple devices\n   - Verify presence indicators update within acceptable timeframes (1-2 seconds)\n   - Test across different network conditions including reconnection scenarios",
+        "status": "done",
+        "dependencies": [
+          11,
+          23,
+          29,
+          35,
+          37,
+          38
+        ],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 123,
+        "title": "Implement Read Receipts with Visual Status Indicators",
+        "description": "Add visual delivery status indicators for messages showing single grey checkmark for \"sent\", double grey checkmarks for \"delivered\", and double blue checkmarks for \"read\".",
+        "details": "1. Update the Message entity and model in features/messaging/domain/entities/message.dart and features/messaging/data/models/message_model.dart to include delivery status fields:\n   - Add enum MessageStatus { sent, delivered, read }\n   - Add deliveryStatus field to track current status\n   - Add deliveredAt and readAt timestamp fields\n\n2. Implement the MarkMessageAsDelivered use case:\n   - Create mark_message_as_delivered.dart in features/messaging/domain/usecases\n   - Accept messageId and conversationId parameters\n   - Update message status to \"delivered\" and set deliveredAt timestamp\n   - Handle error cases and return appropriate failures\n\n3. Implement the MarkMessageAsRead use case:\n   - Create mark_message_as_read.dart in features/messaging/domain/usecases\n   - Accept messageId and conversationId parameters\n   - Update message status to \"read\" and set readAt timestamp\n   - Handle error cases and return appropriate failures\n\n4. Update the message repository and data sources:\n   - Add markAsDelivered and markAsRead methods to message_repository.dart interface\n   - Implement these methods in message_repository_impl.dart\n   - Update remote and local data sources with corresponding methods\n   - Ensure proper error handling and conversion to failures\n\n5. Create the AutoDeliveryMarker service:\n   - Create auto_delivery_marker.dart in features/messaging/domain/services\n   - Implement logic to automatically mark messages as delivered when they arrive\n   - Use Firestore listeners to detect new messages\n   - Handle batch operations for multiple messages\n\n6. Update the message_bubble.dart widget:\n   - Add status indicator component that shows appropriate checkmark based on message status\n   - Implement single grey checkmark for \"sent\" status\n   - Implement double grey checkmarks for \"delivered\" status\n   - Implement double blue checkmarks for \"read\" status\n   - Position indicators appropriately within the message bubble\n   - Ensure proper styling and accessibility\n\n7. Update message providers:\n   - Add providers for the new use cases in message_provider.dart\n   - Create providers for tracking message status changes\n   - Implement optimistic UI updates for status changes\n\n8. Add Firestore security rules for status updates:\n   - Ensure only conversation participants can update message status\n   - Add validation for status field values",
+        "testStrategy": "1. Unit test the Message entity and model:\n   - Test serialization and deserialization with status fields\n   - Verify conversion between entity and model preserves status information\n   - Test equality comparison with different status values\n\n2. Unit test the MarkMessageAsDelivered and MarkMessageAsRead use cases:\n   - Test with mocked repositories for success scenarios\n   - Test error handling and failure cases\n   - Verify timestamp updates are correct\n\n3. Unit test the message repository implementation:\n   - Test markAsDelivered and markAsRead methods with mocked data sources\n   - Verify proper error handling and conversion to failures\n   - Test offline behavior and synchronization\n\n4. Unit test the AutoDeliveryMarker service:\n   - Test automatic status updates with mock Firestore events\n   - Verify batch operations work correctly\n   - Test error handling and recovery\n\n5. Widget test the message bubble:\n   - Test rendering of different status indicators\n   - Verify correct indicator is shown for each status\n   - Test layout and positioning on different screen sizes\n\n6. Integration tests:\n   - Test end-to-end flow from sending a message to status updates\n   - Verify real-time updates when status changes\n   - Test with multiple devices/users to ensure proper synchronization\n\n7. Manual testing:\n   - Verify visual appearance of status indicators matches design\n   - Test with slow network conditions to ensure proper state transitions\n   - Verify accessibility of status indicators",
+        "status": "done",
+        "dependencies": [
+          25,
+          31,
+          33,
+          35,
+          39
+        ],
+        "priority": "high",
+        "subtasks": []
       }
     ],
     "metadata": {
       "created": "2025-10-20T21:03:23.979Z",
-      "updated": "2025-10-22T00:41:33.258Z",
+      "updated": "2025-10-22T02:02:11.302Z",
       "description": "Tasks for master context"
     }
   }
