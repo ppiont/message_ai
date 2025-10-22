@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:message_ai/features/messaging/data/models/message_model.dart';
 import 'package:message_ai/features/messaging/domain/entities/message.dart';
@@ -148,7 +149,7 @@ void main() {
         expect(json['text'], 'Hello, World!');
         expect(json['senderId'], 'user-456');
         expect(json['senderName'], 'John Doe');
-        expect(json['timestamp'], '2024-01-01T12:30:00.000');
+        expect(json['timestamp'], isA<Timestamp>()); // Firestore Timestamp, not String
         expect(json['type'], 'text');
         expect(json['status'], 'delivered');
         expect(json['detectedLanguage'], 'en');
