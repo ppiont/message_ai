@@ -191,19 +191,29 @@ class MessageRepositoryImpl implements MessageRepository {
   @override
   Stream<Either<Failure, List<Message>>> watchMessages({
     required String conversationId,
+    required String currentUserId,
     int limit = 50,
   }) {
     try {
       // Watch Firestore for incoming messages
-      // When new messages arrive, save them to local DB
+      // When new messages arrive, save them to local DB and mark as delivered
       _remoteDataSource
           .watchMessages(conversationId: conversationId, limit: limit)
           .listen((messageModels) async {
         try {
           final messages =
               messageModels.map((model) => model.toEntity()).toList();
+
           // Upsert to local database (updates existing, inserts new)
           await _localDataSource.insertMessages(conversationId, messages);
+
+          // Auto-mark incoming messages as delivered (not from current user)
+          for (final message in messages) {
+            if (message.senderId != currentUserId && message.status == 'sent') {
+              // Mark as delivered in background (don't wait)
+              markAsDelivered(conversationId, message.id);
+            }
+          }
         } catch (e) {
           // Silently fail - local stream will still work
         }

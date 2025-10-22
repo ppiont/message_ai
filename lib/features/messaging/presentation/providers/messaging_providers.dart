@@ -181,14 +181,19 @@ Stream<List<Map<String, dynamic>>> userConversationsStream(
 /// Stream provider for watching messages in a conversation in real-time.
 ///
 /// Automatically updates when messages change in Firestore.
+/// Automatically marks incoming messages as delivered.
 @riverpod
 Stream<List<Map<String, dynamic>>> conversationMessagesStream(
   Ref ref,
   String conversationId,
+  String currentUserId,
 ) async* {
   final watchUseCase = ref.watch(watchMessagesUseCaseProvider);
 
-  await for (final result in watchUseCase(conversationId: conversationId)) {
+  await for (final result in watchUseCase(
+    conversationId: conversationId,
+    currentUserId: currentUserId,
+  )) {
     yield result.fold(
       (failure) {
         // Log error but return empty list to keep UI functional

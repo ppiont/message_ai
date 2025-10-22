@@ -33,8 +33,6 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   final ScrollController _scrollController = ScrollController();
   final Set<String> _markedAsRead =
       {}; // Track which messages we've marked as read
-  final Set<String> _markedAsDelivered =
-      {}; // Track which messages we've marked as delivered
 
   @override
   void dispose() {
@@ -42,30 +40,8 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     super.dispose();
   }
 
-  /// Marks a message as delivered (when it arrives at recipient's device)
-  void _markMessageAsDelivered(String messageId) {
-    // Add to set immediately to prevent duplicate calls
-    _markedAsDelivered.add(messageId);
-
-    // Call use case asynchronously
-    final markAsDeliveredUseCase = ref.read(
-      markMessageAsDeliveredUseCaseProvider,
-    );
-    markAsDeliveredUseCase(widget.conversationId, messageId).then((result) {
-      result.fold(
-        (failure) {
-          // Silently fail - delivery receipts are not critical
-          // Remove from set so we can retry later
-          _markedAsDelivered.remove(messageId);
-        },
-        (_) {
-          // Success - keep in set
-        },
-      );
-    });
-  }
-
   /// Marks a message as read (when user actually sees it)
+  /// Note: Messages are automatically marked as delivered in the repository
   void _markMessageAsRead(String messageId) {
     // Add to set immediately to prevent duplicate calls
     _markedAsRead.add(messageId);
@@ -205,7 +181,10 @@ class _ChatPageState extends ConsumerState<ChatPage> {
 
   Widget _buildMessageList(String currentUserId) {
     final messagesStream = ref.watch(
-      conversationMessagesStreamProvider(widget.conversationId),
+      conversationMessagesStreamProvider(
+        widget.conversationId,
+        currentUserId,
+      ),
     );
 
     return messagesStream.when(
@@ -231,15 +210,9 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             final messageId = message['id'] as String;
             final status = message['status'] as String? ?? 'sent';
 
-            // Mark incoming messages as delivered when they arrive (only once)
-            if (!isMe &&
-                status == 'sent' &&
-                !_markedAsDelivered.contains(messageId)) {
-              _markMessageAsDelivered(messageId);
-            }
-
             // Mark incoming messages as read when user sees them (only once)
             // Only mark as read if already delivered (not sent)
+            // Note: Messages are automatically marked as delivered in the repository
             if (!isMe &&
                 status == 'delivered' &&
                 !_markedAsRead.contains(messageId)) {
@@ -271,7 +244,10 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => ref.invalidate(
-                conversationMessagesStreamProvider(widget.conversationId),
+                conversationMessagesStreamProvider(
+                  widget.conversationId,
+                  currentUserId,
+                ),
               ),
               child: const Text('Retry'),
             ),

@@ -846,6 +846,7 @@ final class UserConversationsStreamFamily extends $Family
 /// Stream provider for watching messages in a conversation in real-time.
 ///
 /// Automatically updates when messages change in Firestore.
+/// Automatically marks incoming messages as delivered.
 
 @ProviderFor(conversationMessagesStream)
 const conversationMessagesStreamProvider = ConversationMessagesStreamFamily._();
@@ -853,6 +854,7 @@ const conversationMessagesStreamProvider = ConversationMessagesStreamFamily._();
 /// Stream provider for watching messages in a conversation in real-time.
 ///
 /// Automatically updates when messages change in Firestore.
+/// Automatically marks incoming messages as delivered.
 
 final class ConversationMessagesStreamProvider
     extends
@@ -867,9 +869,10 @@ final class ConversationMessagesStreamProvider
   /// Stream provider for watching messages in a conversation in real-time.
   ///
   /// Automatically updates when messages change in Firestore.
+  /// Automatically marks incoming messages as delivered.
   const ConversationMessagesStreamProvider._({
     required ConversationMessagesStreamFamily super.from,
-    required String super.argument,
+    required (String, String) super.argument,
   }) : super(
          retry: null,
          name: r'conversationMessagesStreamProvider',
@@ -885,7 +888,7 @@ final class ConversationMessagesStreamProvider
   String toString() {
     return r'conversationMessagesStreamProvider'
         ''
-        '($argument)';
+        '$argument';
   }
 
   @$internal
@@ -896,8 +899,8 @@ final class ConversationMessagesStreamProvider
 
   @override
   Stream<List<Map<String, dynamic>>> create(Ref ref) {
-    final argument = this.argument as String;
-    return conversationMessagesStream(ref, argument);
+    final argument = this.argument as (String, String);
+    return conversationMessagesStream(ref, argument.$1, argument.$2);
   }
 
   @override
@@ -913,14 +916,19 @@ final class ConversationMessagesStreamProvider
 }
 
 String _$conversationMessagesStreamHash() =>
-    r'8bbc529177f3080a40ffbb8b07113d2bd20a9059';
+    r'0cf19c78d2447e2dea9254085df6d4981b03e96e';
 
 /// Stream provider for watching messages in a conversation in real-time.
 ///
 /// Automatically updates when messages change in Firestore.
+/// Automatically marks incoming messages as delivered.
 
 final class ConversationMessagesStreamFamily extends $Family
-    with $FunctionalFamilyOverride<Stream<List<Map<String, dynamic>>>, String> {
+    with
+        $FunctionalFamilyOverride<
+          Stream<List<Map<String, dynamic>>>,
+          (String, String)
+        > {
   const ConversationMessagesStreamFamily._()
     : super(
         retry: null,
@@ -933,12 +941,15 @@ final class ConversationMessagesStreamFamily extends $Family
   /// Stream provider for watching messages in a conversation in real-time.
   ///
   /// Automatically updates when messages change in Firestore.
+  /// Automatically marks incoming messages as delivered.
 
-  ConversationMessagesStreamProvider call(String conversationId) =>
-      ConversationMessagesStreamProvider._(
-        argument: conversationId,
-        from: this,
-      );
+  ConversationMessagesStreamProvider call(
+    String conversationId,
+    String currentUserId,
+  ) => ConversationMessagesStreamProvider._(
+    argument: (conversationId, currentUserId),
+    from: this,
+  );
 
   @override
   String toString() => r'conversationMessagesStreamProvider';

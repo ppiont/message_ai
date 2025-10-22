@@ -42,8 +42,10 @@ abstract class MessageRepository {
   );
 
   /// Watches messages in a conversation in real-time.
+  /// Automatically marks incoming messages as delivered.
   Stream<Either<Failure, List<Message>>> watchMessages({
     required String conversationId,
+    required String currentUserId,
     int limit = 50,
   });
 
