@@ -380,17 +380,17 @@ final class ConversationRepositoryProvider
 String _$conversationRepositoryHash() =>
     r'8980f472f4ad7a535e5d9eeed7a15f96ef8e703c';
 
-/// Provides the [SendMessage] use case.
+/// Provides the [SendMessage] use case with language detection.
 
 @ProviderFor(sendMessageUseCase)
 const sendMessageUseCaseProvider = SendMessageUseCaseProvider._();
 
-/// Provides the [SendMessage] use case.
+/// Provides the [SendMessage] use case with language detection.
 
 final class SendMessageUseCaseProvider
     extends $FunctionalProvider<SendMessage, SendMessage, SendMessage>
     with $Provider<SendMessage> {
-  /// Provides the [SendMessage] use case.
+  /// Provides the [SendMessage] use case with language detection.
   const SendMessageUseCaseProvider._()
     : super(
         from: null,
@@ -425,7 +425,7 @@ final class SendMessageUseCaseProvider
 }
 
 String _$sendMessageUseCaseHash() =>
-    r'2b6b870b83db4a8595417b1fc34aac82e028946f';
+    r'f14046ab6b2ba0ae9da017a7f8f5ae72ec351c8e';
 
 /// Provides the [WatchMessages] use case.
 

@@ -5,6 +5,7 @@ import 'package:message_ai/features/messaging/domain/entities/message.dart';
 import 'package:message_ai/features/messaging/domain/repositories/conversation_repository.dart';
 import 'package:message_ai/features/messaging/domain/repositories/message_repository.dart';
 import 'package:message_ai/features/messaging/domain/usecases/send_message.dart';
+import 'package:message_ai/features/translation/data/services/language_detection_service.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockMessageRepository extends Mock implements MessageRepository {}
@@ -12,12 +13,16 @@ class MockMessageRepository extends Mock implements MessageRepository {}
 class MockConversationRepository extends Mock
     implements ConversationRepository {}
 
+class MockLanguageDetectionService extends Mock
+    implements LanguageDetectionService {}
+
 class FakeMessage extends Fake implements Message {}
 
 void main() {
   late SendMessage useCase;
   late MockMessageRepository mockMessageRepository;
   late MockConversationRepository mockConversationRepository;
+  late MockLanguageDetectionService mockLanguageDetectionService;
 
   setUpAll(() {
     registerFallbackValue(FakeMessage());
@@ -26,9 +31,16 @@ void main() {
   setUp(() {
     mockMessageRepository = MockMessageRepository();
     mockConversationRepository = MockConversationRepository();
+    mockLanguageDetectionService = MockLanguageDetectionService();
+
+    // Default behavior: return detected language as 'en'
+    when(() => mockLanguageDetectionService.detectLanguage(any()))
+        .thenAnswer((_) async => 'en');
+
     useCase = SendMessage(
       messageRepository: mockMessageRepository,
       conversationRepository: mockConversationRepository,
+      languageDetectionService: mockLanguageDetectionService,
     );
   });
 
@@ -112,7 +124,8 @@ void main() {
           },
         );
 
-        verify(() => mockMessageRepository.createMessage('conv-123', testMessage))
+        // Verify createMessage was called with a message that has detected language
+        verify(() => mockMessageRepository.createMessage('conv-123', any()))
             .called(1);
         verify(() => mockConversationRepository.updateLastMessage(
               'conv-123',

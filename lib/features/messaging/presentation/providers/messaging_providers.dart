@@ -35,6 +35,7 @@ import 'package:message_ai/features/messaging/domain/usecases/send_message.dart'
 import 'package:message_ai/features/messaging/domain/usecases/update_group_info.dart';
 import 'package:message_ai/features/messaging/domain/usecases/watch_conversations.dart';
 import 'package:message_ai/features/messaging/domain/usecases/watch_messages.dart';
+import 'package:message_ai/features/translation/presentation/providers/language_detection_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'messaging_providers.g.dart';
@@ -101,12 +102,13 @@ ConversationRepository conversationRepository(Ref ref) {
 
 // ========== Use Case Providers ==========
 
-/// Provides the [SendMessage] use case.
+/// Provides the [SendMessage] use case with language detection.
 @riverpod
 SendMessage sendMessageUseCase(Ref ref) {
   return SendMessage(
     messageRepository: ref.watch(messageRepositoryProvider),
     conversationRepository: ref.watch(conversationRepositoryProvider),
+    languageDetectionService: ref.watch(languageDetectionServiceProvider),
   );
 }
 
