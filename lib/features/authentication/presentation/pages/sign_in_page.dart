@@ -80,8 +80,16 @@ class _SignInPageState extends ConsumerState<SignInPage> {
         );
 
         // Initialize FCM for push notifications
-        final fcmService = ref.read(fcmServiceProvider);
-        await fcmService.initialize(userId: user.uid);
+        print('DEBUG: About to initialize FCM for user ${user.uid}');
+        try {
+          final fcmService = ref.read(fcmServiceProvider);
+          print('DEBUG: Got FCM service provider');
+          await fcmService.initialize(userId: user.uid);
+          print('DEBUG: FCM initialization completed');
+        } catch (e, stackTrace) {
+          print('DEBUG: FCM initialization failed: $e');
+          print('DEBUG: Stack trace: $stackTrace');
+        }
 
         // Navigation will be handled by auth state listener in main app
         if (!mounted) return;

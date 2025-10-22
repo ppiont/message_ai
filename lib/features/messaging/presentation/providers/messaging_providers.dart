@@ -267,11 +267,12 @@ Stream<List<TypingUser>> conversationTypingUsers(
 ///
 /// Automatically marks incoming messages as delivered for all conversations.
 @Riverpod(keepAlive: true)
-AutoDeliveryMarker autoDeliveryMarker(Ref ref) {
+AutoDeliveryMarker? autoDeliveryMarker(Ref ref) {
   final currentUser = ref.watch(authStateProvider).value;
 
+  // Return null if user is not authenticated (e.g., on logout)
   if (currentUser == null) {
-    throw Exception('User must be authenticated');
+    return null;
   }
 
   final marker = AutoDeliveryMarker(

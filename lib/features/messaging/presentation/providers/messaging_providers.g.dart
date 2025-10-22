@@ -1113,11 +1113,11 @@ const autoDeliveryMarkerProvider = AutoDeliveryMarkerProvider._();
 final class AutoDeliveryMarkerProvider
     extends
         $FunctionalProvider<
-          AutoDeliveryMarker,
-          AutoDeliveryMarker,
-          AutoDeliveryMarker
+          AutoDeliveryMarker?,
+          AutoDeliveryMarker?,
+          AutoDeliveryMarker?
         >
-    with $Provider<AutoDeliveryMarker> {
+    with $Provider<AutoDeliveryMarker?> {
   /// Provides the [AutoDeliveryMarker] service.
   ///
   /// Automatically marks incoming messages as delivered for all conversations.
@@ -1137,26 +1137,26 @@ final class AutoDeliveryMarkerProvider
 
   @$internal
   @override
-  $ProviderElement<AutoDeliveryMarker> $createElement(
+  $ProviderElement<AutoDeliveryMarker?> $createElement(
     $ProviderPointer pointer,
   ) => $ProviderElement(pointer);
 
   @override
-  AutoDeliveryMarker create(Ref ref) {
+  AutoDeliveryMarker? create(Ref ref) {
     return autoDeliveryMarker(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(AutoDeliveryMarker value) {
+  Override overrideWithValue(AutoDeliveryMarker? value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<AutoDeliveryMarker>(value),
+      providerOverride: $SyncValueProvider<AutoDeliveryMarker?>(value),
     );
   }
 }
 
 String _$autoDeliveryMarkerHash() =>
-    r'ee637f8df3b6a7ee3c858845fb81a6b25be5a88a';
+    r'8573126e962b960ce9d565b3fff4611badaf747b';
 
 /// Provides the [PresenceService] instance.
 
