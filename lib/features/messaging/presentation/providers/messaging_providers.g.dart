@@ -1099,67 +1099,64 @@ final class ConversationTypingUsersFamily extends $Family
   String toString() => r'conversationTypingUsersProvider';
 }
 
-/// Provides the global message delivery tracker.
+/// Provides the [AutoDeliveryMarker] service.
 ///
-/// Automatically marks incoming messages as delivered when they arrive,
-/// regardless of which screen is open.
+/// Automatically marks incoming messages as delivered for all conversations.
 
-@ProviderFor(messageDeliveryTracker)
-const messageDeliveryTrackerProvider = MessageDeliveryTrackerProvider._();
+@ProviderFor(autoDeliveryMarker)
+const autoDeliveryMarkerProvider = AutoDeliveryMarkerProvider._();
 
-/// Provides the global message delivery tracker.
+/// Provides the [AutoDeliveryMarker] service.
 ///
-/// Automatically marks incoming messages as delivered when they arrive,
-/// regardless of which screen is open.
+/// Automatically marks incoming messages as delivered for all conversations.
 
-final class MessageDeliveryTrackerProvider
+final class AutoDeliveryMarkerProvider
     extends
         $FunctionalProvider<
-          MessageDeliveryTracker,
-          MessageDeliveryTracker,
-          MessageDeliveryTracker
+          AutoDeliveryMarker,
+          AutoDeliveryMarker,
+          AutoDeliveryMarker
         >
-    with $Provider<MessageDeliveryTracker> {
-  /// Provides the global message delivery tracker.
+    with $Provider<AutoDeliveryMarker> {
+  /// Provides the [AutoDeliveryMarker] service.
   ///
-  /// Automatically marks incoming messages as delivered when they arrive,
-  /// regardless of which screen is open.
-  const MessageDeliveryTrackerProvider._()
+  /// Automatically marks incoming messages as delivered for all conversations.
+  const AutoDeliveryMarkerProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'messageDeliveryTrackerProvider',
+        name: r'autoDeliveryMarkerProvider',
         isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$messageDeliveryTrackerHash();
+  String debugGetCreateSourceHash() => _$autoDeliveryMarkerHash();
 
   @$internal
   @override
-  $ProviderElement<MessageDeliveryTracker> $createElement(
+  $ProviderElement<AutoDeliveryMarker> $createElement(
     $ProviderPointer pointer,
   ) => $ProviderElement(pointer);
 
   @override
-  MessageDeliveryTracker create(Ref ref) {
-    return messageDeliveryTracker(ref);
+  AutoDeliveryMarker create(Ref ref) {
+    return autoDeliveryMarker(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(MessageDeliveryTracker value) {
+  Override overrideWithValue(AutoDeliveryMarker value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<MessageDeliveryTracker>(value),
+      providerOverride: $SyncValueProvider<AutoDeliveryMarker>(value),
     );
   }
 }
 
-String _$messageDeliveryTrackerHash() =>
-    r'0dcd4764da951b4096e385fce569704a25599566';
+String _$autoDeliveryMarkerHash() =>
+    r'ee637f8df3b6a7ee3c858845fb81a6b25be5a88a';
 
 /// Provides the [PresenceService] instance.
 

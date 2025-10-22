@@ -11,6 +11,7 @@ import 'package:message_ai/features/messaging/data/datasources/message_local_dat
 import 'package:message_ai/features/messaging/data/datasources/message_remote_datasource.dart';
 import 'package:message_ai/features/messaging/data/repositories/conversation_repository_impl.dart';
 import 'package:message_ai/features/messaging/data/repositories/message_repository_impl.dart';
+import 'package:message_ai/features/messaging/data/services/auto_delivery_marker.dart';
 import 'package:message_ai/features/messaging/data/services/message_queue.dart';
 import 'package:message_ai/features/messaging/data/services/message_sync_service.dart';
 import 'package:message_ai/features/messaging/data/services/presence_service.dart';
@@ -24,7 +25,6 @@ import 'package:message_ai/features/messaging/domain/usecases/mark_message_as_re
 import 'package:message_ai/features/messaging/domain/usecases/send_message.dart';
 import 'package:message_ai/features/messaging/domain/usecases/watch_conversations.dart';
 import 'package:message_ai/features/messaging/domain/usecases/watch_messages.dart';
-import 'package:message_ai/features/messaging/presentation/providers/message_delivery_tracker.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'messaging_providers.g.dart';
@@ -251,30 +251,34 @@ Stream<List<TypingUser>> conversationTypingUsers(
   );
 }
 
-// ========== Message Delivery Tracking ==========
+// ========== Auto Delivery Marker ==========
 
-/// Provides the global message delivery tracker.
+/// Provides the [AutoDeliveryMarker] service.
 ///
-/// Automatically marks incoming messages as delivered when they arrive,
-/// regardless of which screen is open.
+/// Automatically marks incoming messages as delivered for all conversations.
 @Riverpod(keepAlive: true)
-MessageDeliveryTracker messageDeliveryTracker(Ref ref) {
+AutoDeliveryMarker autoDeliveryMarker(Ref ref) {
   final currentUser = ref.watch(authStateProvider).value;
 
   if (currentUser == null) {
-    throw Exception('User must be authenticated to track message delivery');
+    throw Exception('User must be authenticated');
   }
 
-  final tracker = MessageDeliveryTracker(
+  final marker = AutoDeliveryMarker(
+    conversationRepository: ref.watch(conversationRepositoryProvider),
     messageRepository: ref.watch(messageRepositoryProvider),
-    firestore: ref.watch(messagingFirestoreProvider),
     currentUserId: currentUser.uid,
   );
 
-  // Start tracking
-  tracker.start();
+  // Start watching
+  marker.start();
 
-  return tracker;
+  // Dispose when provider is disposed
+  ref.onDispose(() {
+    marker.stop();
+  });
+
+  return marker;
 }
 
 // ========== Presence Providers ==========

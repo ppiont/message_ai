@@ -203,7 +203,9 @@ void main() {
         (prev, next) {},
       );
 
-      await container.read(conversationMessagesStreamProvider('conv-1', 'user-1').future);
+      await container.read(
+        conversationMessagesStreamProvider('conv-1', 'user-1').future,
+      );
 
       final result = sub.read().value!;
 
@@ -242,7 +244,9 @@ void main() {
         (prev, next) {},
       );
 
-      await container.read(conversationMessagesStreamProvider('conv-1', 'user-1').future);
+      await container.read(
+        conversationMessagesStreamProvider('conv-1', 'user-1').future,
+      );
 
       // Assert
       expect(sub.read().value, isEmpty);
@@ -274,7 +278,9 @@ void main() {
         (prev, next) {},
       );
 
-      await container.read(conversationMessagesStreamProvider('conv-1', 'user-1').future);
+      await container.read(
+        conversationMessagesStreamProvider('conv-1', 'user-1').future,
+      );
 
       // Assert
       expect(sub.read().value, isEmpty);

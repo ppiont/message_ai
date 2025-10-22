@@ -202,7 +202,7 @@ class MessageRepositoryImpl implements MessageRepository {
     try {
       // Watch Firestore for incoming messages
       // When new messages arrive, save them to local DB
-      // Note: Delivery marking is handled globally by MessageDeliveryTracker
+      // Note: Delivery marking is handled by AutoDeliveryMarker service
       _remoteDataSource
           .watchMessages(conversationId: conversationId, limit: limit)
           .listen((messageModels) async {
