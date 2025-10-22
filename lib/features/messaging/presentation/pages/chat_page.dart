@@ -138,7 +138,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           );
         },
         loading: () => const SizedBox.shrink(),
-        error: (_, __) => const SizedBox.shrink(),
+        error: (_, _) => const SizedBox.shrink(),
       );
     } else {
       // Show individual user presence status
