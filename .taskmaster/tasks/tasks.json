@@ -752,7 +752,7 @@
               3
             ],
             "details": "Create a foreground message handler to display custom in-app notifications when the app is open. Implement a background message handler to process notifications when the app is in the background or terminated. Set up notification channels for Android. Configure notification presentation options for iOS. Handle different notification types based on payload data.",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": "Test notification handling in foreground, background, and terminated app states. Verify proper display of notifications. Test different notification payload types and formats."
           },
           {
@@ -763,7 +763,7 @@
               4
             ],
             "details": "Implement click handlers for notifications in different app states. Create a notification routing system to navigate to the appropriate screen based on notification payload. Handle deep linking from notifications. Implement data extraction from notification payload to pass to destination screens. Add analytics tracking for notification interactions.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test notification click handling in different app states. Verify correct navigation to destination screens. Test deep linking functionality. Verify data extraction and passing to destination screens."
           }
         ]
@@ -1857,7 +1857,7 @@
     ],
     "metadata": {
       "created": "2025-10-20T21:03:23.979Z",
-      "updated": "2025-10-22T03:48:08.263Z",
+      "updated": "2025-10-22T19:30:10.762Z",
       "description": "Tasks for master context"
     }
   }

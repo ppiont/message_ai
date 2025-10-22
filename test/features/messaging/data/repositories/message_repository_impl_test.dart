@@ -33,7 +33,7 @@ void main() {
       remoteDataSource: mockRemoteDataSource,
       localDataSource: mockLocalDataSource,
     );
-  });
+  })
 
   final testMessage = MessageModel(
     id: 'msg-123',

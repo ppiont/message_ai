@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
 import 'package:message_ai/features/authentication/presentation/pages/password_reset_page.dart';
-import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
 
 /// Sign in page with email/password authentication
 class SignInPage extends ConsumerStatefulWidget {

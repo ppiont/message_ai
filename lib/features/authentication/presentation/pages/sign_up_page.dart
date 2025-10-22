@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
-import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
 
 /// Sign up page with email/password registration
 class SignUpPage extends ConsumerStatefulWidget {
