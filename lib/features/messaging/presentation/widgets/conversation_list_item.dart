@@ -9,6 +9,7 @@ import 'package:message_ai/features/messaging/presentation/providers/messaging_p
 /// Widget displaying a single conversation in the conversation list.
 ///
 /// Shows participant info, last message preview, timestamp, unread badge, and online status.
+/// Supports both direct conversations and group chats.
 class ConversationListItem extends ConsumerWidget {
   const ConversationListItem({
     required this.conversationId,
@@ -18,6 +19,9 @@ class ConversationListItem extends ConsumerWidget {
     required this.onTap,
     this.lastMessage,
     this.unreadCount = 0,
+    this.isGroup = false,
+    this.groupName,
+    this.participantCount,
     super.key,
   });
 
@@ -28,79 +32,224 @@ class ConversationListItem extends ConsumerWidget {
   final int unreadCount;
   final String currentUserId;
   final VoidCallback onTap;
+  final bool isGroup;
+  final String? groupName;
+  final int? participantCount;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Get the other participant (for 1-to-1 conversations)
-    Map<String, dynamic> otherParticipant;
-    try {
-      otherParticipant = participants.firstWhere(
-        (p) => p['uid'] != currentUserId,
+    if (isGroup) {
+      // Group conversation
+      final name = groupName ?? 'Unknown Group';
+      final groupPresenceAsync = ref.watch(
+        groupPresenceStatusProvider(conversationId),
       );
-    } catch (e) {
-      // Fallback to first participant if not found
-      otherParticipant = participants.isNotEmpty
-          ? participants.first
-          : {'name': 'Unknown', 'uid': '', 'imageUrl': null};
-    }
 
-    final name = otherParticipant['name'] as String? ?? 'Unknown';
-    final imageUrl = otherParticipant['imageUrl'] as String?;
-    final otherUserId = otherParticipant['uid'] as String? ?? '';
-
-    // Watch presence for the other user
-    final presenceAsync = ref.watch(userPresenceProvider(otherUserId));
-
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      leading: _buildAvatarWithPresence(name, imageUrl, presenceAsync),
-      title: Row(
-        children: [
-          Expanded(
-            child: Text(
-              name,
-              style: TextStyle(
-                fontWeight: unreadCount > 0 ? FontWeight.bold : FontWeight.w500,
-                fontSize: 16,
+      return ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: _buildGroupAvatarWithPresence(name, groupPresenceAsync),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                name,
+                style: TextStyle(
+                  fontWeight: unreadCount > 0
+                      ? FontWeight.bold
+                      : FontWeight.w500,
+                  fontSize: 16,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
-              overflow: TextOverflow.ellipsis,
             ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            _formatTimestamp(lastUpdatedAt),
-            style: TextStyle(
-              fontSize: 12,
-              color: unreadCount > 0
-                  ? Theme.of(context).colorScheme.primary
-                  : Colors.grey[600],
-              fontWeight: unreadCount > 0 ? FontWeight.w600 : FontWeight.normal,
-            ),
-          ),
-        ],
-      ),
-      subtitle: Row(
-        children: [
-          Expanded(
-            child: Text(
-              lastMessage ?? 'No messages yet',
+            const SizedBox(width: 8),
+            Text(
+              _formatTimestamp(lastUpdatedAt),
               style: TextStyle(
-                color: lastMessage == null ? Colors.grey : Colors.grey[700],
+                fontSize: 12,
+                color: unreadCount > 0
+                    ? Theme.of(context).colorScheme.primary
+                    : Colors.grey[600],
                 fontWeight: unreadCount > 0
-                    ? FontWeight.w500
+                    ? FontWeight.w600
                     : FontWeight.normal,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
-          ),
-          if (unreadCount > 0) ...[
-            const SizedBox(width: 8),
-            _buildUnreadBadge(context),
           ],
-        ],
-      ),
-      onTap: onTap,
+        ),
+        subtitle: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    lastMessage ?? 'No messages yet',
+                    style: TextStyle(
+                      color: lastMessage == null
+                          ? Colors.grey
+                          : Colors.grey[700],
+                      fontWeight: unreadCount > 0
+                          ? FontWeight.w500
+                          : FontWeight.normal,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  // Show member count and online status
+                  groupPresenceAsync.when(
+                    data: (presence) {
+                      final onlineCount = presence['onlineCount'] as int? ?? 0;
+                      final totalCount =
+                          presence['totalCount'] as int? ??
+                          participantCount ??
+                          0;
+                      return Text(
+                        onlineCount > 0
+                            ? '$onlineCount/$totalCount online'
+                            : '$totalCount members',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: onlineCount > 0
+                              ? Colors.green
+                              : Colors.grey[600],
+                          fontWeight: onlineCount > 0
+                              ? FontWeight.w500
+                              : FontWeight.normal,
+                        ),
+                      );
+                    },
+                    loading: () => Text(
+                      '${participantCount ?? 0} members',
+                      style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                    ),
+                    error: (_, _) => Text(
+                      '${participantCount ?? 0} members',
+                      style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (unreadCount > 0) ...[
+              const SizedBox(width: 8),
+              _buildUnreadBadge(context),
+            ],
+          ],
+        ),
+        onTap: onTap,
+      );
+    } else {
+      // Direct conversation
+      Map<String, dynamic> otherParticipant;
+      try {
+        otherParticipant = participants.firstWhere(
+          (p) => p['uid'] != currentUserId,
+        );
+      } catch (e) {
+        // Fallback to first participant if not found
+        otherParticipant = participants.isNotEmpty
+            ? participants.first
+            : {'name': 'Unknown', 'uid': '', 'imageUrl': null};
+      }
+
+      final name = otherParticipant['name'] as String? ?? 'Unknown';
+      final imageUrl = otherParticipant['imageUrl'] as String?;
+      final otherUserId = otherParticipant['uid'] as String? ?? '';
+
+      // Watch presence for the other user
+      final presenceAsync = ref.watch(userPresenceProvider(otherUserId));
+
+      return ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: _buildAvatarWithPresence(name, imageUrl, presenceAsync),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                name,
+                style: TextStyle(
+                  fontWeight: unreadCount > 0
+                      ? FontWeight.bold
+                      : FontWeight.w500,
+                  fontSize: 16,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              _formatTimestamp(lastUpdatedAt),
+              style: TextStyle(
+                fontSize: 12,
+                color: unreadCount > 0
+                    ? Theme.of(context).colorScheme.primary
+                    : Colors.grey[600],
+                fontWeight: unreadCount > 0
+                    ? FontWeight.w600
+                    : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+        subtitle: Row(
+          children: [
+            Expanded(
+              child: Text(
+                lastMessage ?? 'No messages yet',
+                style: TextStyle(
+                  color: lastMessage == null ? Colors.grey : Colors.grey[700],
+                  fontWeight: unreadCount > 0
+                      ? FontWeight.w500
+                      : FontWeight.normal,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (unreadCount > 0) ...[
+              const SizedBox(width: 8),
+              _buildUnreadBadge(context),
+            ],
+          ],
+        ),
+        onTap: onTap,
+      );
+    }
+  }
+
+  Widget _buildGroupAvatarWithPresence(
+    String name,
+    AsyncValue<Map<String, dynamic>> groupPresenceAsync,
+  ) {
+    return Stack(
+      children: [
+        _buildGroupAvatar(name),
+        // Online indicator (bottom-right of avatar)
+        groupPresenceAsync.when(
+          data: (presence) {
+            final onlineCount = presence['onlineCount'] as int? ?? 0;
+            if (onlineCount == 0) return const SizedBox.shrink();
+
+            return Positioned(
+              right: 0,
+              bottom: 0,
+              child: Container(
+                width: 14,
+                height: 14,
+                decoration: BoxDecoration(
+                  color: Colors.green,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                ),
+              ),
+            );
+          },
+          loading: () => const SizedBox.shrink(),
+          error: (_, _) => const SizedBox.shrink(),
+        ),
+      ],
     );
   }
 
@@ -127,10 +276,7 @@ class ConversationListItem extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: isOnline ? Colors.green : Colors.grey,
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white,
-                    width: 2,
-                  ),
+                  border: Border.all(color: Colors.white, width: 2),
                 ),
               ),
             );
@@ -139,6 +285,17 @@ class ConversationListItem extends ConsumerWidget {
           error: (_, _) => const SizedBox.shrink(),
         ),
       ],
+    );
+  }
+
+  Widget _buildGroupAvatar(String name) {
+    // Generate color from name for consistent avatar colors
+    final color = _generateColorFromString(name);
+
+    return CircleAvatar(
+      radius: 28,
+      backgroundColor: color,
+      child: const Icon(Icons.group, color: Colors.white, size: 28),
     );
   }
 
