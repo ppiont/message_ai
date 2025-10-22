@@ -32,13 +32,12 @@ void main() {
 
     // Set up mock Firebase Auth for user creation
     final mockUser = MockUser(
-      isAnonymous: false,
       uid: 'test-uid',
       email: 'test@example.com',
       displayName: 'Test User',
       phoneNumber: '+1234567890',
     );
-    mockFirebaseAuth = MockFirebaseAuth(mockUser: mockUser, signedIn: false);
+    mockFirebaseAuth = MockFirebaseAuth(mockUser: mockUser);
   });
 
   group('Email Authentication', () {
@@ -471,7 +470,6 @@ void main() {
       test('should return User when user is signed in', () {
         // Arrange
         final mockUser = MockUser(
-          isAnonymous: false,
           uid: 'test-uid',
           email: 'test@example.com',
           displayName: 'Test User',
@@ -549,7 +547,6 @@ void main() {
       test('should emit User when auth state changes', () async {
         // Arrange
         final mockUser = MockUser(
-          isAnonymous: false,
           uid: 'test-uid',
           email: 'test@example.com',
           displayName: 'Test User',

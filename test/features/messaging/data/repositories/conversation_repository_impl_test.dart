@@ -2,8 +2,8 @@ import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:message_ai/core/error/exceptions.dart';
 import 'package:message_ai/core/error/failures.dart';
-import 'package:message_ai/features/messaging/data/datasources/conversation_remote_datasource.dart';
 import 'package:message_ai/features/messaging/data/datasources/conversation_local_datasource.dart';
+import 'package:message_ai/features/messaging/data/datasources/conversation_remote_datasource.dart';
 import 'package:message_ai/features/messaging/data/models/conversation_model.dart';
 import 'package:message_ai/features/messaging/data/repositories/conversation_repository_impl.dart';
 import 'package:message_ai/features/messaging/domain/entities/conversation.dart';
@@ -38,13 +38,13 @@ void main() {
   final testConversation = ConversationModel(
     documentId: 'conv-123',
     type: 'direct',
-    participantIds: ['user-1', 'user-2'],
+    participantIds: const ['user-1', 'user-2'],
     participants: const [
       ParticipantModel(uid: 'user-1', name: 'User 1', preferredLanguage: 'en'),
       ParticipantModel(uid: 'user-2', name: 'User 2', preferredLanguage: 'es'),
     ],
-    lastUpdatedAt: DateTime(2024, 1, 1, 12, 0),
-    initiatedAt: DateTime(2024, 1, 1, 10, 0),
+    lastUpdatedAt: DateTime(2024, 1, 1, 12),
+    initiatedAt: DateTime(2024, 1, 1, 10),
     unreadCount: const {'user-1': 0, 'user-2': 0},
     translationEnabled: false,
     autoDetectLanguage: false,
@@ -238,10 +238,8 @@ void main() {
         // Assert
         await expectLater(
           stream.first,
-          completion(predicate<Either<Failure, List<Conversation>>>((result) {
-            return result.isRight() &&
-                result.fold((l) => null, (r) => r)!.length == 1;
-          })),
+          completion(predicate<Either<Failure, List<Conversation>>>((result) => result.isRight() &&
+                result.fold((l) => null, (r) => r)!.length == 1)),
         );
       });
     });
@@ -313,7 +311,7 @@ void main() {
           'Hello!',
           'user-1',
           'User 1',
-          DateTime(2024, 1, 1),
+          DateTime(2024),
         );
 
         // Assert
@@ -337,7 +335,7 @@ void main() {
           'Hello!',
           'user-1',
           'User 1',
-          DateTime(2024, 1, 1),
+          DateTime(2024),
         );
 
         // Assert

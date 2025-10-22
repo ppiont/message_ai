@@ -43,10 +43,10 @@ abstract class UserRemoteDataSource {
 
 /// Implementation of UserRemoteDataSource using Cloud Firestore
 class UserRemoteDataSourceImpl implements UserRemoteDataSource {
-  final FirebaseFirestore _firestore;
 
   UserRemoteDataSourceImpl({required FirebaseFirestore firestore})
     : _firestore = firestore;
+  final FirebaseFirestore _firestore;
 
   static const String _usersCollection = 'users';
 

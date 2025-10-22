@@ -11,13 +11,6 @@ import 'package:message_ai/features/messaging/domain/repositories/message_reposi
 
 /// Automatically marks incoming messages as delivered
 class AutoDeliveryMarker {
-  final ConversationRepository _conversationRepository;
-  final MessageRepository _messageRepository;
-  final String _currentUserId;
-
-  final Set<String> _markedMessages = {};
-  StreamSubscription? _conversationsSub;
-  final Map<String, StreamSubscription> _messageSubs = {};
 
   AutoDeliveryMarker({
     required ConversationRepository conversationRepository,
@@ -26,6 +19,13 @@ class AutoDeliveryMarker {
   })  : _conversationRepository = conversationRepository,
         _messageRepository = messageRepository,
         _currentUserId = currentUserId;
+  final ConversationRepository _conversationRepository;
+  final MessageRepository _messageRepository;
+  final String _currentUserId;
+
+  final Set<String> _markedMessages = {};
+  StreamSubscription? _conversationsSub;
+  final Map<String, StreamSubscription> _messageSubs = {};
 
   /// Start watching conversations and marking messages
   void start() {
@@ -54,7 +54,6 @@ class AutoDeliveryMarker {
         .watchMessages(
       conversationId: conversationId,
       currentUserId: _currentUserId,
-      limit: 50,
     )
         .listen((result) {
       result.fold(

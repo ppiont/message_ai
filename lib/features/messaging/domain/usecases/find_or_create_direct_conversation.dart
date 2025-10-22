@@ -12,11 +12,11 @@ import 'package:uuid/uuid.dart';
 /// This is the primary way to initiate a 1-to-1 chat. It ensures that
 /// only one direct conversation exists between any two users.
 class FindOrCreateDirectConversation {
-  final ConversationRepository _conversationRepository;
-  final Uuid _uuid;
 
   FindOrCreateDirectConversation(this._conversationRepository)
       : _uuid = const Uuid();
+  final ConversationRepository _conversationRepository;
+  final Uuid _uuid;
 
   /// Finds or creates a direct conversation between two users.
   ///
@@ -56,7 +56,7 @@ class FindOrCreateDirectConversation {
         await _conversationRepository.findDirectConversation(userId1, userId2);
 
     return findResult.fold(
-      (failure) => Left(failure),
+      Left.new,
       (existingConversation) async {
         // If conversation exists, return it
         if (existingConversation != null) {

@@ -96,7 +96,7 @@ void main() {
         const userName = 'User One';
 
         // Act - Rapid typing updates
-        for (int i = 0; i < 5; i++) {
+        for (var i = 0; i < 5; i++) {
           await service.setTyping(
             conversationId: conversationId,
             userId: userId,
@@ -218,11 +218,9 @@ void main() {
         // Assert
         await expectLater(
           stream,
-          emits(predicate<List<TypingUser>>((users) {
-            return users.length == 2 &&
+          emits(predicate<List<TypingUser>>((users) => users.length == 2 &&
                 users.any((u) => u.userId == 'user-2') &&
-                users.any((u) => u.userId == 'user-3');
-          })),
+                users.any((u) => u.userId == 'user-3'))),
         );
       });
 
@@ -265,9 +263,7 @@ void main() {
         // Assert - Should only include user-2
         await expectLater(
           stream,
-          emits(predicate<List<TypingUser>>((users) {
-            return users.length == 1 && users.first.userId == 'user-2';
-          })),
+          emits(predicate<List<TypingUser>>((users) => users.length == 1 && users.first.userId == 'user-2')),
         );
       });
 
@@ -311,9 +307,7 @@ void main() {
         // Assert - Should only include user-2 (fresh)
         await expectLater(
           stream,
-          emits(predicate<List<TypingUser>>((users) {
-            return users.length == 1 && users.first.userId == 'user-2';
-          })),
+          emits(predicate<List<TypingUser>>((users) => users.length == 1 && users.first.userId == 'user-2')),
         );
       });
 
@@ -468,7 +462,7 @@ void main() {
         final user1 = TypingUser(
           userId: 'user-1',
           userName: 'User One',
-          lastUpdated: DateTime(2024, 1, 1),
+          lastUpdated: DateTime(2024),
         );
         final user2 = TypingUser(
           userId: 'user-1',
@@ -486,7 +480,7 @@ void main() {
         final user = TypingUser(
           userId: 'user-1',
           userName: 'User One',
-          lastUpdated: DateTime(2024, 1, 1),
+          lastUpdated: DateTime(2024),
         );
 
         // Act

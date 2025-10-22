@@ -7,9 +7,7 @@ import 'package:message_ai/features/authentication/presentation/pages/sign_up_pa
 
 void main() {
   group('AuthPage Widget Tests', () {
-    Widget createWidgetUnderTest() {
-      return const ProviderScope(child: MaterialApp(home: AuthPage()));
-    }
+    Widget createWidgetUnderTest() => const ProviderScope(child: MaterialApp(home: AuthPage()));
 
     testWidgets('should display app bar with title', (tester) async {
       await tester.pumpWidget(createWidgetUnderTest());

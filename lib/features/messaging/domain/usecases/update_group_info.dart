@@ -9,9 +9,9 @@ import 'package:message_ai/features/messaging/domain/repositories/group_conversa
 ///
 /// Only group admins should be able to update group info.
 class UpdateGroupInfo {
-  final GroupConversationRepository _groupRepository;
 
   UpdateGroupInfo(this._groupRepository);
+  final GroupConversationRepository _groupRepository;
 
   /// Updates group information.
   ///
@@ -58,7 +58,7 @@ class UpdateGroupInfo {
     // Get the group to validate requester is admin
     final groupResult = await _groupRepository.getGroupById(groupId);
 
-    return groupResult.fold((failure) => Left(failure), (group) async {
+    return groupResult.fold(Left.new, (group) async {
       // Check if requester is admin
       if (!(group.adminIds?.contains(requesterId) ?? false)) {
         return const Left(

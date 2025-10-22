@@ -5,6 +5,7 @@ import 'package:dartz/dartz.dart';
 import 'package:message_ai/core/error/failures.dart';
 import 'package:message_ai/features/authentication/domain/entities/user.dart';
 import 'package:message_ai/features/authentication/domain/repositories/user_repository.dart';
+import 'package:message_ai/features/authentication/domain/usecases/ensure_user_exists_in_firestore.dart' show EnsureUserExistsInFirestore;
 
 /// Syncs a Firebase Auth user to Firestore users collection.
 ///
@@ -18,9 +19,9 @@ import 'package:message_ai/features/authentication/domain/repositories/user_repo
 /// **Do NOT use for sign-in flows** - use [EnsureUserExistsInFirestore] instead,
 /// which only creates if missing (avoids unnecessary writes).
 class SyncUserToFirestore {
-  final UserRepository _userRepository;
 
   SyncUserToFirestore(this._userRepository);
+  final UserRepository _userRepository;
 
   /// Sync user data to Firestore
   ///
@@ -30,13 +31,13 @@ class SyncUserToFirestore {
     // Check if user already exists in Firestore
     final existsResult = await _userRepository.userExists(user.uid);
 
-    return existsResult.fold((failure) => Left(failure), (exists) async {
+    return existsResult.fold(Left.new, (exists) async {
       if (exists) {
         // Update existing user
-        return await _userRepository.updateUser(user);
+        return _userRepository.updateUser(user);
       } else {
         // Create new user
-        return await _userRepository.createUser(user);
+        return _userRepository.createUser(user);
       }
     });
   }

@@ -39,11 +39,10 @@ void main() {
     createdAt: DateTime.now(),
     lastSeen: DateTime.now(),
     isOnline: true,
-    fcmTokens: [],
+    fcmTokens: const [],
   );
 
-  Widget createWidgetUnderTest() {
-    return ProviderScope(
+  Widget createWidgetUnderTest() => ProviderScope(
       overrides: [
         signInWithEmailUseCaseProvider.overrideWithValue(mockSignInUseCase),
         ensureUserExistsInFirestoreUseCaseProvider.overrideWithValue(
@@ -52,7 +51,6 @@ void main() {
       ],
       child: const MaterialApp(home: Scaffold(body: SignInPage())),
     );
-  }
 
   group('SignInPage Widget Tests', () {
     testWidgets('should display all UI elements', (tester) async {

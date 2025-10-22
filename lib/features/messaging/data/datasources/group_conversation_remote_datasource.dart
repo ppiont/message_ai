@@ -72,10 +72,10 @@ abstract class GroupConversationRemoteDataSource {
 /// Implementation of [GroupConversationRemoteDataSource] using Firebase Firestore.
 class GroupConversationRemoteDataSourceImpl
     implements GroupConversationRemoteDataSource {
-  final FirebaseFirestore _firestore;
 
   GroupConversationRemoteDataSourceImpl({required FirebaseFirestore firestore})
     : _firestore = firestore;
+  final FirebaseFirestore _firestore;
 
   static const String _groupsCollection = 'group-conversations';
 
@@ -98,21 +98,21 @@ class GroupConversationRemoteDataSourceImpl
 
       // Validate group fields
       if (group.type != 'group') {
-        throw ValidationException(message: 'Conversation type must be "group"');
+        throw const ValidationException(message: 'Conversation type must be "group"');
       }
 
       if (group.participantIds.length < 2) {
-        throw ValidationException(
+        throw const ValidationException(
           message: 'Group must have at least 2 participants',
         );
       }
 
       if (group.groupName == null || group.groupName!.isEmpty) {
-        throw ValidationException(message: 'Group name is required');
+        throw const ValidationException(message: 'Group name is required');
       }
 
       if (group.adminIds == null || group.adminIds!.isEmpty) {
-        throw ValidationException(
+        throw const ValidationException(
           message: 'Group must have at least one admin',
         );
       }
@@ -172,7 +172,7 @@ class GroupConversationRemoteDataSourceImpl
     DateTime? before,
   }) async {
     try {
-      Query<Map<String, dynamic>> query = _groupsRef
+      var query = _groupsRef
           .where('participantIds', arrayContains: userId)
           .orderBy('lastUpdatedAt', descending: true)
           .limit(limit);
@@ -268,11 +268,9 @@ class GroupConversationRemoteDataSourceImpl
           .orderBy('lastUpdatedAt', descending: true)
           .limit(limit)
           .snapshots()
-          .map((snapshot) {
-            return snapshot.docs
+          .map((snapshot) => snapshot.docs
                 .map((doc) => ConversationModel.fromJson(doc.data()))
-                .toList();
-          });
+                .toList());
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
@@ -559,9 +557,9 @@ class GroupConversationRemoteDataSourceImpl
           message: 'Permission denied to access group conversation',
         );
       case 'not-found':
-        return RecordNotFoundException(recordType: 'GroupConversation');
+        return const RecordNotFoundException(recordType: 'GroupConversation');
       case 'already-exists':
-        return RecordAlreadyExistsException(recordType: 'GroupConversation');
+        return const RecordAlreadyExistsException(recordType: 'GroupConversation');
       case 'unavailable':
         return ServerException(
           message: 'Network unavailable: ${exception.message}',

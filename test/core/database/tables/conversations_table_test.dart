@@ -1,4 +1,4 @@
-import 'package:drift/drift.dart' hide isNull, isNotNull;
+import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:message_ai/core/database/app_database.dart';
@@ -505,10 +505,10 @@ void main() {
 
     test('JSON fields can store complex data', () async {
       final now = DateTime.now();
-      final participants =
+      const participants =
           '[{"uid":"user1","name":"Alice"},{"uid":"user2","name":"Bob"}]';
-      final unreadCount = '{"user1": 0, "user2": 5}';
-      final translations = '{"es":"Hola","fr":"Bonjour"}';
+      const unreadCount = '{"user1": 0, "user2": 5}';
+      const translations = '{"es":"Hola","fr":"Bonjour"}';
 
       final conversation = ConversationsCompanion.insert(
         documentId: 'json-data',
@@ -516,7 +516,7 @@ void main() {
         participantIds: '["user1","user2"]',
         participants: participants,
         unreadCount: unreadCount,
-        lastMessageTranslations: Value(translations),
+        lastMessageTranslations: const Value(translations),
         lastUpdatedAt: now,
         initiatedAt: now,
       );

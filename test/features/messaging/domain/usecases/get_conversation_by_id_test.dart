@@ -21,14 +21,14 @@ void main() {
   final testConversation = Conversation(
     documentId: 'conv-123',
     type: 'direct',
-    participantIds: ['user-1', 'user-2'],
-    participants: [
+    participantIds: const ['user-1', 'user-2'],
+    participants: const [
       Participant(uid: 'user-1', name: 'User 1', preferredLanguage: 'en'),
       Participant(uid: 'user-2', name: 'User 2', preferredLanguage: 'en'),
     ],
-    lastUpdatedAt: DateTime(2024, 1, 1),
-    initiatedAt: DateTime(2024, 1, 1),
-    unreadCount: {'user-1': 0, 'user-2': 0},
+    lastUpdatedAt: DateTime(2024),
+    initiatedAt: DateTime(2024),
+    unreadCount: const {'user-1': 0, 'user-2': 0},
     translationEnabled: false,
     autoDetectLanguage: false,
   );

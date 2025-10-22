@@ -30,10 +30,10 @@ void main() {
     email: 'test@test.com',
     displayName: 'Test User',
     preferredLanguage: 'en',
-    createdAt: DateTime(2024, 1, 1),
-    lastSeen: DateTime(2024, 1, 1),
+    createdAt: DateTime(2024),
+    lastSeen: DateTime(2024),
     isOnline: true,
-    fcmTokens: [],
+    fcmTokens: const [],
   );
 
   final testUserModel = UserModel(
@@ -41,8 +41,8 @@ void main() {
     email: 'test@test.com',
     displayName: 'Test User',
     preferredLanguage: 'en',
-    createdAt: DateTime(2024, 1, 1),
-    lastSeen: DateTime(2024, 1, 1),
+    createdAt: DateTime(2024),
+    lastSeen: DateTime(2024),
     isOnline: true,
     fcmTokens: [],
   );
@@ -310,7 +310,7 @@ void main() {
     group('updateUserLastSeen', () {
       test('should return Right(null) on success', () async {
         // Arrange
-        final lastSeen = DateTime(2024, 2, 1);
+        final lastSeen = DateTime(2024, 2);
         when(() => mockDataSource.updateUserLastSeen(any(), any()))
             .thenAnswer((_) async => {});
 
@@ -385,13 +385,11 @@ void main() {
         // Assert
         await expectLater(
           stream.first,
-          completion(predicate<Either<Failure, User>>((result) {
-            return result.isRight() &&
+          completion(predicate<Either<Failure, User>>((result) => result.isRight() &&
                 result
                     .fold((l) => null, (r) => r)!
                     .uid ==
-                    testUser.uid;
-          })),
+                    testUser.uid)),
         );
         verify(() => mockDataSource.watchUser('test-uid')).called(1);
       });

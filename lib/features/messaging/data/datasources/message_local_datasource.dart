@@ -3,7 +3,7 @@ library;
 
 import 'dart:convert';
 
-import 'package:drift/drift.dart' hide isNull, isNotNull;
+import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:message_ai/core/database/app_database.dart';
 import 'package:message_ai/core/database/daos/message_dao.dart';
 import 'package:message_ai/core/error/exceptions.dart';
@@ -216,10 +216,10 @@ abstract class MessageLocalDataSource {
 /// Handles all local database operations for messages, including CRUD operations,
 /// sync status tracking, and reactive streams for real-time UI updates.
 class MessageLocalDataSourceImpl implements MessageLocalDataSource {
-  final MessageDao _messageDao;
 
   MessageLocalDataSourceImpl({required MessageDao messageDao})
     : _messageDao = messageDao;
+  final MessageDao _messageDao;
 
   // ============================================================================
   // Helper Methods
@@ -229,8 +229,7 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
   MessagesCompanion _messageToCompanion(
     String conversationId,
     Message message,
-  ) {
-    return MessagesCompanion.insert(
+  ) => MessagesCompanion.insert(
       id: message.id,
       conversationId: conversationId,
       messageText: message.text,
@@ -252,17 +251,12 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
             ? _serializeAIAnalysis(message.aiAnalysis!)
             : null,
       ),
-      embedding: const Value.absent(),
       syncStatus: const Value('pending'),
       retryCount: const Value(0),
-      tempId: const Value.absent(),
-      lastSyncAttempt: const Value.absent(),
     );
-  }
 
   /// Converts a Drift MessageEntity to a domain Message entity.
-  Message _entityToMessage(MessageEntity entity) {
-    return MessageModel(
+  Message _entityToMessage(MessageEntity entity) => MessageModel(
       id: entity.id,
       text: entity.messageText,
       senderId: entity.senderId,
@@ -282,26 +276,21 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
           ? _deserializeAIAnalysis(entity.aiAnalysis!)
           : null,
     );
-  }
 
   // JSON serialization methods
-  String _serializeTranslations(Map<String, String> translations) {
-    return jsonEncode(translations);
-  }
+  String _serializeTranslations(Map<String, String> translations) => jsonEncode(translations);
 
   Map<String, String> _deserializeTranslations(String json) {
     final decoded = jsonDecode(json) as Map<String, dynamic>;
     return decoded.map((key, value) => MapEntry(key, value.toString()));
   }
 
-  String _serializeMetadata(MessageMetadata metadata) {
-    return jsonEncode({
+  String _serializeMetadata(MessageMetadata metadata) => jsonEncode({
       'edited': metadata.edited,
       'deleted': metadata.deleted,
       'priority': metadata.priority,
       'hasIdioms': metadata.hasIdioms,
     });
-  }
 
   MessageMetadata _deserializeMetadata(String json) {
     final decoded = jsonDecode(json) as Map<String, dynamic>;
@@ -313,13 +302,11 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
     );
   }
 
-  String _serializeAIAnalysis(MessageAIAnalysis analysis) {
-    return jsonEncode({
+  String _serializeAIAnalysis(MessageAIAnalysis analysis) => jsonEncode({
       'priority': analysis.priority,
       'actionItems': analysis.actionItems,
       'sentiment': analysis.sentiment,
     });
-  }
 
   MessageAIAnalysis? _deserializeAIAnalysis(String json) {
     try {
@@ -804,12 +791,10 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
       case 'server-wins':
         // Remote version takes precedence (default for most sync scenarios)
         resolvedMessage = remoteMessage;
-        break;
 
       case 'client-wins':
         // Local version takes precedence (used for user edits that haven't synced yet)
         resolvedMessage = localMessage;
-        break;
 
       case 'merge':
         // Merge both versions intelligently
@@ -817,7 +802,6 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
           localMessage: localMessage,
           remoteMessage: remoteMessage,
         );
-        break;
 
       default:
         throw ValidationException(

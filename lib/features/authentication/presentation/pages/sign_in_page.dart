@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
 import 'package:message_ai/features/authentication/presentation/pages/password_reset_page.dart';
+import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
 
 /// Sign in page with email/password authentication
 class SignInPage extends ConsumerStatefulWidget {
@@ -64,7 +64,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
         );
         final ensureResult = await ensureUseCase(user);
 
-        String message = 'Welcome back, ${user.displayName}!';
+        var message = 'Welcome back, ${user.displayName}!';
         ensureResult.fold(
           (failure) {
             // Failed to create/check Firestore document
@@ -94,9 +94,8 @@ class _SignInPageState extends ConsumerState<SignInPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
+  Widget build(BuildContext context) => Padding(
+      padding: const EdgeInsets.all(24),
       child: Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -234,5 +233,4 @@ class _SignInPageState extends ConsumerState<SignInPage> {
         ),
       ),
     );
-  }
 }

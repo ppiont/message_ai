@@ -108,7 +108,7 @@ void main() {
     });
 
     test('maps ValidationException to ValidationFailure', () {
-      final exception = ValidationException(
+      const exception = ValidationException(
         message: 'Validation failed',
         fieldErrors: {'email': 'Invalid'},
       );
@@ -375,7 +375,7 @@ void main() {
 
   group('ErrorMapper - Network Exceptions', () {
     test('maps SocketException to NoInternetFailure', () {
-      final exception = SocketException('No network');
+      const exception = SocketException('No network');
 
       final failure = ErrorMapper.mapExceptionToFailure(exception);
 
@@ -391,7 +391,7 @@ void main() {
     });
 
     test('maps HttpException to ServerFailure', () {
-      final exception = HttpException('Bad request');
+      const exception = HttpException('Bad request');
 
       final failure = ErrorMapper.mapExceptionToFailure(exception);
 

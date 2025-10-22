@@ -20,6 +20,18 @@ import 'package:message_ai/features/messaging/domain/repositories/message_reposi
 /// - Uses repositories for remote operations (handles Model/Entity conversion)
 /// - Stays at domain layer for clean architecture
 class MessageSyncService {
+
+  MessageSyncService({
+    required MessageLocalDataSource messageLocalDataSource,
+    required MessageRepository messageRepository,
+    required ConversationLocalDataSource conversationLocalDataSource,
+    required ConversationRepository conversationRepository,
+    Connectivity? connectivity,
+  }) : _messageLocalDataSource = messageLocalDataSource,
+       _messageRepository = messageRepository,
+       _conversationLocalDataSource = conversationLocalDataSource,
+       _conversationRepository = conversationRepository,
+       _connectivity = connectivity ?? Connectivity();
   final MessageLocalDataSource _messageLocalDataSource;
   final MessageRepository _messageRepository;
   final ConversationLocalDataSource _conversationLocalDataSource;
@@ -34,18 +46,6 @@ class MessageSyncService {
   // State
   bool _isSyncing = false;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
-
-  MessageSyncService({
-    required MessageLocalDataSource messageLocalDataSource,
-    required MessageRepository messageRepository,
-    required ConversationLocalDataSource conversationLocalDataSource,
-    required ConversationRepository conversationRepository,
-    Connectivity? connectivity,
-  }) : _messageLocalDataSource = messageLocalDataSource,
-       _messageRepository = messageRepository,
-       _conversationLocalDataSource = conversationLocalDataSource,
-       _conversationRepository = conversationRepository,
-       _connectivity = connectivity ?? Connectivity();
 
   // ============================================================================
   // Public API
@@ -101,8 +101,8 @@ class MessageSyncService {
       }
 
       final errors = <String>[];
-      int messagesSynced = 0;
-      int conversationsSynced = 0;
+      var messagesSynced = 0;
+      var conversationsSynced = 0;
 
       // Sync conversations first (messages depend on them)
       try {
@@ -168,7 +168,6 @@ class MessageSyncService {
               conversationId: conversationId,
               localMessage: message,
               remoteMessage: remoteMessage,
-              strategy: 'server-wins',
             );
 
             // Update remote with resolved version
@@ -248,7 +247,6 @@ class MessageSyncService {
             final resolved = await _conversationLocalDataSource.resolveConflict(
               localConversation: conversation,
               remoteConversation: remoteConversation,
-              strategy: 'server-wins',
             );
 
             // Update remote with resolved version
@@ -276,7 +274,7 @@ class MessageSyncService {
 
   /// Syncs all unsynced messages.
   Future<int> _syncMessages() async {
-    int synced = 0;
+    var synced = 0;
 
     // Get messages that need syncing
     final unsyncedMessages = await _messageLocalDataSource
@@ -326,7 +324,7 @@ class MessageSyncService {
 
   /// Syncs all unsynced conversations.
   Future<int> _syncConversations() async {
-    int synced = 0;
+    var synced = 0;
 
     // Get conversations that need syncing
     final unsyncedConversations = await _conversationLocalDataSource
@@ -350,11 +348,11 @@ class MessageSyncService {
   /// Retries failed messages with exponential backoff.
   Future<void> _retryFailedMessages() async {
     final failedMessages = await _messageLocalDataSource
-        .getFailedMessagesForRetry(maxRetries: maxRetries);
+        .getFailedMessagesForRetry();
 
     for (final message in failedMessages) {
       // Calculate backoff delay based on retry count
-      final retryCount = 0; // Would get this from message metadata
+      const retryCount = 0; // Would get this from message metadata
       final delay = _calculateBackoffDelay(retryCount);
 
       // Wait before retrying
@@ -384,9 +382,7 @@ class MessageSyncService {
   // ============================================================================
 
   /// Checks if there's an active network connection.
-  bool _hasConnection(List<ConnectivityResult> results) {
-    return results.any((result) => result != ConnectivityResult.none);
-  }
+  bool _hasConnection(List<ConnectivityResult> results) => results.any((result) => result != ConnectivityResult.none);
 
   /// Calculates exponential backoff delay.
   Duration _calculateBackoffDelay(int retryCount) {
@@ -404,21 +400,19 @@ class MessageSyncService {
 
 /// Result of a sync operation.
 class SyncResult {
-  final int messagesSynced;
-  final int conversationsSynced;
-  final List<String> errors;
 
   SyncResult({
     required this.messagesSynced,
     required this.conversationsSynced,
     required this.errors,
   });
+  final int messagesSynced;
+  final int conversationsSynced;
+  final List<String> errors;
 
   bool get hasErrors => errors.isNotEmpty;
   bool get isSuccess => !hasErrors;
 
   @override
-  String toString() {
-    return 'SyncResult(messages: $messagesSynced, conversations: $conversationsSynced, errors: ${errors.length})';
-  }
+  String toString() => 'SyncResult(messages: $messagesSynced, conversations: $conversationsSynced, errors: ${errors.length})';
 }

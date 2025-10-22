@@ -22,28 +22,28 @@ void main() {
     Conversation(
       documentId: 'conv-1',
       type: 'direct',
-      participantIds: ['user-1', 'user-2'],
-      participants: [
+      participantIds: const ['user-1', 'user-2'],
+      participants: const [
         Participant(uid: 'user-1', name: 'User 1', preferredLanguage: 'en'),
         Participant(uid: 'user-2', name: 'User 2', preferredLanguage: 'en'),
       ],
-      lastUpdatedAt: DateTime(2024, 1, 1),
-      initiatedAt: DateTime(2024, 1, 1),
-      unreadCount: {'user-1': 0, 'user-2': 0},
+      lastUpdatedAt: DateTime(2024),
+      initiatedAt: DateTime(2024),
+      unreadCount: const {'user-1': 0, 'user-2': 0},
       translationEnabled: false,
       autoDetectLanguage: false,
     ),
     Conversation(
       documentId: 'conv-2',
       type: 'direct',
-      participantIds: ['user-1', 'user-3'],
-      participants: [
+      participantIds: const ['user-1', 'user-3'],
+      participants: const [
         Participant(uid: 'user-1', name: 'User 1', preferredLanguage: 'en'),
         Participant(uid: 'user-3', name: 'User 3', preferredLanguage: 'en'),
       ],
       lastUpdatedAt: DateTime(2024, 1, 2),
       initiatedAt: DateTime(2024, 1, 2),
-      unreadCount: {'user-1': 2, 'user-3': 0},
+      unreadCount: const {'user-1': 2, 'user-3': 0},
       translationEnabled: false,
       autoDetectLanguage: false,
     ),
@@ -59,10 +59,8 @@ void main() {
         await expectLater(
           stream.first,
           completion(
-              predicate<Either<Failure, List<Conversation>>>((result) {
-            return result.isLeft() &&
-                result.fold((l) => l, (r) => null) is ValidationFailure;
-          })),
+              predicate<Either<Failure, List<Conversation>>>((result) => result.isLeft() &&
+                result.fold((l) => l, (r) => null) is ValidationFailure)),
         );
       });
 
@@ -75,9 +73,7 @@ void main() {
         await expectLater(
           stream.first,
           completion(
-              predicate<Either<Failure, List<Conversation>>>((result) {
-            return result.isLeft();
-          })),
+              predicate<Either<Failure, List<Conversation>>>((result) => result.isLeft())),
         );
       });
     });
@@ -96,13 +92,11 @@ void main() {
         await expectLater(
           stream.first,
           completion(
-              predicate<Either<Failure, List<Conversation>>>((result) {
-            return result.isRight() &&
-                result.fold((l) => null, (r) => r)!.length == 2;
-          })),
+              predicate<Either<Failure, List<Conversation>>>((result) => result.isRight() &&
+                result.fold((l) => null, (r) => r)!.length == 2)),
         );
 
-        verify(() => mockRepository.watchConversationsForUser('user-1', limit: 50))
+        verify(() => mockRepository.watchConversationsForUser('user-1'))
             .called(1);
       });
 
@@ -135,10 +129,8 @@ void main() {
         await expectLater(
           stream.first,
           completion(
-              predicate<Either<Failure, List<Conversation>>>((result) {
-            return result.isRight() &&
-                result.fold((l) => null, (r) => r)!.isEmpty;
-          })),
+              predicate<Either<Failure, List<Conversation>>>((result) => result.isRight() &&
+                result.fold((l) => null, (r) => r)!.isEmpty)),
         );
       });
     });

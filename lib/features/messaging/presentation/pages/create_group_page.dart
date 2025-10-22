@@ -110,15 +110,14 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       appBar: AppBar(
         title: const Text('Create Group'),
         actions: [
           if (_isLoading)
             const Center(
               child: Padding(
-                padding: EdgeInsets.all(16.0),
+                padding: EdgeInsets.all(16),
                 child: SizedBox(
                   width: 20,
                   height: 20,
@@ -142,7 +141,7 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
           children: [
             // Group name input
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(16),
               child: TextFormField(
                 controller: _groupNameController,
                 decoration: const InputDecoration(
@@ -161,7 +160,7 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
             ),
             const Divider(),
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
                   const Text(
@@ -182,7 +181,6 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
         ),
       ),
     );
-  }
 
   Widget _buildUserList() {
     // In a real app, you'd fetch users from a backend API
@@ -217,7 +215,7 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
                   ? null
                   : (value) {
                       setState(() {
-                        if (value == true) {
+                        if (value ?? false) {
                           _selectedUserIds.add(userId);
                         } else {
                           _selectedUserIds.remove(userId);

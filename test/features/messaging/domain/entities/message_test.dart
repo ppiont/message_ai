@@ -49,10 +49,10 @@ void main() {
         type: 'text',
         status: 'delivered',
         detectedLanguage: 'en',
-        translations: {'es': 'Hola, Mundo!'},
+        translations: const {'es': 'Hola, Mundo!'},
         replyTo: 'msg-122',
         metadata: testMetadata,
-        embedding: [0.1, 0.2, 0.3],
+        embedding: const [0.1, 0.2, 0.3],
         aiAnalysis: analysis,
       );
 

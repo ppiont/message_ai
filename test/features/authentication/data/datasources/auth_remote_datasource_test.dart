@@ -12,11 +12,10 @@ void main() {
   setUp(() {
     mockUser = MockUser(
       uid: 'test-uid-123',
-      email: null,
       phoneNumber: '+1234567890',
       displayName: 'Test User',
     );
-    mockFirebaseAuth = MockFirebaseAuth(mockUser: mockUser, signedIn: false);
+    mockFirebaseAuth = MockFirebaseAuth(mockUser: mockUser);
     dataSource = AuthRemoteDataSourceImpl(mockFirebaseAuth);
   });
 

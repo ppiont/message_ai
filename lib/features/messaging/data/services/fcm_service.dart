@@ -79,15 +79,6 @@ typedef NotificationTapCallback =
 /// - Background notification handling
 /// - Notification tap handling with navigation
 class FCMService {
-  final FirebaseMessaging _messaging;
-  final FirebaseFirestore _firestore;
-  final FlutterLocalNotificationsPlugin _localNotifications;
-
-  // State
-  StreamSubscription<String>? _tokenRefreshSubscription;
-  StreamSubscription<RemoteMessage>? _foregroundMessageSubscription;
-  StreamSubscription<RemoteMessage>? _notificationTapSubscription;
-  bool _notificationsInitialized = false;
 
   FCMService({
     FirebaseMessaging? messaging,
@@ -97,6 +88,15 @@ class FCMService {
        _firestore = firestore ?? FirebaseFirestore.instance,
        _localNotifications =
            localNotifications ?? FlutterLocalNotificationsPlugin();
+  final FirebaseMessaging _messaging;
+  final FirebaseFirestore _firestore;
+  final FlutterLocalNotificationsPlugin _localNotifications;
+
+  // State
+  StreamSubscription<String>? _tokenRefreshSubscription;
+  StreamSubscription<RemoteMessage>? _foregroundMessageSubscription;
+  StreamSubscription<RemoteMessage>? _notificationTapSubscription;
+  bool _notificationsInitialized = false;
 
   // ============================================================================
   // Public API
@@ -179,10 +179,7 @@ class FCMService {
   /// On older Android: Automatically granted
   Future<AuthorizationStatus> requestPermission() async {
     final settings = await _messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-      provisional: false,
+
     );
 
     return settings.authorizationStatus;
@@ -243,9 +240,6 @@ class FCMService {
       description: 'New message notifications',
       importance: Importance.high,
       sound: RawResourceAndroidNotificationSound('default'),
-      playSound: true,
-      enableVibration: true,
-      showBadge: true,
     );
 
     // Create the channel on Android
@@ -283,12 +277,7 @@ class FCMService {
     _notificationTapSubscription?.cancel();
 
     // Handle messages when app is in foreground
-    _foregroundMessageSubscription = FirebaseMessaging.onMessage.listen((
-      RemoteMessage message,
-    ) {
-      // Show local notification (Firebase doesn't auto-show in foreground)
-      _showForegroundNotification(message);
-    });
+    _foregroundMessageSubscription = FirebaseMessaging.onMessage.listen(_showForegroundNotification);
 
     // Handle notification tap when app is in background or foreground
     if (onNotificationTap != null) {
@@ -312,10 +301,6 @@ class FCMService {
       channelDescription: 'New message notifications',
       importance: Importance.high,
       priority: Priority.high,
-      // Note: Using default icon since custom ic_notification doesn't exist
-      // To customize, add drawable/ic_notification.xml to res folder
-      playSound: true,
-      enableVibration: true,
       styleInformation: BigTextStyleInformation(''), // WhatsApp-style
     );
 

@@ -49,7 +49,7 @@ void main() {
     senderId: 'user-1',
     senderName: 'Test User',
     text: 'Hello, World!',
-    timestamp: DateTime(2024, 1, 1),
+    timestamp: DateTime(2024),
     status: 'sent',
     type: 'text',
     metadata: MessageMetadata.defaultMetadata(),

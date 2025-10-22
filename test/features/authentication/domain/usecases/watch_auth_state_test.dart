@@ -23,7 +23,7 @@ void main() {
     createdAt: DateTime.now(),
     lastSeen: DateTime.now(),
     isOnline: true,
-    fcmTokens: [],
+    fcmTokens: const [],
   );
 
   group('WatchAuthState', () {

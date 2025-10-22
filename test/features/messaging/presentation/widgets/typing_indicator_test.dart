@@ -82,7 +82,7 @@ void main() {
         (widget) =>
             widget is Container &&
             widget.decoration is BoxDecoration &&
-            (widget.decoration as BoxDecoration).shape == BoxShape.circle,
+            (widget.decoration! as BoxDecoration).shape == BoxShape.circle,
       );
 
       expect(dotContainers, findsNWidgets(3)); // 3 dots
@@ -182,7 +182,7 @@ void main() {
 
       // Act
       await tester.pumpWidget(
-        MaterialApp(
+        const MaterialApp(
           home: Scaffold(body: TypingIndicator(typingUserNames: typingUsers)),
         ),
       );
@@ -203,7 +203,7 @@ void main() {
 
       // Act
       await tester.pumpWidget(
-        MaterialApp(
+        const MaterialApp(
           home: Scaffold(
             body: SizedBox(
               width: 300,

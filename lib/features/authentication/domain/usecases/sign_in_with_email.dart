@@ -5,9 +5,9 @@ import 'package:message_ai/features/authentication/domain/repositories/auth_repo
 
 /// Use case for signing in an existing user with email and password
 class SignInWithEmail {
-  final AuthRepository _repository;
 
   SignInWithEmail(this._repository);
+  final AuthRepository _repository;
 
   /// Signs in an existing user
   ///

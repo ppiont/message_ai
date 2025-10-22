@@ -1,4 +1,4 @@
-import 'package:drift/drift.dart' hide isNull, isNotNull;
+import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:message_ai/core/database/app_database.dart';
@@ -118,7 +118,7 @@ void main() {
     test('getUsersByUids returns multiple users', () async {
       final now = DateTime.now();
 
-      for (int i = 0; i < 3; i++) {
+      for (var i = 0; i < 3; i++) {
         await database.userDao.insertUser(UsersCompanion.insert(
           uid: 'user-$i',
           name: 'User $i',
@@ -162,7 +162,7 @@ void main() {
     test('countUsers returns correct count', () async {
       final now = DateTime.now();
 
-      for (int i = 0; i < 5; i++) {
+      for (var i = 0; i < 5; i++) {
         await database.userDao.insertUser(UsersCompanion.insert(
           uid: 'user-$i',
           name: 'User $i',
@@ -341,7 +341,7 @@ void main() {
     test('countOnlineUsers returns correct count', () async {
       final now = DateTime.now();
 
-      for (int i = 0; i < 3; i++) {
+      for (var i = 0; i < 3; i++) {
         await database.userDao.insertUser(UsersCompanion.insert(
           uid: 'user-$i',
           name: 'User $i',
@@ -358,7 +358,7 @@ void main() {
     test('setAllUsersOffline sets all online users to offline', () async {
       final now = DateTime.now();
 
-      for (int i = 0; i < 3; i++) {
+      for (var i = 0; i < 3; i++) {
         await database.userDao.insertUser(UsersCompanion.insert(
           uid: 'user-$i',
           name: 'User $i',
@@ -482,7 +482,7 @@ void main() {
     test('batchUpdateOnlineStatus updates multiple users', () async {
       final now = DateTime.now();
 
-      for (int i = 0; i < 3; i++) {
+      for (var i = 0; i < 3; i++) {
         await database.userDao.insertUser(UsersCompanion.insert(
           uid: 'user-$i',
           name: 'User $i',
@@ -504,7 +504,7 @@ void main() {
     test('batchDeleteUsers removes multiple users', () async {
       final now = DateTime.now();
 
-      for (int i = 0; i < 5; i++) {
+      for (var i = 0; i < 5; i++) {
         await database.userDao.insertUser(UsersCompanion.insert(
           uid: 'user-$i',
           name: 'User $i',

@@ -5,9 +5,7 @@ import 'package:message_ai/core/network/network_info.dart';
 /// Provider for the Connectivity instance
 ///
 /// Singleton instance used by NetworkInfo
-final connectivityProvider = Provider<Connectivity>((ref) {
-  return Connectivity();
-});
+final connectivityProvider = Provider<Connectivity>((ref) => Connectivity());
 
 /// Provider for NetworkInfo service
 ///
@@ -31,5 +29,5 @@ final networkStatusProvider = StreamProvider<bool>((ref) {
 /// Returns true if device currently has internet connection
 final isConnectedProvider = FutureProvider<bool>((ref) async {
   final networkInfo = ref.watch(networkInfoProvider);
-  return await networkInfo.isConnected;
+  return networkInfo.isConnected;
 });

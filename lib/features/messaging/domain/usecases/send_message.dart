@@ -18,9 +18,6 @@ import 'package:message_ai/features/translation/data/services/language_detection
 ///
 /// Returns the created message or a Failure.
 class SendMessage {
-  final MessageRepository _messageRepository;
-  final ConversationRepository _conversationRepository;
-  final LanguageDetectionService _languageDetectionService;
 
   SendMessage({
     required MessageRepository messageRepository,
@@ -29,6 +26,9 @@ class SendMessage {
   })  : _messageRepository = messageRepository,
         _conversationRepository = conversationRepository,
         _languageDetectionService = languageDetectionService;
+  final MessageRepository _messageRepository;
+  final ConversationRepository _conversationRepository;
+  final LanguageDetectionService _languageDetectionService;
 
   /// Sends a message to a conversation.
   ///
@@ -79,7 +79,7 @@ class SendMessage {
     );
 
     return result.fold(
-      (failure) => Left(failure),
+      Left.new,
       (createdMessage) async {
         // Update conversation's last message
         // (non-critical operation, ignore failures)

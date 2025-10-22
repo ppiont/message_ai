@@ -3,7 +3,7 @@ import 'package:message_ai/features/authentication/domain/entities/user.dart';
 
 void main() {
   group('User Entity', () {
-    final testDate = DateTime(2024, 10, 21, 12, 0, 0);
+    final testDate = DateTime(2024, 10, 21, 12);
 
     final testUser = User(
       uid: 'test-uid-123',
@@ -15,7 +15,7 @@ void main() {
       createdAt: testDate,
       lastSeen: testDate,
       isOnline: true,
-      fcmTokens: ['token1', 'token2'],
+      fcmTokens: const ['token1', 'token2'],
     );
 
     test('should create user with all properties', () {
@@ -39,7 +39,7 @@ void main() {
         createdAt: testDate,
         lastSeen: testDate,
         isOnline: false,
-        fcmTokens: [],
+        fcmTokens: const [],
       );
 
       expect(minimalUser.email, isNull);
@@ -108,7 +108,7 @@ void main() {
           createdAt: testDate,
           lastSeen: testDate,
           isOnline: true,
-          fcmTokens: ['token1', 'token2'],
+          fcmTokens: const ['token1', 'token2'],
         );
 
         expect(user1, equals(user2));

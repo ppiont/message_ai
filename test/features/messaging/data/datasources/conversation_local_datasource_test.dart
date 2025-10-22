@@ -13,18 +13,16 @@ void main() {
   final testConversation = Conversation(
     documentId: 'conv-1',
     type: 'direct',
-    participantIds: ['user-1', 'user-2'],
-    participants: [
-      const Participant(
+    participantIds: const ['user-1', 'user-2'],
+    participants: const [
+      Participant(
         uid: 'user-1',
         name: 'User One',
-        imageUrl: null,
         preferredLanguage: 'en',
       ),
-      const Participant(
+      Participant(
         uid: 'user-2',
         name: 'User Two',
-        imageUrl: null,
         preferredLanguage: 'es',
       ),
     ],
@@ -32,12 +30,12 @@ void main() {
       text: 'Hello',
       senderId: 'user-1',
       senderName: 'User One',
-      timestamp: DateTime(2024, 1, 1, 12, 0),
+      timestamp: DateTime(2024, 1, 1, 12),
       type: 'text',
     ),
-    lastUpdatedAt: DateTime(2024, 1, 1, 12, 0),
-    initiatedAt: DateTime(2024, 1, 1, 10, 0),
-    unreadCount: {'user-1': 0, 'user-2': 1},
+    lastUpdatedAt: DateTime(2024, 1, 1, 12),
+    initiatedAt: DateTime(2024, 1, 1, 10),
+    unreadCount: const {'user-1': 0, 'user-2': 1},
     translationEnabled: true,
     autoDetectLanguage: true,
   );
@@ -89,24 +87,22 @@ void main() {
           final fullConversation = Conversation(
             documentId: 'conv-full',
             type: 'group',
-            participantIds: ['user-1', 'user-2', 'user-3'],
-            participants: [
-              const Participant(
+            participantIds: const ['user-1', 'user-2', 'user-3'],
+            participants: const [
+              Participant(
                 uid: 'user-1',
                 name: 'User One',
                 imageUrl: 'https://example.com/1.jpg',
                 preferredLanguage: 'en',
               ),
-              const Participant(
+              Participant(
                 uid: 'user-2',
                 name: 'User Two',
-                imageUrl: null,
                 preferredLanguage: 'es',
               ),
-              const Participant(
+              Participant(
                 uid: 'user-3',
                 name: 'User Three',
-                imageUrl: null,
                 preferredLanguage: 'fr',
               ),
             ],
@@ -114,21 +110,21 @@ void main() {
               text: 'Group message',
               senderId: 'user-1',
               senderName: 'User One',
-              timestamp: DateTime(2024, 1, 1, 12, 0),
+              timestamp: DateTime(2024, 1, 1, 12),
               type: 'text',
-              translations: {
+              translations: const {
                 'es': 'Mensaje de grupo',
                 'fr': 'Message de groupe',
               },
             ),
-            lastUpdatedAt: DateTime(2024, 1, 1, 12, 0),
-            initiatedAt: DateTime(2024, 1, 1, 10, 0),
-            unreadCount: {'user-1': 0, 'user-2': 2, 'user-3': 1},
+            lastUpdatedAt: DateTime(2024, 1, 1, 12),
+            initiatedAt: DateTime(2024, 1, 1, 10),
+            unreadCount: const {'user-1': 0, 'user-2': 2, 'user-3': 1},
             translationEnabled: true,
             autoDetectLanguage: true,
             groupName: 'Test Group',
             groupImage: 'https://example.com/group.jpg',
-            adminIds: ['user-1'],
+            adminIds: const ['user-1'],
           );
 
           // Act
@@ -182,7 +178,7 @@ void main() {
               text: 'Updated message',
               senderId: 'user-2',
               senderName: 'User Two',
-              timestamp: DateTime(2024, 1, 1, 13, 0),
+              timestamp: DateTime(2024, 1, 1, 13),
               type: 'text',
             ),
           );
@@ -203,11 +199,11 @@ void main() {
             final nonExistentConversation = Conversation(
               documentId: 'non-existent',
               type: 'direct',
-              participantIds: ['user-1', 'user-2'],
+              participantIds: const ['user-1', 'user-2'],
               participants: const [],
               lastUpdatedAt: DateTime.now(),
               initiatedAt: DateTime.now(),
-              unreadCount: {},
+              unreadCount: const {},
               translationEnabled: true,
               autoDetectLanguage: true,
             );
@@ -255,15 +251,15 @@ void main() {
             // Arrange
             final conv1 = testConversation.copyWith(
               documentId: 'conv-1',
-              lastUpdatedAt: DateTime(2024, 1, 1, 10, 0),
+              lastUpdatedAt: DateTime(2024, 1, 1, 10),
             );
             final conv2 = testConversation.copyWith(
               documentId: 'conv-2',
-              lastUpdatedAt: DateTime(2024, 1, 1, 12, 0),
+              lastUpdatedAt: DateTime(2024, 1, 1, 12),
             );
             final conv3 = testConversation.copyWith(
               documentId: 'conv-3',
-              lastUpdatedAt: DateTime(2024, 1, 1, 11, 0),
+              lastUpdatedAt: DateTime(2024, 1, 1, 11),
             );
 
             await dataSource.createConversation(conv1);
@@ -284,11 +280,11 @@ void main() {
 
         test('should respect limit and offset parameters', () async {
           // Arrange - Create 5 conversations
-          for (int i = 1; i <= 5; i++) {
+          for (var i = 1; i <= 5; i++) {
             await dataSource.createConversation(
               testConversation.copyWith(
                 documentId: 'conv-$i',
-                lastUpdatedAt: DateTime(2024, 1, 1, 10 + i, 0),
+                lastUpdatedAt: DateTime(2024, 1, 1, 10 + i),
               ),
             );
           }
@@ -296,7 +292,6 @@ void main() {
           // Act
           final page1 = await dataSource.getAllConversations(
             limit: 2,
-            offset: 0,
           );
           final page2 = await dataSource.getAllConversations(
             limit: 2,
@@ -467,7 +462,7 @@ void main() {
 
           // Act
           final activeConversations = await dataSource.getActiveConversations(
-            daysBack: 7,
+
           );
 
           // Assert
@@ -524,7 +519,7 @@ void main() {
             text: 'New message',
             senderId: 'user-2',
             senderName: 'User Two',
-            timestamp: DateTime(2024, 1, 1, 13, 0),
+            timestamp: DateTime(2024, 1, 1, 13),
             type: 'text',
           );
 
@@ -671,15 +666,15 @@ void main() {
       group('getConversationsUpdatedAfter', () {
         test('should return conversations updated after timestamp', () async {
           // Arrange
-          final cutoff = DateTime(2024, 1, 1, 11, 0);
+          final cutoff = DateTime(2024, 1, 1, 11);
 
           final oldConv = testConversation.copyWith(
             documentId: 'conv-old',
-            lastUpdatedAt: DateTime(2024, 1, 1, 10, 0),
+            lastUpdatedAt: DateTime(2024, 1, 1, 10),
           );
           final newConv = testConversation.copyWith(
             documentId: 'conv-new',
-            lastUpdatedAt: DateTime(2024, 1, 1, 12, 0),
+            lastUpdatedAt: DateTime(2024, 1, 1, 12),
           );
 
           await dataSource.createConversation(oldConv);
@@ -765,7 +760,7 @@ void main() {
               text: 'Different message',
               senderId: 'user-2',
               senderName: 'User Two',
-              timestamp: DateTime(2024, 1, 1, 12, 0),
+              timestamp: DateTime(2024, 1, 1, 12),
               type: 'text',
             ),
           );
@@ -852,7 +847,6 @@ void main() {
           final resolved = await dataSource.resolveConflict(
             localConversation: localConv,
             remoteConversation: remoteConv,
-            strategy: 'server-wins',
           );
 
           // Assert
@@ -893,7 +887,7 @@ void main() {
               text: 'Local message',
               senderId: 'user-1',
               senderName: 'User One',
-              timestamp: DateTime(2024, 1, 1, 14, 0),
+              timestamp: DateTime(2024, 1, 1, 14),
               type: 'text',
             ),
           );
@@ -903,7 +897,7 @@ void main() {
               text: 'Remote message',
               senderId: 'user-2',
               senderName: 'User Two',
-              timestamp: DateTime(2024, 1, 1, 13, 0),
+              timestamp: DateTime(2024, 1, 1, 13),
               type: 'text',
             ),
           );
@@ -949,7 +943,7 @@ void main() {
               text: 'Older message',
               senderId: 'user-1',
               senderName: 'User One',
-              timestamp: DateTime(2024, 1, 1, 11, 0),
+              timestamp: DateTime(2024, 1, 1, 11),
               type: 'text',
             ),
           );
@@ -958,7 +952,7 @@ void main() {
               text: 'Newer message',
               senderId: 'user-2',
               senderName: 'User Two',
-              timestamp: DateTime(2024, 1, 1, 13, 0),
+              timestamp: DateTime(2024, 1, 1, 13),
               type: 'text',
             ),
           );
@@ -1001,13 +995,11 @@ void main() {
               const Participant(
                 uid: 'user-1',
                 name: 'User One',
-                imageUrl: null,
                 preferredLanguage: 'en',
               ),
               const Participant(
                 uid: 'user-2',
                 name: 'User Two',
-                imageUrl: null,
                 preferredLanguage: 'es',
               ),
             ],
@@ -1018,13 +1010,11 @@ void main() {
               const Participant(
                 uid: 'user-1',
                 name: 'User One',
-                imageUrl: null,
                 preferredLanguage: 'en',
               ),
               const Participant(
                 uid: 'user-3',
                 name: 'User Three',
-                imageUrl: null,
                 preferredLanguage: 'fr',
               ),
             ],
@@ -1070,10 +1060,10 @@ void main() {
         test('should use most recent lastUpdatedAt', () async {
           // Arrange
           final localConv = testConversation.copyWith(
-            lastUpdatedAt: DateTime(2024, 1, 1, 14, 0),
+            lastUpdatedAt: DateTime(2024, 1, 1, 14),
           );
           final remoteConv = testConversation.copyWith(
-            lastUpdatedAt: DateTime(2024, 1, 1, 12, 0),
+            lastUpdatedAt: DateTime(2024, 1, 1, 12),
           );
 
           // Act
@@ -1083,7 +1073,7 @@ void main() {
           );
 
           // Assert
-          expect(merged.lastUpdatedAt, DateTime(2024, 1, 1, 14, 0));
+          expect(merged.lastUpdatedAt, DateTime(2024, 1, 1, 14));
         });
       });
     });

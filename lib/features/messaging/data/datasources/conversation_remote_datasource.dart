@@ -57,13 +57,13 @@ abstract class ConversationRemoteDataSource {
 
 /// Implementation of [ConversationRemoteDataSource] using Firebase Firestore.
 class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
+
+  ConversationRemoteDataSourceImpl({required FirebaseFirestore firestore})
+      : _firestore = firestore;
   final FirebaseFirestore _firestore;
 
   // Cache to track which collection each conversation belongs to
   final Map<String, String> _conversationTypeCache = {};
-
-  ConversationRemoteDataSourceImpl({required FirebaseFirestore firestore})
-      : _firestore = firestore;
 
   static const String _conversationsCollection = 'conversations';
   static const String _groupConversationsCollection = 'group-conversations';
@@ -163,7 +163,7 @@ class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
     DateTime? before,
   }) async {
     try {
-      Query<Map<String, dynamic>> query = _conversationsRef
+      var query = _conversationsRef
           .where('participantIds', arrayContains: userId)
           .orderBy('lastUpdatedAt', descending: true)
           .limit(limit);
@@ -249,11 +249,9 @@ class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
           .orderBy('lastUpdatedAt', descending: true)
           .limit(limit)
           .snapshots()
-          .map((snapshot) {
-        return snapshot.docs
+          .map((snapshot) => snapshot.docs
             .map((doc) => ConversationModel.fromJson(doc.data()))
-            .toList();
-      });
+            .toList());
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {

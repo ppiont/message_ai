@@ -110,7 +110,6 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
 
     final result = await updateProfileUseCase(
       displayName: _nameController.text.trim(),
-      photoURL: null, // Will be implemented with Firebase Storage
     );
 
     if (!mounted) return;
@@ -148,11 +147,10 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       appBar: AppBar(title: const Text('Complete Your Profile')),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
           child: Column(
@@ -296,5 +294,4 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
         ),
       ),
     );
-  }
 }

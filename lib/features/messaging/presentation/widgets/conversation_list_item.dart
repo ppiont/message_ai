@@ -222,8 +222,7 @@ class ConversationListItem extends ConsumerWidget {
   Widget _buildGroupAvatarWithPresence(
     String name,
     AsyncValue<Map<String, dynamic>> groupPresenceAsync,
-  ) {
-    return Stack(
+  ) => Stack(
       children: [
         _buildGroupAvatar(name),
         // Online indicator (bottom-right of avatar)
@@ -251,14 +250,12 @@ class ConversationListItem extends ConsumerWidget {
         ),
       ],
     );
-  }
 
   Widget _buildAvatarWithPresence(
     String name,
     String? imageUrl,
     AsyncValue<Map<String, dynamic>?> presenceAsync,
-  ) {
-    return Stack(
+  ) => Stack(
       children: [
         _buildAvatar(name, imageUrl),
         // Presence indicator (bottom-right of avatar)
@@ -286,7 +283,6 @@ class ConversationListItem extends ConsumerWidget {
         ),
       ],
     );
-  }
 
   Widget _buildGroupAvatar(String name) {
     // Generate color from name for consistent avatar colors
@@ -380,8 +376,8 @@ class ConversationListItem extends ConsumerWidget {
 
   Color _generateColorFromString(String str) {
     // Generate consistent color from string hash
-    int hash = 0;
-    for (int i = 0; i < str.length; i++) {
+    var hash = 0;
+    for (var i = 0; i < str.length; i++) {
       hash = str.codeUnitAt(i) + ((hash << 5) - hash);
     }
 

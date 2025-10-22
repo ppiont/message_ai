@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/services/language_detection_service.dart';
+import 'package:message_ai/features/translation/data/services/language_detection_service.dart';
 
 /// Provider for the language detection service.
 ///
@@ -10,7 +10,7 @@ final languageDetectionServiceProvider = Provider<LanguageDetectionService>(
     final service = LanguageDetectionService();
 
     // Dispose the service when the provider is disposed
-    ref.onDispose(() => service.dispose());
+    ref.onDispose(service.dispose);
 
     return service;
   },

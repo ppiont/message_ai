@@ -70,8 +70,7 @@ class _MessageInputState extends ConsumerState<MessageInput> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -119,14 +118,14 @@ class _MessageInputState extends ConsumerState<MessageInput> {
             ),
           ),
           const SizedBox(width: 8),
-          Container(
+          DecoratedBox(
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.primary,
               shape: BoxShape.circle,
             ),
             child: IconButton(
               icon: _isSending
-                  ? SizedBox(
+                  ? const SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
@@ -142,7 +141,6 @@ class _MessageInputState extends ConsumerState<MessageInput> {
         ],
       ),
     );
-  }
 
   Future<void> _sendMessage() async {
     final text = _controller.text.trim();

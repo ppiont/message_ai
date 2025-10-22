@@ -5,8 +5,8 @@ import 'package:dartz/dartz.dart';
 import 'package:message_ai/core/error/error_mapper.dart';
 import 'package:message_ai/core/error/exceptions.dart';
 import 'package:message_ai/core/error/failures.dart';
-import 'package:message_ai/features/messaging/data/datasources/group_conversation_remote_datasource.dart';
 import 'package:message_ai/features/messaging/data/datasources/conversation_local_datasource.dart';
+import 'package:message_ai/features/messaging/data/datasources/group_conversation_remote_datasource.dart';
 import 'package:message_ai/features/messaging/data/models/conversation_model.dart';
 import 'package:message_ai/features/messaging/domain/entities/conversation.dart';
 import 'package:message_ai/features/messaging/domain/repositories/group_conversation_repository.dart';
@@ -17,39 +17,39 @@ import 'package:message_ai/features/messaging/domain/repositories/group_conversa
 /// Strategy:
 /// - Reads: Local first (instant), sync from remote in background
 /// - Writes: Local immediate, queue for remote sync
-class GroupConversationRepositoryImpl implements GroupConversationRepository {
-  final GroupConversationRemoteDataSource _remoteDataSource;
-  final ConversationLocalDataSource
-  _localDataSource; // Reuse existing local data source
+class GroupConversationRepositoryImpl implements GroupConversationRepository { // Reuse existing local data source
 
   GroupConversationRepositoryImpl({
     required GroupConversationRemoteDataSource remoteDataSource,
     required ConversationLocalDataSource localDataSource,
   }) : _remoteDataSource = remoteDataSource,
        _localDataSource = localDataSource;
+  final GroupConversationRemoteDataSource _remoteDataSource;
+  final ConversationLocalDataSource
+  _localDataSource;
 
   @override
   Future<Either<Failure, Conversation>> createGroup(Conversation group) async {
     try {
       // Validate group fields
       if (group.type != 'group') {
-        return Left(
+        return const Left(
           ValidationFailure(message: 'Conversation type must be "group"'),
         );
       }
 
       if (group.participantIds.length < 2) {
-        return Left(
+        return const Left(
           ValidationFailure(message: 'Group must have at least 2 participants'),
         );
       }
 
       if (group.groupName == null || group.groupName!.isEmpty) {
-        return Left(ValidationFailure(message: 'Group name is required'));
+        return const Left(ValidationFailure(message: 'Group name is required'));
       }
 
       if (group.adminIds == null || group.adminIds!.isEmpty) {
-        return Left(
+        return const Left(
           ValidationFailure(message: 'Group must have at least one admin'),
         );
       }
@@ -270,7 +270,7 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository {
       // Get current group
       final groupResult = await getGroupById(groupId);
 
-      return groupResult.fold((failure) => Left(failure), (group) async {
+      return groupResult.fold(Left.new, (group) async {
         // Add member to participants list
         final updatedParticipants = [
           ...group.participants,
@@ -316,7 +316,7 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository {
       // Get current group
       final groupResult = await getGroupById(groupId);
 
-      return groupResult.fold((failure) => Left(failure), (group) async {
+      return groupResult.fold(Left.new, (group) async {
         // Remove member from participants list
         final updatedParticipants = group.participants
             .where((p) => p.uid != userId)
@@ -360,7 +360,7 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository {
       // Get current group
       final groupResult = await getGroupById(groupId);
 
-      return groupResult.fold((failure) => Left(failure), (group) async {
+      return groupResult.fold(Left.new, (group) async {
         // Update group info
         final updatedGroup = group.copyWith(
           groupName: groupName ?? group.groupName,
@@ -396,7 +396,7 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository {
       // Get current group
       final groupResult = await getGroupById(groupId);
 
-      return groupResult.fold((failure) => Left(failure), (group) async {
+      return groupResult.fold(Left.new, (group) async {
         // Add user to admins list
         final updatedAdminIds = [
           ...?group.adminIds,
@@ -432,7 +432,7 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository {
       // Get current group
       final groupResult = await getGroupById(groupId);
 
-      return groupResult.fold((failure) => Left(failure), (group) async {
+      return groupResult.fold(Left.new, (group) async {
         // Remove user from admins list
         final updatedAdminIds = group.adminIds
             ?.where((id) => id != userId)
@@ -508,7 +508,7 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository {
       // Get current group
       final groupResult = await getGroupById(groupId);
 
-      return groupResult.fold((failure) => Left(failure), (group) async {
+      return groupResult.fold(Left.new, (group) async {
         // Update unread count for user
         final updatedUnreadCount = {...group.unreadCount, userId: count};
 

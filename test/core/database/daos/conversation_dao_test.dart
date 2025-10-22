@@ -1,4 +1,4 @@
-import 'package:drift/drift.dart' hide isNull, isNotNull;
+import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:message_ai/core/database/app_database.dart';
@@ -83,8 +83,8 @@ void main() {
 
       final updated = await database.conversationDao.updateConversation(
         'conv-1',
-        ConversationsCompanion(
-          groupName: const Value('Updated Name'),
+        const ConversationsCompanion(
+          groupName: Value('Updated Name'),
         ),
       );
 
@@ -174,7 +174,7 @@ void main() {
       final now = DateTime.now();
 
       // Insert 10 conversations
-      for (int i = 0; i < 10; i++) {
+      for (var i = 0; i < 10; i++) {
         await database.conversationDao.insertConversation(
           ConversationsCompanion.insert(
             documentId: 'conv-$i',
@@ -191,7 +191,6 @@ void main() {
       // Get first page
       final page1 = await database.conversationDao.getAllConversations(
         limit: 5,
-        offset: 0,
       );
       expect(page1.length, equals(5));
       expect(page1.first.documentId, equals('conv-9')); // Newest
@@ -337,7 +336,7 @@ void main() {
     test('countConversations returns correct count', () async {
       final now = DateTime.now();
 
-      for (int i = 0; i < 5; i++) {
+      for (var i = 0; i < 5; i++) {
         await database.conversationDao.insertConversation(
           ConversationsCompanion.insert(
             documentId: 'conv-$i',
@@ -471,7 +470,7 @@ void main() {
     test('batchDeleteConversations removes multiple conversations', () async {
       final now = DateTime.now();
 
-      for (int i = 0; i < 5; i++) {
+      for (var i = 0; i < 5; i++) {
         await database.conversationDao.insertConversation(
           ConversationsCompanion.insert(
             documentId: 'conv-$i',
@@ -635,7 +634,7 @@ void main() {
       );
 
       final active = await database.conversationDao
-          .getActiveConversations(daysBack: 7);
+          .getActiveConversations();
 
       expect(active.length, equals(1));
       expect(active.first.documentId, equals('conv-recent'));

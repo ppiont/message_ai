@@ -5,7 +5,7 @@ import 'package:message_ai/features/authentication/domain/entities/user.dart';
 
 void main() {
   group('UserModel', () {
-    final testDate = DateTime(2024, 10, 21, 12, 0, 0);
+    final testDate = DateTime(2024, 10, 21, 12);
     final testTimestamp = Timestamp.fromDate(testDate);
 
     final testJson = {
@@ -44,7 +44,7 @@ void main() {
       createdAt: testDate,
       lastSeen: testDate,
       isOnline: true,
-      fcmTokens: ['token1', 'token2'],
+      fcmTokens: const ['token1', 'token2'],
     );
 
     group('fromJson', () {

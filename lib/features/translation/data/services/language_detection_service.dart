@@ -5,6 +5,11 @@ import 'package:google_mlkit_language_id/google_mlkit_language_id.dart';
 /// Provides on-device language detection with caching to optimize performance.
 /// Uses a confidence threshold of 0.5 to filter out unreliable detections.
 class LanguageDetectionService {
+
+  LanguageDetectionService()
+      : _languageIdentifier = LanguageIdentifier(
+          confidenceThreshold: confidenceThreshold,
+        );
   final LanguageIdentifier _languageIdentifier;
 
   /// Cache for detected languages to avoid redundant processing.
@@ -14,11 +19,6 @@ class LanguageDetectionService {
   /// Confidence threshold for language detection.
   /// Detections below this threshold are considered unreliable.
   static const double confidenceThreshold = 0.5;
-
-  LanguageDetectionService()
-      : _languageIdentifier = LanguageIdentifier(
-          confidenceThreshold: confidenceThreshold,
-        );
 
   /// Detects the language of the given text.
   ///
@@ -53,7 +53,7 @@ class LanguageDetectionService {
     try {
       // Perform language identification
       // This returns a list of possible languages with confidence scores
-      final List<IdentifiedLanguage> possibleLanguages =
+      final possibleLanguages =
           await _languageIdentifier.identifyPossibleLanguages(text);
 
       // Check if any languages were detected
@@ -111,7 +111,7 @@ class LanguageDetectionService {
       }
 
       // Perform detection
-      final List<IdentifiedLanguage> possibleLanguages =
+      final possibleLanguages =
           await _languageIdentifier.identifyPossibleLanguages(text);
 
       if (possibleLanguages.isEmpty) {
@@ -157,13 +157,13 @@ class LanguageDetectionService {
 
 /// Result of language detection with confidence information.
 class LanguageDetectionResult {
-  final String languageCode;
-  final double confidence;
 
   const LanguageDetectionResult({
     required this.languageCode,
     required this.confidence,
   });
+  final String languageCode;
+  final double confidence;
 
   @override
   String toString() =>

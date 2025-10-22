@@ -69,13 +69,12 @@ class _PasswordResetPageState extends ConsumerState<PasswordResetPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       appBar: AppBar(
         title: const Text('Reset Password'),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
           child: Column(
@@ -223,5 +222,4 @@ class _PasswordResetPageState extends ConsumerState<PasswordResetPage> {
         ),
       ),
     );
-  }
 }

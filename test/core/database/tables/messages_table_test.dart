@@ -1,4 +1,4 @@
-import 'package:drift/drift.dart' hide isNull, isNotNull;
+import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:message_ai/core/database/app_database.dart';
@@ -559,10 +559,10 @@ void main() {
 
     test('JSON fields can store complex data', () async {
       final now = DateTime.now();
-      final translations = '{"es":"Hola","fr":"Bonjour","de":"Hallo"}';
-      final metadata = '{"edited":true,"editedAt":"2024-01-01T00:00:00Z"}';
-      final aiAnalysis = '{"sentiment":"positive","entities":["greeting"]}';
-      final embedding = '[0.1,0.2,0.3,0.4,0.5]';
+      const translations = '{"es":"Hola","fr":"Bonjour","de":"Hallo"}';
+      const metadata = '{"edited":true,"editedAt":"2024-01-01T00:00:00Z"}';
+      const aiAnalysis = '{"sentiment":"positive","entities":["greeting"]}';
+      const embedding = '[0.1,0.2,0.3,0.4,0.5]';
 
       final message = MessagesCompanion.insert(
         id: 'json-msg',
@@ -571,10 +571,10 @@ void main() {
         senderId: 'user-1',
         senderName: 'Alice',
         timestamp: now,
-        translations: Value(translations),
-        metadata: Value(metadata),
-        aiAnalysis: Value(aiAnalysis),
-        embedding: Value(embedding),
+        translations: const Value(translations),
+        metadata: const Value(metadata),
+        aiAnalysis: const Value(aiAnalysis),
+        embedding: const Value(embedding),
       );
 
       await database.into(database.messages).insert(message);
@@ -650,7 +650,7 @@ void main() {
       final now = DateTime.now();
 
       // Insert 10 messages
-      for (int i = 0; i < 10; i++) {
+      for (var i = 0; i < 10; i++) {
         await database.into(database.messages).insert(MessagesCompanion.insert(
           id: 'msg-$i',
           conversationId: 'conv-1',

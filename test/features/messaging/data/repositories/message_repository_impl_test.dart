@@ -2,12 +2,12 @@ import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:message_ai/core/error/exceptions.dart';
 import 'package:message_ai/core/error/failures.dart';
+import 'package:message_ai/features/messaging/data/datasources/message_local_datasource.dart';
+import 'package:message_ai/features/messaging/data/datasources/message_remote_datasource.dart';
 import 'package:message_ai/features/messaging/data/models/message_model.dart';
 import 'package:message_ai/features/messaging/data/repositories/message_repository_impl.dart';
 import 'package:message_ai/features/messaging/domain/entities/message.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:message_ai/features/messaging/data/datasources/message_remote_datasource.dart';
-import 'package:message_ai/features/messaging/data/datasources/message_local_datasource.dart';
 
 class MockMessageRemoteDataSource extends Mock
     implements MessageRemoteDataSource {}
@@ -26,7 +26,7 @@ void main() {
     registerFallbackValue(FakeMessageModel());
   });
 
-  setUp() {
+  void setUp() {
     mockRemoteDataSource = MockMessageRemoteDataSource();
     mockLocalDataSource = MockMessageLocalDataSource();
     repository = MessageRepositoryImpl(
@@ -40,7 +40,7 @@ void main() {
     senderId: 'user-1',
     senderName: 'Test User',
     text: 'Hello, world!',
-    timestamp: DateTime(2024, 1, 1, 12, 0),
+    timestamp: DateTime(2024, 1, 1, 12),
     type: 'text',
     status: 'sent',
     metadata: const MessageMetadataModel(
@@ -307,10 +307,8 @@ void main() {
           await expectLater(
             stream.first,
             completion(
-              predicate<Either<Failure, List<Message>>>((result) {
-                return result.isRight() &&
-                    result.fold((l) => null, (r) => r)!.length == 1;
-              }),
+              predicate<Either<Failure, List<Message>>>((result) => result.isRight() &&
+                    result.fold((l) => null, (r) => r)!.length == 1),
             ),
           );
         },

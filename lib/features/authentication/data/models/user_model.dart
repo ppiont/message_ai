@@ -5,33 +5,16 @@ import 'package:message_ai/features/authentication/domain/entities/user.dart';
 ///
 /// Handles conversion between Firestore documents, JSON, and the domain entity.
 class UserModel {
-  final String uid;
-  final String? email;
-  final String? phoneNumber;
-  final String displayName;
-  final String? photoURL;
-  final String preferredLanguage;
-  final DateTime createdAt;
-  final DateTime lastSeen;
-  final bool isOnline;
-  final List<String> fcmTokens;
 
   const UserModel({
     required this.uid,
-    this.email,
+    required this.displayName, required this.preferredLanguage, required this.createdAt, required this.lastSeen, required this.isOnline, required this.fcmTokens, this.email,
     this.phoneNumber,
-    required this.displayName,
     this.photoURL,
-    required this.preferredLanguage,
-    required this.createdAt,
-    required this.lastSeen,
-    required this.isOnline,
-    required this.fcmTokens,
   });
 
   /// Creates a UserModel from JSON map
-  factory UserModel.fromJson(Map<String, dynamic> json) {
-    return UserModel(
+  factory UserModel.fromJson(Map<String, dynamic> json) => UserModel(
       uid: json['uid'] as String,
       email: json['email'] as String?,
       phoneNumber: json['phoneNumber'] as String?,
@@ -47,27 +30,9 @@ class UserModel {
               .toList() ??
           [],
     );
-  }
-
-  /// Converts this UserModel to JSON map for Firestore
-  Map<String, dynamic> toJson() {
-    return {
-      'uid': uid,
-      'email': email,
-      'phoneNumber': phoneNumber,
-      'displayName': displayName,
-      'photoURL': photoURL,
-      'preferredLanguage': preferredLanguage,
-      'createdAt': Timestamp.fromDate(createdAt),
-      'lastSeen': Timestamp.fromDate(lastSeen),
-      'isOnline': isOnline,
-      'fcmTokens': fcmTokens,
-    };
-  }
 
   /// Creates a UserModel from a User entity
-  factory UserModel.fromEntity(User user) {
-    return UserModel(
+  factory UserModel.fromEntity(User user) => UserModel(
       uid: user.uid,
       email: user.email,
       phoneNumber: user.phoneNumber,
@@ -79,11 +44,33 @@ class UserModel {
       isOnline: user.isOnline,
       fcmTokens: user.fcmTokens,
     );
-  }
+  final String uid;
+  final String? email;
+  final String? phoneNumber;
+  final String displayName;
+  final String? photoURL;
+  final String preferredLanguage;
+  final DateTime createdAt;
+  final DateTime lastSeen;
+  final bool isOnline;
+  final List<String> fcmTokens;
+
+  /// Converts this UserModel to JSON map for Firestore
+  Map<String, dynamic> toJson() => {
+      'uid': uid,
+      'email': email,
+      'phoneNumber': phoneNumber,
+      'displayName': displayName,
+      'photoURL': photoURL,
+      'preferredLanguage': preferredLanguage,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'lastSeen': Timestamp.fromDate(lastSeen),
+      'isOnline': isOnline,
+      'fcmTokens': fcmTokens,
+    };
 
   /// Converts this UserModel to a User entity
-  User toEntity() {
-    return User(
+  User toEntity() => User(
       uid: uid,
       email: email,
       phoneNumber: phoneNumber,
@@ -95,7 +82,6 @@ class UserModel {
       isOnline: isOnline,
       fcmTokens: fcmTokens,
     );
-  }
 
   /// Creates a copy of this model with the given fields replaced
   UserModel copyWith({
@@ -109,8 +95,7 @@ class UserModel {
     DateTime? lastSeen,
     bool? isOnline,
     List<String>? fcmTokens,
-  }) {
-    return UserModel(
+  }) => UserModel(
       uid: uid ?? this.uid,
       email: email ?? this.email,
       phoneNumber: phoneNumber ?? this.phoneNumber,
@@ -122,5 +107,4 @@ class UserModel {
       isOnline: isOnline ?? this.isOnline,
       fcmTokens: fcmTokens ?? this.fcmTokens,
     );
-  }
 }

@@ -225,7 +225,6 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
                   lastUpdatedAt: conversation['lastUpdatedAt'] as DateTime,
                   unreadCount: conversation['unreadCount'] as int,
                   currentUserId: userId,
-                  isGroup: false,
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
@@ -233,7 +232,6 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
                           conversationId: conversationId,
                           otherParticipantName: otherParticipantName,
                           otherParticipantId: otherParticipantId,
-                          isGroup: false,
                         ),
                       ),
                     );
@@ -264,8 +262,7 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
+  Widget _buildEmptyState() => Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -291,7 +288,6 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
         ],
       ),
     );
-  }
 
   void _showSearchDialog() {
     showDialog(

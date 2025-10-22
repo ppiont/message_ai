@@ -66,7 +66,6 @@ Future<void> _handleNotificationNavigation({
             conversationId: conversationId,
             otherParticipantId: senderId,
             otherParticipantName: senderName,
-            isGroup: false,
           ),
         ),
       );

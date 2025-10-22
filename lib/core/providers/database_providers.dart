@@ -15,9 +15,7 @@ AppDatabase database(Ref ref) {
   final database = AppDatabase();
 
   // Dispose when app closes
-  ref.onDispose(() {
-    database.close();
-  });
+  ref.onDispose(database.close);
 
   return database;
 }

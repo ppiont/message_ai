@@ -42,7 +42,7 @@ void main() {
     createdAt: DateTime.now(),
     lastSeen: DateTime.now(),
     isOnline: true,
-    fcmTokens: [],
+    fcmTokens: const [],
   );
 
   group('Data Layer Providers', () {
@@ -218,7 +218,7 @@ void main() {
         // Listen to provider changes
         final values = <User?>[];
         container.listen(authStateProvider, (previous, next) {
-          next.whenData((value) => values.add(value));
+          next.whenData(values.add);
         });
 
         // Emit values
@@ -374,7 +374,7 @@ void main() {
       container.read(currentUserProvider);
 
       // Dispose should not throw
-      expect(() => container.dispose(), returnsNormally);
+      expect(container.dispose, returnsNormally);
     });
   });
 }

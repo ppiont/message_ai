@@ -11,9 +11,7 @@ part 'user_providers.g.dart';
 
 /// Provider for FirebaseFirestore instance
 @riverpod
-FirebaseFirestore firebaseFirestore(Ref ref) {
-  return FirebaseFirestore.instance;
-}
+FirebaseFirestore firebaseFirestore(Ref ref) => FirebaseFirestore.instance;
 
 /// Provider for UserRemoteDataSource
 @riverpod

@@ -7,9 +7,9 @@ import 'package:message_ai/features/messaging/domain/repositories/message_reposi
 /// This is called when a message arrives at the recipient's device
 /// but before they've actually opened the chat to read it.
 class MarkMessageAsDelivered {
-  final MessageRepository _repository;
 
   MarkMessageAsDelivered(this._repository);
+  final MessageRepository _repository;
 
   /// Marks the specified message as delivered
   ///
@@ -18,7 +18,5 @@ class MarkMessageAsDelivered {
   Future<Either<Failure, void>> call(
     String conversationId,
     String messageId,
-  ) async {
-    return await _repository.markAsDelivered(conversationId, messageId);
-  }
+  ) async => _repository.markAsDelivered(conversationId, messageId);
 }

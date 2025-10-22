@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 
-import 'exceptions.dart';
-import 'failures.dart';
+import 'package:message_ai/core/error/exceptions.dart';
+import 'package:message_ai/core/error/failures.dart';
 
 /// Centralized error logging service
 ///

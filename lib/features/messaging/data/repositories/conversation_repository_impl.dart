@@ -5,8 +5,8 @@ import 'package:dartz/dartz.dart';
 import 'package:message_ai/core/error/error_mapper.dart';
 import 'package:message_ai/core/error/exceptions.dart';
 import 'package:message_ai/core/error/failures.dart';
-import 'package:message_ai/features/messaging/data/datasources/conversation_remote_datasource.dart';
 import 'package:message_ai/features/messaging/data/datasources/conversation_local_datasource.dart';
+import 'package:message_ai/features/messaging/data/datasources/conversation_remote_datasource.dart';
 import 'package:message_ai/features/messaging/data/models/conversation_model.dart';
 import 'package:message_ai/features/messaging/domain/entities/conversation.dart';
 import 'package:message_ai/features/messaging/domain/repositories/conversation_repository.dart';
@@ -18,14 +18,14 @@ import 'package:message_ai/features/messaging/domain/repositories/conversation_r
 /// - Reads: Local first (instant), sync from remote in background
 /// - Writes: Local immediate, queue for remote sync
 class ConversationRepositoryImpl implements ConversationRepository {
-  final ConversationRemoteDataSource _remoteDataSource;
-  final ConversationLocalDataSource _localDataSource;
 
   ConversationRepositoryImpl({
     required ConversationRemoteDataSource remoteDataSource,
     required ConversationLocalDataSource localDataSource,
   })  : _remoteDataSource = remoteDataSource,
         _localDataSource = localDataSource;
+  final ConversationRemoteDataSource _remoteDataSource;
+  final ConversationLocalDataSource _localDataSource;
 
   @override
   Future<Either<Failure, Conversation>> createConversation(

@@ -229,7 +229,7 @@ class _GroupManagementPageState extends ConsumerState<GroupManagementPage> {
               if (_isLoading)
                 const Center(
                   child: Padding(
-                    padding: EdgeInsets.all(16.0),
+                    padding: EdgeInsets.all(16),
                     child: SizedBox(
                       width: 20,
                       height: 20,
@@ -268,9 +268,8 @@ class _GroupManagementPageState extends ConsumerState<GroupManagementPage> {
     Conversation group,
     String currentUserId,
     bool isAdmin,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
+  ) => Padding(
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -347,15 +346,13 @@ class _GroupManagementPageState extends ConsumerState<GroupManagementPage> {
         ],
       ),
     );
-  }
 
   Widget _buildMembersSection(
     Conversation group,
     String currentUserId,
     bool isAdmin,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
+  ) => Padding(
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -446,11 +443,9 @@ class _GroupManagementPageState extends ConsumerState<GroupManagementPage> {
         ],
       ),
     );
-  }
 
-  Widget _buildActionsSection(String currentUserId, bool isAdmin) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
+  Widget _buildActionsSection(String currentUserId, bool isAdmin) => Padding(
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -473,7 +468,6 @@ class _GroupManagementPageState extends ConsumerState<GroupManagementPage> {
         ],
       ),
     );
-  }
 }
 
 /// Dialog for adding a member to the group.

@@ -23,11 +23,11 @@ void main() {
       final conversation = Conversation(
         documentId: 'conv-123',
         type: 'direct',
-        participantIds: ['user-123', 'user-456'],
+        participantIds: const ['user-123', 'user-456'],
         participants: testParticipants,
         lastUpdatedAt: testTimestamp,
         initiatedAt: testTimestamp,
-        unreadCount: {'user-123': 0, 'user-456': 3},
+        unreadCount: const {'user-123': 0, 'user-456': 3},
         translationEnabled: true,
         autoDetectLanguage: true,
       );
@@ -60,17 +60,17 @@ void main() {
       final conversation = Conversation(
         documentId: 'conv-789',
         type: 'group',
-        participantIds: ['user-123', 'user-456', 'user-789'],
+        participantIds: const ['user-123', 'user-456', 'user-789'],
         participants: testParticipants,
         lastMessage: lastMessage,
         lastUpdatedAt: testTimestamp,
         initiatedAt: testTimestamp,
-        unreadCount: {'user-123': 0, 'user-456': 2, 'user-789': 5},
+        unreadCount: const {'user-123': 0, 'user-456': 2, 'user-789': 5},
         translationEnabled: false,
         autoDetectLanguage: false,
         groupName: 'Project Team',
         groupImage: 'https://example.com/group.jpg',
-        adminIds: ['user-123'],
+        adminIds: const ['user-123'],
       );
 
       expect(conversation.type, 'group');
@@ -84,11 +84,11 @@ void main() {
       final conversation1 = Conversation(
         documentId: 'conv-123',
         type: 'direct',
-        participantIds: ['user-123', 'user-456'],
+        participantIds: const ['user-123', 'user-456'],
         participants: testParticipants,
         lastUpdatedAt: testTimestamp,
         initiatedAt: testTimestamp,
-        unreadCount: {'user-123': 0},
+        unreadCount: const {'user-123': 0},
         translationEnabled: true,
         autoDetectLanguage: true,
       );
@@ -96,11 +96,11 @@ void main() {
       final conversation2 = Conversation(
         documentId: 'conv-123',
         type: 'direct',
-        participantIds: ['user-123', 'user-456'],
+        participantIds: const ['user-123', 'user-456'],
         participants: testParticipants,
         lastUpdatedAt: testTimestamp,
         initiatedAt: testTimestamp,
-        unreadCount: {'user-123': 0},
+        unreadCount: const {'user-123': 0},
         translationEnabled: true,
         autoDetectLanguage: true,
       );
@@ -112,11 +112,11 @@ void main() {
       final conversation1 = Conversation(
         documentId: 'conv-123',
         type: 'direct',
-        participantIds: ['user-123', 'user-456'],
+        participantIds: const ['user-123', 'user-456'],
         participants: testParticipants,
         lastUpdatedAt: testTimestamp,
         initiatedAt: testTimestamp,
-        unreadCount: {},
+        unreadCount: const {},
         translationEnabled: true,
         autoDetectLanguage: true,
       );
@@ -124,11 +124,11 @@ void main() {
       final conversation2 = Conversation(
         documentId: 'conv-456',
         type: 'direct',
-        participantIds: ['user-123', 'user-456'],
+        participantIds: const ['user-123', 'user-456'],
         participants: testParticipants,
         lastUpdatedAt: testTimestamp,
         initiatedAt: testTimestamp,
-        unreadCount: {},
+        unreadCount: const {},
         translationEnabled: true,
         autoDetectLanguage: true,
       );
@@ -140,11 +140,11 @@ void main() {
       final original = Conversation(
         documentId: 'conv-123',
         type: 'direct',
-        participantIds: ['user-123', 'user-456'],
+        participantIds: const ['user-123', 'user-456'],
         participants: testParticipants,
         lastUpdatedAt: testTimestamp,
         initiatedAt: testTimestamp,
-        unreadCount: {'user-123': 0},
+        unreadCount: const {'user-123': 0},
         translationEnabled: false,
         autoDetectLanguage: false,
       );
@@ -164,11 +164,11 @@ void main() {
       final conversation = Conversation(
         documentId: 'conv-123',
         type: 'direct',
-        participantIds: ['user-123', 'user-456'],
+        participantIds: const ['user-123', 'user-456'],
         participants: testParticipants,
         lastUpdatedAt: testTimestamp,
         initiatedAt: testTimestamp,
-        unreadCount: {},
+        unreadCount: const {},
         translationEnabled: true,
         autoDetectLanguage: true,
       );
@@ -181,11 +181,11 @@ void main() {
       final conversation = Conversation(
         documentId: 'conv-123',
         type: 'group',
-        participantIds: ['user-123', 'user-456', 'user-789'],
+        participantIds: const ['user-123', 'user-456', 'user-789'],
         participants: testParticipants,
         lastUpdatedAt: testTimestamp,
         initiatedAt: testTimestamp,
-        unreadCount: {},
+        unreadCount: const {},
         translationEnabled: true,
         autoDetectLanguage: true,
       );
@@ -198,11 +198,11 @@ void main() {
       final conversation = Conversation(
         documentId: 'conv-123',
         type: 'direct',
-        participantIds: ['user-123', 'user-456'],
+        participantIds: const ['user-123', 'user-456'],
         participants: testParticipants,
         lastUpdatedAt: testTimestamp,
         initiatedAt: testTimestamp,
-        unreadCount: {'user-123': 0, 'user-456': 5},
+        unreadCount: const {'user-123': 0, 'user-456': 5},
         translationEnabled: true,
         autoDetectLanguage: true,
       );
@@ -215,11 +215,11 @@ void main() {
       final conversation = Conversation(
         documentId: 'conv-123',
         type: 'direct',
-        participantIds: ['user-123', 'user-456'],
+        participantIds: const ['user-123', 'user-456'],
         participants: testParticipants,
         lastUpdatedAt: testTimestamp,
         initiatedAt: testTimestamp,
-        unreadCount: {'user-123': 0},
+        unreadCount: const {'user-123': 0},
         translationEnabled: true,
         autoDetectLanguage: true,
       );

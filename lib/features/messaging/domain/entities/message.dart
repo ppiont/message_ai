@@ -6,6 +6,21 @@ import 'package:equatable/equatable.dart';
 /// the core business logic for messages. It is independent of any
 /// data source or framework implementation.
 class Message extends Equatable {
+
+  const Message({
+    required this.id,
+    required this.text,
+    required this.senderId,
+    required this.senderName,
+    required this.timestamp,
+    required this.type,
+    required this.status,
+    required this.metadata, this.detectedLanguage,
+    this.translations,
+    this.replyTo,
+    this.embedding,
+    this.aiAnalysis,
+  });
   /// Unique identifier for the message
   final String id;
 
@@ -45,22 +60,6 @@ class Message extends Equatable {
   /// AI-generated analysis of the message
   final MessageAIAnalysis? aiAnalysis;
 
-  const Message({
-    required this.id,
-    required this.text,
-    required this.senderId,
-    required this.senderName,
-    required this.timestamp,
-    required this.type,
-    required this.status,
-    this.detectedLanguage,
-    this.translations,
-    this.replyTo,
-    required this.metadata,
-    this.embedding,
-    this.aiAnalysis,
-  });
-
   /// Creates a copy of this message with the given fields replaced
   Message copyWith({
     String? id,
@@ -76,8 +75,7 @@ class Message extends Equatable {
     MessageMetadata? metadata,
     List<double>? embedding,
     MessageAIAnalysis? aiAnalysis,
-  }) {
-    return Message(
+  }) => Message(
       id: id ?? this.id,
       text: text ?? this.text,
       senderId: senderId ?? this.senderId,
@@ -92,7 +90,6 @@ class Message extends Equatable {
       embedding: embedding ?? this.embedding,
       aiAnalysis: aiAnalysis ?? this.aiAnalysis,
     );
-  }
 
   @override
   List<Object?> get props => [
@@ -114,6 +111,21 @@ class Message extends Equatable {
 
 /// Metadata for a message
 class MessageMetadata extends Equatable {
+
+  const MessageMetadata({
+    required this.edited,
+    required this.deleted,
+    required this.priority,
+    required this.hasIdioms,
+  });
+
+  /// Creates a default metadata instance
+  factory MessageMetadata.defaultMetadata() => const MessageMetadata(
+      edited: false,
+      deleted: false,
+      priority: 'medium',
+      hasIdioms: false,
+    );
   /// Whether the message has been edited
   final bool edited;
 
@@ -126,37 +138,18 @@ class MessageMetadata extends Equatable {
   /// Whether the message contains idioms or slang
   final bool hasIdioms;
 
-  const MessageMetadata({
-    required this.edited,
-    required this.deleted,
-    required this.priority,
-    required this.hasIdioms,
-  });
-
-  /// Creates a default metadata instance
-  factory MessageMetadata.defaultMetadata() {
-    return const MessageMetadata(
-      edited: false,
-      deleted: false,
-      priority: 'medium',
-      hasIdioms: false,
-    );
-  }
-
   /// Creates a copy of this metadata with the given fields replaced
   MessageMetadata copyWith({
     bool? edited,
     bool? deleted,
     String? priority,
     bool? hasIdioms,
-  }) {
-    return MessageMetadata(
+  }) => MessageMetadata(
       edited: edited ?? this.edited,
       deleted: deleted ?? this.deleted,
       priority: priority ?? this.priority,
       hasIdioms: hasIdioms ?? this.hasIdioms,
     );
-  }
 
   @override
   List<Object?> get props => [edited, deleted, priority, hasIdioms];
@@ -164,6 +157,12 @@ class MessageMetadata extends Equatable {
 
 /// AI-generated analysis of a message
 class MessageAIAnalysis extends Equatable {
+
+  const MessageAIAnalysis({
+    required this.priority,
+    required this.actionItems,
+    required this.sentiment,
+  });
   /// Priority level determined by AI (low, medium, high, urgent)
   final String priority;
 
@@ -173,24 +172,16 @@ class MessageAIAnalysis extends Equatable {
   /// Sentiment analysis (positive, neutral, negative)
   final String sentiment;
 
-  const MessageAIAnalysis({
-    required this.priority,
-    required this.actionItems,
-    required this.sentiment,
-  });
-
   /// Creates a copy of this analysis with the given fields replaced
   MessageAIAnalysis copyWith({
     String? priority,
     List<String>? actionItems,
     String? sentiment,
-  }) {
-    return MessageAIAnalysis(
+  }) => MessageAIAnalysis(
       priority: priority ?? this.priority,
       actionItems: actionItems ?? this.actionItems,
       sentiment: sentiment ?? this.sentiment,
     );
-  }
 
   @override
   List<Object?> get props => [priority, actionItems, sentiment];

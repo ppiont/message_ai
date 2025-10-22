@@ -177,7 +177,7 @@ void main() {
     });
 
     test('ValidationFailure getFieldError returns correct error', () {
-      final failure = ValidationFailure(
+      const failure = ValidationFailure(
         fieldErrors: {'email': 'Invalid format'},
       );
 
@@ -186,7 +186,7 @@ void main() {
     });
 
     test('ValidationFailure hasFieldError checks correctly', () {
-      final failure = ValidationFailure(
+      const failure = ValidationFailure(
         fieldErrors: {'email': 'Invalid format'},
       );
 
@@ -307,8 +307,8 @@ void main() {
     });
 
     test('RateLimitExceededFailure equality', () {
-      final time1 = DateTime(2025, 1, 1);
-      final time2 = DateTime(2025, 1, 1);
+      final time1 = DateTime(2025);
+      final time2 = DateTime(2025);
       final time3 = DateTime(2025, 1, 2);
 
       final failure1 = RateLimitExceededFailure(retryAfter: time1);

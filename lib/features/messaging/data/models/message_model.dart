@@ -14,17 +14,15 @@ class MessageModel extends Message {
     required super.timestamp,
     required super.type,
     required super.status,
-    super.detectedLanguage,
+    required super.metadata, super.detectedLanguage,
     super.translations,
     super.replyTo,
-    required super.metadata,
     super.embedding,
     super.aiAnalysis,
   });
 
   /// Creates a MessageModel from a domain Message entity
-  factory MessageModel.fromEntity(Message message) {
-    return MessageModel(
+  factory MessageModel.fromEntity(Message message) => MessageModel(
       id: message.id,
       text: message.text,
       senderId: message.senderId,
@@ -39,11 +37,9 @@ class MessageModel extends Message {
       embedding: message.embedding,
       aiAnalysis: message.aiAnalysis,
     );
-  }
 
   /// Creates a MessageModel from JSON (Firestore document)
-  factory MessageModel.fromJson(Map<String, dynamic> json) {
-    return MessageModel(
+  factory MessageModel.fromJson(Map<String, dynamic> json) => MessageModel(
       id: json['id'] as String,
       text: json['text'] as String,
       senderId: json['senderId'] as String,
@@ -70,7 +66,6 @@ class MessageModel extends Message {
             )
           : null,
     );
-  }
 
   /// Helper method to parse DateTime from either Timestamp or String
   static DateTime _parseDateTime(dynamic value) {
@@ -84,8 +79,7 @@ class MessageModel extends Message {
   }
 
   /// Converts this MessageModel to JSON for Firestore
-  Map<String, dynamic> toJson() {
-    return {
+  Map<String, dynamic> toJson() => {
       'id': id,
       'text': text,
       'senderId': senderId,
@@ -101,11 +95,9 @@ class MessageModel extends Message {
       if (aiAnalysis != null)
         'aiAnalysis': MessageAIAnalysisModel.fromEntity(aiAnalysis!).toJson(),
     };
-  }
 
   /// Converts this model to a domain entity
-  Message toEntity() {
-    return Message(
+  Message toEntity() => Message(
       id: id,
       text: text,
       senderId: senderId,
@@ -120,7 +112,6 @@ class MessageModel extends Message {
       embedding: embedding,
       aiAnalysis: aiAnalysis,
     );
-  }
 
   /// Creates a copy of this model with the given fields replaced
   @override
@@ -138,8 +129,7 @@ class MessageModel extends Message {
     MessageMetadata? metadata,
     List<double>? embedding,
     MessageAIAnalysis? aiAnalysis,
-  }) {
-    return MessageModel(
+  }) => MessageModel(
       id: id ?? this.id,
       text: text ?? this.text,
       senderId: senderId ?? this.senderId,
@@ -154,7 +144,6 @@ class MessageModel extends Message {
       embedding: embedding ?? this.embedding,
       aiAnalysis: aiAnalysis ?? this.aiAnalysis,
     );
-  }
 }
 
 /// Data model for MessageMetadata with serialization
@@ -167,44 +156,36 @@ class MessageMetadataModel extends MessageMetadata {
   });
 
   /// Creates a MessageMetadataModel from a domain MessageMetadata entity
-  factory MessageMetadataModel.fromEntity(MessageMetadata metadata) {
-    return MessageMetadataModel(
+  factory MessageMetadataModel.fromEntity(MessageMetadata metadata) => MessageMetadataModel(
       edited: metadata.edited,
       deleted: metadata.deleted,
       priority: metadata.priority,
       hasIdioms: metadata.hasIdioms,
     );
-  }
 
   /// Creates a MessageMetadataModel from JSON
-  factory MessageMetadataModel.fromJson(Map<String, dynamic> json) {
-    return MessageMetadataModel(
+  factory MessageMetadataModel.fromJson(Map<String, dynamic> json) => MessageMetadataModel(
       edited: json['edited'] as bool,
       deleted: json['deleted'] as bool,
       priority: json['priority'] as String,
       hasIdioms: json['hasIdioms'] as bool,
     );
-  }
 
   /// Converts this model to JSON
-  Map<String, dynamic> toJson() {
-    return {
+  Map<String, dynamic> toJson() => {
       'edited': edited,
       'deleted': deleted,
       'priority': priority,
       'hasIdioms': hasIdioms,
     };
-  }
 
   /// Converts this model to a domain entity
-  MessageMetadata toEntity() {
-    return MessageMetadata(
+  MessageMetadata toEntity() => MessageMetadata(
       edited: edited,
       deleted: deleted,
       priority: priority,
       hasIdioms: hasIdioms,
     );
-  }
 }
 
 /// Data model for MessageAIAnalysis with serialization
@@ -216,38 +197,30 @@ class MessageAIAnalysisModel extends MessageAIAnalysis {
   });
 
   /// Creates a MessageAIAnalysisModel from a domain MessageAIAnalysis entity
-  factory MessageAIAnalysisModel.fromEntity(MessageAIAnalysis analysis) {
-    return MessageAIAnalysisModel(
+  factory MessageAIAnalysisModel.fromEntity(MessageAIAnalysis analysis) => MessageAIAnalysisModel(
       priority: analysis.priority,
       actionItems: analysis.actionItems,
       sentiment: analysis.sentiment,
     );
-  }
 
   /// Creates a MessageAIAnalysisModel from JSON
-  factory MessageAIAnalysisModel.fromJson(Map<String, dynamic> json) {
-    return MessageAIAnalysisModel(
+  factory MessageAIAnalysisModel.fromJson(Map<String, dynamic> json) => MessageAIAnalysisModel(
       priority: json['priority'] as String,
       actionItems: List<String>.from(json['actionItems'] as List),
       sentiment: json['sentiment'] as String,
     );
-  }
 
   /// Converts this model to JSON
-  Map<String, dynamic> toJson() {
-    return {
+  Map<String, dynamic> toJson() => {
       'priority': priority,
       'actionItems': actionItems,
       'sentiment': sentiment,
     };
-  }
 
   /// Converts this model to a domain entity
-  MessageAIAnalysis toEntity() {
-    return MessageAIAnalysis(
+  MessageAIAnalysis toEntity() => MessageAIAnalysis(
       priority: priority,
       actionItems: actionItems,
       sentiment: sentiment,
     );
-  }
 }

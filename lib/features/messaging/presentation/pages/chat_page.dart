@@ -288,8 +288,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
+  Widget _buildEmptyState() => Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -311,7 +310,6 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         ],
       ),
     );
-  }
 
   bool _shouldShowTimestamp(List<Map<String, dynamic>> messages, int index) {
     if (index == 0) return true; // Always show for first message

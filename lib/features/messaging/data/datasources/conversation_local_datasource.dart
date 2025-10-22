@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:drift/drift.dart' hide isNull, isNotNull;
+import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:message_ai/core/database/app_database.dart';
 import 'package:message_ai/core/database/daos/conversation_dao.dart';
 import 'package:message_ai/core/error/exceptions.dart';
@@ -189,18 +189,17 @@ abstract class ConversationLocalDataSource {
 
 /// Implementation of [ConversationLocalDataSource] using Drift.
 class ConversationLocalDataSourceImpl implements ConversationLocalDataSource {
-  final ConversationDao _conversationDao;
 
   ConversationLocalDataSourceImpl({required ConversationDao conversationDao})
     : _conversationDao = conversationDao;
+  final ConversationDao _conversationDao;
 
   // ============================================================================
   // Helper Methods - Mapping between Entity and Drift
   // ============================================================================
 
   /// Converts Drift ConversationEntity to domain Conversation
-  Conversation _entityToConversation(ConversationEntity entity) {
-    return Conversation(
+  Conversation _entityToConversation(ConversationEntity entity) => Conversation(
       documentId: entity.documentId,
       type: entity.conversationType,
       participantIds: _deserializeList(entity.participantIds),
@@ -217,11 +216,9 @@ class ConversationLocalDataSourceImpl implements ConversationLocalDataSource {
           ? _deserializeList(entity.adminIds!)
           : null,
     );
-  }
 
   /// Converts domain Conversation to Drift ConversationsCompanion
-  ConversationsCompanion _conversationToCompanion(Conversation conversation) {
-    return ConversationsCompanion.insert(
+  ConversationsCompanion _conversationToCompanion(Conversation conversation) => ConversationsCompanion.insert(
       documentId: conversation.documentId,
       conversationType: conversation.type,
       participantIds: _serializeList(conversation.participantIds),
@@ -249,15 +246,12 @@ class ConversationLocalDataSourceImpl implements ConversationLocalDataSource {
             : null,
       ),
     );
-  }
 
   // ============================================================================
   // Serialization Helpers
   // ============================================================================
 
-  String _serializeList(List<String> list) {
-    return json.encode(list);
-  }
+  String _serializeList(List<String> list) => json.encode(list);
 
   List<String> _deserializeList(String jsonString) {
     try {
@@ -271,8 +265,7 @@ class ConversationLocalDataSourceImpl implements ConversationLocalDataSource {
     }
   }
 
-  String _serializeParticipants(List<Participant> participants) {
-    return json.encode(
+  String _serializeParticipants(List<Participant> participants) => json.encode(
       participants
           .map(
             (p) => {
@@ -284,7 +277,6 @@ class ConversationLocalDataSourceImpl implements ConversationLocalDataSource {
           )
           .toList(),
     );
-  }
 
   List<Participant> _deserializeParticipants(String jsonString) {
     try {
@@ -304,9 +296,7 @@ class ConversationLocalDataSourceImpl implements ConversationLocalDataSource {
     }
   }
 
-  String _serializeUnreadCount(Map<String, int> unreadCount) {
-    return json.encode(unreadCount);
-  }
+  String _serializeUnreadCount(Map<String, int> unreadCount) => json.encode(unreadCount);
 
   Map<String, int> _deserializeUnreadCount(String jsonString) {
     try {
@@ -317,9 +307,7 @@ class ConversationLocalDataSourceImpl implements ConversationLocalDataSource {
     }
   }
 
-  String? _serializeTranslations(Map<String, String> translations) {
-    return json.encode(translations);
-  }
+  String? _serializeTranslations(Map<String, String> translations) => json.encode(translations);
 
   Map<String, String>? _deserializeTranslations(String? jsonString) {
     if (jsonString == null || jsonString.isEmpty) return null;
@@ -686,9 +674,7 @@ class ConversationLocalDataSourceImpl implements ConversationLocalDataSource {
   // ============================================================================
 
   @override
-  Future<List<Conversation>> getUnsyncedConversations() async {
-    return getConversationsByStatus('pending');
-  }
+  Future<List<Conversation>> getUnsyncedConversations() async => getConversationsByStatus('pending');
 
   @override
   Future<List<Conversation>> getConversationsByStatus(String syncStatus) async {
@@ -912,12 +898,10 @@ class ConversationLocalDataSourceImpl implements ConversationLocalDataSource {
       case 'server-wins':
         // Remote version takes precedence (default for most sync scenarios)
         resolvedConversation = remoteConversation;
-        break;
 
       case 'client-wins':
         // Local version takes precedence (rare, for pending changes)
         resolvedConversation = localConversation;
-        break;
 
       case 'merge':
         // Merge both versions intelligently
@@ -925,7 +909,6 @@ class ConversationLocalDataSourceImpl implements ConversationLocalDataSource {
           localConversation: localConversation,
           remoteConversation: remoteConversation,
         );
-        break;
 
       default:
         throw ValidationException(

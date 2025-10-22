@@ -77,9 +77,8 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
+  Widget build(BuildContext context) => Padding(
+      padding: const EdgeInsets.all(24),
       child: Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -256,5 +255,4 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
         ),
       ),
     );
-  }
 }

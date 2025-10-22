@@ -21,11 +21,9 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
   // ============================================================================
 
   /// Get a single message by ID
-  Future<MessageEntity?> getMessageById(String messageId) {
-    return (select(
+  Future<MessageEntity?> getMessageById(String messageId) => (select(
       messages,
     )..where((m) => m.id.equals(messageId))).getSingleOrNull();
-  }
 
   /// Get messages for a conversation with pagination
   ///
@@ -35,13 +33,11 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
     String conversationId, {
     int limit = 50,
     int offset = 0,
-  }) {
-    return (select(messages)
+  }) => (select(messages)
           ..where((m) => m.conversationId.equals(conversationId))
           ..orderBy([(m) => OrderingTerm.asc(m.timestamp)])
           ..limit(limit, offset: offset))
         .get();
-  }
 
   /// Watch messages for a conversation (reactive stream)
   ///
@@ -51,51 +47,41 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
   Stream<List<MessageEntity>> watchMessagesForConversation(
     String conversationId, {
     int limit = 50,
-  }) {
-    return (select(messages)
+  }) => (select(messages)
           ..where((m) => m.conversationId.equals(conversationId))
           ..orderBy([(m) => OrderingTerm.asc(m.timestamp)])
           ..limit(limit))
         .watch();
-  }
 
   /// Get messages that need to be synced
   ///
   /// Returns messages with syncStatus = 'pending' or 'failed'
-  Future<List<MessageEntity>> getUnsyncedMessages() {
-    return (select(messages)
+  Future<List<MessageEntity>> getUnsyncedMessages() => (select(messages)
           ..where(
             (m) =>
                 m.syncStatus.equals('pending') | m.syncStatus.equals('failed'),
           )
           ..orderBy([(m) => OrderingTerm.asc(m.timestamp)]))
         .get();
-  }
 
   /// Get messages by sync status
-  Future<List<MessageEntity>> getMessagesByStatus(String syncStatus) {
-    return (select(messages)
+  Future<List<MessageEntity>> getMessagesByStatus(String syncStatus) => (select(messages)
           ..where((m) => m.syncStatus.equals(syncStatus))
           ..orderBy([(m) => OrderingTerm.desc(m.timestamp)]))
         .get();
-  }
 
   /// Search messages by text content
-  Future<List<MessageEntity>> searchMessages(String query) {
-    return (select(messages)
+  Future<List<MessageEntity>> searchMessages(String query) => (select(messages)
           ..where((m) => m.messageText.like('%$query%'))
           ..orderBy([(m) => OrderingTerm.desc(m.timestamp)]))
         .get();
-  }
 
   /// Get the last message for a conversation
-  Future<MessageEntity?> getLastMessage(String conversationId) {
-    return (select(messages)
+  Future<MessageEntity?> getLastMessage(String conversationId) => (select(messages)
           ..where((m) => m.conversationId.equals(conversationId))
           ..orderBy([(m) => OrderingTerm.desc(m.timestamp)])
           ..limit(1))
         .getSingleOrNull();
-  }
 
   /// Count messages in a conversation
   Future<int> countMessagesInConversation(String conversationId) async {
@@ -128,14 +114,10 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
   // ============================================================================
 
   /// Insert a new message (optimistic update)
-  Future<int> insertMessage(MessagesCompanion message) {
-    return into(messages).insert(message);
-  }
+  Future<int> insertMessage(MessagesCompanion message) => into(messages).insert(message);
 
   /// Insert or update a message
-  Future<int> upsertMessage(MessagesCompanion message) {
-    return into(messages).insertOnConflictUpdate(message);
-  }
+  Future<int> upsertMessage(MessagesCompanion message) => into(messages).insertOnConflictUpdate(message);
 
   /// Batch insert messages (efficient for initial sync)
   Future<void> insertMessages(List<MessagesCompanion> messageList) async {
@@ -150,16 +132,12 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
   }
 
   /// Update message by ID
-  Future<bool> updateMessage(String messageId, MessagesCompanion message) {
-    return (update(messages)..where((m) => m.id.equals(messageId)))
+  Future<bool> updateMessage(String messageId, MessagesCompanion message) => (update(messages)..where((m) => m.id.equals(messageId)))
         .write(message)
         .then((count) => count > 0);
-  }
 
   /// Update message status (for delivery/read receipts)
-  Future<bool> updateMessageStatus(String messageId, String status) {
-    return updateMessage(messageId, MessagesCompanion(status: Value(status)));
-  }
+  Future<bool> updateMessageStatus(String messageId, String status) => updateMessage(messageId, MessagesCompanion(status: Value(status)));
 
   /// Update sync status for a message
   Future<bool> updateSyncStatus({
@@ -167,8 +145,7 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
     required String syncStatus,
     DateTime? lastSyncAttempt,
     int? retryCount,
-  }) {
-    return (update(messages)..where((m) => m.id.equals(messageId)))
+  }) => (update(messages)..where((m) => m.id.equals(messageId)))
         .write(
           MessagesCompanion(
             syncStatus: Value(syncStatus),
@@ -177,7 +154,6 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
           ),
         )
         .then((count) => count > 0);
-  }
 
   /// Replace temp ID with real server ID (after successful sync)
   ///
@@ -215,7 +191,6 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
           embedding: Value(tempMessage.embedding),
           syncStatus: const Value('synced'),
           retryCount: Value(tempMessage.retryCount),
-          tempId: const Value.absent(),
           lastSyncAttempt: Value(tempMessage.lastSyncAttempt),
         ),
       );
@@ -225,21 +200,15 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
   }
 
   /// Delete a message
-  Future<int> deleteMessage(String messageId) {
-    return (delete(messages)..where((m) => m.id.equals(messageId))).go();
-  }
+  Future<int> deleteMessage(String messageId) => (delete(messages)..where((m) => m.id.equals(messageId))).go();
 
   /// Delete all messages in a conversation
-  Future<int> deleteMessagesInConversation(String conversationId) {
-    return (delete(
+  Future<int> deleteMessagesInConversation(String conversationId) => (delete(
       messages,
     )..where((m) => m.conversationId.equals(conversationId))).go();
-  }
 
   /// Delete all messages (use with caution!)
-  Future<int> deleteAllMessages() {
-    return delete(messages).go();
-  }
+  Future<int> deleteAllMessages() => delete(messages).go();
 
   // ============================================================================
   // Batch Operations
@@ -277,8 +246,7 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
   /// Get messages that failed to sync and are ready for retry
   ///
   /// Only returns messages where retryCount < maxRetries
-  Future<List<MessageEntity>> getFailedMessagesForRetry({int maxRetries = 3}) {
-    return (select(messages)
+  Future<List<MessageEntity>> getFailedMessagesForRetry({int maxRetries = 3}) => (select(messages)
           ..where(
             (m) =>
                 m.syncStatus.equals('failed') &
@@ -286,15 +254,13 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
           )
           ..orderBy([(m) => OrderingTerm.asc(m.lastSyncAttempt)]))
         .get();
-  }
 
   /// Get messages for a conversation in a specific time range
   Future<List<MessageEntity>> getMessagesInRange({
     required String conversationId,
     required DateTime startTime,
     required DateTime endTime,
-  }) {
-    return (select(messages)
+  }) => (select(messages)
           ..where(
             (m) =>
                 m.conversationId.equals(conversationId) &
@@ -303,15 +269,13 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
           )
           ..orderBy([(m) => OrderingTerm.desc(m.timestamp)]))
         .get();
-  }
 
   /// Get messages by sender in a conversation
   Future<List<MessageEntity>> getMessagesBySender({
     required String conversationId,
     required String senderId,
     int limit = 50,
-  }) {
-    return (select(messages)
+  }) => (select(messages)
           ..where(
             (m) =>
                 m.conversationId.equals(conversationId) &
@@ -320,21 +284,16 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
           ..orderBy([(m) => OrderingTerm.desc(m.timestamp)])
           ..limit(limit))
         .get();
-  }
 
   /// Get replies to a specific message (threaded conversation)
-  Future<List<MessageEntity>> getReplies(String messageId) {
-    return (select(messages)
+  Future<List<MessageEntity>> getReplies(String messageId) => (select(messages)
           ..where((m) => m.replyTo.equals(messageId))
           ..orderBy([(m) => OrderingTerm.asc(m.timestamp)]))
         .get();
-  }
 
   /// Watch replies to a message (reactive)
-  Stream<List<MessageEntity>> watchReplies(String messageId) {
-    return (select(messages)
+  Stream<List<MessageEntity>> watchReplies(String messageId) => (select(messages)
           ..where((m) => m.replyTo.equals(messageId))
           ..orderBy([(m) => OrderingTerm.asc(m.timestamp)]))
         .watch();
-  }
 }

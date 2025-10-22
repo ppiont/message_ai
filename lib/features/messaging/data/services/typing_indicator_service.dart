@@ -9,6 +9,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 /// - Auto-timeout to clear stale status
 /// - Watch other users' typing status
 class TypingIndicatorService {
+
+  TypingIndicatorService({FirebaseFirestore? firestore})
+      : _firestore = firestore ?? FirebaseFirestore.instance;
   final FirebaseFirestore _firestore;
 
   // Configuration
@@ -18,9 +21,6 @@ class TypingIndicatorService {
   // State
   final Map<String, Timer?> _debounceTimers = {};
   final Map<String, Timer?> _timeoutTimers = {};
-
-  TypingIndicatorService({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
 
   // ============================================================================
   // Public API
@@ -81,8 +81,7 @@ class TypingIndicatorService {
   Stream<List<TypingUser>> watchTypingUsers({
     required String conversationId,
     required String currentUserId,
-  }) {
-    return _firestore
+  }) => _firestore
         .collection('conversations')
         .doc(conversationId)
         .collection('typingStatus')
@@ -106,10 +105,9 @@ class TypingIndicatorService {
             final staleDuration = typingTimeout + const Duration(seconds: 1);
             return now.difference(lastUpdated) < staleDuration;
           })
-          .map((doc) => TypingUser.fromFirestore(doc))
+          .map(TypingUser.fromFirestore)
           .toList();
     });
-  }
 
   /// Clears typing status for a user in a conversation.
   ///
@@ -185,9 +183,6 @@ class TypingIndicatorService {
 
 /// Represents a user who is currently typing.
 class TypingUser {
-  final String userId;
-  final String userName;
-  final DateTime lastUpdated;
 
   TypingUser({
     required this.userId,
@@ -196,13 +191,16 @@ class TypingUser {
   });
 
   factory TypingUser.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+    final data = doc.data()! as Map<String, dynamic>;
     return TypingUser(
       userId: data['userId'] as String,
       userName: data['userName'] as String,
       lastUpdated: (data['lastUpdated'] as Timestamp).toDate(),
     );
   }
+  final String userId;
+  final String userName;
+  final DateTime lastUpdated;
 
   @override
   bool operator ==(Object other) {

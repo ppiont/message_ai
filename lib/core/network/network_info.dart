@@ -24,9 +24,9 @@ abstract class NetworkInfo {
 
 /// Implementation of [NetworkInfo] using connectivity_plus package
 class NetworkInfoImpl implements NetworkInfo {
-  final Connectivity _connectivity;
 
   NetworkInfoImpl(this._connectivity);
+  final Connectivity _connectivity;
 
   @override
   Future<bool> get isConnected async {
@@ -35,20 +35,14 @@ class NetworkInfoImpl implements NetworkInfo {
   }
 
   @override
-  Stream<bool> get onConnectivityChanged {
-    return _connectivity.onConnectivityChanged.map(_isConnectedResult);
-  }
+  Stream<bool> get onConnectivityChanged => _connectivity.onConnectivityChanged.map(_isConnectedResult);
 
   @override
-  Future<List<ConnectivityResult>> get connectionType async {
-    return await _connectivity.checkConnectivity();
-  }
+  Future<List<ConnectivityResult>> get connectionType async => _connectivity.checkConnectivity();
 
   /// Determines if connectivity result represents an active connection
-  bool _isConnectedResult(List<ConnectivityResult> results) {
-    return results.any((result) =>
+  bool _isConnectedResult(List<ConnectivityResult> results) => results.any((result) =>
         result == ConnectivityResult.wifi ||
         result == ConnectivityResult.mobile ||
         result == ConnectivityResult.ethernet);
-  }
 }

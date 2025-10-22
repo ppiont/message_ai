@@ -17,7 +17,7 @@ void main() {
   final testConversation = ConversationModel(
     documentId: 'conv-123',
     type: 'direct',
-    participantIds: ['user-1', 'user-2'],
+    participantIds: const ['user-1', 'user-2'],
     participants: const [
       ParticipantModel(
         uid: 'user-1',
@@ -30,8 +30,8 @@ void main() {
         preferredLanguage: 'es',
       ),
     ],
-    lastUpdatedAt: DateTime(2024, 1, 1, 12, 0),
-    initiatedAt: DateTime(2024, 1, 1, 10, 0),
+    lastUpdatedAt: DateTime(2024, 1, 1, 12),
+    initiatedAt: DateTime(2024, 1, 1, 10),
     unreadCount: const {'user-1': 0, 'user-2': 0},
     translationEnabled: false,
     autoDetectLanguage: false,
@@ -209,10 +209,8 @@ void main() {
         // Assert
         await expectLater(
           stream.first,
-          completion(predicate<List<ConversationModel>>((conversations) {
-            return conversations.length == 1 &&
-                conversations[0].documentId == 'conv-123';
-          })),
+          completion(predicate<List<ConversationModel>>((conversations) => conversations.length == 1 &&
+                conversations[0].documentId == 'conv-123')),
         );
       });
 
@@ -223,9 +221,7 @@ void main() {
         // Assert
         await expectLater(
           stream.first,
-          completion(predicate<List<ConversationModel>>((conversations) {
-            return conversations.isEmpty;
-          })),
+          completion(predicate<List<ConversationModel>>((conversations) => conversations.isEmpty)),
         );
       });
     });
@@ -276,7 +272,7 @@ void main() {
           'Hello!',
           'user-1',
           'User 1',
-          DateTime(2024, 1, 1, 14, 0),
+          DateTime(2024, 1, 1, 14),
         );
 
         // Assert

@@ -116,9 +116,9 @@ abstract class AuthRemoteDataSource {
 
 /// Implementation of [AuthRemoteDataSource] using Firebase Auth
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
-  final FirebaseAuth _firebaseAuth;
 
   AuthRemoteDataSourceImpl(this._firebaseAuth);
+  final FirebaseAuth _firebaseAuth;
 
   // ========== Email Authentication Implementation ==========
 
@@ -144,7 +144,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       throw _mapAuthException(e);
     } catch (e) {
       if (e is AppException) rethrow;
-      throw ServerException(message: 'Failed to sign up: ${e.toString()}');
+      throw ServerException(message: 'Failed to sign up: $e');
     }
   }
 
@@ -170,7 +170,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       throw _mapAuthException(e);
     } catch (e) {
       if (e is AppException) rethrow;
-      throw ServerException(message: 'Failed to sign in: ${e.toString()}');
+      throw ServerException(message: 'Failed to sign in: $e');
     }
   }
 
@@ -182,7 +182,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       throw _mapAuthException(e);
     } catch (e) {
       throw ServerException(
-        message: 'Failed to send password reset email: ${e.toString()}',
+        message: 'Failed to send password reset email: $e',
       );
     }
   }
@@ -201,7 +201,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     } catch (e) {
       if (e is AppException) rethrow;
       throw ServerException(
-        message: 'Failed to send email verification: ${e.toString()}',
+        message: 'Failed to send email verification: $e',
       );
     }
   }
@@ -243,7 +243,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       throw _mapAuthException(e);
     } catch (e) {
       throw ServerException(
-        message: 'Failed to verify phone number: ${e.toString()}',
+        message: 'Failed to verify phone number: $e',
       );
     }
   }
@@ -274,7 +274,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       throw _mapAuthException(e);
     } catch (e) {
       if (e is AppException) rethrow;
-      throw ServerException(message: 'Failed to verify code: ${e.toString()}');
+      throw ServerException(message: 'Failed to verify code: $e');
     }
   }
 
@@ -283,19 +283,15 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     try {
       await _firebaseAuth.signOut();
     } catch (e) {
-      throw ServerException(message: 'Failed to sign out: ${e.toString()}');
+      throw ServerException(message: 'Failed to sign out: $e');
     }
   }
 
   @override
-  User? getCurrentUser() {
-    return _firebaseAuth.currentUser;
-  }
+  User? getCurrentUser() => _firebaseAuth.currentUser;
 
   @override
-  Stream<User?> authStateChanges() {
-    return _firebaseAuth.authStateChanges();
-  }
+  Stream<User?> authStateChanges() => _firebaseAuth.authStateChanges();
 
   @override
   Future<String> getIdToken() async {
@@ -315,7 +311,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       throw _mapAuthException(e);
     } catch (e) {
       if (e is AppException) rethrow;
-      throw ServerException(message: 'Failed to get ID token: ${e.toString()}');
+      throw ServerException(message: 'Failed to get ID token: $e');
     }
   }
 
@@ -341,7 +337,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     } catch (e) {
       if (e is AppException) rethrow;
       throw ServerException(
-        message: 'Failed to reauthenticate: ${e.toString()}',
+        message: 'Failed to reauthenticate: $e',
       );
     }
   }
@@ -377,7 +373,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     } catch (e) {
       if (e is AppException) rethrow;
       throw ServerException(
-        message: 'Failed to update profile: ${e.toString()}',
+        message: 'Failed to update profile: $e',
       );
     }
   }

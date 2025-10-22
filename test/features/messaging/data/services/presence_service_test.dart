@@ -132,11 +132,9 @@ void main() {
         await expectLater(
           stream,
           emits(
-            predicate<UserPresence?>((presence) {
-              return presence != null &&
+            predicate<UserPresence?>((presence) => presence != null &&
                   presence.userId == userId &&
-                  presence.isOnline == true;
-            }),
+                  presence.isOnline == true),
           ),
         );
       });
@@ -218,11 +216,9 @@ void main() {
         await expectLater(
           stream,
           emits(
-            predicate<Map<String, UserPresence>>((map) {
-              return map.length == 2 &&
-                  map['user-1']?.isOnline == true &&
-                  map['user-2']?.isOnline == false;
-            }),
+            predicate<Map<String, UserPresence>>((map) => map.length == 2 &&
+                  map['user-1']?.isOnline ?? false &&
+                  map['user-2']?.isOnline == false),
           ),
         );
       });
@@ -237,7 +233,7 @@ void main() {
 
       test('should handle large user lists (limited to 10)', () async {
         // Arrange - Create 15 users
-        for (int i = 1; i <= 15; i++) {
+        for (var i = 1; i <= 15; i++) {
           await fakeFirestore.collection('presence').doc('user-$i').set({
             'userId': 'user-$i',
             'userName': 'User $i',
@@ -255,9 +251,7 @@ void main() {
         await expectLater(
           stream,
           emits(
-            predicate<Map<String, UserPresence>>((map) {
-              return map.length == 10;
-            }),
+            predicate<Map<String, UserPresence>>((map) => map.length == 10),
           ),
         );
       });
@@ -425,7 +419,7 @@ void main() {
 
         test('should return date for > 1 week', () {
           // Arrange
-          final lastSeen = DateTime(2024, 1, 1);
+          final lastSeen = DateTime(2024);
           final presence = UserPresence(
             userId: 'user-1',
             userName: 'User One',
@@ -447,7 +441,7 @@ void main() {
           userId: 'user-1',
           userName: 'User One',
           isOnline: true,
-          lastSeen: DateTime(2024, 1, 1),
+          lastSeen: DateTime(2024),
         );
         final presence2 = UserPresence(
           userId: 'user-1',
@@ -471,7 +465,7 @@ void main() {
           userId: 'user-1',
           userName: 'User One',
           isOnline: true,
-          lastSeen: DateTime(2024, 1, 1),
+          lastSeen: DateTime(2024),
         );
 
         // Act

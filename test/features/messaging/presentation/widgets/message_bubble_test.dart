@@ -13,20 +13,18 @@ void main() {
     DateTime? timestamp,
     bool showTimestamp = false,
     String status = 'sent',
-  }) {
-    return MaterialApp(
+  }) => MaterialApp(
       home: Scaffold(
         body: MessageBubble(
           message: message,
           isMe: isMe,
           senderName: senderName,
-          timestamp: timestamp ?? DateTime(2024, 1, 1, 12, 0),
+          timestamp: timestamp ?? DateTime(2024, 1, 1, 12),
           showTimestamp: showTimestamp,
           status: status,
         ),
       ),
     );
-  }
 
   group('MessageBubble', () {
     group('message display', () {
@@ -104,7 +102,7 @@ void main() {
             matching: find.byType(Container).first,
           ),
         );
-        final decoration = container.decoration as BoxDecoration;
+        final decoration = container.decoration! as BoxDecoration;
         expect(decoration.color, isNotNull);
       });
 
@@ -123,7 +121,7 @@ void main() {
             matching: find.byType(Container).first,
           ),
         );
-        final decoration = container.decoration as BoxDecoration;
+        final decoration = container.decoration! as BoxDecoration;
         expect(decoration.color, Colors.grey[200]);
       });
 
@@ -193,7 +191,7 @@ void main() {
         (tester) async {
           // Arrange & Act
           await tester.pumpWidget(
-            createTestWidget(message: 'Test', isMe: true, showTimestamp: false),
+            createTestWidget(message: 'Test', isMe: true),
           );
 
           // Assert
@@ -206,7 +204,7 @@ void main() {
       testWidgets('should show single check for sent status', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
-          createTestWidget(message: 'Test', isMe: true, status: 'sent'),
+          createTestWidget(message: 'Test', isMe: true),
         );
 
         // Assert
@@ -257,7 +255,7 @@ void main() {
       ) async {
         // Arrange & Act
         await tester.pumpWidget(
-          createTestWidget(message: 'Test', isMe: false, status: 'sent'),
+          createTestWidget(message: 'Test', isMe: false),
         );
 
         // Assert

@@ -24,13 +24,13 @@ void main() {
     useCase = FindOrCreateDirectConversation(mockRepository);
   });
 
-  final participant1 = Participant(
+  const participant1 = Participant(
     uid: 'user-1',
     name: 'User 1',
     preferredLanguage: 'en',
   );
 
-  final participant2 = Participant(
+  const participant2 = Participant(
     uid: 'user-2',
     name: 'User 2',
     preferredLanguage: 'en',
@@ -39,11 +39,11 @@ void main() {
   final testConversation = Conversation(
     documentId: 'conv-123',
     type: 'direct',
-    participantIds: ['user-1', 'user-2'],
-    participants: [participant1, participant2],
-    lastUpdatedAt: DateTime(2024, 1, 1),
-    initiatedAt: DateTime(2024, 1, 1),
-    unreadCount: {'user-1': 0, 'user-2': 0},
+    participantIds: const ['user-1', 'user-2'],
+    participants: const [participant1, participant2],
+    lastUpdatedAt: DateTime(2024),
+    initiatedAt: DateTime(2024),
+    unreadCount: const {'user-1': 0, 'user-2': 0},
     translationEnabled: false,
     autoDetectLanguage: false,
   );

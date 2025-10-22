@@ -38,8 +38,7 @@ void main() {
   Widget createTestWidget({
     MockSendMessage? sendMessage,
     VoidCallback? onMessageSent,
-  }) {
-    return ProviderScope(
+  }) => ProviderScope(
       overrides: [
         if (sendMessage != null)
           sendMessageUseCaseProvider.overrideWithValue(sendMessage),
@@ -55,7 +54,6 @@ void main() {
         ),
       ),
     );
-  }
 
   group('MessageInput', () {
     group('UI elements', () {
@@ -203,7 +201,7 @@ void main() {
         tester,
       ) async {
         // Arrange
-        bool callbackCalled = false;
+        var callbackCalled = false;
         final testMessage = Message(
           id: 'msg-1',
           senderId: 'user-1',

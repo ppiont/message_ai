@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:message_ai/core/providers/database_provider.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:message_ai/core/database/app_database.dart';
 import 'package:message_ai/core/database/daos/message_dao.dart';
+import 'package:message_ai/core/providers/database_provider.dart';
 
 void main() {
   group('Database Providers', () {
@@ -78,7 +78,7 @@ void main() {
   group('ProviderScope Widget Integration', () {
     testWidgets('ProviderScope allows access to providers',
         (WidgetTester tester) async {
-      bool providerAccessed = false;
+      var providerAccessed = false;
 
       await tester.pumpWidget(
         ProviderScope(

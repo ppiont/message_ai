@@ -1,8 +1,8 @@
 import 'dart:async';
+
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:message_ai/core/error/failures.dart';
 import 'package:message_ai/features/messaging/data/datasources/conversation_local_datasource.dart';
 import 'package:message_ai/features/messaging/data/datasources/message_local_datasource.dart';
@@ -11,6 +11,7 @@ import 'package:message_ai/features/messaging/domain/entities/conversation.dart'
 import 'package:message_ai/features/messaging/domain/entities/message.dart';
 import 'package:message_ai/features/messaging/domain/repositories/conversation_repository.dart';
 import 'package:message_ai/features/messaging/domain/repositories/message_repository.dart';
+import 'package:mocktail/mocktail.dart';
 
 // Mocks
 class MockMessageLocalDataSource extends Mock
@@ -41,7 +42,7 @@ void main() {
     text: 'Test message',
     senderId: 'user-1',
     senderName: 'User One',
-    timestamp: DateTime(2024, 1, 1, 12, 0),
+    timestamp: DateTime(2024, 1, 1, 12),
     type: 'text',
     status: 'sent',
     metadata: MessageMetadata.defaultMetadata(),
@@ -50,24 +51,22 @@ void main() {
   final testConversation = Conversation(
     documentId: 'conv-1',
     type: 'direct',
-    participantIds: ['user-1', 'user-2'],
+    participantIds: const ['user-1', 'user-2'],
     participants: const [
       Participant(
         uid: 'user-1',
         name: 'User One',
-        imageUrl: null,
         preferredLanguage: 'en',
       ),
       Participant(
         uid: 'user-2',
         name: 'User Two',
-        imageUrl: null,
         preferredLanguage: 'es',
       ),
     ],
-    lastUpdatedAt: DateTime(2024, 1, 1, 12, 0),
-    initiatedAt: DateTime(2024, 1, 1, 10, 0),
-    unreadCount: {'user-1': 0, 'user-2': 1},
+    lastUpdatedAt: DateTime(2024, 1, 1, 12),
+    initiatedAt: DateTime(2024, 1, 1, 10),
+    unreadCount: const {'user-1': 0, 'user-2': 1},
     translationEnabled: true,
     autoDetectLanguage: true,
   );
@@ -348,7 +347,6 @@ void main() {
             conversationId: 'conv-1',
             localMessage: testMessage,
             remoteMessage: remoteMessage,
-            strategy: 'server-wins',
           ),
         ).called(1);
       });
@@ -398,13 +396,13 @@ void main() {
         when(
           () => mockMessageRepository.getMessageById(any(), any()),
         ).thenAnswer(
-          (_) async => Left(ServerFailure(message: 'Network error')),
+          (_) async => const Left(ServerFailure(message: 'Network error')),
         );
 
         when(
           () => mockMessageRepository.createMessage(any(), any()),
         ).thenAnswer(
-          (_) async => Left(ServerFailure(message: 'Network error')),
+          (_) async => const Left(ServerFailure(message: 'Network error')),
         );
 
         when(
@@ -507,7 +505,6 @@ void main() {
             () => mockConversationLocal.resolveConflict(
               localConversation: testConversation,
               remoteConversation: remoteConversation,
-              strategy: 'server-wins',
             ),
           ).called(1);
         },

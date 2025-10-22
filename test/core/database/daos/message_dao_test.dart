@@ -1,4 +1,4 @@
-import 'package:drift/drift.dart' hide isNull, isNotNull;
+import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:message_ai/core/database/app_database.dart';
@@ -146,7 +146,7 @@ void main() {
       final now = DateTime.now();
 
       // Insert 10 messages
-      for (int i = 0; i < 10; i++) {
+      for (var i = 0; i < 10; i++) {
         await database.messageDao.insertMessage(MessagesCompanion.insert(
           id: 'msg-$i',
           conversationId: 'conv-1',
@@ -161,7 +161,6 @@ void main() {
       final page1 = await database.messageDao.getMessagesForConversation(
         'conv-1',
         limit: 5,
-        offset: 0,
       );
       expect(page1.length, equals(5));
       expect(page1.first.id, equals('msg-9')); // Newest
@@ -231,7 +230,7 @@ void main() {
     test('countMessagesInConversation returns correct count', () async {
       final now = DateTime.now();
 
-      for (int i = 0; i < 5; i++) {
+      for (var i = 0; i < 5; i++) {
         await database.messageDao.insertMessage(MessagesCompanion.insert(
           id: 'msg-$i',
           conversationId: 'conv-1',
@@ -404,7 +403,7 @@ void main() {
       ));
 
       final retryable = await database.messageDao.getFailedMessagesForRetry(
-        maxRetries: 3,
+
       );
 
       expect(retryable.length, equals(1));
@@ -436,7 +435,7 @@ void main() {
     test('batchUpdateStatus updates multiple message statuses', () async {
       final now = DateTime.now();
 
-      for (int i = 0; i < 3; i++) {
+      for (var i = 0; i < 3; i++) {
         await database.messageDao.insertMessage(MessagesCompanion.insert(
           id: 'msg-$i',
           conversationId: 'conv-1',
@@ -453,7 +452,7 @@ void main() {
         status: 'read',
       );
 
-      for (int i = 0; i < 3; i++) {
+      for (var i = 0; i < 3; i++) {
         final message = await database.messageDao.getMessageById('msg-$i');
         expect(message!.status, equals('read'));
       }
@@ -462,7 +461,7 @@ void main() {
     test('batchDeleteMessages removes multiple messages', () async {
       final now = DateTime.now();
 
-      for (int i = 0; i < 5; i++) {
+      for (var i = 0; i < 5; i++) {
         await database.messageDao.insertMessage(MessagesCompanion.insert(
           id: 'msg-$i',
           conversationId: 'conv-1',

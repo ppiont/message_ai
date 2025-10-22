@@ -12,10 +12,10 @@ import 'package:message_ai/features/authentication/domain/repositories/user_repo
 
 /// Implementation of UserRepository
 class UserRepositoryImpl implements UserRepository {
-  final UserRemoteDataSource _remoteDataSource;
 
   UserRepositoryImpl({required UserRemoteDataSource remoteDataSource})
     : _remoteDataSource = remoteDataSource;
+  final UserRemoteDataSource _remoteDataSource;
 
   @override
   Future<Either<Failure, User>> createUser(User user) async {

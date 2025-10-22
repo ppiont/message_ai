@@ -5,8 +5,8 @@ import 'package:dartz/dartz.dart';
 import 'package:message_ai/core/error/error_mapper.dart';
 import 'package:message_ai/core/error/exceptions.dart';
 import 'package:message_ai/core/error/failures.dart';
-import 'package:message_ai/features/messaging/data/datasources/message_remote_datasource.dart';
 import 'package:message_ai/features/messaging/data/datasources/message_local_datasource.dart';
+import 'package:message_ai/features/messaging/data/datasources/message_remote_datasource.dart';
 import 'package:message_ai/features/messaging/data/models/message_model.dart';
 import 'package:message_ai/features/messaging/domain/entities/message.dart';
 import 'package:message_ai/features/messaging/domain/repositories/message_repository.dart';
@@ -18,14 +18,14 @@ import 'package:message_ai/features/messaging/domain/repositories/message_reposi
 /// - Reads: Local first (instant), sync from remote in background
 /// - Writes: Local immediate, queue for remote sync
 class MessageRepositoryImpl implements MessageRepository {
-  final MessageRemoteDataSource _remoteDataSource;
-  final MessageLocalDataSource _localDataSource;
 
   MessageRepositoryImpl({
     required MessageRemoteDataSource remoteDataSource,
     required MessageLocalDataSource localDataSource,
   }) : _remoteDataSource = remoteDataSource,
        _localDataSource = localDataSource;
+  final MessageRemoteDataSource _remoteDataSource;
+  final MessageLocalDataSource _localDataSource;
 
   @override
   Future<Either<Failure, Message>> createMessage(
@@ -116,7 +116,6 @@ class MessageRepositoryImpl implements MessageRepository {
       final localMessages = await _localDataSource.getMessages(
         conversationId: conversationId,
         limit: limit,
-        offset: 0,
       );
 
       return Right(localMessages);
@@ -225,7 +224,7 @@ class MessageRepositoryImpl implements MessageRepository {
       );
 
       return localStream.map(
-        (messages) => Right<Failure, List<Message>>(messages),
+        Right<Failure, List<Message>>.new,
       );
     } on AppException catch (e) {
       return Stream.value(Left(ErrorMapper.mapExceptionToFailure(e)));
@@ -243,7 +242,7 @@ class MessageRepositoryImpl implements MessageRepository {
       // Get message from local
       final message = await _localDataSource.getMessage(messageId);
       if (message == null) {
-        return Left(RecordNotFoundFailure(recordType: 'Message'));
+        return const Left(RecordNotFoundFailure(recordType: 'Message'));
       }
 
       // Offline-first: Update local immediately
@@ -271,7 +270,7 @@ class MessageRepositoryImpl implements MessageRepository {
       // Get message from local
       final message = await _localDataSource.getMessage(messageId);
       if (message == null) {
-        return Left(RecordNotFoundFailure(recordType: 'Message'));
+        return const Left(RecordNotFoundFailure(recordType: 'Message'));
       }
 
       // Offline-first: Update local immediately

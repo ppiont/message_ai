@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:message_ai/features/messaging/data/datasources/message_local_datasource.dart';
 import 'package:message_ai/features/messaging/data/services/message_queue.dart';
 import 'package:message_ai/features/messaging/data/services/message_sync_service.dart';
 import 'package:message_ai/features/messaging/domain/entities/message.dart';
+import 'package:mocktail/mocktail.dart';
 
 // Mocks
 class MockMessageLocalDataSource extends Mock
@@ -22,7 +22,7 @@ void main() {
     text: 'Test message',
     senderId: 'user-1',
     senderName: 'User One',
-    timestamp: DateTime(2024, 1, 1, 12, 0),
+    timestamp: DateTime(2024, 1, 1, 12),
     type: 'text',
     status: 'sending',
     metadata: MessageMetadata.defaultMetadata(),
@@ -355,7 +355,6 @@ void main() {
           conversationId: 'conv-1',
           message: testMessage,
           retryCount: 0,
-          lastAttempt: null,
         );
 
         // Assert
@@ -371,7 +370,6 @@ void main() {
           conversationId: 'conv-1',
           message: testMessage,
           retryCount: 0,
-          lastAttempt: null,
         );
 
         final newTime = DateTime.now();
@@ -391,7 +389,7 @@ void main() {
 
       test('should implement equality', () {
         // Arrange
-        final time = DateTime(2024, 1, 1);
+        final time = DateTime(2024);
         final qm1 = QueuedMessage(
           conversationId: 'conv-1',
           message: testMessage,
@@ -416,7 +414,7 @@ void main() {
           conversationId: 'conv-1',
           message: testMessage,
           retryCount: 2,
-          lastAttempt: DateTime(2024, 1, 1),
+          lastAttempt: DateTime(2024),
         );
 
         // Act

@@ -10,9 +10,9 @@ import 'package:message_ai/features/messaging/domain/repositories/group_conversa
 /// Any member can leave a group, but the last admin cannot leave
 /// without first promoting another member to admin.
 class LeaveGroup {
-  final GroupConversationRepository _groupRepository;
 
   LeaveGroup(this._groupRepository);
+  final GroupConversationRepository _groupRepository;
 
   /// Leaves a group.
   ///
@@ -46,7 +46,7 @@ class LeaveGroup {
     // Get the group to validate
     final groupResult = await _groupRepository.getGroupById(groupId);
 
-    return groupResult.fold((failure) => Left(failure), (group) async {
+    return groupResult.fold(Left.new, (group) async {
       // Check if user is a member
       if (!group.participantIds.contains(userId)) {
         return const Left(

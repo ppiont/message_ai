@@ -2,15 +2,14 @@ import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:message_ai/core/database/daos/conversation_dao.dart';
+import 'package:message_ai/core/database/daos/message_dao.dart';
+import 'package:message_ai/core/database/daos/user_dao.dart';
+import 'package:message_ai/core/database/tables/conversations_table.dart';
+import 'package:message_ai/core/database/tables/messages_table.dart';
+import 'package:message_ai/core/database/tables/users_table.dart';
 import 'package:path/path.dart' as p;
-
-import 'tables/users_table.dart';
-import 'tables/conversations_table.dart';
-import 'tables/messages_table.dart';
-import 'daos/message_dao.dart';
-import 'daos/conversation_dao.dart';
-import 'daos/user_dao.dart';
+import 'package:path_provider/path_provider.dart';
 
 part 'app_database.g.dart';
 
@@ -39,8 +38,7 @@ class AppDatabase extends _$AppDatabase {
   int get schemaVersion => 1;
 
   @override
-  MigrationStrategy get migration {
-    return MigrationStrategy(
+  MigrationStrategy get migration => MigrationStrategy(
       onCreate: (Migrator m) async {
         await m.createAll();
       },
@@ -52,12 +50,10 @@ class AppDatabase extends _$AppDatabase {
         await customStatement('PRAGMA foreign_keys = ON');
       },
     );
-  }
 }
 
 /// Opens a connection to the database
-LazyDatabase _openConnection() {
-  return LazyDatabase(() async {
+LazyDatabase _openConnection() => LazyDatabase(() async {
     final dbFolder = await getApplicationDocumentsDirectory();
     final file = File(p.join(dbFolder.path, 'messageai.db'));
 
@@ -66,4 +62,3 @@ LazyDatabase _openConnection() {
       logStatements: true, // Enable logging in debug mode
     );
   });
-}

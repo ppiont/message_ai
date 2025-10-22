@@ -27,8 +27,7 @@ class _AuthPageState extends State<AuthPage>
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       appBar: AppBar(
         title: const Text('MessageAI'),
         bottom: TabBar(
@@ -47,5 +46,4 @@ class _AuthPageState extends State<AuthPage>
         ],
       ),
     );
-  }
 }

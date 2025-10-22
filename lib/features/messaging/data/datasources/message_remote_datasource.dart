@@ -47,13 +47,13 @@ abstract class MessageRemoteDataSource {
 
 /// Implementation of [MessageRemoteDataSource] using Firebase Firestore.
 class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
+
+  MessageRemoteDataSourceImpl({required FirebaseFirestore firestore})
+    : _firestore = firestore;
   final FirebaseFirestore _firestore;
 
   // Cache to track which collection each conversation belongs to
   final Map<String, String> _conversationTypeCache = {};
-
-  MessageRemoteDataSourceImpl({required FirebaseFirestore firestore})
-    : _firestore = firestore;
 
   static const String _conversationsCollection = 'conversations';
   static const String _groupConversationsCollection = 'group-conversations';
@@ -165,7 +165,7 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
   }) async {
     try {
       final messagesRef = await _messagesRef(conversationId);
-      Query<Map<String, dynamic>> query = messagesRef
+      var query = messagesRef
           .orderBy('timestamp', descending: true)
           .limit(limit);
 
@@ -251,20 +251,16 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
       // Convert Future to Stream, then flatten
       return Stream.fromFuture(_messagesRef(conversationId)).asyncExpand((
         messagesRef,
-      ) {
-        return messagesRef
+      ) => messagesRef
             .orderBy(
               'timestamp',
               descending: false,
             ) // Oldest first (standard chat order)
             .limit(limit)
             .snapshots()
-            .map((snapshot) {
-              return snapshot.docs
+            .map((snapshot) => snapshot.docs
                   .map((doc) => MessageModel.fromJson(doc.data()))
-                  .toList();
-            });
-      });
+                  .toList()));
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {

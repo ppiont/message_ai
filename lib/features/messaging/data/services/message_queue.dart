@@ -12,6 +12,12 @@ import 'package:message_ai/features/messaging/domain/entities/message.dart';
 /// - Exponential backoff for failures
 /// - Dead letter queue for persistent failures
 class MessageQueue {
+
+  MessageQueue({
+    required MessageLocalDataSource localDataSource,
+    required MessageSyncService syncService,
+  })  : _localDataSource = localDataSource,
+        _syncService = syncService;
   final MessageLocalDataSource _localDataSource;
   final MessageSyncService _syncService;
 
@@ -26,12 +32,6 @@ class MessageQueue {
   final List<QueuedMessage> _deadLetterQueue = [];
   Timer? _processingTimer;
   bool _isProcessing = false;
-
-  MessageQueue({
-    required MessageLocalDataSource localDataSource,
-    required MessageSyncService syncService,
-  })  : _localDataSource = localDataSource,
-        _syncService = syncService;
 
   // ============================================================================
   // Public API
@@ -68,7 +68,6 @@ class MessageQueue {
       conversationId: conversationId,
       message: message,
       retryCount: 0,
-      lastAttempt: null,
     ));
   }
 
@@ -165,7 +164,6 @@ class MessageQueue {
     // Reset retry count and re-queue
     _queue.add(queuedMessage.copyWith(
       retryCount: 0,
-      lastAttempt: null,
     ));
 
     // Update sync status
@@ -202,10 +200,6 @@ class MessageQueue {
 
 /// Represents a message in the queue.
 class QueuedMessage {
-  final String conversationId;
-  final Message message;
-  final int retryCount;
-  final DateTime? lastAttempt;
 
   QueuedMessage({
     required this.conversationId,
@@ -213,20 +207,22 @@ class QueuedMessage {
     required this.retryCount,
     this.lastAttempt,
   });
+  final String conversationId;
+  final Message message;
+  final int retryCount;
+  final DateTime? lastAttempt;
 
   QueuedMessage copyWith({
     String? conversationId,
     Message? message,
     int? retryCount,
     DateTime? lastAttempt,
-  }) {
-    return QueuedMessage(
+  }) => QueuedMessage(
       conversationId: conversationId ?? this.conversationId,
       message: message ?? this.message,
       retryCount: retryCount ?? this.retryCount,
       lastAttempt: lastAttempt ?? this.lastAttempt,
     );
-  }
 
   @override
   bool operator ==(Object other) {
@@ -240,15 +236,11 @@ class QueuedMessage {
   }
 
   @override
-  int get hashCode {
-    return conversationId.hashCode ^
+  int get hashCode => conversationId.hashCode ^
         message.id.hashCode ^
         retryCount.hashCode ^
         lastAttempt.hashCode;
-  }
 
   @override
-  String toString() {
-    return 'QueuedMessage(conversationId: $conversationId, messageId: ${message.id}, retryCount: $retryCount, lastAttempt: $lastAttempt)';
-  }
+  String toString() => 'QueuedMessage(conversationId: $conversationId, messageId: ${message.id}, retryCount: $retryCount, lastAttempt: $lastAttempt)';
 }

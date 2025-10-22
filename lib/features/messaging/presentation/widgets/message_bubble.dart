@@ -27,8 +27,7 @@ class MessageBubble extends StatelessWidget {
   final String status;
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
+  Widget build(BuildContext context) => Column(
       crossAxisAlignment: isMe
           ? CrossAxisAlignment.end
           : CrossAxisAlignment.start,
@@ -110,10 +109,8 @@ class MessageBubble extends StatelessWidget {
         ),
       ],
     );
-  }
 
-  Widget _buildTimestampDivider(BuildContext context) {
-    return Padding(
+  Widget _buildTimestampDivider(BuildContext context) => Padding(
       padding: const EdgeInsets.symmetric(vertical: 16),
       child: Row(
         children: [
@@ -133,24 +130,23 @@ class MessageBubble extends StatelessWidget {
         ],
       ),
     );
-  }
 
   Widget _buildStatusIcon(BuildContext context) {
     switch (status) {
       case 'sent':
-        return Icon(
+        return const Icon(
           Icons.check,
           size: 16, // Increased from 14
           color: Colors.white, // Changed from white70 to full white
         );
       case 'delivered':
-        return Icon(
+        return const Icon(
           Icons.done_all,
           size: 16, // Increased from 14
           color: Colors.white, // Changed from white70 to full white
         );
       case 'read':
-        return Icon(
+        return const Icon(
           Icons.done_all,
           size: 16, // Increased from 14
           color: Colors.lightBlueAccent, // More visible color for read status

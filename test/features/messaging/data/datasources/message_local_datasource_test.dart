@@ -1,7 +1,7 @@
 /// Tests for message local data source
 library;
 
-import 'package:drift/drift.dart' hide isNull, isNotNull;
+import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:message_ai/core/database/app_database.dart';
@@ -20,7 +20,7 @@ void main() {
     text: 'Hello world',
     senderId: 'user-1',
     senderName: 'User 1',
-    timestamp: DateTime(2024, 1, 1, 12, 0),
+    timestamp: DateTime(2024, 1, 1, 12),
     type: 'text',
     status: 'sent',
     metadata: MessageMetadata.defaultMetadata(),
@@ -80,11 +80,11 @@ void main() {
           text: 'Complex message',
           senderId: 'user-1',
           senderName: 'User 1',
-          timestamp: DateTime(2024, 1, 1, 12, 0),
+          timestamp: DateTime(2024, 1, 1, 12),
           type: 'text',
           status: 'sent',
           detectedLanguage: 'en',
-          translations: {'es': 'Mensaje complejo'},
+          translations: const {'es': 'Mensaje complejo'},
           replyTo: 'msg-0',
           metadata: const MessageMetadata(
             edited: true,
@@ -304,7 +304,6 @@ void main() {
         final page1 = await dataSource.getMessages(
           conversationId: conversationId,
           limit: 3,
-          offset: 0,
         );
 
         // Get next 2 messages
@@ -427,7 +426,7 @@ void main() {
           text: 'Hello world',
           senderId: 'user-1',
           senderName: 'User 1',
-          timestamp: DateTime(2024, 1, 1, 12, 0),
+          timestamp: DateTime(2024, 1, 1, 12),
           type: 'text',
           status: 'sent',
           metadata: MessageMetadata.defaultMetadata(),
@@ -519,7 +518,7 @@ void main() {
           text: 'Delivered message',
           senderId: 'user-2', // Not current user
           senderName: 'User 2',
-          timestamp: DateTime(2024, 1, 1, 12, 0),
+          timestamp: DateTime(2024, 1, 1, 12),
           type: 'text',
           status: 'delivered', // Unread
           metadata: MessageMetadata.defaultMetadata(),
@@ -738,7 +737,7 @@ void main() {
             text: 'Message $i',
             senderId: 'user-1',
             senderName: 'User 1',
-            timestamp: DateTime(2024, 1, i, 12, 0),
+            timestamp: DateTime(2024, 1, i, 12),
             type: 'text',
             status: 'sent',
             metadata: MessageMetadata.defaultMetadata(),
@@ -766,7 +765,7 @@ void main() {
           text: 'From user 1',
           senderId: 'user-1',
           senderName: 'User 1',
-          timestamp: DateTime(2024, 1, 1, 12, 0),
+          timestamp: DateTime(2024, 1, 1, 12),
           type: 'text',
           status: 'sent',
           metadata: MessageMetadata.defaultMetadata(),
@@ -1035,7 +1034,6 @@ void main() {
           conversationId: conversationId,
           localMessage: localMessage,
           remoteMessage: remoteMessage,
-          strategy: 'server-wins',
         );
 
         // Assert
@@ -1095,7 +1093,7 @@ void main() {
           timestamp: testMessage.timestamp,
           type: testMessage.type,
           status: 'read', // Local is further along
-          translations: {'es': 'Texto local'},
+          translations: const {'es': 'Texto local'},
           metadata: testMessage.metadata,
         );
         final remoteMessage = Message(
@@ -1106,7 +1104,7 @@ void main() {
           timestamp: testMessage.timestamp,
           type: testMessage.type,
           status: 'delivered',
-          translations: {'fr': 'Texte distant'},
+          translations: const {'fr': 'Texte distant'},
           metadata: testMessage.metadata,
         );
 
@@ -1156,7 +1154,7 @@ void main() {
           timestamp: testMessage.timestamp,
           type: testMessage.type,
           status: testMessage.status,
-          translations: {'es': 'Hola mundo', 'fr': 'Bonjour monde'},
+          translations: const {'es': 'Hola mundo', 'fr': 'Bonjour monde'},
           metadata: testMessage.metadata,
         );
         final remoteMessage = Message(
@@ -1167,7 +1165,7 @@ void main() {
           timestamp: testMessage.timestamp,
           type: testMessage.type,
           status: testMessage.status,
-          translations: {'de': 'Hallo Welt'},
+          translations: const {'de': 'Hallo Welt'},
           metadata: testMessage.metadata,
         );
 

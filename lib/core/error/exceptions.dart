@@ -4,13 +4,15 @@
 /// and should be caught and converted to [Failure] objects by repositories.
 library;
 
+import 'package:message_ai/core/error/failures.dart' show Failure;
+
 /// Base exception class for all custom exceptions
 abstract class AppException implements Exception {
+
+  const AppException({required this.message, this.code, this.originalError});
   final String message;
   final String? code;
   final dynamic originalError;
-
-  const AppException({required this.message, this.code, this.originalError});
 
   @override
   String toString() => 'AppException: $message (code: $code)';
@@ -34,7 +36,6 @@ class NetworkTimeoutException extends AppException {
 
 /// Exception thrown when the server returns an error
 class ServerException extends AppException {
-  final int? statusCode;
 
   const ServerException({
     required super.message,
@@ -42,6 +43,7 @@ class ServerException extends AppException {
     this.statusCode,
     super.originalError,
   });
+  final int? statusCode;
 
   @override
   String toString() =>
@@ -110,11 +112,11 @@ class DatabaseException extends AppException {
 
 /// Exception thrown when a record is not found
 class RecordNotFoundException extends AppException {
-  final String recordType;
-  final String? recordId;
 
   const RecordNotFoundException({required this.recordType, this.recordId})
     : super(message: 'Record not found', code: 'RECORD_NOT_FOUND');
+  final String recordType;
+  final String? recordId;
 
   @override
   String toString() {
@@ -127,11 +129,11 @@ class RecordNotFoundException extends AppException {
 
 /// Exception thrown when a record already exists
 class RecordAlreadyExistsException extends AppException {
-  final String recordType;
-  final String? recordId;
 
   const RecordAlreadyExistsException({required this.recordType, this.recordId})
     : super(message: 'Record already exists', code: 'RECORD_ALREADY_EXISTS');
+  final String recordType;
+  final String? recordId;
 
   @override
   String toString() {
@@ -156,10 +158,10 @@ class ConstraintViolationException extends AppException {
 
 /// Exception thrown when input validation fails
 class ValidationException extends AppException {
-  final Map<String, String>? fieldErrors;
 
   const ValidationException({required super.message, this.fieldErrors})
     : super(code: 'VALIDATION_ERROR');
+  final Map<String, String>? fieldErrors;
 
   @override
   String toString() {
@@ -172,12 +174,12 @@ class ValidationException extends AppException {
 
 /// Exception thrown when input format is invalid
 class InvalidFormatException extends AppException {
-  final String fieldName;
 
   const InvalidFormatException({
     required this.fieldName,
     required super.message,
   }) : super(code: 'INVALID_FORMAT');
+  final String fieldName;
 
   @override
   String toString() => 'InvalidFormatException: $fieldName - $message';
@@ -257,10 +259,10 @@ class TranslationException extends AppException {
 
 /// Exception thrown when AI rate limit is exceeded
 class RateLimitExceededException extends AppException {
-  final DateTime? retryAfter;
 
   const RateLimitExceededException({this.retryAfter})
     : super(message: 'Rate limit exceeded', code: 'RATE_LIMIT_EXCEEDED');
+  final DateTime? retryAfter;
 
   @override
   String toString() {

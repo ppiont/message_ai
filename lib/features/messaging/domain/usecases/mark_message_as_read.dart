@@ -10,9 +10,9 @@ import 'package:message_ai/features/messaging/domain/repositories/message_reposi
 /// This updates the message's status to 'read' and can trigger
 /// read receipt notifications.
 class MarkMessageAsRead {
-  final MessageRepository _messageRepository;
 
   MarkMessageAsRead(this._messageRepository);
+  final MessageRepository _messageRepository;
 
   /// Marks a message as read.
   ///

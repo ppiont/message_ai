@@ -5,6 +5,13 @@ import 'package:equatable/equatable.dart';
 /// This is the core domain model for users, independent of any
 /// data source implementation details.
 class User extends Equatable {
+
+  const User({
+    required this.uid,
+    required this.displayName, required this.preferredLanguage, required this.createdAt, required this.lastSeen, required this.isOnline, required this.fcmTokens, this.email,
+    this.phoneNumber,
+    this.photoURL,
+  });
   /// Firebase Authentication unique identifier
   final String uid;
 
@@ -35,19 +42,6 @@ class User extends Equatable {
   /// List of FCM tokens for push notifications across devices
   final List<String> fcmTokens;
 
-  const User({
-    required this.uid,
-    this.email,
-    this.phoneNumber,
-    required this.displayName,
-    this.photoURL,
-    required this.preferredLanguage,
-    required this.createdAt,
-    required this.lastSeen,
-    required this.isOnline,
-    required this.fcmTokens,
-  });
-
   /// Creates a copy of this user with the given fields replaced
   User copyWith({
     String? uid,
@@ -60,8 +54,7 @@ class User extends Equatable {
     DateTime? lastSeen,
     bool? isOnline,
     List<String>? fcmTokens,
-  }) {
-    return User(
+  }) => User(
       uid: uid ?? this.uid,
       email: email ?? this.email,
       phoneNumber: phoneNumber ?? this.phoneNumber,
@@ -73,7 +66,6 @@ class User extends Equatable {
       isOnline: isOnline ?? this.isOnline,
       fcmTokens: fcmTokens ?? this.fcmTokens,
     );
-  }
 
   @override
   List<Object?> get props => [
@@ -90,8 +82,6 @@ class User extends Equatable {
   ];
 
   @override
-  String toString() {
-    return 'User(uid: $uid, displayName: $displayName, email: $email, '
+  String toString() => 'User(uid: $uid, displayName: $displayName, email: $email, '
         'isOnline: $isOnline, preferredLanguage: $preferredLanguage)';
-  }
 }

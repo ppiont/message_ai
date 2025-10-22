@@ -28,21 +28,19 @@ void main() {
     int unreadCount = 0,
     String currentUserId = 'user-1',
     VoidCallback? onTap,
-  }) {
-    return MaterialApp(
+  }) => MaterialApp(
       home: Scaffold(
         body: ConversationListItem(
           conversationId: 'conv-1',
           participants: participants,
           lastMessage: lastMessage,
-          lastUpdatedAt: DateTime(2024, 1, 1, 12, 0),
+          lastUpdatedAt: DateTime(2024, 1, 1, 12),
           unreadCount: unreadCount,
           currentUserId: currentUserId,
           onTap: onTap ?? () {},
         ),
       ),
     );
-  }
 
   group('ConversationListItem', () {
     group('participant display', () {
@@ -51,7 +49,6 @@ void main() {
         await tester.pumpWidget(
           createTestWidget(
             participants: testParticipants,
-            currentUserId: 'user-1',
           ),
         );
 
@@ -80,7 +77,6 @@ void main() {
                 'preferredLanguage': 'en',
               },
             ],
-            currentUserId: 'user-1',
           ),
         );
 
@@ -109,7 +105,6 @@ void main() {
                 'preferredLanguage': 'en',
               },
             ],
-            currentUserId: 'user-1',
           ),
         );
 
@@ -122,7 +117,7 @@ void main() {
       ) async {
         // Arrange & Act
         await tester.pumpWidget(
-          createTestWidget(participants: [], currentUserId: 'user-1'),
+          createTestWidget(participants: []),
         );
 
         // Assert - Should show 'Unknown' and not crash
@@ -163,7 +158,7 @@ void main() {
       testWidgets('should display placeholder when no message', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
-          createTestWidget(participants: testParticipants, lastMessage: null),
+          createTestWidget(participants: testParticipants),
         );
 
         // Assert
@@ -209,7 +204,7 @@ void main() {
       testWidgets('should not display badge when unread = 0', (tester) async {
         // Arrange & Act
         await tester.pumpWidget(
-          createTestWidget(participants: testParticipants, unreadCount: 0),
+          createTestWidget(participants: testParticipants),
         );
 
         // Assert - No badge container
@@ -218,7 +213,7 @@ void main() {
             (widget) =>
                 widget is Container &&
                 widget.decoration is BoxDecoration &&
-                (widget.decoration as BoxDecoration).borderRadius != null,
+                (widget.decoration! as BoxDecoration).borderRadius != null,
           ),
           findsNothing,
         );
@@ -277,7 +272,7 @@ void main() {
     group('interaction', () {
       testWidgets('should call onTap when tapped', (tester) async {
         // Arrange
-        bool tapped = false;
+        var tapped = false;
         await tester.pumpWidget(
           createTestWidget(
             participants: testParticipants,
@@ -315,7 +310,6 @@ void main() {
                 'preferredLanguage': 'en',
               },
             ],
-            currentUserId: 'user-1',
           ),
         );
 
@@ -345,7 +339,6 @@ void main() {
                 'preferredLanguage': 'en',
               },
             ],
-            currentUserId: 'user-1',
           ),
         );
 
@@ -371,7 +364,6 @@ void main() {
                 'preferredLanguage': 'en',
               },
             ],
-            currentUserId: 'user-1',
           ),
         );
 

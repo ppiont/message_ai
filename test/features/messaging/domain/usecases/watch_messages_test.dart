@@ -23,7 +23,7 @@ void main() {
       senderId: 'user-1',
       senderName: 'User 1',
       text: 'Hello',
-      timestamp: DateTime(2024, 1, 1),
+      timestamp: DateTime(2024),
       status: 'sent',
       type: 'text',
       metadata: MessageMetadata.defaultMetadata(),
@@ -52,10 +52,8 @@ void main() {
           await expectLater(
             stream.first,
             completion(
-              predicate<Either<Failure, List<Message>>>((result) {
-                return result.isLeft() &&
-                    result.fold((l) => l, (r) => null) is ValidationFailure;
-              }),
+              predicate<Either<Failure, List<Message>>>((result) => result.isLeft() &&
+                    result.fold((l) => l, (r) => null) is ValidationFailure),
             ),
           );
         },
@@ -74,9 +72,7 @@ void main() {
           await expectLater(
             stream.first,
             completion(
-              predicate<Either<Failure, List<Message>>>((result) {
-                return result.isLeft();
-              }),
+              predicate<Either<Failure, List<Message>>>((result) => result.isLeft()),
             ),
           );
         },
@@ -104,10 +100,8 @@ void main() {
         await expectLater(
           stream.first,
           completion(
-            predicate<Either<Failure, List<Message>>>((result) {
-              return result.isRight() &&
-                  result.fold((l) => null, (r) => r)!.length == 2;
-            }),
+            predicate<Either<Failure, List<Message>>>((result) => result.isRight() &&
+                  result.fold((l) => null, (r) => r)!.length == 2),
           ),
         );
 
@@ -115,7 +109,6 @@ void main() {
           () => mockRepository.watchMessages(
             conversationId: 'conv-123',
             currentUserId: 'user-123',
-            limit: 50,
           ),
         ).called(1);
       });
@@ -169,10 +162,8 @@ void main() {
         await expectLater(
           stream.first,
           completion(
-            predicate<Either<Failure, List<Message>>>((result) {
-              return result.isRight() &&
-                  result.fold((l) => null, (r) => r)!.isEmpty;
-            }),
+            predicate<Either<Failure, List<Message>>>((result) => result.isRight() &&
+                  result.fold((l) => null, (r) => r)!.isEmpty),
           ),
         );
       });

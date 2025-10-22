@@ -82,7 +82,7 @@ class _UserSelectionPageState extends ConsumerState<UserSelectionPage> {
           Expanded(child: _buildUserList(currentUser)),
           // Loading overlay
           if (_isCreatingConversation)
-            Container(
+            ColoredBox(
               color: Colors.black.withValues(alpha: 0.5),
               child: const Center(
                 child: CircularProgressIndicator(color: Colors.white),
@@ -93,8 +93,7 @@ class _UserSelectionPageState extends ConsumerState<UserSelectionPage> {
     );
   }
 
-  Widget _buildUserList(User currentUser) {
-    return StreamBuilder<QuerySnapshot>(
+  Widget _buildUserList(User currentUser) => StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance.collection('users').snapshots(),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
@@ -124,7 +123,7 @@ class _UserSelectionPageState extends ConsumerState<UserSelectionPage> {
         // Filter users
         final users = snapshot.data!.docs
             .map((doc) {
-              final data = doc.data() as Map<String, dynamic>;
+              final data = doc.data()! as Map<String, dynamic>;
               // Extract fields with proper null handling
               final uid = data['uid'] as String?;
               final displayName = data['displayName'] as String? ?? '';
@@ -186,10 +185,8 @@ class _UserSelectionPageState extends ConsumerState<UserSelectionPage> {
         );
       },
     );
-  }
 
-  Widget _buildEmptyState() {
-    return Center(
+  Widget _buildEmptyState() => Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -213,7 +210,6 @@ class _UserSelectionPageState extends ConsumerState<UserSelectionPage> {
         ],
       ),
     );
-  }
 
   Future<void> _handleUserSelected(
     User currentUser,

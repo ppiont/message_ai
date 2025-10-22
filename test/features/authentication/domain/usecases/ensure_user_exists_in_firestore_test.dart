@@ -28,10 +28,10 @@ void main() {
     email: 'test@test.com',
     displayName: 'Test User',
     preferredLanguage: 'en',
-    createdAt: DateTime(2024, 1, 1),
-    lastSeen: DateTime(2024, 1, 1),
+    createdAt: DateTime(2024),
+    lastSeen: DateTime(2024),
     isOnline: true,
-    fcmTokens: [],
+    fcmTokens: const [],
   );
 
   group('EnsureUserExistsInFirestore', () {

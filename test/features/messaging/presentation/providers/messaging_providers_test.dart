@@ -2,6 +2,7 @@
 library;
 
 import 'package:dartz/dartz.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:message_ai/core/error/failures.dart';
 import 'package:message_ai/features/messaging/domain/entities/conversation.dart';
@@ -10,7 +11,6 @@ import 'package:message_ai/features/messaging/domain/usecases/watch_conversation
 import 'package:message_ai/features/messaging/domain/usecases/watch_messages.dart';
 import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Mocks
 class MockWatchConversations extends Mock implements WatchConversations {}
@@ -31,22 +31,22 @@ void main() {
     text: 'Test message',
     senderId: 'user-1',
     senderName: 'User 1',
-    timestamp: DateTime(2024, 1, 1, 12, 0),
+    timestamp: DateTime(2024, 1, 1, 12),
     type: 'text',
   );
 
   final testConversation = Conversation(
     documentId: 'conv-1',
     type: 'direct',
-    participantIds: ['user-1', 'user-2'],
-    participants: [
+    participantIds: const ['user-1', 'user-2'],
+    participants: const [
       Participant(uid: 'user-1', name: 'User 1', preferredLanguage: 'en'),
       Participant(uid: 'user-2', name: 'User 2', preferredLanguage: 'es'),
     ],
     lastMessage: testLastMessage,
-    lastUpdatedAt: DateTime(2024, 1, 1, 12, 0),
-    initiatedAt: DateTime(2024, 1, 1, 10, 0),
-    unreadCount: {'user-1': 0, 'user-2': 1},
+    lastUpdatedAt: DateTime(2024, 1, 1, 12),
+    initiatedAt: DateTime(2024, 1, 1, 10),
+    unreadCount: const {'user-1': 0, 'user-2': 1},
     translationEnabled: false,
     autoDetectLanguage: false,
   );
@@ -56,10 +56,9 @@ void main() {
     text: 'Hello world',
     senderId: 'user-1',
     senderName: 'User 1',
-    timestamp: DateTime(2024, 1, 1, 12, 0),
+    timestamp: DateTime(2024, 1, 1, 12),
     type: 'text',
     status: 'sent',
-    translations: null,
     metadata: MessageMetadata.defaultMetadata(),
   );
 
@@ -119,7 +118,6 @@ void main() {
         final freshMock = MockWatchConversations();
         final convWithoutLastMessage = testConversation.copyWith(
           documentId: 'conv-2',
-          lastMessage: null,
         );
 
         final container = ProviderContainer(

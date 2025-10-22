@@ -17,10 +17,9 @@ void main() {
     uid: 'test-uid',
     email: 'test@test.com',
     displayName: 'Test User',
-    photoURL: null,
     preferredLanguage: 'en',
-    createdAt: DateTime(2024, 1, 1),
-    lastSeen: DateTime(2024, 1, 1),
+    createdAt: DateTime(2024),
+    lastSeen: DateTime(2024),
     isOnline: true,
     fcmTokens: [],
   );
@@ -207,7 +206,7 @@ void main() {
             .doc(testUserModel.uid)
             .set(testUserModel.toJson());
 
-        final newLastSeen = DateTime(2024, 2, 1);
+        final newLastSeen = DateTime(2024, 2);
 
         // Act
         await dataSource.updateUserLastSeen(testUserModel.uid, newLastSeen);

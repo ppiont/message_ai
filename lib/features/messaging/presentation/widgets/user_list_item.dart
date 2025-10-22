@@ -23,8 +23,7 @@ class UserListItem extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return ListTile(
+  Widget build(BuildContext context) => ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       leading: _buildAvatar(),
       title: Text(
@@ -44,7 +43,6 @@ class UserListItem extends StatelessWidget {
       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
       onTap: onTap,
     );
-  }
 
   Widget _buildAvatar() {
     if (imageUrl != null && imageUrl!.isNotEmpty) {
@@ -84,8 +82,8 @@ class UserListItem extends StatelessWidget {
 
   Color _generateColorFromString(String str) {
     // Generate consistent color from string hash
-    int hash = 0;
-    for (int i = 0; i < str.length; i++) {
+    var hash = 0;
+    for (var i = 0; i < str.length; i++) {
       hash = str.codeUnitAt(i) + ((hash << 5) - hash);
     }
 

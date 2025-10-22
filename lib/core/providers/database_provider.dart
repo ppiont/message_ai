@@ -1,8 +1,8 @@
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:message_ai/core/database/app_database.dart';
-import 'package:message_ai/core/database/daos/message_dao.dart';
 import 'package:message_ai/core/database/daos/conversation_dao.dart';
+import 'package:message_ai/core/database/daos/message_dao.dart';
 import 'package:message_ai/core/database/daos/user_dao.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'database_provider.g.dart';
 
@@ -20,9 +20,7 @@ AppDatabase database(Ref ref) {
   final db = AppDatabase();
 
   // Clean up database when provider is disposed
-  ref.onDispose(() {
-    db.close();
-  });
+  ref.onDispose(db.close);
 
   return db;
 }

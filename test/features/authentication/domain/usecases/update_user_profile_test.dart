@@ -29,10 +29,10 @@ void main() {
     displayName: 'Updated User',
     photoURL: 'https://example.com/photo.jpg',
     preferredLanguage: 'en',
-    createdAt: DateTime(2024, 1, 1),
-    lastSeen: DateTime(2024, 1, 1),
+    createdAt: DateTime(2024),
+    lastSeen: DateTime(2024),
     isOnline: true,
-    fcmTokens: [],
+    fcmTokens: const [],
   );
 
   group('UpdateUserProfile', () {

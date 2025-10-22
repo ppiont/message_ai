@@ -19,7 +19,7 @@ void main() {
     senderId: 'user-1',
     senderName: 'Test User',
     text: 'Hello, world!',
-    timestamp: DateTime(2024, 1, 1, 12, 0),
+    timestamp: DateTime(2024, 1, 1, 12),
     type: 'text',
     status: 'sent',
     metadata: const MessageMetadataModel(
@@ -153,7 +153,7 @@ void main() {
 
       test('should respect limit parameter', () async {
         // Arrange - create 3 messages
-        for (int i = 0; i < 3; i++) {
+        for (var i = 0; i < 3; i++) {
           await fakeFirestore
               .collection('conversations')
               .doc('conv-123')
@@ -291,9 +291,7 @@ void main() {
         // Assert
         await expectLater(
           stream.first,
-          completion(predicate<List<MessageModel>>((messages) {
-            return messages.length == 1 && messages[0].id == 'msg-123';
-          })),
+          completion(predicate<List<MessageModel>>((messages) => messages.length == 1 && messages[0].id == 'msg-123')),
         );
       });
 
@@ -304,9 +302,7 @@ void main() {
         // Assert
         await expectLater(
           stream.first,
-          completion(predicate<List<MessageModel>>((messages) {
-            return messages.isEmpty;
-          })),
+          completion(predicate<List<MessageModel>>((messages) => messages.isEmpty)),
         );
       });
 
@@ -350,7 +346,7 @@ void main() {
 
       test('should respect limit parameter', () async {
         // Arrange - create 3 messages
-        for (int i = 0; i < 3; i++) {
+        for (var i = 0; i < 3; i++) {
           await fakeFirestore
               .collection('conversations')
               .doc('conv-123')
@@ -382,9 +378,7 @@ void main() {
         // Assert
         await expectLater(
           stream.first,
-          completion(predicate<List<MessageModel>>((messages) {
-            return messages.length == 2;
-          })),
+          completion(predicate<List<MessageModel>>((messages) => messages.length == 2)),
         );
       });
     });
