@@ -2,7 +2,10 @@
 library;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:message_ai/core/providers/database_providers.dart';
+import 'package:message_ai/features/messaging/data/datasources/conversation_local_datasource.dart';
 import 'package:message_ai/features/messaging/data/datasources/conversation_remote_datasource.dart';
+import 'package:message_ai/features/messaging/data/datasources/message_local_datasource.dart';
 import 'package:message_ai/features/messaging/data/datasources/message_remote_datasource.dart';
 import 'package:message_ai/features/messaging/data/repositories/conversation_repository_impl.dart';
 import 'package:message_ai/features/messaging/data/repositories/message_repository_impl.dart';
@@ -35,6 +38,13 @@ MessageRemoteDataSource messageRemoteDataSource(Ref ref) {
   );
 }
 
+/// Provides the [MessageLocalDataSource] implementation.
+@riverpod
+MessageLocalDataSource messageLocalDataSource(Ref ref) {
+  final database = ref.watch(databaseProvider);
+  return MessageLocalDataSourceImpl(messageDao: database.messageDao);
+}
+
 /// Provides the [ConversationRemoteDataSource] implementation.
 @riverpod
 ConversationRemoteDataSource conversationRemoteDataSource(Ref ref) {
@@ -43,21 +53,32 @@ ConversationRemoteDataSource conversationRemoteDataSource(Ref ref) {
   );
 }
 
+/// Provides the [ConversationLocalDataSource] implementation.
+@riverpod
+ConversationLocalDataSource conversationLocalDataSource(Ref ref) {
+  final database = ref.watch(databaseProvider);
+  return ConversationLocalDataSourceImpl(
+    conversationDao: database.conversationDao,
+  );
+}
+
 // ========== Repository Providers ==========
 
-/// Provides the [MessageRepository] implementation.
+/// Provides the [MessageRepository] implementation (offline-first).
 @riverpod
 MessageRepository messageRepository(Ref ref) {
   return MessageRepositoryImpl(
     remoteDataSource: ref.watch(messageRemoteDataSourceProvider),
+    localDataSource: ref.watch(messageLocalDataSourceProvider),
   );
 }
 
-/// Provides the [ConversationRepository] implementation.
+/// Provides the [ConversationRepository] implementation (offline-first).
 @riverpod
 ConversationRepository conversationRepository(Ref ref) {
   return ConversationRepositoryImpl(
     remoteDataSource: ref.watch(conversationRemoteDataSourceProvider),
+    localDataSource: ref.watch(conversationLocalDataSourceProvider),
   );
 }
 

@@ -94,9 +94,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       ),
       body: Column(
         children: [
-          Expanded(
-            child: _buildMessageList(currentUser.uid),
-          ),
+          Expanded(child: _buildMessageList(currentUser.uid)),
           _buildTypingIndicator(currentUser.uid),
           MessageInput(
             conversationId: widget.conversationId,
@@ -111,10 +109,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
 
   Widget _buildTypingIndicator(String currentUserId) {
     final typingUsersAsync = ref.watch(
-      conversationTypingUsersProvider(
-        widget.conversationId,
-        currentUserId,
-      ),
+      conversationTypingUsersProvider(widget.conversationId, currentUserId),
     );
 
     return typingUsersAsync.when(
@@ -123,7 +118,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         return TypingIndicator(typingUserNames: typingNames);
       },
       loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 
@@ -155,11 +150,10 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             final messageId = message['id'] as String;
             final status = message['status'] as String? ?? 'sent';
 
-            // DEBUG: Print status to console
-            print('Message $messageId: status="$status", isMe=$isMe');
-
             // Mark incoming messages as read (only once)
-            if (!isMe && status != 'read' && !_markedAsRead.contains(messageId)) {
+            if (!isMe &&
+                status != 'read' &&
+                !_markedAsRead.contains(messageId)) {
               _markMessageAsRead(messageId);
             }
 
@@ -203,24 +197,20 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.chat_bubble_outline,
-            size: 80,
-            color: Colors.grey[400],
-          ),
+          Icon(Icons.chat_bubble_outline, size: 80, color: Colors.grey[400]),
           const SizedBox(height: 24),
           Text(
             'No messages yet',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: Colors.grey[600],
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(color: Colors.grey[600]),
           ),
           const SizedBox(height: 8),
           Text(
             'Send a message to start the conversation',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[500],
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[500]),
           ),
         ],
       ),

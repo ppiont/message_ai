@@ -29,7 +29,9 @@ class MessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      crossAxisAlignment: isMe
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
       children: [
         if (showTimestamp) _buildTimestampDivider(context),
         Padding(
@@ -40,7 +42,9 @@ class MessageBubble extends StatelessWidget {
             bottom: 4,
           ),
           child: Column(
-            crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+            crossAxisAlignment: isMe
+                ? CrossAxisAlignment.end
+                : CrossAxisAlignment.start,
             children: [
               if (!isMe)
                 Padding(
@@ -132,26 +136,32 @@ class MessageBubble extends StatelessWidget {
   }
 
   Widget _buildStatusIcon(BuildContext context) {
+    // Debug: Print status to see what we're getting
+    print('MessageBubble status: "$status" for isMe=$isMe');
+
     switch (status) {
       case 'sent':
         return Icon(
           Icons.check,
-          size: 14,
-          color: Colors.white70,
+          size: 16, // Increased from 14
+          color: Colors.white, // Changed from white70 to full white
         );
       case 'delivered':
         return Icon(
           Icons.done_all,
-          size: 14,
-          color: Colors.white70,
+          size: 16, // Increased from 14
+          color: Colors.white, // Changed from white70 to full white
         );
       case 'read':
         return Icon(
           Icons.done_all,
-          size: 14,
-          color: Theme.of(context).colorScheme.secondary,
+          size: 16, // Increased from 14
+          color: Colors.lightBlueAccent, // More visible color for read status
         );
       default:
+        print(
+          'MessageBubble: Unknown status "$status", returning empty widget',
+        );
         return const SizedBox.shrink();
     }
   }

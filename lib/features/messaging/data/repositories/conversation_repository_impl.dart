@@ -6,32 +6,54 @@ import 'package:message_ai/core/error/error_mapper.dart';
 import 'package:message_ai/core/error/exceptions.dart';
 import 'package:message_ai/core/error/failures.dart';
 import 'package:message_ai/features/messaging/data/datasources/conversation_remote_datasource.dart';
+import 'package:message_ai/features/messaging/data/datasources/conversation_local_datasource.dart';
 import 'package:message_ai/features/messaging/data/models/conversation_model.dart';
 import 'package:message_ai/features/messaging/domain/entities/conversation.dart';
 import 'package:message_ai/features/messaging/domain/repositories/conversation_repository.dart';
 
-/// Implementation of [ConversationRepository] that uses [ConversationRemoteDataSource]
-/// to interact with Firestore.
+/// Implementation of [ConversationRepository] that uses both local and remote data sources
+/// for offline-first functionality.
+///
+/// Strategy:
+/// - Reads: Local first (instant), sync from remote in background
+/// - Writes: Local immediate, queue for remote sync
 class ConversationRepositoryImpl implements ConversationRepository {
   final ConversationRemoteDataSource _remoteDataSource;
+  final ConversationLocalDataSource _localDataSource;
 
   ConversationRepositoryImpl({
     required ConversationRemoteDataSource remoteDataSource,
-  }) : _remoteDataSource = remoteDataSource;
+    required ConversationLocalDataSource localDataSource,
+  })  : _remoteDataSource = remoteDataSource,
+        _localDataSource = localDataSource;
 
   @override
   Future<Either<Failure, Conversation>> createConversation(
     Conversation conversation,
   ) async {
     try {
-      final conversationModel = ConversationModel.fromEntity(conversation);
-      final createdConversationModel =
-          await _remoteDataSource.createConversation(conversationModel);
-      return Right(createdConversationModel.toEntity());
+      // Offline-first: Save to local immediately
+      final localConversation =
+          await _localDataSource.createConversation(conversation);
+
+      // Background sync to remote (don't wait for it)
+      _syncToRemote(localConversation);
+
+      return Right(localConversation);
     } on AppException catch (e) {
       return Left(ErrorMapper.mapExceptionToFailure(e));
     } catch (e) {
       return Left(UnknownFailure(message: e.toString()));
+    }
+  }
+
+  /// Background sync to remote - fire and forget
+  Future<void> _syncToRemote(Conversation conversation) async {
+    try {
+      final conversationModel = ConversationModel.fromEntity(conversation);
+      await _remoteDataSource.createConversation(conversationModel);
+    } catch (e) {
+      // Sync failed - will be retried by sync service
     }
   }
 
@@ -40,9 +62,23 @@ class ConversationRepositoryImpl implements ConversationRepository {
     String conversationId,
   ) async {
     try {
+      // Offline-first: Try local first
+      final localConversation =
+          await _localDataSource.getConversation(conversationId);
+
+      if (localConversation != null) {
+        return Right(localConversation);
+      }
+
+      // Not in local, try remote
       final conversationModel =
           await _remoteDataSource.getConversationById(conversationId);
-      return Right(conversationModel.toEntity());
+      final conversation = conversationModel.toEntity();
+
+      // Save to local for future offline access
+      await _localDataSource.createConversation(conversation);
+
+      return Right(conversation);
     } on AppException catch (e) {
       return Left(ErrorMapper.mapExceptionToFailure(e));
     } catch (e) {
@@ -109,15 +145,39 @@ class ConversationRepositoryImpl implements ConversationRepository {
     int limit = 50,
   }) {
     try {
-      return _remoteDataSource
-          .watchConversationsForUser(userId, limit: limit)
-          .map((conversationModels) => Right<Failure, List<Conversation>>(
-                conversationModels.map((model) => model.toEntity()).toList(),
-              ));
+      // Offline-first: Watch from local database
+      // This provides instant updates and works offline
+      final localStream = _localDataSource.watchConversationsByParticipant(
+        userId,
+        limit: limit,
+      );
+
+      // Background sync from remote (fire and forget)
+      _syncConversationsFromRemote(userId, limit);
+
+      return localStream.map(
+        (conversations) => Right<Failure, List<Conversation>>(conversations),
+      );
     } on AppException catch (e) {
       return Stream.value(Left(ErrorMapper.mapExceptionToFailure(e)));
     } catch (e) {
       return Stream.value(Left(UnknownFailure(message: e.toString())));
+    }
+  }
+
+  /// Background sync from remote to local
+  Future<void> _syncConversationsFromRemote(String userId, int limit) async {
+    try {
+      final conversationModels =
+          await _remoteDataSource.getConversationsForUser(userId, limit: limit);
+
+      final conversations =
+          conversationModels.map((model) => model.toEntity()).toList();
+
+      // Upsert to local database
+      await _localDataSource.insertConversations(conversations);
+    } catch (e) {
+      // Silently fail - user has local data
     }
   }
 
@@ -127,9 +187,26 @@ class ConversationRepositoryImpl implements ConversationRepository {
     String userId2,
   ) async {
     try {
+      // Offline-first: Try local first
+      final localConversation =
+          await _localDataSource.getDirectConversation(userId1, userId2);
+
+      if (localConversation != null) {
+        return Right(localConversation);
+      }
+
+      // Not in local, try remote
       final conversationModel =
           await _remoteDataSource.findDirectConversation(userId1, userId2);
-      return Right(conversationModel?.toEntity());
+
+      if (conversationModel != null) {
+        final conversation = conversationModel.toEntity();
+        // Save to local for future offline access
+        await _localDataSource.createConversation(conversation);
+        return Right(conversation);
+      }
+
+      return const Right(null);
     } on AppException catch (e) {
       return Left(ErrorMapper.mapExceptionToFailure(e));
     } catch (e) {
@@ -146,13 +223,29 @@ class ConversationRepositoryImpl implements ConversationRepository {
     DateTime timestamp,
   ) async {
     try {
-      await _remoteDataSource.updateLastMessage(
+      // Offline-first: Update local immediately
+      final lastMessage = LastMessage(
+        text: messageText,
+        senderId: senderId,
+        senderName: senderName,
+        timestamp: timestamp,
+        type: 'text',
+      );
+
+      await _localDataSource.updateLastMessage(
+        documentId: conversationId,
+        lastMessage: lastMessage,
+      );
+
+      // Background sync to remote
+      _remoteDataSource.updateLastMessage(
         conversationId,
         messageText,
         senderId,
         senderName,
         timestamp,
       );
+
       return const Right(null);
     } on AppException catch (e) {
       return Left(ErrorMapper.mapExceptionToFailure(e));

@@ -114,6 +114,59 @@ final class MessageRemoteDataSourceProvider
 String _$messageRemoteDataSourceHash() =>
     r'3bf4eecac4b81321a843d236e9c2fa7abc9e0655';
 
+/// Provides the [MessageLocalDataSource] implementation.
+
+@ProviderFor(messageLocalDataSource)
+const messageLocalDataSourceProvider = MessageLocalDataSourceProvider._();
+
+/// Provides the [MessageLocalDataSource] implementation.
+
+final class MessageLocalDataSourceProvider
+    extends
+        $FunctionalProvider<
+          MessageLocalDataSource,
+          MessageLocalDataSource,
+          MessageLocalDataSource
+        >
+    with $Provider<MessageLocalDataSource> {
+  /// Provides the [MessageLocalDataSource] implementation.
+  const MessageLocalDataSourceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'messageLocalDataSourceProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$messageLocalDataSourceHash();
+
+  @$internal
+  @override
+  $ProviderElement<MessageLocalDataSource> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  MessageLocalDataSource create(Ref ref) {
+    return messageLocalDataSource(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(MessageLocalDataSource value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<MessageLocalDataSource>(value),
+    );
+  }
+}
+
+String _$messageLocalDataSourceHash() =>
+    r'29a9bae4c8e610a25a4fa71861ed85a6333236b9';
+
 /// Provides the [ConversationRemoteDataSource] implementation.
 
 @ProviderFor(conversationRemoteDataSource)
@@ -168,12 +221,66 @@ final class ConversationRemoteDataSourceProvider
 String _$conversationRemoteDataSourceHash() =>
     r'56b43642c6ec61a3d0fc58f25afa73afe00fb395';
 
-/// Provides the [MessageRepository] implementation.
+/// Provides the [ConversationLocalDataSource] implementation.
+
+@ProviderFor(conversationLocalDataSource)
+const conversationLocalDataSourceProvider =
+    ConversationLocalDataSourceProvider._();
+
+/// Provides the [ConversationLocalDataSource] implementation.
+
+final class ConversationLocalDataSourceProvider
+    extends
+        $FunctionalProvider<
+          ConversationLocalDataSource,
+          ConversationLocalDataSource,
+          ConversationLocalDataSource
+        >
+    with $Provider<ConversationLocalDataSource> {
+  /// Provides the [ConversationLocalDataSource] implementation.
+  const ConversationLocalDataSourceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'conversationLocalDataSourceProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$conversationLocalDataSourceHash();
+
+  @$internal
+  @override
+  $ProviderElement<ConversationLocalDataSource> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  ConversationLocalDataSource create(Ref ref) {
+    return conversationLocalDataSource(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(ConversationLocalDataSource value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<ConversationLocalDataSource>(value),
+    );
+  }
+}
+
+String _$conversationLocalDataSourceHash() =>
+    r'16adb86e3a19354308c75cf70b385c36f91e18e1';
+
+/// Provides the [MessageRepository] implementation (offline-first).
 
 @ProviderFor(messageRepository)
 const messageRepositoryProvider = MessageRepositoryProvider._();
 
-/// Provides the [MessageRepository] implementation.
+/// Provides the [MessageRepository] implementation (offline-first).
 
 final class MessageRepositoryProvider
     extends
@@ -183,7 +290,7 @@ final class MessageRepositoryProvider
           MessageRepository
         >
     with $Provider<MessageRepository> {
-  /// Provides the [MessageRepository] implementation.
+  /// Provides the [MessageRepository] implementation (offline-first).
   const MessageRepositoryProvider._()
     : super(
         from: null,
@@ -218,14 +325,14 @@ final class MessageRepositoryProvider
   }
 }
 
-String _$messageRepositoryHash() => r'64198466d7b1525d08d4fe8cf0fdbcb8bcf71efb';
+String _$messageRepositoryHash() => r'91f5830f711fdf5b0ed17302f62f4f88ba83b792';
 
-/// Provides the [ConversationRepository] implementation.
+/// Provides the [ConversationRepository] implementation (offline-first).
 
 @ProviderFor(conversationRepository)
 const conversationRepositoryProvider = ConversationRepositoryProvider._();
 
-/// Provides the [ConversationRepository] implementation.
+/// Provides the [ConversationRepository] implementation (offline-first).
 
 final class ConversationRepositoryProvider
     extends
@@ -235,7 +342,7 @@ final class ConversationRepositoryProvider
           ConversationRepository
         >
     with $Provider<ConversationRepository> {
-  /// Provides the [ConversationRepository] implementation.
+  /// Provides the [ConversationRepository] implementation (offline-first).
   const ConversationRepositoryProvider._()
     : super(
         from: null,
@@ -271,7 +378,7 @@ final class ConversationRepositoryProvider
 }
 
 String _$conversationRepositoryHash() =>
-    r'e4c92eac36c3008160bbbca958e50f5fb245a371';
+    r'8980f472f4ad7a535e5d9eeed7a15f96ef8e703c';
 
 /// Provides the [SendMessage] use case.
 

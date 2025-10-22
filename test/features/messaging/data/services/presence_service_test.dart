@@ -29,8 +29,10 @@ void main() {
         await Future.delayed(const Duration(milliseconds: 100));
 
         // Assert
-        final doc =
-            await fakeFirestore.collection('presence').doc(userId).get();
+        final doc = await fakeFirestore
+            .collection('presence')
+            .doc(userId)
+            .get();
 
         expect(doc.exists, true);
         expect(doc.data()?['userId'], userId);
@@ -51,8 +53,10 @@ void main() {
         await Future.delayed(const Duration(milliseconds: 100));
 
         // Assert - Document should exist with online status
-        final doc =
-            await fakeFirestore.collection('presence').doc(userId).get();
+        final doc = await fakeFirestore
+            .collection('presence')
+            .doc(userId)
+            .get();
 
         expect(doc.exists, true);
         expect(doc.data()?['isOnline'], true);
@@ -75,8 +79,10 @@ void main() {
         await service.setOffline(userId: userId, userName: userName);
 
         // Assert
-        final doc =
-            await fakeFirestore.collection('presence').doc(userId).get();
+        final doc = await fakeFirestore
+            .collection('presence')
+            .doc(userId)
+            .get();
 
         expect(doc.exists, true);
         expect(doc.data()?['isOnline'], false);
@@ -94,8 +100,10 @@ void main() {
         await service.setOffline(userId: userId, userName: userName);
 
         // Assert - Should be offline
-        final doc =
-            await fakeFirestore.collection('presence').doc(userId).get();
+        final doc = await fakeFirestore
+            .collection('presence')
+            .doc(userId)
+            .get();
 
         expect(doc.data()?['isOnline'], false);
         // Note: Heartbeat timer is internal implementation detail
@@ -123,11 +131,13 @@ void main() {
         // Assert
         await expectLater(
           stream,
-          emits(predicate<UserPresence?>((presence) {
-            return presence != null &&
-                presence.userId == userId &&
-                presence.isOnline == true;
-          })),
+          emits(
+            predicate<UserPresence?>((presence) {
+              return presence != null &&
+                  presence.userId == userId &&
+                  presence.isOnline == true;
+            }),
+          ),
         );
       });
 
@@ -207,11 +217,13 @@ void main() {
         // Assert
         await expectLater(
           stream,
-          emits(predicate<Map<String, UserPresence>>((map) {
-            return map.length == 2 &&
-                map['user-1']?.isOnline == true &&
-                map['user-2']?.isOnline == false;
-          })),
+          emits(
+            predicate<Map<String, UserPresence>>((map) {
+              return map.length == 2 &&
+                  map['user-1']?.isOnline == true &&
+                  map['user-2']?.isOnline == false;
+            }),
+          ),
         );
       });
 
@@ -242,9 +254,11 @@ void main() {
         // Assert - Should only include first 10 due to Firestore 'in' query limit
         await expectLater(
           stream,
-          emits(predicate<Map<String, UserPresence>>((map) {
-            return map.length == 10;
-          })),
+          emits(
+            predicate<Map<String, UserPresence>>((map) {
+              return map.length == 10;
+            }),
+          ),
         );
       });
     });
@@ -273,8 +287,10 @@ void main() {
           'lastSeen': now,
         });
 
-        final doc =
-            await fakeFirestore.collection('presence').doc('user-1').get();
+        final doc = await fakeFirestore
+            .collection('presence')
+            .doc('user-1')
+            .get();
 
         // Act
         final presence = UserPresence.fromFirestore(doc);
@@ -295,8 +311,10 @@ void main() {
           'userName': 'User One',
         });
 
-        final doc =
-            await fakeFirestore.collection('presence').doc('user-1').get();
+        final doc = await fakeFirestore
+            .collection('presence')
+            .doc('user-1')
+            .get();
 
         // Act
         final presence = UserPresence.fromFirestore(doc);
@@ -435,7 +453,11 @@ void main() {
           userId: 'user-1',
           userName: 'User One',
           isOnline: true,
-          lastSeen: DateTime(2024, 1, 2), // Different lastSeen doesn't affect equality
+          lastSeen: DateTime(
+            2024,
+            1,
+            2,
+          ), // Different lastSeen doesn't affect equality
         );
 
         // Assert

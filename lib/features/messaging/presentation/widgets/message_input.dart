@@ -167,10 +167,7 @@ class _MessageInputState extends ConsumerState<MessageInput> {
 
       // Send message via use case
       final sendMessageUseCase = ref.read(sendMessageUseCaseProvider);
-      final result = await sendMessageUseCase(
-        widget.conversationId,
-        message,
-      );
+      final result = await sendMessageUseCase(widget.conversationId, message);
 
       result.fold(
         (failure) {
