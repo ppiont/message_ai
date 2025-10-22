@@ -30,7 +30,7 @@ This PRD defines a **production-ready messaging platform** built on Flutter + Fi
 2. **Superior Querying:** Compound queries with sorting + filtering on multiple fields. RTDB only allows sort OR filter
 3. **Shallow Queries:** Queries don't fetch entire subtrees, crucial for chat apps with nested messages
 4. **Multi-region Support:** Built-in multi-region replication (99.999% SLA vs 99.95% for RTDB)
-5. **Better Offline Support:** Works across web, iOS, and Android (RTDB lacks web offline support)
+5. **Better Offline Support:** Works across iOS, and Android (RTDB lacks web offline support)
 
 **Cost Consideration:** Firestore charges per operation; RTDB charges for bandwidth. For chat apps with frequent small updates, Firestore is more cost-effective at scale.
 

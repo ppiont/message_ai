@@ -22,8 +22,9 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
 
   /// Get a single message by ID
   Future<MessageEntity?> getMessageById(String messageId) {
-    return (select(messages)..where((m) => m.id.equals(messageId)))
-        .getSingleOrNull();
+    return (select(
+      messages,
+    )..where((m) => m.id.equals(messageId))).getSingleOrNull();
   }
 
   /// Get messages for a conversation with pagination
@@ -63,8 +64,10 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
   /// Returns messages with syncStatus = 'pending' or 'failed'
   Future<List<MessageEntity>> getUnsyncedMessages() {
     return (select(messages)
-          ..where((m) =>
-              m.syncStatus.equals('pending') | m.syncStatus.equals('failed'))
+          ..where(
+            (m) =>
+                m.syncStatus.equals('pending') | m.syncStatus.equals('failed'),
+          )
           ..orderBy([(m) => OrderingTerm.asc(m.timestamp)]))
         .get();
   }
@@ -137,7 +140,11 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
   /// Batch insert messages (efficient for initial sync)
   Future<void> insertMessages(List<MessagesCompanion> messageList) async {
     await batch((batch) {
-      batch.insertAll(messages, messageList);
+      batch.insertAll(
+        messages,
+        messageList,
+        mode: InsertMode.insertOrReplace, // Upsert: insert new or update existing
+      );
     });
   }
 
@@ -150,10 +157,7 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
 
   /// Update message status (for delivery/read receipts)
   Future<bool> updateMessageStatus(String messageId, String status) {
-    return updateMessage(
-      messageId,
-      MessagesCompanion(status: Value(status)),
-    );
+    return updateMessage(messageId, MessagesCompanion(status: Value(status)));
   }
 
   /// Update sync status for a message
@@ -163,13 +167,15 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
     DateTime? lastSyncAttempt,
     int? retryCount,
   }) {
-    return (update(messages)..where((m) => m.id.equals(messageId))).write(
-      MessagesCompanion(
-        syncStatus: Value(syncStatus),
-        lastSyncAttempt: Value(lastSyncAttempt),
-        retryCount: Value(retryCount ?? 0),
-      ),
-    ).then((count) => count > 0);
+    return (update(messages)..where((m) => m.id.equals(messageId)))
+        .write(
+          MessagesCompanion(
+            syncStatus: Value(syncStatus),
+            lastSyncAttempt: Value(lastSyncAttempt),
+            retryCount: Value(retryCount ?? 0),
+          ),
+        )
+        .then((count) => count > 0);
   }
 
   /// Replace temp ID with real server ID (after successful sync)
@@ -180,9 +186,9 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
     required String realId,
   }) async {
     // Get the temp message
-    final tempMessage = await (select(messages)
-          ..where((m) => m.tempId.equals(tempId)))
-        .getSingleOrNull();
+    final tempMessage = await (select(
+      messages,
+    )..where((m) => m.tempId.equals(tempId))).getSingleOrNull();
 
     if (tempMessage == null) return false;
 
@@ -224,9 +230,9 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
 
   /// Delete all messages in a conversation
   Future<int> deleteMessagesInConversation(String conversationId) {
-    return (delete(messages)
-          ..where((m) => m.conversationId.equals(conversationId)))
-        .go();
+    return (delete(
+      messages,
+    )..where((m) => m.conversationId.equals(conversationId))).go();
   }
 
   /// Delete all messages (use with caution!)
@@ -258,10 +264,7 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
   Future<void> batchDeleteMessages(List<String> messageIds) async {
     await batch((batch) {
       for (final messageId in messageIds) {
-        batch.deleteWhere(
-          messages,
-          (m) => m.id.equals(messageId),
-        );
+        batch.deleteWhere(messages, (m) => m.id.equals(messageId));
       }
     });
   }
@@ -273,13 +276,13 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
   /// Get messages that failed to sync and are ready for retry
   ///
   /// Only returns messages where retryCount < maxRetries
-  Future<List<MessageEntity>> getFailedMessagesForRetry({
-    int maxRetries = 3,
-  }) {
+  Future<List<MessageEntity>> getFailedMessagesForRetry({int maxRetries = 3}) {
     return (select(messages)
-          ..where((m) =>
-              m.syncStatus.equals('failed') &
-              m.retryCount.isSmallerThanValue(maxRetries))
+          ..where(
+            (m) =>
+                m.syncStatus.equals('failed') &
+                m.retryCount.isSmallerThanValue(maxRetries),
+          )
           ..orderBy([(m) => OrderingTerm.asc(m.lastSyncAttempt)]))
         .get();
   }
@@ -291,10 +294,12 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
     required DateTime endTime,
   }) {
     return (select(messages)
-          ..where((m) =>
-              m.conversationId.equals(conversationId) &
-              m.timestamp.isBiggerOrEqualValue(startTime) &
-              m.timestamp.isSmallerOrEqualValue(endTime))
+          ..where(
+            (m) =>
+                m.conversationId.equals(conversationId) &
+                m.timestamp.isBiggerOrEqualValue(startTime) &
+                m.timestamp.isSmallerOrEqualValue(endTime),
+          )
           ..orderBy([(m) => OrderingTerm.desc(m.timestamp)]))
         .get();
   }
@@ -306,9 +311,11 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
     int limit = 50,
   }) {
     return (select(messages)
-          ..where((m) =>
-              m.conversationId.equals(conversationId) &
-              m.senderId.equals(senderId))
+          ..where(
+            (m) =>
+                m.conversationId.equals(conversationId) &
+                m.senderId.equals(senderId),
+          )
           ..orderBy([(m) => OrderingTerm.desc(m.timestamp)])
           ..limit(limit))
         .get();

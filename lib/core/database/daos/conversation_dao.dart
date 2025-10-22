@@ -159,7 +159,11 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
     List<ConversationsCompanion> conversationList,
   ) async {
     await batch((batch) {
-      batch.insertAll(conversations, conversationList);
+      batch.insertAll(
+        conversations,
+        conversationList,
+        mode: InsertMode.insertOrReplace, // Upsert: insert new or update existing
+      );
     });
   }
 
