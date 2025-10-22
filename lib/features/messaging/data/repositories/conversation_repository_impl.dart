@@ -145,39 +145,20 @@ class ConversationRepositoryImpl implements ConversationRepository {
     int limit = 50,
   }) {
     try {
-      print('📡 watchConversationsForUser called for userId: $userId');
-
       // Watch Firestore for conversation updates
       // When conversations change, save them to local DB
       _remoteDataSource
           .watchConversationsForUser(userId, limit: limit)
-          .listen(
-        (conversationModels) async {
-          print('🔔 Firestore conversation update received! Count: ${conversationModels.length}');
-          try {
-            final conversations =
-                conversationModels.map((model) => model.toEntity()).toList();
-
-            // Debug: Log the lastMessage from Firestore
-            for (final conv in conversations) {
-              print('🔄 Syncing conversation ${conv.documentId}: lastMessage="${conv.lastMessage?.text}" from Firestore');
-            }
-
-            // Upsert to local database (updates existing, inserts new)
-            await _localDataSource.insertConversations(conversations);
-            print('✅ Successfully synced ${conversations.length} conversations to local DB');
-          } catch (e) {
-            // Silently fail - local stream will still work
-            print('❌ Failed to sync conversations from Firestore: $e');
-          }
-        },
-        onError: (error) {
-          print('❌ Firestore conversation stream error: $error');
-        },
-        onDone: () {
-          print('⚠️ Firestore conversation stream closed');
-        },
-      );
+          .listen((conversationModels) async {
+        try {
+          final conversations =
+              conversationModels.map((model) => model.toEntity()).toList();
+          // Upsert to local database (updates existing, inserts new)
+          await _localDataSource.insertConversations(conversations);
+        } catch (e) {
+          // Silently fail - local stream will still work
+        }
+      });
 
       // Return local stream (which now gets updates from Firestore)
       final localStream = _localDataSource.watchConversationsByParticipant(
@@ -252,17 +233,14 @@ class ConversationRepositoryImpl implements ConversationRepository {
         lastMessage: lastMessage,
       );
 
-      // Background sync to remote (with error logging)
+      // Background sync to remote
       _remoteDataSource.updateLastMessage(
         conversationId,
         messageText,
         senderId,
         senderName,
         timestamp,
-      ).catchError((error) {
-        // Log but don't fail - local update succeeded
-        print('Warning: Failed to update lastMessage in Firestore: $error');
-      });
+      );
 
       return const Right(null);
     } on AppException catch (e) {

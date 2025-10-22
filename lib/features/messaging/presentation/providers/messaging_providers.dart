@@ -3,6 +3,7 @@ library;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:rxdart/rxdart.dart';
 import 'package:message_ai/core/providers/database_providers.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
 import 'package:message_ai/features/messaging/data/datasources/conversation_local_datasource.dart';
@@ -494,9 +495,12 @@ Stream<List<Map<String, dynamic>>> allConversationsStream(
     );
   });
 
-  // Merge the two streams and sort by lastUpdatedAt
-  return directStream.asyncExpand((directConvs) async* {
-    await for (final groups in groupStream) {
+  // Merge the two streams using combineLatest2
+  // This ensures the combined stream emits whenever EITHER stream emits
+  return Rx.combineLatest2(
+    directStream,
+    groupStream,
+    (directConvs, groups) {
       final allConversations = <Map<String, dynamic>>[
         ...directConvs,
         ...groups,
@@ -509,9 +513,9 @@ Stream<List<Map<String, dynamic>>> allConversationsStream(
         return bTime.compareTo(aTime);
       });
 
-      yield allConversations;
-    }
-  });
+      return allConversations;
+    },
+  );
 }
 
 // ========== User Discovery Provider ==========
