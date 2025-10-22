@@ -3,6 +3,7 @@ library;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:rxdart/rxdart.dart';
 import 'package:message_ai/core/providers/database_providers.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
 import 'package:message_ai/features/messaging/data/datasources/conversation_local_datasource.dart';
@@ -14,15 +15,24 @@ import 'package:message_ai/features/messaging/data/repositories/message_reposito
 import 'package:message_ai/features/messaging/data/services/auto_delivery_marker.dart';
 import 'package:message_ai/features/messaging/data/services/message_queue.dart';
 import 'package:message_ai/features/messaging/data/services/message_sync_service.dart';
+import 'package:message_ai/features/messaging/data/services/fcm_service.dart';
 import 'package:message_ai/features/messaging/data/services/presence_service.dart';
 import 'package:message_ai/features/messaging/data/services/typing_indicator_service.dart';
 import 'package:message_ai/features/messaging/domain/repositories/conversation_repository.dart';
 import 'package:message_ai/features/messaging/domain/repositories/message_repository.dart';
+import 'package:message_ai/features/messaging/data/datasources/group_conversation_remote_datasource.dart';
+import 'package:message_ai/features/messaging/data/repositories/group_conversation_repository_impl.dart';
+import 'package:message_ai/features/messaging/domain/repositories/group_conversation_repository.dart';
+import 'package:message_ai/features/messaging/domain/usecases/add_group_member.dart';
+import 'package:message_ai/features/messaging/domain/usecases/create_group.dart';
 import 'package:message_ai/features/messaging/domain/usecases/find_or_create_direct_conversation.dart';
 import 'package:message_ai/features/messaging/domain/usecases/get_conversation_by_id.dart';
+import 'package:message_ai/features/messaging/domain/usecases/leave_group.dart';
 import 'package:message_ai/features/messaging/domain/usecases/mark_message_as_delivered.dart';
 import 'package:message_ai/features/messaging/domain/usecases/mark_message_as_read.dart';
+import 'package:message_ai/features/messaging/domain/usecases/remove_group_member.dart';
 import 'package:message_ai/features/messaging/domain/usecases/send_message.dart';
+import 'package:message_ai/features/messaging/domain/usecases/update_group_info.dart';
 import 'package:message_ai/features/messaging/domain/usecases/watch_conversations.dart';
 import 'package:message_ai/features/messaging/domain/usecases/watch_messages.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -257,11 +267,12 @@ Stream<List<TypingUser>> conversationTypingUsers(
 ///
 /// Automatically marks incoming messages as delivered for all conversations.
 @Riverpod(keepAlive: true)
-AutoDeliveryMarker autoDeliveryMarker(Ref ref) {
+AutoDeliveryMarker? autoDeliveryMarker(Ref ref) {
   final currentUser = ref.watch(authStateProvider).value;
 
+  // Return null if user is not authenticated (e.g., on logout)
   if (currentUser == null) {
-    throw Exception('User must be authenticated');
+    return null;
   }
 
   final marker = AutoDeliveryMarker(
@@ -298,6 +309,19 @@ PresenceService presenceService(Ref ref) {
   return service;
 }
 
+/// Provides the [FCMService] instance for push notifications.
+@Riverpod(keepAlive: true)
+FCMService fcmService(Ref ref) {
+  final service = FCMService(firestore: ref.watch(messagingFirestoreProvider));
+
+  // Dispose when provider is disposed
+  ref.onDispose(() {
+    service.dispose();
+  });
+
+  return service;
+}
+
 /// Watches presence status for a specific user.
 ///
 /// Returns a stream of presence data including:
@@ -305,10 +329,7 @@ PresenceService presenceService(Ref ref) {
 /// - lastSeen: timestamp of last activity
 /// - userName: display name
 @riverpod
-Stream<Map<String, dynamic>?> userPresence(
-  Ref ref,
-  String userId,
-) {
+Stream<Map<String, dynamic>?> userPresence(Ref ref, String userId) {
   final service = ref.watch(presenceServiceProvider);
   return service.watchUserPresence(userId: userId).map((presence) {
     if (presence == null) return null;
@@ -365,4 +386,232 @@ MessageQueue messageQueue(Ref ref) {
   });
 
   return queue;
+}
+
+// ========== Group Conversation Providers ==========
+
+/// Provides the [GroupConversationRemoteDataSource] implementation.
+@riverpod
+GroupConversationRemoteDataSource groupConversationRemoteDataSource(Ref ref) {
+  return GroupConversationRemoteDataSourceImpl(
+    firestore: ref.watch(messagingFirestoreProvider),
+  );
+}
+
+/// Provides the [GroupConversationRepository] implementation (offline-first).
+@riverpod
+GroupConversationRepository groupConversationRepository(Ref ref) {
+  return GroupConversationRepositoryImpl(
+    remoteDataSource: ref.watch(groupConversationRemoteDataSourceProvider),
+    localDataSource: ref.watch(conversationLocalDataSourceProvider),
+  );
+}
+
+// ========== Group Use Case Providers ==========
+
+/// Provides the [CreateGroup] use case.
+@riverpod
+CreateGroup createGroupUseCase(Ref ref) {
+  return CreateGroup(ref.watch(groupConversationRepositoryProvider));
+}
+
+/// Provides the [AddGroupMember] use case.
+@riverpod
+AddGroupMember addGroupMemberUseCase(Ref ref) {
+  return AddGroupMember(ref.watch(groupConversationRepositoryProvider));
+}
+
+/// Provides the [RemoveGroupMember] use case.
+@riverpod
+RemoveGroupMember removeGroupMemberUseCase(Ref ref) {
+  return RemoveGroupMember(ref.watch(groupConversationRepositoryProvider));
+}
+
+/// Provides the [LeaveGroup] use case.
+@riverpod
+LeaveGroup leaveGroupUseCase(Ref ref) {
+  return LeaveGroup(ref.watch(groupConversationRepositoryProvider));
+}
+
+/// Provides the [UpdateGroupInfo] use case.
+@riverpod
+UpdateGroupInfo updateGroupInfoUseCase(Ref ref) {
+  return UpdateGroupInfo(ref.watch(groupConversationRepositoryProvider));
+}
+
+// ========== Unified Conversation List Provider ==========
+
+/// Stream provider for watching all conversations (both direct and groups) in real-time.
+///
+/// Merges direct conversations and group conversations into a single unified list,
+/// sorted by last update time.
+@riverpod
+Stream<List<Map<String, dynamic>>> allConversationsStream(
+  Ref ref,
+  String userId,
+) {
+  final watchConversationsUseCase = ref.watch(
+    watchConversationsUseCaseProvider,
+  );
+  final groupRepository = ref.watch(groupConversationRepositoryProvider);
+
+  // Watch direct conversations
+  final directStream = watchConversationsUseCase(userId: userId).map((result) {
+    return result.fold(
+      (failure) => <Map<String, dynamic>>[],
+      (conversations) => conversations.map((conv) {
+        return <String, dynamic>{
+          'id': conv.documentId,
+          'type': 'direct',
+          'participants': conv.participants
+              .map(
+                (p) => <String, dynamic>{
+                  'uid': p.uid,
+                  'name': p.name,
+                  'imageUrl': p.imageUrl,
+                  'preferredLanguage': p.preferredLanguage,
+                },
+              )
+              .toList(),
+          'lastMessage': conv.lastMessage?.text,
+          'lastUpdatedAt': conv.lastUpdatedAt,
+          'unreadCount': conv.getUnreadCountForUser(userId),
+        };
+      }).toList(),
+    );
+  });
+
+  // Watch groups
+  final groupStream = groupRepository.watchGroupsForUser(userId).map((result) {
+    return result.fold(
+      (failure) => <Map<String, dynamic>>[],
+      (groups) => groups.map((group) {
+        return <String, dynamic>{
+          'id': group.documentId,
+          'type': 'group',
+          'groupName': group.groupName,
+          'groupImage': group.groupImage,
+          'participants': group.participants
+              .map(
+                (p) => <String, dynamic>{
+                  'uid': p.uid,
+                  'name': p.name,
+                  'imageUrl': p.imageUrl,
+                  'preferredLanguage': p.preferredLanguage,
+                },
+              )
+              .toList(),
+          'participantCount': group.participantIds.length,
+          'lastMessage': group.lastMessage?.text,
+          'lastUpdatedAt': group.lastUpdatedAt,
+          'unreadCount': group.getUnreadCountForUser(userId),
+        };
+      }).toList(),
+    );
+  });
+
+  // Merge the two streams using combineLatest2
+  // This ensures the combined stream emits whenever EITHER stream emits
+  return Rx.combineLatest2(directStream, groupStream, (directConvs, groups) {
+    final allConversations = <Map<String, dynamic>>[...directConvs, ...groups];
+
+    // Sort by lastUpdatedAt (newest first)
+    allConversations.sort((a, b) {
+      final aTime = a['lastUpdatedAt'] as DateTime;
+      final bTime = b['lastUpdatedAt'] as DateTime;
+      return bTime.compareTo(aTime);
+    });
+
+    return allConversations;
+  });
+}
+
+// ========== User Discovery Provider ==========
+
+/// Provider for streaming all users from Firestore.
+///
+/// In a production app, this would be a proper user search/directory feature.
+@riverpod
+Stream<List<Map<String, dynamic>>> conversationUsersStream(Ref ref) {
+  final firestore = ref.watch(messagingFirestoreProvider);
+  final currentUser = ref.watch(currentUserProvider);
+
+  if (currentUser == null) {
+    return Stream.value([]);
+  }
+
+  return firestore.collection('users').snapshots().map((snapshot) {
+    return snapshot.docs
+        .where((doc) => doc.id != currentUser.uid) // Exclude current user
+        .map((doc) {
+          final data = doc.data();
+          return {
+            'uid': doc.id,
+            'name': data['displayName'] as String? ?? '',
+            'email': data['email'] as String? ?? '',
+            'preferredLanguage': data['preferredLanguage'] as String? ?? 'en',
+          };
+        })
+        .toList();
+  });
+}
+
+// ========== Group Presence Provider ==========
+
+/// Provides aggregated online status for a group conversation.
+///
+/// Returns a map with:
+/// - 'onlineCount': Number of members currently online
+/// - 'totalCount': Total number of members
+/// - 'onlineMembers': List of online member IDs
+/// - 'displayText': Human-readable status (e.g., "3/5 online")
+@riverpod
+Stream<Map<String, dynamic>> groupPresenceStatus(
+  Ref ref,
+  String groupId,
+) async* {
+  final groupRepository = ref.watch(groupConversationRepositoryProvider);
+  final presenceService = ref.watch(presenceServiceProvider);
+
+  // Poll both group members and their presence every 2 seconds
+  await for (final _ in Stream.periodic(const Duration(seconds: 2))) {
+    // Refresh group to get current member list (handles add/remove)
+    final groupResult = await groupRepository.getGroupById(groupId);
+
+    final presenceData = await groupResult.fold(
+      (failure) async => <String, dynamic>{
+        'onlineCount': 0,
+        'totalCount': 0,
+        'onlineMembers': <String>[],
+        'displayText': 'Unknown',
+      },
+      (group) async {
+        final participantIds = group.participantIds;
+        final onlineMembers = <String>[];
+
+        for (final userId in participantIds) {
+          final presenceStream = presenceService.watchUserPresence(
+            userId: userId,
+          );
+          await for (final presence in presenceStream.take(1)) {
+            if (presence != null && presence.isOnline) {
+              onlineMembers.add(userId);
+            }
+            break;
+          }
+        }
+
+        return <String, dynamic>{
+          'onlineCount': onlineMembers.length,
+          'totalCount': participantIds.length,
+          'onlineMembers': onlineMembers,
+          'displayText': onlineMembers.isEmpty
+              ? 'All offline'
+              : '${onlineMembers.length}/${participantIds.length} online',
+        };
+      },
+    );
+
+    yield presenceData;
+  }
 }

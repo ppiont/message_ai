@@ -1113,11 +1113,11 @@ const autoDeliveryMarkerProvider = AutoDeliveryMarkerProvider._();
 final class AutoDeliveryMarkerProvider
     extends
         $FunctionalProvider<
-          AutoDeliveryMarker,
-          AutoDeliveryMarker,
-          AutoDeliveryMarker
+          AutoDeliveryMarker?,
+          AutoDeliveryMarker?,
+          AutoDeliveryMarker?
         >
-    with $Provider<AutoDeliveryMarker> {
+    with $Provider<AutoDeliveryMarker?> {
   /// Provides the [AutoDeliveryMarker] service.
   ///
   /// Automatically marks incoming messages as delivered for all conversations.
@@ -1137,26 +1137,26 @@ final class AutoDeliveryMarkerProvider
 
   @$internal
   @override
-  $ProviderElement<AutoDeliveryMarker> $createElement(
+  $ProviderElement<AutoDeliveryMarker?> $createElement(
     $ProviderPointer pointer,
   ) => $ProviderElement(pointer);
 
   @override
-  AutoDeliveryMarker create(Ref ref) {
+  AutoDeliveryMarker? create(Ref ref) {
     return autoDeliveryMarker(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(AutoDeliveryMarker value) {
+  Override overrideWithValue(AutoDeliveryMarker? value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<AutoDeliveryMarker>(value),
+      providerOverride: $SyncValueProvider<AutoDeliveryMarker?>(value),
     );
   }
 }
 
 String _$autoDeliveryMarkerHash() =>
-    r'ee637f8df3b6a7ee3c858845fb81a6b25be5a88a';
+    r'8573126e962b960ce9d565b3fff4611badaf747b';
 
 /// Provides the [PresenceService] instance.
 
@@ -1204,6 +1204,52 @@ final class PresenceServiceProvider
 }
 
 String _$presenceServiceHash() => r'dc32f854480383c033d4c735e4ba8284bd1cef22';
+
+/// Provides the [FCMService] instance for push notifications.
+
+@ProviderFor(fcmService)
+const fcmServiceProvider = FcmServiceProvider._();
+
+/// Provides the [FCMService] instance for push notifications.
+
+final class FcmServiceProvider
+    extends $FunctionalProvider<FCMService, FCMService, FCMService>
+    with $Provider<FCMService> {
+  /// Provides the [FCMService] instance for push notifications.
+  const FcmServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'fcmServiceProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$fcmServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<FCMService> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  FCMService create(Ref ref) {
+    return fcmService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(FCMService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<FCMService>(value),
+    );
+  }
+}
+
+String _$fcmServiceHash() => r'd896e197769a8ff50cfbbe8d88377394fbdbcf76';
 
 /// Watches presence status for a specific user.
 ///
@@ -1426,3 +1472,628 @@ final class MessageQueueProvider
 }
 
 String _$messageQueueHash() => r'9b2185063af10745cd105b6528f0ead3e2b8d842';
+
+/// Provides the [GroupConversationRemoteDataSource] implementation.
+
+@ProviderFor(groupConversationRemoteDataSource)
+const groupConversationRemoteDataSourceProvider =
+    GroupConversationRemoteDataSourceProvider._();
+
+/// Provides the [GroupConversationRemoteDataSource] implementation.
+
+final class GroupConversationRemoteDataSourceProvider
+    extends
+        $FunctionalProvider<
+          GroupConversationRemoteDataSource,
+          GroupConversationRemoteDataSource,
+          GroupConversationRemoteDataSource
+        >
+    with $Provider<GroupConversationRemoteDataSource> {
+  /// Provides the [GroupConversationRemoteDataSource] implementation.
+  const GroupConversationRemoteDataSourceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'groupConversationRemoteDataSourceProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() =>
+      _$groupConversationRemoteDataSourceHash();
+
+  @$internal
+  @override
+  $ProviderElement<GroupConversationRemoteDataSource> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  GroupConversationRemoteDataSource create(Ref ref) {
+    return groupConversationRemoteDataSource(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(GroupConversationRemoteDataSource value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<GroupConversationRemoteDataSource>(
+        value,
+      ),
+    );
+  }
+}
+
+String _$groupConversationRemoteDataSourceHash() =>
+    r'd40cc05fa53616cfa6447031049606dc4020757a';
+
+/// Provides the [GroupConversationRepository] implementation (offline-first).
+
+@ProviderFor(groupConversationRepository)
+const groupConversationRepositoryProvider =
+    GroupConversationRepositoryProvider._();
+
+/// Provides the [GroupConversationRepository] implementation (offline-first).
+
+final class GroupConversationRepositoryProvider
+    extends
+        $FunctionalProvider<
+          GroupConversationRepository,
+          GroupConversationRepository,
+          GroupConversationRepository
+        >
+    with $Provider<GroupConversationRepository> {
+  /// Provides the [GroupConversationRepository] implementation (offline-first).
+  const GroupConversationRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'groupConversationRepositoryProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$groupConversationRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<GroupConversationRepository> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  GroupConversationRepository create(Ref ref) {
+    return groupConversationRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(GroupConversationRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<GroupConversationRepository>(value),
+    );
+  }
+}
+
+String _$groupConversationRepositoryHash() =>
+    r'9cb65164ce628d86b06dd89c3dee4bfdb37e205f';
+
+/// Provides the [CreateGroup] use case.
+
+@ProviderFor(createGroupUseCase)
+const createGroupUseCaseProvider = CreateGroupUseCaseProvider._();
+
+/// Provides the [CreateGroup] use case.
+
+final class CreateGroupUseCaseProvider
+    extends $FunctionalProvider<CreateGroup, CreateGroup, CreateGroup>
+    with $Provider<CreateGroup> {
+  /// Provides the [CreateGroup] use case.
+  const CreateGroupUseCaseProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'createGroupUseCaseProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$createGroupUseCaseHash();
+
+  @$internal
+  @override
+  $ProviderElement<CreateGroup> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  CreateGroup create(Ref ref) {
+    return createGroupUseCase(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(CreateGroup value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<CreateGroup>(value),
+    );
+  }
+}
+
+String _$createGroupUseCaseHash() =>
+    r'f3a1abc4df90c9382a0092d46fa6663ebffa13f8';
+
+/// Provides the [AddGroupMember] use case.
+
+@ProviderFor(addGroupMemberUseCase)
+const addGroupMemberUseCaseProvider = AddGroupMemberUseCaseProvider._();
+
+/// Provides the [AddGroupMember] use case.
+
+final class AddGroupMemberUseCaseProvider
+    extends $FunctionalProvider<AddGroupMember, AddGroupMember, AddGroupMember>
+    with $Provider<AddGroupMember> {
+  /// Provides the [AddGroupMember] use case.
+  const AddGroupMemberUseCaseProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'addGroupMemberUseCaseProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$addGroupMemberUseCaseHash();
+
+  @$internal
+  @override
+  $ProviderElement<AddGroupMember> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  AddGroupMember create(Ref ref) {
+    return addGroupMemberUseCase(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(AddGroupMember value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<AddGroupMember>(value),
+    );
+  }
+}
+
+String _$addGroupMemberUseCaseHash() =>
+    r'f62e417e5489e1c126fa01dc96b01b16c3761ddf';
+
+/// Provides the [RemoveGroupMember] use case.
+
+@ProviderFor(removeGroupMemberUseCase)
+const removeGroupMemberUseCaseProvider = RemoveGroupMemberUseCaseProvider._();
+
+/// Provides the [RemoveGroupMember] use case.
+
+final class RemoveGroupMemberUseCaseProvider
+    extends
+        $FunctionalProvider<
+          RemoveGroupMember,
+          RemoveGroupMember,
+          RemoveGroupMember
+        >
+    with $Provider<RemoveGroupMember> {
+  /// Provides the [RemoveGroupMember] use case.
+  const RemoveGroupMemberUseCaseProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'removeGroupMemberUseCaseProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$removeGroupMemberUseCaseHash();
+
+  @$internal
+  @override
+  $ProviderElement<RemoveGroupMember> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  RemoveGroupMember create(Ref ref) {
+    return removeGroupMemberUseCase(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(RemoveGroupMember value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<RemoveGroupMember>(value),
+    );
+  }
+}
+
+String _$removeGroupMemberUseCaseHash() =>
+    r'59e3417a4cc28f35336be694aaf99e6f0c9b1dc9';
+
+/// Provides the [LeaveGroup] use case.
+
+@ProviderFor(leaveGroupUseCase)
+const leaveGroupUseCaseProvider = LeaveGroupUseCaseProvider._();
+
+/// Provides the [LeaveGroup] use case.
+
+final class LeaveGroupUseCaseProvider
+    extends $FunctionalProvider<LeaveGroup, LeaveGroup, LeaveGroup>
+    with $Provider<LeaveGroup> {
+  /// Provides the [LeaveGroup] use case.
+  const LeaveGroupUseCaseProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'leaveGroupUseCaseProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$leaveGroupUseCaseHash();
+
+  @$internal
+  @override
+  $ProviderElement<LeaveGroup> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  LeaveGroup create(Ref ref) {
+    return leaveGroupUseCase(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(LeaveGroup value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<LeaveGroup>(value),
+    );
+  }
+}
+
+String _$leaveGroupUseCaseHash() => r'8be254f5f8a794806b2ed938f315b0326226f8d9';
+
+/// Provides the [UpdateGroupInfo] use case.
+
+@ProviderFor(updateGroupInfoUseCase)
+const updateGroupInfoUseCaseProvider = UpdateGroupInfoUseCaseProvider._();
+
+/// Provides the [UpdateGroupInfo] use case.
+
+final class UpdateGroupInfoUseCaseProvider
+    extends
+        $FunctionalProvider<UpdateGroupInfo, UpdateGroupInfo, UpdateGroupInfo>
+    with $Provider<UpdateGroupInfo> {
+  /// Provides the [UpdateGroupInfo] use case.
+  const UpdateGroupInfoUseCaseProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'updateGroupInfoUseCaseProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$updateGroupInfoUseCaseHash();
+
+  @$internal
+  @override
+  $ProviderElement<UpdateGroupInfo> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  UpdateGroupInfo create(Ref ref) {
+    return updateGroupInfoUseCase(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(UpdateGroupInfo value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<UpdateGroupInfo>(value),
+    );
+  }
+}
+
+String _$updateGroupInfoUseCaseHash() =>
+    r'3d0ac2d1b201c7ffb5a2263752053af33d767b86';
+
+/// Stream provider for watching all conversations (both direct and groups) in real-time.
+///
+/// Merges direct conversations and group conversations into a single unified list,
+/// sorted by last update time.
+
+@ProviderFor(allConversationsStream)
+const allConversationsStreamProvider = AllConversationsStreamFamily._();
+
+/// Stream provider for watching all conversations (both direct and groups) in real-time.
+///
+/// Merges direct conversations and group conversations into a single unified list,
+/// sorted by last update time.
+
+final class AllConversationsStreamProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<Map<String, dynamic>>>,
+          List<Map<String, dynamic>>,
+          Stream<List<Map<String, dynamic>>>
+        >
+    with
+        $FutureModifier<List<Map<String, dynamic>>>,
+        $StreamProvider<List<Map<String, dynamic>>> {
+  /// Stream provider for watching all conversations (both direct and groups) in real-time.
+  ///
+  /// Merges direct conversations and group conversations into a single unified list,
+  /// sorted by last update time.
+  const AllConversationsStreamProvider._({
+    required AllConversationsStreamFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'allConversationsStreamProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$allConversationsStreamHash();
+
+  @override
+  String toString() {
+    return r'allConversationsStreamProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<List<Map<String, dynamic>>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<Map<String, dynamic>>> create(Ref ref) {
+    final argument = this.argument as String;
+    return allConversationsStream(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is AllConversationsStreamProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$allConversationsStreamHash() =>
+    r'626a7b788b65ab4651a0504c207c310376af0c0b';
+
+/// Stream provider for watching all conversations (both direct and groups) in real-time.
+///
+/// Merges direct conversations and group conversations into a single unified list,
+/// sorted by last update time.
+
+final class AllConversationsStreamFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<List<Map<String, dynamic>>>, String> {
+  const AllConversationsStreamFamily._()
+    : super(
+        retry: null,
+        name: r'allConversationsStreamProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Stream provider for watching all conversations (both direct and groups) in real-time.
+  ///
+  /// Merges direct conversations and group conversations into a single unified list,
+  /// sorted by last update time.
+
+  AllConversationsStreamProvider call(String userId) =>
+      AllConversationsStreamProvider._(argument: userId, from: this);
+
+  @override
+  String toString() => r'allConversationsStreamProvider';
+}
+
+/// Provider for streaming all users from Firestore.
+///
+/// In a production app, this would be a proper user search/directory feature.
+
+@ProviderFor(conversationUsersStream)
+const conversationUsersStreamProvider = ConversationUsersStreamProvider._();
+
+/// Provider for streaming all users from Firestore.
+///
+/// In a production app, this would be a proper user search/directory feature.
+
+final class ConversationUsersStreamProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<Map<String, dynamic>>>,
+          List<Map<String, dynamic>>,
+          Stream<List<Map<String, dynamic>>>
+        >
+    with
+        $FutureModifier<List<Map<String, dynamic>>>,
+        $StreamProvider<List<Map<String, dynamic>>> {
+  /// Provider for streaming all users from Firestore.
+  ///
+  /// In a production app, this would be a proper user search/directory feature.
+  const ConversationUsersStreamProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'conversationUsersStreamProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$conversationUsersStreamHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<List<Map<String, dynamic>>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<Map<String, dynamic>>> create(Ref ref) {
+    return conversationUsersStream(ref);
+  }
+}
+
+String _$conversationUsersStreamHash() =>
+    r'dfa9741c3d075c9b40ff64c68971ebe1ebcc1d7a';
+
+/// Provides aggregated online status for a group conversation.
+///
+/// Returns a map with:
+/// - 'onlineCount': Number of members currently online
+/// - 'totalCount': Total number of members
+/// - 'onlineMembers': List of online member IDs
+/// - 'displayText': Human-readable status (e.g., "3/5 online")
+
+@ProviderFor(groupPresenceStatus)
+const groupPresenceStatusProvider = GroupPresenceStatusFamily._();
+
+/// Provides aggregated online status for a group conversation.
+///
+/// Returns a map with:
+/// - 'onlineCount': Number of members currently online
+/// - 'totalCount': Total number of members
+/// - 'onlineMembers': List of online member IDs
+/// - 'displayText': Human-readable status (e.g., "3/5 online")
+
+final class GroupPresenceStatusProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<Map<String, dynamic>>,
+          Map<String, dynamic>,
+          Stream<Map<String, dynamic>>
+        >
+    with
+        $FutureModifier<Map<String, dynamic>>,
+        $StreamProvider<Map<String, dynamic>> {
+  /// Provides aggregated online status for a group conversation.
+  ///
+  /// Returns a map with:
+  /// - 'onlineCount': Number of members currently online
+  /// - 'totalCount': Total number of members
+  /// - 'onlineMembers': List of online member IDs
+  /// - 'displayText': Human-readable status (e.g., "3/5 online")
+  const GroupPresenceStatusProvider._({
+    required GroupPresenceStatusFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'groupPresenceStatusProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$groupPresenceStatusHash();
+
+  @override
+  String toString() {
+    return r'groupPresenceStatusProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<Map<String, dynamic>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<Map<String, dynamic>> create(Ref ref) {
+    final argument = this.argument as String;
+    return groupPresenceStatus(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is GroupPresenceStatusProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$groupPresenceStatusHash() =>
+    r'ad13934708b1c46db0dc8637af614747a498afdb';
+
+/// Provides aggregated online status for a group conversation.
+///
+/// Returns a map with:
+/// - 'onlineCount': Number of members currently online
+/// - 'totalCount': Total number of members
+/// - 'onlineMembers': List of online member IDs
+/// - 'displayText': Human-readable status (e.g., "3/5 online")
+
+final class GroupPresenceStatusFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<Map<String, dynamic>>, String> {
+  const GroupPresenceStatusFamily._()
+    : super(
+        retry: null,
+        name: r'groupPresenceStatusProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Provides aggregated online status for a group conversation.
+  ///
+  /// Returns a map with:
+  /// - 'onlineCount': Number of members currently online
+  /// - 'totalCount': Total number of members
+  /// - 'onlineMembers': List of online member IDs
+  /// - 'displayText': Human-readable status (e.g., "3/5 online")
+
+  GroupPresenceStatusProvider call(String groupId) =>
+      GroupPresenceStatusProvider._(argument: groupId, from: this);
+
+  @override
+  String toString() => r'groupPresenceStatusProvider';
+}

@@ -4,6 +4,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
+import 'package:message_ai/features/messaging/presentation/pages/group_management_page.dart';
 import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:message_ai/features/messaging/presentation/widgets/message_bubble.dart';
 import 'package:message_ai/features/messaging/presentation/widgets/message_input.dart';
@@ -13,17 +14,20 @@ import 'package:message_ai/features/messaging/presentation/widgets/typing_indica
 ///
 /// Shows messages in real-time, allows sending new messages,
 /// and handles loading/empty states.
+/// Supports both direct conversations and group chats.
 class ChatPage extends ConsumerStatefulWidget {
   const ChatPage({
     required this.conversationId,
     required this.otherParticipantName,
     required this.otherParticipantId,
+    this.isGroup = false,
     super.key,
   });
 
   final String conversationId;
   final String otherParticipantName;
   final String otherParticipantId;
+  final bool isGroup;
 
   @override
   ConsumerState<ChatPage> createState() => _ChatPageState();
@@ -80,17 +84,19 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           children: [Text(widget.otherParticipantName), _buildPresenceStatus()],
         ),
         actions: [
-          // TODO: Add menu for conversation settings
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Conversation settings coming soon!'),
-                ),
-              );
-            },
-          ),
+          if (widget.isGroup)
+            IconButton(
+              icon: const Icon(Icons.info_outline),
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => GroupManagementPage(
+                      conversationId: widget.conversationId,
+                    ),
+                  ),
+                );
+              },
+            ),
         ],
       ),
       body: Column(
@@ -109,40 +115,68 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   }
 
   Widget _buildPresenceStatus() {
-    final presenceAsync = ref.watch(
-      userPresenceProvider(widget.otherParticipantId),
-    );
+    if (widget.isGroup) {
+      // Show group presence status
+      final groupPresenceAsync = ref.watch(
+        groupPresenceStatusProvider(widget.conversationId),
+      );
 
-    return presenceAsync.when(
-      data: (presence) {
-        if (presence == null) {
-          return const SizedBox.shrink();
-        }
+      return groupPresenceAsync.when(
+        data: (presence) {
+          final displayText = presence['displayText'] as String? ?? '';
+          final onlineCount = presence['onlineCount'] as int? ?? 0;
 
-        final isOnline = presence['isOnline'] as bool? ?? false;
-        final lastSeen = presence['lastSeen'] as DateTime?;
+          if (displayText.isEmpty) return const SizedBox.shrink();
 
-        if (isOnline) {
-          return const Text(
-            'Online',
+          return Text(
+            displayText,
             style: TextStyle(
               fontSize: 12,
-              color: Colors.green,
-              fontWeight: FontWeight.w500,
+              color: onlineCount > 0 ? Colors.green : Colors.grey,
+              fontWeight: onlineCount > 0 ? FontWeight.w500 : FontWeight.normal,
             ),
           );
-        } else if (lastSeen != null) {
-          return Text(
-            'Last seen ${_formatLastSeen(lastSeen)}',
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
-          );
-        }
+        },
+        loading: () => const SizedBox.shrink(),
+        error: (_, __) => const SizedBox.shrink(),
+      );
+    } else {
+      // Show individual user presence status
+      final presenceAsync = ref.watch(
+        userPresenceProvider(widget.otherParticipantId),
+      );
 
-        return const SizedBox.shrink();
-      },
-      loading: () => const SizedBox.shrink(),
-      error: (_, _) => const SizedBox.shrink(),
-    );
+      return presenceAsync.when(
+        data: (presence) {
+          if (presence == null) {
+            return const SizedBox.shrink();
+          }
+
+          final isOnline = presence['isOnline'] as bool? ?? false;
+          final lastSeen = presence['lastSeen'] as DateTime?;
+
+          if (isOnline) {
+            return const Text(
+              'Online',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.green,
+                fontWeight: FontWeight.w500,
+              ),
+            );
+          } else if (lastSeen != null) {
+            return Text(
+              'Last seen ${_formatLastSeen(lastSeen)}',
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            );
+          }
+
+          return const SizedBox.shrink();
+        },
+        loading: () => const SizedBox.shrink(),
+        error: (_, _) => const SizedBox.shrink(),
+      );
+    }
   }
 
   String _formatLastSeen(DateTime lastSeen) {

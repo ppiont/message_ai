@@ -78,7 +78,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
           },
         );
 
-        // Navigation will be handled by auth state listener in main app
+        // Navigation and FCM initialization handled by app.dart
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(message), backgroundColor: Colors.green),

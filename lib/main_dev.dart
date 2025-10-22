@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:message_ai/features/messaging/data/services/fcm_service.dart';
 import 'app.dart';
 import 'config/env_config.dart';
 
@@ -18,6 +20,9 @@ void main() async {
 
   // Initialize Firebase with dev project
   await Firebase.initializeApp();
+
+  // Register background message handler
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   // Log environment info in dev
   debugPrint('🚀 Starting MessageAI in ${envConfig.environment} mode');

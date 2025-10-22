@@ -166,9 +166,12 @@ class ConversationRepositoryImpl implements ConversationRepository {
         limit: limit,
       );
 
-      return localStream.map(
-        (conversations) => Right<Failure, List<Conversation>>(conversations),
-      );
+      // Filter out groups - they're handled by GroupConversationRepository
+      return localStream.map((conversations) {
+        final directConversations =
+            conversations.where((c) => !c.isGroup).toList();
+        return Right<Failure, List<Conversation>>(directConversations);
+      });
     } on AppException catch (e) {
       return Stream.value(Left(ErrorMapper.mapExceptionToFailure(e)));
     } catch (e) {

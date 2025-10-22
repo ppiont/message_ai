@@ -2,22 +2,22 @@
 
 ## 🎯 Current Focus: MVP Features - 80% Complete! 🎉
 
-**Session Goal**: Just completed online/offline presence indicators. Ready for next MVP feature.
+**Session Goal**: Synced Taskmaster and Memory Bank. Ready to complete final 2 MVP features!
 
 **Status**: 8/10 MVP features complete!
 
 ## 📍 Where We Are
 
 ### Just Completed (This Session)
-1. ✅ Fixed bidirectional message sync (Firestore ↔ Local ↔ UI)
-2. ✅ Fixed message ordering (ascending, oldest first)
-3. ✅ Fixed ROLLBACK errors with upsert mode in batch inserts
-4. ✅ Implemented online/offline presence indicators (Task 46)
-   - Presence providers with automatic management
-   - Green/grey dots on conversation list avatars
-   - "Online" / "Last seen X ago" in chat header
-   - Integrated with auth flow (auto online/offline on login/logout)
-5. ✅ Updated memory bank and Taskmaster status
+1. ✅ Fixed delivered status for read receipts
+   - Implemented AutoDeliveryMarker service
+   - Cleaned up previous broken MessageDeliveryTracker
+   - Visual checkmarks now correctly show: sent (1 grey), delivered (2 grey), read (2 blue)
+2. ✅ Synced Taskmaster with actual implementation
+   - Added Task 122: Online/offline presence indicators (marked done)
+   - Added Task 123: Read receipts with delivery status (marked done)
+   - Verified all completed features are tracked
+3. ✅ Updated memory bank to reflect current state
 
 ### Current Implementation Status
 
@@ -39,8 +39,8 @@
 - ✅ Online/offline status
 
 **What's Left for MVP**: 2 features remaining
-1. **Push notifications** (Task 42) - Estimated 2-3 hours
-2. **Group chat** (Tasks 49-58) - Estimated 4-6 hours
+1. **Push notifications** (Task 42) - Foreground minimum, estimated 2-3 hours
+2. **Group chat (3+ users)** (Tasks 49-58) - Group creation, member management, estimated 4-6 hours
 
 ## 📊 Progress Update
 
@@ -59,15 +59,19 @@
 
 ## 🎯 Next Steps
 
-**Immediate**: Choose next feature
-1. Push notifications (quick, 2-3 hours)
-2. Group chat (comprehensive, 4-6 hours)
+**Immediate**: Complete final 2 MVP features
+1. **Option A - Push Notifications** (Task 42)
+   - Quick win: 2-3 hours
+   - FCM setup for foreground notifications minimum
+   - Can expand to background later
 
-**For Group Chat** (when ready):
-- Will need to:
-  - Extend conversation model for group metadata
-  - Update UI for group member management
-  - Add group-specific features (admin roles, member list, etc.)
+2. **Option B - Group Chat** (Tasks 49-58)
+   - Comprehensive: 4-6 hours
+   - Group creation, member management, admin roles
+   - Extends existing conversation model
+   - Group-specific UI components
+
+**Recommendation**: Start with Push Notifications as a quick win, then tackle Group Chat to complete MVP.
 
 ## 💡 Technical Notes
 
@@ -94,6 +98,7 @@ Local DB (Drift/SQLite) ← Bidirectional → Remote DB (Firestore)
 - MessageQueue (optimistic UI + retry)
 - TypingIndicatorService (real-time typing)
 - PresenceService (online/offline + heartbeat)
+- AutoDeliveryMarker (automatic delivered status for incoming messages)
 
 ## 📝 Recent Learnings
 

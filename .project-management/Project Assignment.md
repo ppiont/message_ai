@@ -34,15 +34,15 @@ You'll build in two phases: first the core messaging infrastructure with real-ti
 
 This is a hard gate. To pass the MVP checkpoint, you must have:
 
-* One-on-one chat functionality
-* Real-time message delivery between 2+ users
-* Message persistence (survives app restarts)
-* Optimistic UI updates (messages appear instantly before server confirmation)
-* Online/offline status indicators
-* Message timestamps
-* User authentication (users have accounts/profiles)
-* Basic group chat functionality (3+ users in one conversation)
-* Message read receipts
+* One-on-one chat functionality (CHECK)
+* Real-time message delivery between 2+ users (CHECK)
+* Message persistence (survives app restarts) (CHECK)
+* Optimistic UI updates (messages appear instantly before server confirmation) (CHECK)
+* Online/offline status indicators (CHECK)
+* Message timestamps (CHECK)
+* User authentication (users have accounts/profiles) (CHECK)
+* Basic group chat functionality (3+ users in one conversation) (CHECK)
+* Message read receipts (CHECK)
 * Push notifications working (at least in foreground)
 * **Deployment**: Running on local emulator/simulator with deployed backend (TestFlight/APK/Expo Go if possible, but not required for MVP)
 

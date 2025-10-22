@@ -70,17 +70,19 @@ See previous memory bank entries for details. Key achievements:
 2. Upsert mode: `InsertMode.insertOrReplace` in batch operations prevents ROLLBACK errors
 3. Presence integration: Automatic online/offline tracking tied to auth state
 
-### Sprint 5: Real-Time Features & Presence (COMPLETED!) 🎉
+### Sprint 5: Real-Time Features & Read Receipts (COMPLETED!) 🎉
 
 **Tasks Completed**:
 - Task 41: Typing indicators ✅
-- Task 46: Online/offline status indicators ✅
+- Task 122: Online/offline status indicators ✅
+- Task 123: Read receipts with delivery status ✅
 
 **Implementation**:
 - `TypingIndicatorService` with debouncing (3s timeout)
 - `PresenceService` with heartbeat (30s interval)
-- Automatic lifecycle via `presenceController` provider
-- UI components: `TypingIndicator` widget, presence dots on avatars, status in chat header
+- `AutoDeliveryMarker` for automatic delivered status
+- Automatic lifecycle via providers
+- UI components: `TypingIndicator` widget, presence dots on avatars, status in chat header, delivery checkmarks in message bubbles
 
 ## 📊 Current Status: MVP 80% Complete!
 
@@ -157,14 +159,14 @@ Local DB ← Bidirectional Sync → Firestore
 2. ✅ `fix: sync messages bidirectionally and fix message ordering`
 3. ✅ `fix: use upsert mode for batch inserts to prevent rollbacks`
 4. ✅ `feat: add online/offline presence indicators`
+5. ✅ `fix: revert to simpler auto-delivery marker approach` - Fixed delivered status with clean AutoDeliveryMarker service
 
 ## 📝 Next Session Goals
-1. Choose next MVP feature:
-   - **Option A**: Push notifications (Task 42) - Quick win, 2-3 hours
-   - **Option B**: Group chat (Tasks 49-58) - Comprehensive, 4-6 hours
-2. Continue toward 100% MVP completion
-3. Maintain test coverage above 85%
-4. Keep memory bank updated
+1. **Complete final 2 MVP features** to reach 100% MVP:
+   - Push notifications (Task 42) - Foreground minimum, 2-3 hours
+   - Group chat (Tasks 49-58) - Full group functionality, 4-6 hours
+2. Maintain test coverage above 85%
+3. Prepare for AI features implementation (post-MVP)
 
 ## 🎓 Key Learnings This Sprint
 1. **Offline-First is Complex**: Requires careful thought about sync, conflicts, and error handling
@@ -172,3 +174,5 @@ Local DB ← Bidirectional Sync → Firestore
 3. **Bidirectional Sync**: Watching Firestore AND saving to local creates seamless real-time experience
 4. **Presence Lifecycle**: Tying presence to auth state provides automatic, reliable online/offline tracking
 5. **Provider Architecture**: `keepAlive` providers + initialization in App widget ensures services start on launch
+6. **Simple is Better**: AutoDeliveryMarker service (watching conversations globally) is cleaner than per-chat manual marking
+7. **Taskmaster Sync**: Critical to add tasks for features as they're implemented, not retroactively

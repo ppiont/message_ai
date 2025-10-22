@@ -26,14 +26,14 @@ void main() {
     registerFallbackValue(FakeMessageModel());
   });
 
-  setUp(() {
+  setUp() {
     mockRemoteDataSource = MockMessageRemoteDataSource();
     mockLocalDataSource = MockMessageLocalDataSource();
     repository = MessageRepositoryImpl(
       remoteDataSource: mockRemoteDataSource,
       localDataSource: mockLocalDataSource,
     );
-  });
+  })
 
   final testMessage = MessageModel(
     id: 'msg-123',

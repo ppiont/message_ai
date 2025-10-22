@@ -1,11 +1,77 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:message_ai/config/env_config.dart';
 import 'package:message_ai/features/authentication/presentation/pages/auth_page.dart';
 import 'package:message_ai/features/authentication/presentation/pages/profile_setup_page.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
+import 'package:message_ai/features/messaging/presentation/pages/chat_page.dart';
 import 'package:message_ai/features/messaging/presentation/pages/conversation_list_page.dart';
 import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
+
+// Global navigation key for handling notification navigation
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+/// Handles notification tap by fetching conversation details and navigating.
+Future<void> _handleNotificationNavigation({
+  required String conversationId,
+  required String senderId,
+  required NavigatorState navigator,
+}) async {
+  try {
+    final firestore = FirebaseFirestore.instance;
+
+    // Determine collection based on conversation ID
+    final isGroup = conversationId.startsWith('group-');
+    final collection = isGroup ? 'group-conversations' : 'conversations';
+
+    // Fetch conversation to get participant details
+    final conversationDoc =
+        await firestore.collection(collection).doc(conversationId).get();
+
+    if (!conversationDoc.exists) {
+      print('Conversation $conversationId not found');
+      return;
+    }
+
+    final conversationData = conversationDoc.data()!;
+
+    if (isGroup) {
+      // For groups, navigate with group name
+      final groupName = conversationData['name'] as String? ?? 'Group Chat';
+      navigator.push(
+        MaterialPageRoute(
+          builder: (context) => ChatPage(
+            conversationId: conversationId,
+            otherParticipantId: conversationId,
+            otherParticipantName: groupName,
+            isGroup: true,
+          ),
+        ),
+      );
+    } else {
+      // For direct chats, fetch sender's name
+      final senderDoc = await firestore.collection('users').doc(senderId).get();
+
+      final senderName = senderDoc.data()?['displayName'] as String? ??
+          senderDoc.data()?['email'] as String? ??
+          'Unknown User';
+
+      navigator.push(
+        MaterialPageRoute(
+          builder: (context) => ChatPage(
+            conversationId: conversationId,
+            otherParticipantId: senderId,
+            otherParticipantName: senderName,
+            isGroup: false,
+          ),
+        ),
+      );
+    }
+  } catch (e) {
+    print('Failed to navigate from notification: $e');
+  }
+}
 
 /// Root application widget
 ///
@@ -16,36 +82,66 @@ import 'package:message_ai/features/messaging/presentation/providers/messaging_p
 /// - State management (Riverpod)
 /// - Authentication state handling
 /// - Offline-first sync services
+/// - Push notification handling with navigation
 class App extends ConsumerWidget {
   const App({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Initialize offline-first services
-    // These are keepAlive providers, so watching them ensures they start
-    ref.watch(messageSyncServiceProvider);
-    ref.watch(messageQueueProvider);
-
-    // Initialize presence controller
-    // Automatically manages online/offline status based on auth
-    ref.watch(presenceControllerProvider);
-
-    // Watch authentication state
+    // Watch authentication state FIRST
     final authState = ref.watch(authStateProvider);
 
-    // Initialize auto delivery marker (when authenticated)
-    // Automatically marks incoming messages as delivered across all conversations
-    authState.whenData((user) {
-      if (user != null) {
-        try {
-          ref.watch(autoDeliveryMarkerProvider);
-        } catch (e) {
-          // Silently fail if marker can't be initialized
-        }
+    // Only initialize services if user is authenticated
+    // This prevents errors during logout when widget tree is unstable
+    final user = authState.value;
+    if (user != null) {
+      // Initialize offline-first services
+      // These are keepAlive providers, so watching them ensures they start
+      ref.watch(messageSyncServiceProvider);
+      ref.watch(messageQueueProvider);
+
+      // Initialize presence controller
+      // Automatically manages online/offline status based on auth
+      ref.watch(presenceControllerProvider);
+
+      // Initialize auto delivery marker
+      // Automatically marks incoming messages as delivered across all conversations
+      try {
+        ref.watch(autoDeliveryMarkerProvider);
+      } catch (e) {
+        // Silently fail if marker can't be initialized
       }
-    });
+
+      // Initialize FCM for push notifications
+      // This is done here (not in sign-in/sign-up pages) to avoid unmounted widget issues
+      try {
+        final fcmService = ref.read(fcmServiceProvider);
+        fcmService.initialize(
+          userId: user.uid,
+          onNotificationTap: ({
+            required String conversationId,
+            required String senderId,
+          }) {
+            // Navigate to chat page when notification is tapped
+            // Using global navigator key to handle navigation from any app state
+            final navigator = navigatorKey.currentState;
+            if (navigator != null) {
+              _handleNotificationNavigation(
+                conversationId: conversationId,
+                senderId: senderId,
+                navigator: navigator,
+              );
+            }
+          },
+        );
+      } catch (e) {
+        // Silently fail if FCM can't be initialized
+        print('FCM initialization failed: $e');
+      }
+    }
 
     return MaterialApp(
+      navigatorKey: navigatorKey, // For notification navigation
       title: envConfig.appName,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(

@@ -1,4 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Required for push notifications on Android 13+ (API level 33+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
+    <!-- Internet permission (usually added by Firebase automatically, but explicit is better) -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
     <application
         android:label="@string/app_name"
         android:name="${applicationName}"

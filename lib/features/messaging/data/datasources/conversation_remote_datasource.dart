@@ -59,13 +59,46 @@ abstract class ConversationRemoteDataSource {
 class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
   final FirebaseFirestore _firestore;
 
+  // Cache to track which collection each conversation belongs to
+  final Map<String, String> _conversationTypeCache = {};
+
   ConversationRemoteDataSourceImpl({required FirebaseFirestore firestore})
       : _firestore = firestore;
 
   static const String _conversationsCollection = 'conversations';
+  static const String _groupConversationsCollection = 'group-conversations';
 
   CollectionReference<Map<String, dynamic>> get _conversationsRef =>
       _firestore.collection(_conversationsCollection);
+
+  /// Helper to get the correct conversation document reference.
+  /// Automatically determines if it's a group or direct conversation.
+  Future<DocumentReference<Map<String, dynamic>>> _conversationDoc(
+    String conversationId,
+  ) async {
+    // Check cache first
+    if (_conversationTypeCache.containsKey(conversationId)) {
+      final collection = _conversationTypeCache[conversationId]!;
+      return _firestore.collection(collection).doc(conversationId);
+    }
+
+    // Check group-conversations collection first (most specific)
+    final groupDoc = await _firestore
+        .collection(_groupConversationsCollection)
+        .doc(conversationId)
+        .get();
+
+    if (groupDoc.exists) {
+      _conversationTypeCache[conversationId] = _groupConversationsCollection;
+      return _firestore
+          .collection(_groupConversationsCollection)
+          .doc(conversationId);
+    }
+
+    // Fall back to conversations collection
+    _conversationTypeCache[conversationId] = _conversationsCollection;
+    return _firestore.collection(_conversationsCollection).doc(conversationId);
+  }
 
   @override
   Future<ConversationModel> createConversation(
@@ -277,7 +310,8 @@ class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
     DateTime timestamp,
   ) async {
     try {
-      await _conversationsRef.doc(conversationId).update({
+      final conversationDoc = await _conversationDoc(conversationId);
+      await conversationDoc.update({
         'lastMessage': {
           'text': messageText,
           'senderId': senderId,
@@ -305,7 +339,8 @@ class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
     int count,
   ) async {
     try {
-      await _conversationsRef.doc(conversationId).update({
+      final conversationDoc = await _conversationDoc(conversationId);
+      await conversationDoc.update({
         'unreadCount.$userId': count,
       });
     } on FirebaseException catch (e) {

@@ -64,7 +64,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
         final syncUseCase = ref.read(syncUserToFirestoreUseCaseProvider);
         await syncUseCase(user);
 
-        // Navigation will be handled by auth state listener in main app
+        // Navigation and FCM initialization handled by app.dart
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

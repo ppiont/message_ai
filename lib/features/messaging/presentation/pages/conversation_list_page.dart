@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
 import 'package:message_ai/features/messaging/presentation/pages/chat_page.dart';
+import 'package:message_ai/features/messaging/presentation/pages/create_group_page.dart';
 import 'package:message_ai/features/messaging/presentation/pages/user_selection_page.dart';
 import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:message_ai/features/messaging/presentation/widgets/conversation_list_item.dart';
@@ -68,18 +69,56 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
           : _buildConversationList(currentUser.uid),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (context) => const UserSelectionPage()),
-          );
+          _showNewConversationMenu(context);
         },
-        child: const Icon(Icons.edit),
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  void _showNewConversationMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.person),
+              title: const Text('New Chat'),
+              subtitle: const Text('Start a 1-on-1 conversation'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const UserSelectionPage(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.group),
+              title: const Text('New Group'),
+              subtitle: const Text('Create a group conversation'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const CreateGroupPage(),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildConversationList(String userId) {
+    // Use unified stream that includes both direct conversations and groups
     final conversationsStream = ref.watch(
-      userConversationsStreamProvider(userId),
+      allConversationsStreamProvider(userId),
     );
 
     return conversationsStream.when(
@@ -88,6 +127,17 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
         final filteredConversations = _searchQuery.isEmpty
             ? conversations
             : conversations.where((conv) {
+                final type = conv['type'] as String?;
+
+                // For groups, search by group name
+                if (type == 'group') {
+                  final groupName = conv['groupName'] as String? ?? '';
+                  return groupName.toLowerCase().contains(
+                    _searchQuery.toLowerCase(),
+                  );
+                }
+
+                // For direct conversations, search by participant name
                 final participants =
                     conv['participants'] as List<Map<String, dynamic>>;
                 return participants.any((p) {
@@ -105,7 +155,7 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
         return RefreshIndicator(
           onRefresh: () async {
             // Invalidate the stream to trigger a refresh
-            ref.invalidate(userConversationsStreamProvider(userId));
+            ref.invalidate(allConversationsStreamProvider(userId));
             // Wait a bit for the refresh
             await Future.delayed(const Duration(milliseconds: 500));
           },
@@ -115,45 +165,81 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
             itemBuilder: (context, index) {
               final conversation = filteredConversations[index];
               final conversationId = conversation['id'] as String;
+              final type = conversation['type'] as String?;
               final participants =
                   conversation['participants'] as List<Map<String, dynamic>>;
 
-              // Get the other participant's name
-              Map<String, dynamic> otherParticipant;
-              try {
-                otherParticipant = participants.firstWhere(
-                  (p) => p['uid'] != userId,
-                );
-              } catch (e) {
-                // Fallback to first participant if not found
-                otherParticipant = participants.isNotEmpty
-                    ? participants.first
-                    : {'name': 'Unknown', 'uid': ''};
-              }
-              final otherParticipantName =
-                  otherParticipant['name'] as String? ?? 'Unknown';
-              final otherParticipantId =
-                  otherParticipant['uid'] as String? ?? '';
+              // Handle groups vs direct conversations
+              if (type == 'group') {
+                // Group conversation
+                final groupName =
+                    conversation['groupName'] as String? ?? 'Unknown Group';
+                final participantCount =
+                    conversation['participantCount'] as int? ?? 0;
 
-              return ConversationListItem(
-                conversationId: conversationId,
-                participants: participants,
-                lastMessage: conversation['lastMessage'] as String?,
-                lastUpdatedAt: conversation['lastUpdatedAt'] as DateTime,
-                unreadCount: conversation['unreadCount'] as int,
-                currentUserId: userId,
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => ChatPage(
-                        conversationId: conversationId,
-                        otherParticipantName: otherParticipantName,
-                        otherParticipantId: otherParticipantId,
+                return ConversationListItem(
+                  conversationId: conversationId,
+                  participants: participants,
+                  lastMessage: conversation['lastMessage'] as String?,
+                  lastUpdatedAt: conversation['lastUpdatedAt'] as DateTime,
+                  unreadCount: conversation['unreadCount'] as int,
+                  currentUserId: userId,
+                  isGroup: true,
+                  groupName: groupName,
+                  participantCount: participantCount,
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => ChatPage(
+                          conversationId: conversationId,
+                          otherParticipantName: groupName,
+                          otherParticipantId: '', // Not used for groups
+                          isGroup: true,
+                        ),
                       ),
-                    ),
+                    );
+                  },
+                );
+              } else {
+                // Direct conversation
+                Map<String, dynamic> otherParticipant;
+                try {
+                  otherParticipant = participants.firstWhere(
+                    (p) => p['uid'] != userId,
                   );
-                },
-              );
+                } catch (e) {
+                  // Fallback to first participant if not found
+                  otherParticipant = participants.isNotEmpty
+                      ? participants.first
+                      : {'name': 'Unknown', 'uid': ''};
+                }
+                final otherParticipantName =
+                    otherParticipant['name'] as String? ?? 'Unknown';
+                final otherParticipantId =
+                    otherParticipant['uid'] as String? ?? '';
+
+                return ConversationListItem(
+                  conversationId: conversationId,
+                  participants: participants,
+                  lastMessage: conversation['lastMessage'] as String?,
+                  lastUpdatedAt: conversation['lastUpdatedAt'] as DateTime,
+                  unreadCount: conversation['unreadCount'] as int,
+                  currentUserId: userId,
+                  isGroup: false,
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => ChatPage(
+                          conversationId: conversationId,
+                          otherParticipantName: otherParticipantName,
+                          otherParticipantId: otherParticipantId,
+                          isGroup: false,
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }
             },
           ),
         );
@@ -169,7 +255,7 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () =>
-                  ref.invalidate(userConversationsStreamProvider(userId)),
+                  ref.invalidate(allConversationsStreamProvider(userId)),
               child: const Text('Retry'),
             ),
           ],
