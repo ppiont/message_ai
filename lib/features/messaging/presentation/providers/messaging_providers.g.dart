@@ -1099,6 +1099,68 @@ final class ConversationTypingUsersFamily extends $Family
   String toString() => r'conversationTypingUsersProvider';
 }
 
+/// Provides the global message delivery tracker.
+///
+/// Automatically marks incoming messages as delivered when they arrive,
+/// regardless of which screen is open.
+
+@ProviderFor(messageDeliveryTracker)
+const messageDeliveryTrackerProvider = MessageDeliveryTrackerProvider._();
+
+/// Provides the global message delivery tracker.
+///
+/// Automatically marks incoming messages as delivered when they arrive,
+/// regardless of which screen is open.
+
+final class MessageDeliveryTrackerProvider
+    extends
+        $FunctionalProvider<
+          MessageDeliveryTracker,
+          MessageDeliveryTracker,
+          MessageDeliveryTracker
+        >
+    with $Provider<MessageDeliveryTracker> {
+  /// Provides the global message delivery tracker.
+  ///
+  /// Automatically marks incoming messages as delivered when they arrive,
+  /// regardless of which screen is open.
+  const MessageDeliveryTrackerProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'messageDeliveryTrackerProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$messageDeliveryTrackerHash();
+
+  @$internal
+  @override
+  $ProviderElement<MessageDeliveryTracker> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  MessageDeliveryTracker create(Ref ref) {
+    return messageDeliveryTracker(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(MessageDeliveryTracker value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<MessageDeliveryTracker>(value),
+    );
+  }
+}
+
+String _$messageDeliveryTrackerHash() =>
+    r'0dcd4764da951b4096e385fce569704a25599566';
+
 /// Provides the [PresenceService] instance.
 
 @ProviderFor(presenceService)

@@ -2,13 +2,19 @@
 library;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:message_ai/core/providers/database_providers.dart';
+import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
 import 'package:message_ai/features/messaging/data/datasources/conversation_local_datasource.dart';
 import 'package:message_ai/features/messaging/data/datasources/conversation_remote_datasource.dart';
 import 'package:message_ai/features/messaging/data/datasources/message_local_datasource.dart';
 import 'package:message_ai/features/messaging/data/datasources/message_remote_datasource.dart';
 import 'package:message_ai/features/messaging/data/repositories/conversation_repository_impl.dart';
 import 'package:message_ai/features/messaging/data/repositories/message_repository_impl.dart';
+import 'package:message_ai/features/messaging/data/services/message_queue.dart';
+import 'package:message_ai/features/messaging/data/services/message_sync_service.dart';
+import 'package:message_ai/features/messaging/data/services/presence_service.dart';
+import 'package:message_ai/features/messaging/data/services/typing_indicator_service.dart';
 import 'package:message_ai/features/messaging/domain/repositories/conversation_repository.dart';
 import 'package:message_ai/features/messaging/domain/repositories/message_repository.dart';
 import 'package:message_ai/features/messaging/domain/usecases/find_or_create_direct_conversation.dart';
@@ -18,11 +24,7 @@ import 'package:message_ai/features/messaging/domain/usecases/mark_message_as_re
 import 'package:message_ai/features/messaging/domain/usecases/send_message.dart';
 import 'package:message_ai/features/messaging/domain/usecases/watch_conversations.dart';
 import 'package:message_ai/features/messaging/domain/usecases/watch_messages.dart';
-import 'package:message_ai/features/messaging/data/services/typing_indicator_service.dart';
-import 'package:message_ai/features/messaging/data/services/presence_service.dart';
-import 'package:message_ai/features/messaging/data/services/message_sync_service.dart';
-import 'package:message_ai/features/messaging/data/services/message_queue.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:message_ai/features/messaging/presentation/providers/message_delivery_tracker.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'messaging_providers.g.dart';
@@ -247,6 +249,32 @@ Stream<List<TypingUser>> conversationTypingUsers(
     conversationId: conversationId,
     currentUserId: currentUserId,
   );
+}
+
+// ========== Message Delivery Tracking ==========
+
+/// Provides the global message delivery tracker.
+///
+/// Automatically marks incoming messages as delivered when they arrive,
+/// regardless of which screen is open.
+@Riverpod(keepAlive: true)
+MessageDeliveryTracker messageDeliveryTracker(Ref ref) {
+  final currentUser = ref.watch(authStateProvider).value;
+
+  if (currentUser == null) {
+    throw Exception('User must be authenticated to track message delivery');
+  }
+
+  final tracker = MessageDeliveryTracker(
+    messageRepository: ref.watch(messageRepositoryProvider),
+    firestore: ref.watch(messagingFirestoreProvider),
+    currentUserId: currentUser.uid,
+  );
+
+  // Start tracking
+  tracker.start();
+
+  return tracker;
 }
 
 // ========== Presence Providers ==========

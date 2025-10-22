@@ -33,6 +33,14 @@ class App extends ConsumerWidget {
     // Watch authentication state
     final authState = ref.watch(authStateProvider);
 
+    // Initialize global message delivery tracker (when authenticated)
+    // Automatically marks incoming messages as delivered, even when not viewing chat
+    authState.whenData((user) {
+      if (user != null) {
+        ref.watch(messageDeliveryTrackerProvider);
+      }
+    });
+
     return MaterialApp(
       title: envConfig.appName,
       debugShowCheckedModeBanner: false,
