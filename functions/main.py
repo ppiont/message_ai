@@ -48,6 +48,7 @@ def send_message_notification(
     sender_name = message_data.get("senderName", "Someone")
     message_text = message_data.get("text", "")
     conversation_id = event.params["conversationId"]
+    message_id = event.params["messageId"]  # Firestore document ID
 
     print(f"New message from {sender_name} in conversation {conversation_id}")
 
@@ -113,6 +114,7 @@ def send_message_notification(
                     data={
                         "conversationId": conversation_id,
                         "senderId": sender_id,
+                        "messageId": message_id,  # Firestore document ID
                         "type": "new_message",
                     },
                     token=token,

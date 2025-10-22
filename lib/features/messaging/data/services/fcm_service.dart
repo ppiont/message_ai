@@ -34,7 +34,8 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
   // Mark message as delivered if we have the necessary data
   final conversationId = message.data['conversationId'] as String?;
-  final messageId = message.messageId;
+  final messageId =
+      message.data['messageId'] as String?; // Firestore document ID
 
   if (conversationId != null && messageId != null) {
     try {
