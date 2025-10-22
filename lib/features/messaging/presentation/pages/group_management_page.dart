@@ -549,38 +549,41 @@ class _AddMemberDialogState extends ConsumerState<_AddMemberDialog> {
               return const Center(child: Text('No users available'));
             }
 
-            return ListView.builder(
-              itemCount: users.length,
-              itemBuilder: (context, index) {
-                final user = users[index];
-                final userId = user['uid'] as String;
-                final userName = user['name'] as String? ?? 'Unknown';
-                final isSelected = _selectedUserId == userId;
+            return RadioGroup<String>(
+              groupValue: _selectedUserId,
+              onChanged: _isLoading
+                  ? (_) {} // Disabled state
+                  : (value) {
+                      if (value != null) {
+                        final user = users.firstWhere((u) => u['uid'] == value);
+                        setState(() {
+                          _selectedUserId = value;
+                          _selectedUserName =
+                              user['name'] as String? ?? 'Unknown';
+                          _selectedUserLanguage =
+                              user['preferredLanguage'] as String? ?? 'en';
+                        });
+                      }
+                    },
+              child: ListView.builder(
+                itemCount: users.length,
+                itemBuilder: (context, index) {
+                  final user = users[index];
+                  final userId = user['uid'] as String;
+                  final userName = user['name'] as String? ?? 'Unknown';
 
-                return ListTile(
-                  leading: CircleAvatar(
-                    child: Text(
-                      userName.isNotEmpty ? userName[0].toUpperCase() : '?',
+                  return ListTile(
+                    leading: CircleAvatar(
+                      child: Text(
+                        userName.isNotEmpty ? userName[0].toUpperCase() : '?',
+                      ),
                     ),
-                  ),
-                  title: Text(userName),
-                  subtitle: Text(user['email'] as String? ?? ''),
-                  trailing: isSelected
-                      ? const Icon(Icons.check_circle, color: Colors.blue)
-                      : const Icon(Icons.radio_button_unchecked),
-                  onTap: _isLoading
-                      ? null
-                      : () {
-                          setState(() {
-                            _selectedUserId = userId;
-                            _selectedUserName = userName;
-                            _selectedUserLanguage =
-                                user['preferredLanguage'] as String? ?? 'en';
-                          });
-                        },
-                  selected: isSelected,
-                );
-              },
+                    title: Text(userName),
+                    subtitle: Text(user['email'] as String? ?? ''),
+                    trailing: Radio<String>(value: userId),
+                  );
+                },
+              ),
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
