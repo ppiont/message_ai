@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:message_ai/core/error/exceptions.dart';
 import 'package:message_ai/core/error/failures.dart';
+import 'package:message_ai/features/messaging/data/datasources/conversation_local_datasource.dart';
 import 'package:message_ai/features/messaging/data/models/message_model.dart';
 import 'package:message_ai/features/messaging/data/repositories/message_repository_impl.dart';
 import 'package:message_ai/features/messaging/domain/entities/message.dart';
@@ -15,12 +16,16 @@ class MockMessageRemoteDataSource extends Mock
 class MockMessageLocalDataSource extends Mock
     implements MessageLocalDataSource {}
 
+class MockConversationLocalDataSource extends Mock
+    implements ConversationLocalDataSource {}
+
 class FakeMessageModel extends Fake implements MessageModel {}
 
 void main() {
   late MessageRepositoryImpl repository;
   late MockMessageRemoteDataSource mockRemoteDataSource;
   late MockMessageLocalDataSource mockLocalDataSource;
+  late MockConversationLocalDataSource mockConversationLocalDataSource;
 
   setUpAll(() {
     registerFallbackValue(FakeMessageModel());
@@ -29,9 +34,11 @@ void main() {
   setUp(() {
     mockRemoteDataSource = MockMessageRemoteDataSource();
     mockLocalDataSource = MockMessageLocalDataSource();
+    mockConversationLocalDataSource = MockConversationLocalDataSource();
     repository = MessageRepositoryImpl(
       remoteDataSource: mockRemoteDataSource,
       localDataSource: mockLocalDataSource,
+      conversationLocalDataSource: mockConversationLocalDataSource,
     );
   });
 

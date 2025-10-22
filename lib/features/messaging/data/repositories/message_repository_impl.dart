@@ -5,9 +5,11 @@ import 'package:dartz/dartz.dart';
 import 'package:message_ai/core/error/error_mapper.dart';
 import 'package:message_ai/core/error/exceptions.dart';
 import 'package:message_ai/core/error/failures.dart';
+import 'package:message_ai/features/messaging/data/datasources/conversation_local_datasource.dart';
 import 'package:message_ai/features/messaging/data/datasources/message_remote_datasource.dart';
 import 'package:message_ai/features/messaging/data/datasources/message_local_datasource.dart';
 import 'package:message_ai/features/messaging/data/models/message_model.dart';
+import 'package:message_ai/features/messaging/domain/entities/conversation.dart';
 import 'package:message_ai/features/messaging/domain/entities/message.dart';
 import 'package:message_ai/features/messaging/domain/repositories/message_repository.dart';
 
@@ -20,12 +22,15 @@ import 'package:message_ai/features/messaging/domain/repositories/message_reposi
 class MessageRepositoryImpl implements MessageRepository {
   final MessageRemoteDataSource _remoteDataSource;
   final MessageLocalDataSource _localDataSource;
+  final ConversationLocalDataSource _conversationLocalDataSource;
 
   MessageRepositoryImpl({
     required MessageRemoteDataSource remoteDataSource,
     required MessageLocalDataSource localDataSource,
+    required ConversationLocalDataSource conversationLocalDataSource,
   }) : _remoteDataSource = remoteDataSource,
-       _localDataSource = localDataSource;
+       _localDataSource = localDataSource,
+       _conversationLocalDataSource = conversationLocalDataSource;
 
   @override
   Future<Either<Failure, Message>> createMessage(
@@ -213,6 +218,25 @@ class MessageRepositoryImpl implements MessageRepository {
 
               // Upsert to local database (updates existing, inserts new)
               await _localDataSource.insertMessages(conversationId, messages);
+
+              // Update conversation's last message with the most recent message
+              if (messages.isNotEmpty) {
+                // Messages are sorted by timestamp (oldest first from Firestore)
+                final latestMessage = messages.last;
+                final lastMessage = LastMessage(
+                  text: latestMessage.text,
+                  senderId: latestMessage.senderId,
+                  senderName: latestMessage.senderName,
+                  timestamp: latestMessage.timestamp,
+                  type: latestMessage.type,
+                );
+
+                // Update local conversation's last message
+                await _conversationLocalDataSource.updateLastMessage(
+                  documentId: conversationId,
+                  lastMessage: lastMessage,
+                );
+              }
             } catch (e) {
               // Silently fail - local stream will still work
             }

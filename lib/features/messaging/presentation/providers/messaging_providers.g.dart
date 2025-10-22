@@ -325,7 +325,7 @@ final class MessageRepositoryProvider
   }
 }
 
-String _$messageRepositoryHash() => r'91f5830f711fdf5b0ed17302f62f4f88ba83b792';
+String _$messageRepositoryHash() => r'ebda2d6d30aa329dbd23fa819af9c7d99248fed9';
 
 /// Provides the [ConversationRepository] implementation (offline-first).
 
