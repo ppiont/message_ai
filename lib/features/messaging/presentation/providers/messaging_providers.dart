@@ -497,25 +497,18 @@ Stream<List<Map<String, dynamic>>> allConversationsStream(
 
   // Merge the two streams using combineLatest2
   // This ensures the combined stream emits whenever EITHER stream emits
-  return Rx.combineLatest2(
-    directStream,
-    groupStream,
-    (directConvs, groups) {
-      final allConversations = <Map<String, dynamic>>[
-        ...directConvs,
-        ...groups,
-      ];
+  return Rx.combineLatest2(directStream, groupStream, (directConvs, groups) {
+    final allConversations = <Map<String, dynamic>>[...directConvs, ...groups];
 
-      // Sort by lastUpdatedAt (newest first)
-      allConversations.sort((a, b) {
-        final aTime = a['lastUpdatedAt'] as DateTime;
-        final bTime = b['lastUpdatedAt'] as DateTime;
-        return bTime.compareTo(aTime);
-      });
+    // Sort by lastUpdatedAt (newest first)
+    allConversations.sort((a, b) {
+      final aTime = a['lastUpdatedAt'] as DateTime;
+      final bTime = b['lastUpdatedAt'] as DateTime;
+      return bTime.compareTo(aTime);
+    });
 
-      return allConversations;
-    },
-  );
+    return allConversations;
+  });
 }
 
 // ========== User Discovery Provider ==========
