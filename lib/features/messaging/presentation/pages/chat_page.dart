@@ -4,6 +4,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
+import 'package:message_ai/features/messaging/presentation/pages/group_management_page.dart';
 import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:message_ai/features/messaging/presentation/widgets/message_bubble.dart';
 import 'package:message_ai/features/messaging/presentation/widgets/message_input.dart';
@@ -83,17 +84,19 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           children: [Text(widget.otherParticipantName), _buildPresenceStatus()],
         ),
         actions: [
-          // TODO: Add menu for conversation settings
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Conversation settings coming soon!'),
-                ),
-              );
-            },
-          ),
+          if (widget.isGroup)
+            IconButton(
+              icon: const Icon(Icons.info_outline),
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => GroupManagementPage(
+                      conversationId: widget.conversationId,
+                    ),
+                  ),
+                );
+              },
+            ),
         ],
       ),
       body: Column(
