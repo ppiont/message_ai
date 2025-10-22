@@ -233,14 +233,17 @@ class ConversationRepositoryImpl implements ConversationRepository {
         lastMessage: lastMessage,
       );
 
-      // Background sync to remote
+      // Background sync to remote (with error logging)
       _remoteDataSource.updateLastMessage(
         conversationId,
         messageText,
         senderId,
         senderName,
         timestamp,
-      );
+      ).catchError((error) {
+        // Log but don't fail - local update succeeded
+        print('Warning: Failed to update lastMessage in Firestore: $error');
+      });
 
       return const Right(null);
     } on AppException catch (e) {
