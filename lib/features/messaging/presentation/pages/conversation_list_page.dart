@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
 import 'package:message_ai/features/messaging/presentation/pages/chat_page.dart';
+import 'package:message_ai/features/messaging/presentation/pages/create_group_page.dart';
 import 'package:message_ai/features/messaging/presentation/pages/user_selection_page.dart';
 import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:message_ai/features/messaging/presentation/widgets/conversation_list_item.dart';
@@ -68,11 +69,48 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
           : _buildConversationList(currentUser.uid),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (context) => const UserSelectionPage()),
-          );
+          _showNewConversationMenu(context);
         },
-        child: const Icon(Icons.edit),
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  void _showNewConversationMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.person),
+              title: const Text('New Chat'),
+              subtitle: const Text('Start a 1-on-1 conversation'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const UserSelectionPage(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.group),
+              title: const Text('New Group'),
+              subtitle: const Text('Create a group conversation'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const CreateGroupPage(),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

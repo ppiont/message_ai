@@ -1882,6 +1882,59 @@ final class AllConversationsStreamFamily extends $Family
   String toString() => r'allConversationsStreamProvider';
 }
 
+/// Provider for streaming all users from Firestore.
+///
+/// In a production app, this would be a proper user search/directory feature.
+
+@ProviderFor(conversationUsersStream)
+const conversationUsersStreamProvider = ConversationUsersStreamProvider._();
+
+/// Provider for streaming all users from Firestore.
+///
+/// In a production app, this would be a proper user search/directory feature.
+
+final class ConversationUsersStreamProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<Map<String, dynamic>>>,
+          List<Map<String, dynamic>>,
+          Stream<List<Map<String, dynamic>>>
+        >
+    with
+        $FutureModifier<List<Map<String, dynamic>>>,
+        $StreamProvider<List<Map<String, dynamic>>> {
+  /// Provider for streaming all users from Firestore.
+  ///
+  /// In a production app, this would be a proper user search/directory feature.
+  const ConversationUsersStreamProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'conversationUsersStreamProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$conversationUsersStreamHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<List<Map<String, dynamic>>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<Map<String, dynamic>>> create(Ref ref) {
+    return conversationUsersStream(ref);
+  }
+}
+
+String _$conversationUsersStreamHash() =>
+    r'dfa9741c3d075c9b40ff64c68971ebe1ebcc1d7a';
+
 /// Provides aggregated online status for a group conversation.
 ///
 /// Returns a map with:

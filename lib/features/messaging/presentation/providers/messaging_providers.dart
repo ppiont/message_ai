@@ -514,6 +514,36 @@ Stream<List<Map<String, dynamic>>> allConversationsStream(
   });
 }
 
+// ========== User Discovery Provider ==========
+
+/// Provider for streaming all users from Firestore.
+///
+/// In a production app, this would be a proper user search/directory feature.
+@riverpod
+Stream<List<Map<String, dynamic>>> conversationUsersStream(Ref ref) {
+  final firestore = ref.watch(messagingFirestoreProvider);
+  final currentUser = ref.watch(currentUserProvider);
+
+  if (currentUser == null) {
+    return Stream.value([]);
+  }
+
+  return firestore.collection('users').snapshots().map((snapshot) {
+    return snapshot.docs
+        .where((doc) => doc.id != currentUser.uid) // Exclude current user
+        .map((doc) {
+          final data = doc.data();
+          return {
+            'uid': doc.id,
+            'name': data['displayName'] as String? ?? '',
+            'email': data['email'] as String? ?? '',
+            'preferredLanguage': data['preferredLanguage'] as String? ?? 'en',
+          };
+        })
+        .toList();
+  });
+}
+
 // ========== Group Presence Provider ==========
 
 /// Provides aggregated online status for a group conversation.
