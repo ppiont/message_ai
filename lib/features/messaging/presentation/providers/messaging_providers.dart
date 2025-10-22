@@ -85,7 +85,6 @@ MessageRepository messageRepository(Ref ref) {
   return MessageRepositoryImpl(
     remoteDataSource: ref.watch(messageRemoteDataSourceProvider),
     localDataSource: ref.watch(messageLocalDataSourceProvider),
-    conversationLocalDataSource: ref.watch(conversationLocalDataSourceProvider),
   );
 }
 
