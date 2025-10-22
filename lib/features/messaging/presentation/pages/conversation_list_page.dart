@@ -53,14 +53,9 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
           // Menu (for future: settings, logout, etc.)
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
-            onSelected: (value) async {
+            onSelected: (value) {
               if (value == 'logout') {
-                // Close the popup menu first to avoid widget tree exceptions
-                Navigator.of(context).pop();
-                // Small delay to ensure menu is fully closed
-                await Future.delayed(const Duration(milliseconds: 100));
-                if (!mounted) return;
-                await _handleLogout();
+                _handleLogout();
               }
             },
             itemBuilder: (context) => [
