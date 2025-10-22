@@ -153,10 +153,17 @@ class ConversationRepositoryImpl implements ConversationRepository {
         try {
           final conversations =
               conversationModels.map((model) => model.toEntity()).toList();
+
+          // Debug: Log the lastMessage from Firestore
+          for (final conv in conversations) {
+            print('🔄 Syncing conversation ${conv.documentId}: lastMessage="${conv.lastMessage?.text}" from Firestore');
+          }
+
           // Upsert to local database (updates existing, inserts new)
           await _localDataSource.insertConversations(conversations);
         } catch (e) {
           // Silently fail - local stream will still work
+          print('❌ Failed to sync conversations from Firestore: $e');
         }
       });
 
