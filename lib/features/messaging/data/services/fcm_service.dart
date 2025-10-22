@@ -52,12 +52,21 @@ class FCMService {
 
     // For iOS: Wait for APNs token before making FCM API calls
     // This is required in iOS SDK 10.4.0+
+    String? apnsToken;
     try {
-      final apnsToken = await _messaging.getAPNSToken();
+      apnsToken = await _messaging.getAPNSToken();
       print('FCM: APNs token: ${apnsToken != null ? "present" : "null"}');
+
+      // On iOS, if APNs token is null, wait a bit and retry
       if (apnsToken == null) {
-        // APNs token not available yet - this is normal on Android
-        // or if we're not on iOS, so we can continue
+        print('FCM: APNs token null, waiting 2 seconds and retrying...');
+        await Future.delayed(const Duration(seconds: 2));
+        apnsToken = await _messaging.getAPNSToken();
+        print('FCM: APNs token after retry: ${apnsToken != null ? "present" : "null"}');
+
+        if (apnsToken == null) {
+          print('FCM: APNs token still null. Token will be saved when it arrives via refresh listener.');
+        }
       }
     } catch (e) {
       // getAPNSToken() might throw on non-iOS platforms
@@ -75,10 +84,12 @@ class FCMService {
       await _saveTokenToFirestore(userId: userId, token: token);
       print('FCM: Token saved successfully');
     } else {
-      print('FCM: No token available, skipping save');
+      print('FCM: No token available yet. Token will be saved when it arrives via refresh listener.');
     }
 
     // Listen for token refresh
+    // This is crucial for iOS - when APNs token arrives, FCM token will be generated
+    // and this listener will catch it
     print('FCM: Setting up token refresh listener');
     _listenForTokenRefresh(userId: userId);
   }
