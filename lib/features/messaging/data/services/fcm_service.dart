@@ -29,6 +29,7 @@ class FCMService {
   /// Initializes FCM for the given user.
   ///
   /// - Requests notification permissions
+  /// - Waits for APNs token (iOS only)
   /// - Retrieves current FCM token
   /// - Saves token to Firestore
   /// - Listens for token refresh events
@@ -43,6 +44,19 @@ class FCMService {
         status != AuthorizationStatus.provisional) {
       // Permissions denied - can't get token
       return;
+    }
+
+    // For iOS: Wait for APNs token before making FCM API calls
+    // This is required in iOS SDK 10.4.0+
+    try {
+      final apnsToken = await _messaging.getAPNSToken();
+      if (apnsToken == null) {
+        // APNs token not available yet - this is normal on Android
+        // or if we're not on iOS, so we can continue
+      }
+    } catch (e) {
+      // getAPNSToken() might throw on non-iOS platforms
+      // This is expected, continue normally
     }
 
     // Get current token
