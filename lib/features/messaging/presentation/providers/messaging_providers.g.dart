@@ -325,7 +325,7 @@ final class MessageRepositoryProvider
   }
 }
 
-String _$messageRepositoryHash() => r'ebda2d6d30aa329dbd23fa819af9c7d99248fed9';
+String _$messageRepositoryHash() => r'91f5830f711fdf5b0ed17302f62f4f88ba83b792';
 
 /// Provides the [ConversationRepository] implementation (offline-first).
 
@@ -1205,6 +1205,52 @@ final class PresenceServiceProvider
 
 String _$presenceServiceHash() => r'dc32f854480383c033d4c735e4ba8284bd1cef22';
 
+/// Provides the [FCMService] instance for push notifications.
+
+@ProviderFor(fcmService)
+const fcmServiceProvider = FcmServiceProvider._();
+
+/// Provides the [FCMService] instance for push notifications.
+
+final class FcmServiceProvider
+    extends $FunctionalProvider<FCMService, FCMService, FCMService>
+    with $Provider<FCMService> {
+  /// Provides the [FCMService] instance for push notifications.
+  const FcmServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'fcmServiceProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$fcmServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<FCMService> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  FCMService create(Ref ref) {
+    return fcmService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(FCMService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<FCMService>(value),
+    );
+  }
+}
+
+String _$fcmServiceHash() => r'd896e197769a8ff50cfbbe8d88377394fbdbcf76';
+
 /// Watches presence status for a specific user.
 ///
 /// Returns a stream of presence data including:
@@ -1852,7 +1898,7 @@ final class AllConversationsStreamProvider
 }
 
 String _$allConversationsStreamHash() =>
-    r'd714f021c101dbf2989b169ee77a4a761e5b6327';
+    r'626a7b788b65ab4651a0504c207c310376af0c0b';
 
 /// Stream provider for watching all conversations (both direct and groups) in real-time.
 ///
@@ -2016,7 +2062,7 @@ final class GroupPresenceStatusProvider
 }
 
 String _$groupPresenceStatusHash() =>
-    r'dcffb6f2edc5e02c567806603f1de9cc7c829c89';
+    r'ad13934708b1c46db0dc8637af614747a498afdb';
 
 /// Provides aggregated online status for a group conversation.
 ///

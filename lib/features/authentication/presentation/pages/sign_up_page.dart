@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
+import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
 
 /// Sign up page with email/password registration
 class SignUpPage extends ConsumerStatefulWidget {
@@ -63,6 +64,10 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
         // Sync user to Firestore
         final syncUseCase = ref.read(syncUserToFirestoreUseCaseProvider);
         await syncUseCase(user);
+
+        // Initialize FCM for push notifications
+        final fcmService = ref.read(fcmServiceProvider);
+        await fcmService.initialize(userId: user.uid);
 
         // Navigation will be handled by auth state listener in main app
         if (!mounted) return;

@@ -15,6 +15,7 @@ import 'package:message_ai/features/messaging/data/repositories/message_reposito
 import 'package:message_ai/features/messaging/data/services/auto_delivery_marker.dart';
 import 'package:message_ai/features/messaging/data/services/message_queue.dart';
 import 'package:message_ai/features/messaging/data/services/message_sync_service.dart';
+import 'package:message_ai/features/messaging/data/services/fcm_service.dart';
 import 'package:message_ai/features/messaging/data/services/presence_service.dart';
 import 'package:message_ai/features/messaging/data/services/typing_indicator_service.dart';
 import 'package:message_ai/features/messaging/domain/repositories/conversation_repository.dart';
@@ -296,6 +297,21 @@ AutoDeliveryMarker autoDeliveryMarker(Ref ref) {
 @Riverpod(keepAlive: true)
 PresenceService presenceService(Ref ref) {
   final service = PresenceService(
+    firestore: ref.watch(messagingFirestoreProvider),
+  );
+
+  // Dispose when provider is disposed
+  ref.onDispose(() {
+    service.dispose();
+  });
+
+  return service;
+}
+
+/// Provides the [FCMService] instance for push notifications.
+@Riverpod(keepAlive: true)
+FCMService fcmService(Ref ref) {
+  final service = FCMService(
     firestore: ref.watch(messagingFirestoreProvider),
   );
 

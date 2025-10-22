@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
 import 'package:message_ai/features/authentication/presentation/pages/password_reset_page.dart';
+import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
 
 /// Sign in page with email/password authentication
 class SignInPage extends ConsumerStatefulWidget {
@@ -77,6 +78,10 @@ class _SignInPageState extends ConsumerState<SignInPage> {
             }
           },
         );
+
+        // Initialize FCM for push notifications
+        final fcmService = ref.read(fcmServiceProvider);
+        await fcmService.initialize(userId: user.uid);
 
         // Navigation will be handled by auth state listener in main app
         if (!mounted) return;
