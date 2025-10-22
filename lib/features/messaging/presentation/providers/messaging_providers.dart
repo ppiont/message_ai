@@ -13,6 +13,7 @@ import 'package:message_ai/features/messaging/domain/repositories/conversation_r
 import 'package:message_ai/features/messaging/domain/repositories/message_repository.dart';
 import 'package:message_ai/features/messaging/domain/usecases/find_or_create_direct_conversation.dart';
 import 'package:message_ai/features/messaging/domain/usecases/get_conversation_by_id.dart';
+import 'package:message_ai/features/messaging/domain/usecases/mark_message_as_delivered.dart';
 import 'package:message_ai/features/messaging/domain/usecases/mark_message_as_read.dart';
 import 'package:message_ai/features/messaging/domain/usecases/send_message.dart';
 import 'package:message_ai/features/messaging/domain/usecases/watch_conversations.dart';
@@ -107,6 +108,12 @@ WatchMessages watchMessagesUseCase(Ref ref) {
 @riverpod
 MarkMessageAsRead markMessageAsReadUseCase(Ref ref) {
   return MarkMessageAsRead(ref.watch(messageRepositoryProvider));
+}
+
+/// Provides the [MarkMessageAsDelivered] use case.
+@riverpod
+MarkMessageAsDelivered markMessageAsDeliveredUseCase(Ref ref) {
+  return MarkMessageAsDelivered(ref.watch(messageRepositoryProvider));
 }
 
 /// Provides the [FindOrCreateDirectConversation] use case.

@@ -527,6 +527,60 @@ final class MarkMessageAsReadUseCaseProvider
 String _$markMessageAsReadUseCaseHash() =>
     r'd240148f0e42fc9777e039ef4f83e9ed6f06d9cc';
 
+/// Provides the [MarkMessageAsDelivered] use case.
+
+@ProviderFor(markMessageAsDeliveredUseCase)
+const markMessageAsDeliveredUseCaseProvider =
+    MarkMessageAsDeliveredUseCaseProvider._();
+
+/// Provides the [MarkMessageAsDelivered] use case.
+
+final class MarkMessageAsDeliveredUseCaseProvider
+    extends
+        $FunctionalProvider<
+          MarkMessageAsDelivered,
+          MarkMessageAsDelivered,
+          MarkMessageAsDelivered
+        >
+    with $Provider<MarkMessageAsDelivered> {
+  /// Provides the [MarkMessageAsDelivered] use case.
+  const MarkMessageAsDeliveredUseCaseProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'markMessageAsDeliveredUseCaseProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$markMessageAsDeliveredUseCaseHash();
+
+  @$internal
+  @override
+  $ProviderElement<MarkMessageAsDelivered> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  MarkMessageAsDelivered create(Ref ref) {
+    return markMessageAsDeliveredUseCase(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(MarkMessageAsDelivered value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<MarkMessageAsDelivered>(value),
+    );
+  }
+}
+
+String _$markMessageAsDeliveredUseCaseHash() =>
+    r'82dcb904b6791f58649e8ce689a66c66c1dd18f4';
+
 /// Provides the [FindOrCreateDirectConversation] use case.
 
 @ProviderFor(findOrCreateDirectConversationUseCase)

@@ -31,7 +31,8 @@ class ChatPage extends ConsumerStatefulWidget {
 
 class _ChatPageState extends ConsumerState<ChatPage> {
   final ScrollController _scrollController = ScrollController();
-  final Set<String> _markedAsRead = {}; // Track which messages we've marked
+  final Set<String> _markedAsRead = {}; // Track which messages we've marked as read
+  final Set<String> _markedAsDelivered = {}; // Track which messages we've marked as delivered
 
   @override
   void dispose() {
@@ -39,7 +40,28 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     super.dispose();
   }
 
-  /// Marks a message as read
+  /// Marks a message as delivered (when it arrives at recipient's device)
+  void _markMessageAsDelivered(String messageId) {
+    // Add to set immediately to prevent duplicate calls
+    _markedAsDelivered.add(messageId);
+
+    // Call use case asynchronously
+    final markAsDeliveredUseCase = ref.read(markMessageAsDeliveredUseCaseProvider);
+    markAsDeliveredUseCase(widget.conversationId, messageId).then((result) {
+      result.fold(
+        (failure) {
+          // Silently fail - delivery receipts are not critical
+          // Remove from set so we can retry later
+          _markedAsDelivered.remove(messageId);
+        },
+        (_) {
+          // Success - keep in set
+        },
+      );
+    });
+  }
+
+  /// Marks a message as read (when user actually sees it)
   void _markMessageAsRead(String messageId) {
     // Add to set immediately to prevent duplicate calls
     _markedAsRead.add(messageId);
@@ -139,7 +161,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         return const SizedBox.shrink();
       },
       loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 
@@ -205,7 +227,14 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             final messageId = message['id'] as String;
             final status = message['status'] as String? ?? 'sent';
 
-            // Mark incoming messages as read (only once)
+            // Mark incoming messages as delivered when they arrive (only once)
+            if (!isMe &&
+                status == 'sent' &&
+                !_markedAsDelivered.contains(messageId)) {
+              _markMessageAsDelivered(messageId);
+            }
+
+            // Mark incoming messages as read when user sees them (only once)
             if (!isMe &&
                 status != 'read' &&
                 !_markedAsRead.contains(messageId)) {
