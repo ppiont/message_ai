@@ -119,7 +119,6 @@ def send_message_notification(
                     android=messaging.AndroidConfig(
                         priority="high",
                         notification=messaging.AndroidNotification(
-                            icon="ic_notification",
                             color="#2196F3",
                             sound="default",
                             channel_id="messages",

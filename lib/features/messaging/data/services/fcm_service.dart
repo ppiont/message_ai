@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
@@ -20,10 +21,15 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 /// - Can only perform background operations
 ///
 /// Current implementation:
+/// - Initializes Firebase (required for background isolate)
 /// - Marks message as delivered in Firestore
 /// - Logs the notification
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Initialize Firebase (required in background isolate)
+  // This is safe to call multiple times
+  await Firebase.initializeApp();
+
   print('Background notification: ${message.notification?.title}');
 
   // Mark message as delivered if we have the necessary data
@@ -86,10 +92,10 @@ class FCMService {
     FirebaseMessaging? messaging,
     FirebaseFirestore? firestore,
     FlutterLocalNotificationsPlugin? localNotifications,
-  })  : _messaging = messaging ?? FirebaseMessaging.instance,
-        _firestore = firestore ?? FirebaseFirestore.instance,
-        _localNotifications =
-            localNotifications ?? FlutterLocalNotificationsPlugin();
+  }) : _messaging = messaging ?? FirebaseMessaging.instance,
+       _firestore = firestore ?? FirebaseFirestore.instance,
+       _localNotifications =
+           localNotifications ?? FlutterLocalNotificationsPlugin();
 
   // ============================================================================
   // Public API
@@ -244,12 +250,14 @@ class FCMService {
     // Create the channel on Android
     await _localNotifications
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.createNotificationChannel(androidChannel);
 
     // Initialize plugin
-    const initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const initializationSettingsAndroid = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
     const initializationSettingsIOS = DarwinInitializationSettings();
     const initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
@@ -303,7 +311,8 @@ class FCMService {
       channelDescription: 'New message notifications',
       importance: Importance.high,
       priority: Priority.high,
-      icon: '@mipmap/ic_launcher',
+      // Note: Using default icon since custom ic_notification doesn't exist
+      // To customize, add drawable/ic_notification.xml to res folder
       playSound: true,
       enableVibration: true,
       styleInformation: BigTextStyleInformation(''), // WhatsApp-style
