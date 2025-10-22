@@ -69,6 +69,10 @@ dependencies:
   equatable: ^2.0.5
   connectivity_plus: ^5.0.2
   dartz: ^0.10.1
+  rxdart: ^0.28.0
+
+  # Notifications ✅
+  flutter_local_notifications: ^19.5.0
 
 dev_dependencies:
   flutter_test:

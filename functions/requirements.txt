@@ -1,2 +1,4 @@
-firebase_functions~=0.1.0
-firebase-admin~=6.5.0
+firebase_functions~=0.4.2
+firebase-admin~=7.1.0
+google-cloud-translate==3.22.0
+google-cloud-secret-manager==2.25.0

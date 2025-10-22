@@ -1,0 +1,741 @@
+{
+	"meta": {
+		"generatedAt": "2025-10-22T22:50:28.788Z",
+		"tasksAnalyzed": 91,
+		"totalTasks": 148,
+		"analysisCount": 91,
+		"thresholdScore": 7,
+		"projectName": "Taskmaster",
+		"usedResearch": true
+	},
+	"complexityAnalysis": [
+		{
+			"taskId": 14,
+			"taskTitle": "Implement utility functions",
+			"complexityScore": 4,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the utility functions implementation into subtasks for date formatting, validation, and other common utilities. Consider how to structure the code for maximum reusability and testability.",
+			"reasoning": "This task involves creating several utility classes with different purposes (date formatting, validation, string manipulation, file handling). The complexity is moderate because each utility is relatively self-contained and follows common patterns. Unit testing is straightforward but comprehensive, requiring coverage of edge cases. The task doesn't have complex dependencies or state management concerns."
+		},
+		{
+			"taskId": 45,
+			"taskTitle": "Set up WorkManager for background tasks",
+			"complexityScore": 6,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the WorkManager implementation into subtasks for initial setup, periodic sync tasks, one-time tasks, and constraint handling. Consider how to test each component and ensure proper background execution.",
+			"reasoning": "Setting up WorkManager involves understanding platform-specific background processing, which adds complexity. The task requires configuring different types of background tasks (periodic and one-time) with various constraints. Testing background execution is challenging as it requires simulating different device states and network conditions. The high priority indicates its importance to the application's functionality."
+		},
+		{
+			"taskId": 47,
+			"taskTitle": "Implement image compression and thumbnails",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the image compression and thumbnail generation into subtasks for compression implementation, thumbnail generation, and adaptive resolution handling. Consider performance optimization and testing across different image types and sizes.",
+			"reasoning": "This task involves image processing which requires understanding of compression algorithms and memory management. Creating thumbnails with different resolutions adds complexity. Performance testing is critical as image processing can be resource-intensive. The implementation needs to handle various image formats and sizes efficiently while maintaining quality."
+		},
+		{
+			"taskId": 48,
+			"taskTitle": "Integrate cached_network_image",
+			"complexityScore": 3,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Break down the cached_network_image integration into subtasks for basic setup and advanced configuration. Consider caching strategies, placeholder handling, and cache management.",
+			"reasoning": "This task is relatively straightforward as it involves integrating an established library. The complexity comes from configuring optimal cache settings and implementing proper error handling. The task requires understanding caching strategies but doesn't involve complex custom implementations. Testing is straightforward with standard network image scenarios."
+		},
+		{
+			"taskId": 59,
+			"taskTitle": "Set up Firebase Cloud Functions",
+			"complexityScore": 7,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down the Firebase Cloud Functions setup into subtasks for project initialization, Secret Manager configuration, OpenAI proxy implementation, rate limiting, and App Check integration. Consider security best practices and testing strategies.",
+			"reasoning": "Setting up Firebase Cloud Functions involves server-side development in a different language (likely JavaScript/TypeScript), which adds complexity. Implementing secure API proxying with rate limiting and App Check verification requires careful security considerations. The task involves managing API keys securely through Secret Manager and implementing proper error handling. This is a foundational task that many other AI features depend on."
+		},
+		{
+			"taskId": 60,
+			"taskTitle": "Implement thread summarization Cloud Function",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the thread summarization function into subtasks for implementing the core summarization logic, caching mechanism, and error handling. Consider prompt engineering for optimal summarization quality.",
+			"reasoning": "This task requires implementing complex AI functionality using GPT models. Designing an effective system prompt for extracting key information from conversations requires careful prompt engineering. Implementing caching with TTL adds complexity. The task involves handling potentially large conversation data and ensuring the summaries are useful and accurate. Testing requires evaluating summary quality across different conversation types."
+		},
+		{
+			"taskId": 61,
+			"taskTitle": "Implement action item extraction Cloud Function",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the action item extraction function into subtasks for implementing the core extraction logic, JSON structure validation, and error handling. Consider prompt engineering for accurate action item identification.",
+			"reasoning": "This task involves complex AI functionality to extract structured data (action items) from unstructured conversations. Designing an effective system prompt to identify tasks, assignees, deadlines, and status requires careful prompt engineering. Ensuring the returned JSON is properly structured and validated adds complexity. Testing requires evaluating extraction quality across different conversation types and handling edge cases."
+		},
+		{
+			"taskId": 62,
+			"taskTitle": "Implement smart search Cloud Function",
+			"complexityScore": 7,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the smart search function into subtasks for embedding generation, vector search implementation, user filtering, and result formatting. Consider performance optimization for search operations.",
+			"reasoning": "This task involves implementing a Retrieval-Augmented Generation (RAG) system with vector embeddings, which is technically complex. Integrating with the embedding model and implementing vector search in Firestore requires specialized knowledge. Adding user filtering for privacy and configuring search parameters adds complexity. The task requires understanding of vector similarity measures and efficient search algorithms."
+		},
+		{
+			"taskId": 63,
+			"taskTitle": "Implement priority detection Cloud Function",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the priority detection function into subtasks for implementing the core detection logic, notification system integration, and Firestore updates. Consider prompt engineering for accurate priority classification.",
+			"reasoning": "This task requires implementing AI functionality to analyze message priority levels. Designing an effective system prompt for priority analysis requires careful prompt engineering. The task involves integrating with notification systems for high-priority messages and updating Firestore documents with detected priorities. Testing requires evaluating detection accuracy across different message types and ensuring proper notification delivery."
+		},
+		{
+			"taskId": 64,
+			"taskTitle": "Implement decision tracking Cloud Function",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the decision tracking function into subtasks for implementing the core extraction logic, Firestore storage integration, and caching mechanism. Consider prompt engineering for accurate decision identification.",
+			"reasoning": "This task involves complex AI functionality to extract structured decision data from unstructured conversations. Designing an effective system prompt to identify decisions, rationale, alternatives, deciders, and impact requires careful prompt engineering. Implementing storage in Firestore and caching for efficiency adds complexity. Testing requires evaluating extraction quality across different conversation types."
+		},
+		{
+			"taskId": 65,
+			"taskTitle": "Implement smart replies Cloud Function",
+			"complexityScore": 7,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the smart replies function into subtasks for conversation context analysis, reply generation, language detection, and caching implementation. Consider prompt engineering for contextually relevant and appropriate replies.",
+			"reasoning": "This task involves complex AI functionality to generate contextually relevant replies based on conversation history. The high priority indicates its importance to the application's user experience. The task requires analyzing conversation context, detecting language, and generating appropriate replies. Implementing caching with a short TTL adds complexity. Testing requires evaluating reply quality and appropriateness across different conversation contexts and languages."
+		},
+		{
+			"taskId": 66,
+			"taskTitle": "Implement message indexing Cloud Function",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the message indexing function into subtasks for embedding generation, Firestore integration, and context enhancement. Consider performance optimization for the indexing process.",
+			"reasoning": "This task involves implementing vector embeddings for messages, which requires specialized knowledge of embedding models. The function needs to trigger on new message creation and update Firestore documents with embedding vectors. Adding context information to improve embedding quality adds complexity. The task is foundational for semantic search functionality and requires careful implementation to ensure good search quality."
+		},
+		{
+			"taskId": 67,
+			"taskTitle": "Create AI feature entities and models",
+			"complexityScore": 4,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the AI feature entities and models creation into subtasks for each feature type (summaries, action items, smart replies, decisions). Consider serialization requirements and testing strategies.",
+			"reasoning": "This task involves defining domain entities and data models for multiple AI features. While not technically complex, it requires careful design to ensure the models properly represent the data structures needed for each feature. Implementing serialization and deserialization methods adds some complexity. The task is foundational for the AI features and requires thorough testing to ensure data integrity."
+		},
+		{
+			"taskId": 68,
+			"taskTitle": "Implement AI feature remote data source",
+			"complexityScore": 5,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down the AI feature remote data source implementation into subtasks for each AI feature (summarization, action items, smart replies, decisions, priority detection). Consider error handling and retry strategies.",
+			"reasoning": "This task involves creating a remote data source that interfaces with multiple Cloud Functions for different AI features. Implementing proper error handling and retry logic adds complexity. The task requires handling different response formats for each AI feature and converting errors to appropriate exceptions. Testing requires mocking Cloud Functions and simulating various success and failure scenarios."
+		},
+		{
+			"taskId": 69,
+			"taskTitle": "Implement AI feature repository",
+			"complexityScore": 4,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down the AI feature repository implementation into subtasks for each AI feature (summarization, action items, smart replies, decisions, priority detection). Consider error handling and data transformation strategies.",
+			"reasoning": "This task involves creating a repository layer that uses the remote data source for AI feature operations. While following established patterns, it requires implementing methods for multiple AI features. The task involves handling error cases and converting exceptions to failures. Testing requires mocking data sources and verifying proper error handling and data transformation."
+		},
+		{
+			"taskId": 70,
+			"taskTitle": "Implement AI feature use cases",
+			"complexityScore": 4,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down the AI feature use cases implementation into subtasks for each use case (smart replies, thread summarization, action items, priority detection, decision tracking). Consider input validation and error handling strategies.",
+			"reasoning": "This task involves creating use cases for multiple AI features following clean architecture principles. While following established patterns, it requires implementing input validation and error handling for each use case. The task is not technically complex but requires careful implementation to ensure proper separation of concerns. Testing requires mocking repositories and verifying proper input validation and error handling."
+		},
+		{
+			"taskId": 71,
+			"taskTitle": "Create AI feature providers",
+			"complexityScore": 5,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down the AI feature providers implementation into subtasks for each provider (smart replies, thread summarization, action items, priority detection, decision tracking). Consider state management and caching strategies.",
+			"reasoning": "This task involves implementing Riverpod providers for multiple AI features, which requires understanding of state management patterns. Using riverpod_annotation for code generation adds some complexity. The task requires handling loading, error, and success states for each feature and implementing caching for improved performance. Testing requires provider overrides and verifying state changes for different scenarios."
+		},
+		{
+			"taskId": 72,
+			"taskTitle": "Implement smart reply chips widget",
+			"complexityScore": 4,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Break down the smart reply chips widget implementation into subtasks for UI design and interaction handling. Consider animation implementation and testing strategies.",
+			"reasoning": "This task involves creating a UI widget for displaying smart reply suggestions as tappable chips. While not technically complex, it requires implementing proper UI states (loading, error) and handling user interactions. Adding animation for smooth appearance adds some complexity. The high priority indicates its importance to the application's user experience. Testing requires verifying UI components and interaction handling."
+		},
+		{
+			"taskId": 73,
+			"taskTitle": "Implement thread summary card widget",
+			"complexityScore": 4,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Break down the thread summary card widget implementation into subtasks for UI design and expandable functionality. Consider handling different summary lengths and testing strategies.",
+			"reasoning": "This task involves creating a UI widget for displaying conversation summaries with key topics, decisions, and open questions. Implementing expandable/collapsible functionality for long summaries adds some complexity. The task requires handling different UI states (loading, error) and testing with various summary lengths. While not technically complex, it requires careful UI design to present information effectively."
+		},
+		{
+			"taskId": 74,
+			"taskTitle": "Implement action items widget",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the action items widget implementation into subtasks for UI design, item completion functionality, and sorting implementation. Consider state management and testing strategies.",
+			"reasoning": "This task involves creating a UI widget for displaying action items with assignee, deadline, and status. Implementing functionality for marking items as complete and sorting by deadline or priority adds complexity. The task requires handling different UI states (empty, loading) and managing local state for item completion. Testing requires verifying UI components, sorting functionality, and item completion."
+		},
+		{
+			"taskId": 75,
+			"taskTitle": "Implement decisions widget",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the decisions widget implementation into subtasks for UI design, expandable functionality, and filtering implementation. Consider state management and testing strategies.",
+			"reasoning": "This task involves creating a UI widget for displaying decisions with rationale, alternatives, decider, and impact. Implementing expandable/collapsible functionality for details and filtering by impact level adds complexity. The task requires handling different UI states (empty, loading) and managing local state for filtering and expansion. Testing requires verifying UI components, filtering functionality, and expandable behavior."
+		},
+		{
+			"taskId": 76,
+			"taskTitle": "Integrate smart search in chat UI",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the smart search integration into subtasks for search UI implementation, results display, and navigation functionality. Consider search performance and testing strategies.",
+			"reasoning": "This task involves adding search functionality to the chat screen using the smart search Cloud Function. Implementing search results with highlighting and jump-to-message functionality adds complexity. The task requires handling different UI states (empty results, loading) and integrating with existing chat UI. Testing requires verifying search functionality, result display, and navigation to specific messages."
+		},
+		{
+			"taskId": 77,
+			"taskTitle": "Implement language detection with ML Kit",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the language detection implementation into subtasks for ML Kit integration, confidence threshold configuration, and caching mechanism. Consider performance optimization and testing strategies.",
+			"reasoning": "This task involves integrating Google ML Kit for on-device language detection, which requires understanding of machine learning concepts. Configuring confidence threshold for reliable detection and implementing caching adds complexity. The high priority indicates its importance to the translation features. Testing requires verifying detection accuracy with different languages and proper caching behavior."
+		},
+		{
+			"taskId": 78,
+			"taskTitle": "Implement translation service",
+			"complexityScore": 6,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the translation service implementation into subtasks for core translation functionality, caching mechanism, batch translation, and error handling. Consider performance optimization and testing strategies.",
+			"reasoning": "This task involves creating a service for translating messages, which requires integration with translation APIs. Implementing caching with TTL and batch translation for efficiency adds significant complexity. The high priority indicates its importance to the application's multilingual features. The task requires implementing error handling and retry logic. Testing requires verifying translation accuracy, caching behavior, and batch translation efficiency."
+		},
+		{
+			"taskId": 79,
+			"taskTitle": "Create translation entities and models",
+			"complexityScore": 3,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Break down the translation entities and models creation into subtasks for translated messages and language preferences. Consider serialization requirements and testing strategies.",
+			"reasoning": "This task involves defining domain entities and data models for translation features. It's relatively straightforward, following established patterns for entity and model creation. Implementing serialization and deserialization methods adds some complexity. Testing requires verifying proper conversion between entities and models and equality comparison."
+		},
+		{
+			"taskId": 80,
+			"taskTitle": "Implement translation remote data source",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the translation remote data source implementation into subtasks for API integration, error handling, and API key management. Consider retry strategies and testing approaches.",
+			"reasoning": "This task involves creating a remote data source for translation operations, which requires integration with external translation APIs. Implementing error handling, retry logic, and API key management adds complexity. Testing requires mocking translation API responses and verifying proper error handling and retry behavior."
+		},
+		{
+			"taskId": 81,
+			"taskTitle": "Implement translation repository",
+			"complexityScore": 4,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Break down the translation repository implementation into subtasks for language detection integration and translation operations. Consider error handling and testing strategies.",
+			"reasoning": "This task involves creating a repository that combines language detection and translation services. While following established patterns, it requires integrating two different services and handling error cases. The task involves converting exceptions to failures and implementing proper error handling. Testing requires mocking data sources and verifying proper error handling and service integration."
+		},
+		{
+			"taskId": 82,
+			"taskTitle": "Implement translation use cases",
+			"complexityScore": 3,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Break down the translation use cases implementation into subtasks for translate message and detect language. Consider input validation and error handling strategies.",
+			"reasoning": "This task involves creating use cases for translation operations following clean architecture principles. It's relatively straightforward, implementing input validation and error handling for two use cases. Testing requires mocking repositories and verifying proper input validation and error handling. The task follows established patterns and doesn't involve complex logic."
+		},
+		{
+			"taskId": 83,
+			"taskTitle": "Create translation providers",
+			"complexityScore": 4,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Break down the translation providers implementation into subtasks for language detection and translation state management. Consider caching strategies and testing approaches.",
+			"reasoning": "This task involves implementing Riverpod providers for translation state management. Using riverpod_annotation for code generation adds some complexity. The task requires handling loading, error, and success states for translation operations and implementing caching for improved performance. Testing requires provider overrides and verifying state changes for different scenarios."
+		},
+		{
+			"taskId": 84,
+			"taskTitle": "Implement translation toggle in chat UI",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the translation toggle implementation into subtasks for UI controls, translation display, and user preference management. Consider UI state handling and testing strategies.",
+			"reasoning": "This task involves adding translation controls to the chat screen and implementing functionality to display translated messages. The high priority indicates its importance to the application's multilingual features. The task requires handling different UI states during translation and storing user preferences. Testing requires verifying toggle functionality, message display with and without translation, and loading state handling."
+		},
+		{
+			"taskId": 85,
+			"taskTitle": "Implement language settings UI",
+			"complexityScore": 4,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Break down the language settings UI implementation into subtasks for language selection and translation preferences. Consider user preference storage and testing strategies.",
+			"reasoning": "This task involves creating a UI for managing language preferences and translation settings. While not technically complex, it requires implementing language selection, automatic detection options, and preference storage. Testing requires verifying UI components, language selection functionality, and preference storage."
+		},
+		{
+			"taskId": 86,
+			"taskTitle": "Implement formality detection Cloud Function",
+			"complexityScore": 5,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Break down the formality detection function into subtasks for core detection logic and language-specific considerations. Consider prompt engineering for accurate formality analysis.",
+			"reasoning": "This task involves implementing AI functionality to analyze message formality levels. Designing an effective system prompt for distinguishing between formal, informal, and neutral language requires careful prompt engineering. Adding language-specific considerations adds complexity. Testing requires evaluating detection accuracy across different languages and formality levels."
+		},
+		{
+			"taskId": 87,
+			"taskTitle": "Set up internationalization",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the internationalization setup into subtasks for ARB file creation, localization delegate configuration, and language switching implementation. Consider testing strategies for different locales.",
+			"reasoning": "This task involves configuring the app for multi-language support, which requires understanding of internationalization concepts. Creating ARB files for different languages and setting up localization delegates adds complexity. The high priority indicates its importance to the application's multilingual features. Testing requires verifying proper localization across different languages and language switching functionality."
+		},
+		{
+			"taskId": 88,
+			"taskTitle": "Implement app theme",
+			"complexityScore": 4,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the app theme implementation into subtasks for light/dark theme configuration, theme switching, and responsive design. Consider testing strategies for different screen sizes.",
+			"reasoning": "This task involves creating theme configurations for the application, which requires understanding of Flutter's theming system. Implementing theme switching functionality and responsive design considerations adds complexity. Creating custom theme extensions for app-specific styling requires careful design. Testing requires verifying theme application across different UI components and screen sizes."
+		},
+		{
+			"taskId": 89,
+			"taskTitle": "Set up app routing",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the app routing setup into subtasks for route definitions, route guards, and deep linking support. Consider testing strategies for navigation flows.",
+			"reasoning": "This task involves configuring the navigation system for the application, which requires understanding of routing concepts. Implementing route guards for authentication and deep linking support adds complexity. The high priority indicates its importance to the application's core functionality. Testing requires verifying proper navigation between screens and route guard functionality."
+		},
+		{
+			"taskId": 90,
+			"taskTitle": "Implement Firebase Crashlytics",
+			"complexityScore": 4,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Break down the Firebase Crashlytics implementation into subtasks for basic setup and advanced configuration. Consider testing strategies for crash reporting.",
+			"reasoning": "This task involves integrating Firebase Crashlytics for crash reporting, which requires understanding of error handling concepts. Implementing custom keys and logs for better debugging and non-fatal error reporting adds some complexity. Testing requires simulating crashes and verifying proper reporting."
+		},
+		{
+			"taskId": 91,
+			"taskTitle": "Set up Firebase App Check",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the Firebase App Check setup into subtasks for configuration, attestation providers, and enforcement setup. Consider testing strategies for security verification.",
+			"reasoning": "This task involves configuring Firebase App Check for enhanced security, which requires understanding of security concepts. Implementing attestation providers for different platforms and setting up enforcement for various Firebase services adds significant complexity. The high priority indicates its importance to the application's security. Testing requires verifying protected resource access and error handling."
+		},
+		{
+			"taskId": 92,
+			"taskTitle": "Implement Firestore security rules",
+			"complexityScore": 7,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the Firestore security rules implementation into subtasks for user access control, conversation access control, data validation, and rate limiting. Consider testing strategies for security verification.",
+			"reasoning": "This task involves configuring security rules for Firestore collections, which requires deep understanding of Firestore security concepts. Implementing rules for access control, data validation, and rate limiting adds significant complexity. The high priority indicates its importance to the application's security. Testing requires using the Firebase emulator to verify rule effectiveness across different scenarios."
+		},
+		{
+			"taskId": 93,
+			"taskTitle": "Implement Storage security rules",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the Storage security rules implementation into subtasks for access control, file validation, and path-based rules. Consider testing strategies for security verification.",
+			"reasoning": "This task involves configuring security rules for Firebase Storage, which requires understanding of Storage security concepts. Implementing rules for access control, file validation, and path-based access adds complexity. The high priority indicates its importance to the application's security. Testing requires using the Firebase emulator to verify rule effectiveness across different scenarios."
+		},
+		{
+			"taskId": 94,
+			"taskTitle": "Set up CI/CD with GitHub Actions",
+			"complexityScore": 6,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the CI/CD setup into subtasks for test workflow, iOS deployment, Android deployment, and pull request validation. Consider testing strategies for pipeline verification.",
+			"reasoning": "This task involves configuring continuous integration and deployment pipelines, which requires understanding of CI/CD concepts and GitHub Actions. Setting up test jobs with coverage checking and deployment jobs for multiple platforms adds significant complexity. Testing requires verifying pipeline functionality with sample commits and ensuring proper environment configuration."
+		},
+		{
+			"taskId": 95,
+			"taskTitle": "Set up Fastlane for iOS deployment",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the Fastlane setup for iOS into subtasks for TestFlight deployment, certificate management, and version automation. Consider testing strategies for deployment verification.",
+			"reasoning": "This task involves configuring Fastlane for iOS deployment, which requires understanding of iOS deployment concepts and Fastlane. Implementing certificate and provisioning profile management with match and version bump automation adds significant complexity. Testing requires manual execution of Fastlane commands and verifying proper deployment to TestFlight."
+		},
+		{
+			"taskId": 96,
+			"taskTitle": "Set up Fastlane for Android deployment",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the Fastlane setup for Android into subtasks for internal testing deployment, Play Store deployment, and version management. Consider testing strategies for deployment verification.",
+			"reasoning": "This task involves configuring Fastlane for Android deployment, which requires understanding of Android deployment concepts and Fastlane. Implementing Play Store deployment with supply and version code/name management adds complexity. Testing requires manual execution of Fastlane commands and verifying proper deployment to internal testing and Play Store."
+		},
+		{
+			"taskId": 97,
+			"taskTitle": "Implement pagination for Firestore queries",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the pagination implementation into subtasks for conversation list pagination, message list pagination, and UI integration. Consider performance optimization and testing strategies.",
+			"reasoning": "This task involves implementing pagination for Firestore queries, which requires understanding of Firestore query concepts. Using limit and startAfter for efficient pagination and implementing cursor-based pagination for message history adds complexity. The high priority indicates its importance to the application's performance. Testing requires verifying pagination with large datasets and proper UI integration."
+		},
+		{
+			"taskId": 98,
+			"taskTitle": "Configure Firestore offline persistence",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the offline persistence configuration into subtasks for persistence setup, cache size management, and cache clearing functionality. Consider testing strategies for offline scenarios.",
+			"reasoning": "This task involves configuring Firestore offline caching, which requires understanding of Firestore persistence concepts. Implementing cache size management for different devices and cache clearing functionality adds complexity. The high priority indicates its importance to the application's offline capabilities. Testing requires verifying offline functionality by disabling network and testing cache management."
+		},
+		{
+			"taskId": 99,
+			"taskTitle": "Implement denormalization for Firestore",
+			"complexityScore": 7,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the denormalization implementation into subtasks for conversation denormalization, user data denormalization, and update propagation. Consider data consistency and testing strategies.",
+			"reasoning": "This task involves implementing denormalization techniques for Firestore, which requires deep understanding of database design concepts. Implementing update propagation for denormalized data and consistency checks adds significant complexity. The high priority indicates its importance to the application's performance. Testing requires verifying query performance improvement and data consistency."
+		},
+		{
+			"taskId": 100,
+			"taskTitle": "Optimize Firestore listeners",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the Firestore listener optimization into subtasks for scoped listeners, query optimization, and listener lifecycle management. Consider performance testing strategies.",
+			"reasoning": "This task involves optimizing Firestore listeners, which requires understanding of Firestore real-time updates. Implementing scoped listeners, query optimization, and listener lifecycle management adds complexity. The high priority indicates its importance to the application's performance. Testing requires verifying listener efficiency with different query patterns and proper cleanup."
+		},
+		{
+			"taskId": 101,
+			"taskTitle": "Implement OpenAI API caching",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the OpenAI API caching implementation into subtasks for long-lived cache, short-lived cache, and cache invalidation. Consider performance optimization and testing strategies.",
+			"reasoning": "This task involves implementing caching for OpenAI API calls, which requires understanding of caching strategies. Using different storage mechanisms for different cache durations and implementing cache invalidation adds complexity. The high priority indicates its importance to cost reduction. Testing requires verifying cache hit rates and invalidation logic."
+		},
+		{
+			"taskId": 102,
+			"taskTitle": "Implement batch API for OpenAI",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the batch API implementation into subtasks for request collection, batch processing, and timeout-based flushing. Consider performance optimization and testing strategies.",
+			"reasoning": "This task involves implementing batching for OpenAI API calls, which requires understanding of asynchronous processing. Implementing request collection, batch processing, and timeout-based flushing adds complexity. Testing requires verifying batching efficiency with different batch sizes and proper timeout handling."
+		},
+		{
+			"taskId": 103,
+			"taskTitle": "Implement token limiting for OpenAI",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the token limiting implementation into subtasks for token counting, context truncation, and sliding window approach. Consider quality impact and testing strategies.",
+			"reasoning": "This task involves implementing token limiting for OpenAI API calls, which requires understanding of token counting concepts. Implementing context truncation and sliding window approach for thread summarization adds complexity. Testing requires verifying token counting accuracy and quality impact of limiting strategies."
+		},
+		{
+			"taskId": 104,
+			"taskTitle": "Implement PII detection",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the PII detection implementation into subtasks for detection algorithms, redaction/masking, and allowlist functionality. Consider privacy implications and testing strategies.",
+			"reasoning": "This task involves implementing PII detection for sensitive information, which requires understanding of privacy concepts and pattern recognition. Implementing redaction/masking and allowlist functionality adds complexity. The high priority indicates its importance to user privacy. Testing requires verifying detection accuracy with different PII types and proper redaction."
+		},
+		{
+			"taskId": 105,
+			"taskTitle": "Implement rate limiting for Cloud Functions",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the rate limiting implementation into subtasks for quota tracking, limit enforcement, and user feedback. Consider scalability and testing strategies.",
+			"reasoning": "This task involves implementing rate limiting for Cloud Functions, which requires understanding of distributed systems concepts. Implementing quota tracking in Firestore and graceful degradation adds complexity. The high priority indicates its importance to preventing abuse. Testing requires verifying limit enforcement with high request rates and proper user feedback."
+		},
+		{
+			"taskId": 106,
+			"taskTitle": "Set up Secret Manager for API keys",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the Secret Manager setup into subtasks for initial configuration, access control, and key rotation. Consider security best practices and testing strategies.",
+			"reasoning": "This task involves configuring Secret Manager for secure storage of API keys, which requires understanding of security concepts. Implementing access control, key rotation, and fallback mechanisms adds complexity. The high priority indicates its importance to API key security. Testing requires verifying secret access and key rotation functionality."
+		},
+		{
+			"taskId": 107,
+			"taskTitle": "Implement vector search indexing",
+			"complexityScore": 7,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the vector search indexing implementation into subtasks for index configuration, embedding generation, and search optimization. Consider performance implications and testing strategies.",
+			"reasoning": "This task involves setting up vector search for semantic message search, which requires specialized knowledge of vector databases and embeddings. Configuring Firestore vector indexes and implementing embedding generation adds significant complexity. Testing requires verifying search quality with different queries and embedding generation accuracy."
+		},
+		{
+			"taskId": 108,
+			"taskTitle": "Implement translation memory",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the translation memory implementation into subtasks for storage design, fuzzy matching algorithm, and memory update logic. Consider performance optimization and testing strategies.",
+			"reasoning": "This task involves implementing translation memory for reusing previous translations, which requires understanding of natural language processing concepts. Implementing fuzzy matching for similar phrases and memory update logic adds significant complexity. Testing requires verifying memory effectiveness with repeated phrases and fuzzy matching accuracy."
+		},
+		{
+			"taskId": 109,
+			"taskTitle": "Implement batch translation",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the batch translation implementation into subtasks for request collection, batch processing, and timeout-based flushing. Consider performance optimization and testing strategies.",
+			"reasoning": "This task involves implementing batch translation for group chats, which requires understanding of asynchronous processing. Implementing request collection, batch processing, and timeout-based flushing adds complexity. Testing requires verifying batching efficiency with different batch sizes and proper timeout handling."
+		},
+		{
+			"taskId": 110,
+			"taskTitle": "Implement translation optimization",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the translation optimization implementation into subtasks for language pair filtering, detection caching, and translation caching. Consider performance metrics and testing strategies.",
+			"reasoning": "This task involves implementing optimization strategies for translation, which requires understanding of caching and language detection. Implementing language pair filtering, detection caching, and translation caching with a specific hit rate target adds complexity. Testing requires verifying optimization effectiveness with different language scenarios and measuring cache hit rates."
+		},
+		{
+			"taskId": 111,
+			"taskTitle": "Set up performance monitoring",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the performance monitoring setup into subtasks for Firebase configuration, custom traces, and HTTP monitoring. Consider metrics analysis and testing strategies.",
+			"reasoning": "This task involves configuring performance monitoring, which requires understanding of performance metrics and Firebase Performance Monitoring. Implementing custom traces for critical operations and HTTP request monitoring adds complexity. Testing requires verifying trace recording and automatic performance collection."
+		},
+		{
+			"taskId": 112,
+			"taskTitle": "Implement error boundary widget",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the error boundary implementation into subtasks for error catching, reporting integration, and fallback UI. Consider user experience and testing strategies.",
+			"reasoning": "This task involves creating an error boundary widget for graceful error handling, which requires understanding of Flutter's error handling mechanisms. Implementing error reporting to Crashlytics, retry functionality, and fallback UI adds complexity. Testing requires simulating different error scenarios and verifying proper handling."
+		},
+		{
+			"taskId": 113,
+			"taskTitle": "Implement animations and transitions",
+			"complexityScore": 5,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the animations implementation into subtasks for page transitions, micro-interactions, loading animations, and list animations. Consider performance optimization and testing strategies.",
+			"reasoning": "This task involves implementing various animations and transitions, which requires understanding of Flutter's animation system. Creating smooth, performant animations for different UI elements adds complexity. Testing requires verifying animation performance on different devices and ensuring accessibility considerations are met."
+		},
+		{
+			"taskId": 114,
+			"taskTitle": "Implement deep linking",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the deep linking implementation into subtasks for platform configuration, link handling, and authentication integration. Consider testing strategies for different link scenarios.",
+			"reasoning": "This task involves implementing deep linking support, which requires understanding of platform-specific configurations. Implementing link handlers, authentication handling, and analytics adds complexity. Testing requires verifying proper navigation with different link formats and authentication scenarios."
+		},
+		{
+			"taskId": 115,
+			"taskTitle": "Set up analytics",
+			"complexityScore": 4,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the analytics setup into subtasks for Firebase configuration, event tracking, and user property tracking. Consider data analysis and testing strategies.",
+			"reasoning": "This task involves configuring analytics for user behavior tracking, which requires understanding of analytics concepts. Implementing screen tracking, custom events, and user property tracking adds some complexity. Testing requires verifying event recording and proper tracking configuration."
+		},
+		{
+			"taskId": 116,
+			"taskTitle": "Implement A/B testing",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the A/B testing implementation into subtasks for Remote Config setup, experiment configuration, and analytics integration. Consider testing strategies for variant verification.",
+			"reasoning": "This task involves setting up A/B testing, which requires understanding of experiment design and Firebase Remote Config. Implementing feature flags, experiment tracking, and analytics integration adds complexity. Testing requires verifying variant assignment and proper experiment tracking."
+		},
+		{
+			"taskId": 117,
+			"taskTitle": "Implement app review prompts",
+			"complexityScore": 3,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Break down the app review prompts implementation into subtasks for timing logic and UI implementation. Consider user experience and testing strategies.",
+			"reasoning": "This task involves adding prompts for app store reviews, which is relatively straightforward. Implementing logic for determining when to show prompts and frequency limiting adds some complexity. Testing requires verifying prompt timing and proper analytics integration."
+		},
+		{
+			"taskId": 118,
+			"taskTitle": "Conduct security audit",
+			"complexityScore": 8,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down the security audit into subtasks for authentication review, Firestore/Storage rules review, Cloud Function security, data exposure analysis, and dependency vulnerability check. Consider documentation and remediation strategies.",
+			"reasoning": "This task involves performing a comprehensive security audit, which requires deep understanding of security concepts across multiple domains. Reviewing authentication, database rules, API security, and dependencies adds significant complexity. The high priority indicates its importance to application security. Testing requires penetration testing and verification of security measures."
+		},
+		{
+			"taskId": 119,
+			"taskTitle": "Conduct load testing",
+			"complexityScore": 7,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the load testing into subtasks for environment setup, test scenario creation, performance analysis, and optimization. Consider scalability metrics and documentation strategies.",
+			"reasoning": "This task involves performing load testing to verify scalability, which requires understanding of performance testing concepts. Setting up test environments, creating scenarios, and analyzing results adds significant complexity. The high priority indicates its importance to application scalability. Testing requires running tests with different user loads and analyzing metrics."
+		},
+		{
+			"taskId": 120,
+			"taskTitle": "Prepare for app store submission",
+			"complexityScore": 6,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the app store preparation into subtasks for listing creation, screenshot preparation, compliance verification, and store configuration. Consider submission requirements and testing strategies.",
+			"reasoning": "This task involves completing final preparations for app store submission, which requires understanding of app store guidelines and submission processes. Creating listings, preparing materials, and ensuring compliance adds complexity. The high priority indicates its importance to application release. Testing requires verifying all submission materials and compliance with guidelines."
+		},
+		{
+			"taskId": 124,
+			"taskTitle": "Set Up Google Cloud Translation API Integration",
+			"complexityScore": 7,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the Google Cloud Translation API integration into subtasks for Cloud Function implementation, Secret Manager integration, caching mechanism, and rate limiting. Consider security, performance, and testing strategies.",
+			"reasoning": "This task involves creating a server-side integration with Google Cloud Translation API, which requires Python development and understanding of Cloud Functions. Implementing secure API key storage, caching with specific hit rate targets, and rate limiting adds significant complexity. The high priority indicates its importance to the translation features. Testing requires verifying translation accuracy, caching behavior, and rate limiting."
+		},
+		{
+			"taskId": 125,
+			"taskTitle": "Implement Language Detection with ML Kit",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the language detection implementation into subtasks for ML Kit integration, confidence threshold handling, and SendMessage integration. Consider performance optimization and testing strategies.",
+			"reasoning": "This task involves integrating Google ML Kit for on-device language detection, which requires understanding of machine learning concepts. Implementing confidence threshold handling, fallback mechanisms, and integration with the message sending flow adds complexity. The high priority indicates its importance to the translation features. Testing requires verifying detection accuracy across multiple languages and proper integration."
+		},
+		{
+			"taskId": 126,
+			"taskTitle": "Update Message Entity and Model for Translation",
+			"complexityScore": 4,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the Message entity update into subtasks for schema modification, migration function, and code path updates. Consider backward compatibility and testing strategies.",
+			"reasoning": "This task involves extending existing data models to support translation features, which requires careful schema design. Implementing migration for existing messages and updating all code paths adds complexity. Testing requires verifying serialization/deserialization and backward compatibility with existing data."
+		},
+		{
+			"taskId": 127,
+			"taskTitle": "Implement Real-Time Inline Translation UI",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the inline translation UI implementation into subtasks for translation button, overlay widget, and animation. Consider user experience and testing strategies.",
+			"reasoning": "This task involves creating UI components for inline message translation, which requires careful UI design. Implementing translation toggle functionality with animations, loading indicators, and error states adds complexity. The high priority indicates its importance to the translation features. Testing requires verifying UI state changes and proper display across different scenarios."
+		},
+		{
+			"taskId": 128,
+			"taskTitle": "Implement Language Detection & Auto-Translate Integration",
+			"complexityScore": 7,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the auto-translate integration into subtasks for detection integration, batch translation, Firestore storage, and background processing. Consider performance optimization and testing strategies.",
+			"reasoning": "This task involves integrating automatic language detection and translation into the message sending flow, which requires careful system design. Implementing batch translation, recipient language handling, and background processing adds significant complexity. The high priority indicates its importance to the translation features. Testing requires verifying end-to-end flow and performance with multiple recipients."
+		},
+		{
+			"taskId": 129,
+			"taskTitle": "Implement Cultural Context Hints Feature",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the cultural context hints implementation into subtasks for Cloud Function creation, UI badge implementation, and tooltip display. Consider prompt engineering and testing strategies.",
+			"reasoning": "This task involves creating AI-powered cultural context detection, which requires understanding of natural language processing concepts. Implementing the Cloud Function with GPT-4o-mini, UI badges, and tooltips adds complexity. The high priority indicates its importance to the cultural understanding features. Testing requires verifying detection accuracy and proper UI display."
+		},
+		{
+			"taskId": 130,
+			"taskTitle": "Implement Formality Level Adjustment Feature",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the formality adjustment implementation into subtasks for Cloud Function creation, UI controls, and real-time preview. Consider prompt engineering and testing strategies.",
+			"reasoning": "This task involves creating formality analysis and adjustment functionality, which requires understanding of natural language processing concepts. Implementing the Cloud Function with GPT-4o-mini, formality selection UI, and real-time preview adds complexity. The high priority indicates its importance to the communication features. Testing requires verifying adjustment accuracy across different formality levels."
+		},
+		{
+			"taskId": 131,
+			"taskTitle": "Implement Slang/Idiom Explanations Feature",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the idiom explanations implementation into subtasks for Cloud Function creation, contextual menu integration, and bottom sheet UI. Consider prompt engineering and testing strategies.",
+			"reasoning": "This task involves creating functionality for explaining idioms and slang, which requires understanding of natural language processing concepts. Implementing the Cloud Function with GPT-4o-mini, contextual menu, and bottom sheet UI adds complexity. The high priority indicates its importance to the cultural understanding features. Testing requires verifying detection accuracy and proper UI display."
+		},
+		{
+			"taskId": 132,
+			"taskTitle": "Implement Context-Aware Smart Replies with RAG Pipeline",
+			"complexityScore": 8,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down the smart replies implementation into subtasks for embedding generation, style learning, semantic search, reply generation, and UI implementation. Consider performance optimization and testing strategies.",
+			"reasoning": "This task involves creating advanced context-aware smart reply generation using RAG, which requires deep understanding of natural language processing and vector embeddings. Implementing embedding storage, semantic search, style learning, and reply generation adds significant complexity. The high priority indicates its importance to the user experience. Testing requires verifying reply quality and relevance across different contexts."
+		},
+		{
+			"taskId": 133,
+			"taskTitle": "Complete Group Chat Polish and Testing",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the group chat polish into subtasks for aggregate read receipts, typing indicators, and performance optimization. Consider testing strategies for large groups.",
+			"reasoning": "This task involves verifying and polishing group chat features, which requires comprehensive testing. Implementing aggregate read receipts, group typing indicators, and performance optimizations adds complexity. Testing requires verifying functionality with multiple participants and large message volumes."
+		},
+		{
+			"taskId": 134,
+			"taskTitle": "Performance Testing and Optimization",
+			"complexityScore": 7,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the performance optimization into subtasks for scrolling performance, cold start time, image loading, and memory management. Consider measurement methodologies and testing strategies.",
+			"reasoning": "This task involves profiling and optimizing app performance, which requires deep understanding of Flutter performance concepts. Optimizing scrolling performance, cold start time, image loading, and memory usage adds significant complexity. Testing requires careful measurement and verification across different devices."
+		},
+		{
+			"taskId": 135,
+			"taskTitle": "Mobile Lifecycle Testing",
+			"complexityScore": 6,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the lifecycle testing into subtasks for backgrounding/foregrounding, force quit recovery, network interruption handling, and push notification testing. Consider documentation and verification strategies.",
+			"reasoning": "This task involves comprehensive testing of mobile lifecycle scenarios, which requires understanding of mobile application lifecycle concepts. Testing backgrounding, force quit, network interruptions, and push notifications across different states adds complexity. The task requires careful documentation and verification of results."
+		},
+		{
+			"taskId": 136,
+			"taskTitle": "Implement RAG Pipeline for Semantic Search",
+			"complexityScore": 7,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the RAG pipeline implementation into subtasks for embedding generation, similarity calculation, and search function. Consider performance optimization and testing strategies.",
+			"reasoning": "This task involves setting up a production-ready RAG pipeline for semantic search, which requires deep understanding of vector embeddings and similarity search. Implementing embedding generation, storage, and cosine similarity calculation adds significant complexity. Testing requires verifying search accuracy and performance with large message volumes."
+		},
+		{
+			"taskId": 137,
+			"taskTitle": "Security Hardening and Firebase App Check",
+			"complexityScore": 8,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the security hardening into subtasks for Firestore rules, Cloud Functions security, App Check implementation, and PII detection. Consider testing strategies for security verification.",
+			"reasoning": "This task involves comprehensive security hardening, which requires deep understanding of security concepts across multiple domains. Implementing secure Firestore rules, Cloud Function security, App Check, and PII detection adds significant complexity. Testing requires verifying security measures through penetration testing and unauthorized access attempts."
+		},
+		{
+			"taskId": 138,
+			"taskTitle": "Comprehensive Documentation",
+			"complexityScore": 5,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the documentation creation into subtasks for README, architecture documentation, API documentation, and testing documentation. Consider clarity, completeness, and verification strategies.",
+			"reasoning": "This task involves creating comprehensive documentation for the application, which requires clear communication and technical writing skills. Creating multiple documentation files with diagrams, code examples, and troubleshooting guides adds complexity. Testing requires verification of accuracy and completeness through team review."
+		},
+		{
+			"taskId": 139,
+			"taskTitle": "Create Demo Video (5-7 minutes)",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the demo video creation into subtasks for script writing, recording, and editing. Consider content organization and quality verification strategies.",
+			"reasoning": "This task involves creating a comprehensive demo video, which requires planning, recording, and editing skills. Creating a structured video that showcases multiple features and technical achievements adds complexity. Testing requires review for clarity, accuracy, and production quality."
+		},
+		{
+			"taskId": 140,
+			"taskTitle": "Create Persona Brainlift Document",
+			"complexityScore": 3,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Break down the persona document creation into subtasks for persona definition and feature mapping. Consider clarity, completeness, and verification strategies.",
+			"reasoning": "This task involves documenting the International Communicator persona, which is relatively straightforward. Creating a structured document with pain points, solutions, and feature mapping requires clear communication but isn't technically complex. Testing requires review for clarity and completeness."
+		},
+		{
+			"taskId": 141,
+			"taskTitle": "Create Social Media Post",
+			"complexityScore": 2,
+			"recommendedSubtasks": 1,
+			"expansionPrompt": "Create an engaging social media post that highlights the key features, technology stack, and achievements of the project. Consider platform-specific formats and engagement strategies.",
+			"reasoning": "This task involves creating social media content, which is relatively simple. Crafting engaging content that highlights project features and achievements requires communication skills but isn't technically complex. Testing requires review for accuracy and engagement potential."
+		},
+		{
+			"taskId": 142,
+			"taskTitle": "Final Testing and Bug Fixes",
+			"complexityScore": 8,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down the final testing into subtasks for core messaging, offline support, group chat, mobile lifecycle, performance, AI features, advanced AI, and technical verification. Consider documentation and prioritization strategies.",
+			"reasoning": "This task involves comprehensive end-to-end testing and bug fixing, which requires deep understanding of the entire application. Testing multiple feature areas, fixing critical bugs, and documenting results adds significant complexity. The high priority indicates its importance to application quality. The task requires methodical testing and prioritized bug fixing."
+		},
+		{
+			"taskId": 143,
+			"taskTitle": "Implement Translation UI Controller",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the Translation UI Controller implementation into subtasks for state management, translation operations, and caching. Consider performance optimization and testing strategies.",
+			"reasoning": "This task involves creating a controller to manage translation state and operations, which requires understanding of state management patterns. Implementing translation visibility toggling, request handling, and caching adds complexity. The high priority indicates its importance to the translation features. Testing requires verifying state management and proper integration with Cloud Functions."
+		},
+		{
+			"taskId": 144,
+			"taskTitle": "Implement Cultural Context Analysis Service",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the Cultural Context Analysis Service implementation into subtasks for Cloud Function integration, background queue, and caching mechanism. Consider performance optimization and testing strategies.",
+			"reasoning": "This task involves creating a service for cultural context analysis, which requires integration with AI services. Implementing background processing, caching, and error handling adds complexity. The high priority indicates its importance to the cultural understanding features. Testing requires verifying analysis accuracy and proper caching behavior."
+		},
+		{
+			"taskId": 145,
+			"taskTitle": "Implement Formality Adjustment Service",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the Formality Adjustment Service implementation into subtasks for Cloud Function integration, formality detection, and adjustment operations. Consider performance optimization and testing strategies.",
+			"reasoning": "This task involves creating a service for formality analysis and adjustment, which requires integration with AI services. Implementing formality detection, adjustment operations, and caching adds complexity. The high priority indicates its importance to the communication features. Testing requires verifying adjustment accuracy across different formality levels."
+		},
+		{
+			"taskId": 146,
+			"taskTitle": "Implement Idiom Explanation Service",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the Idiom Explanation Service implementation into subtasks for Cloud Function integration, JSON parsing, and caching mechanism. Consider performance optimization and testing strategies.",
+			"reasoning": "This task involves creating a service for idiom and slang explanation, which requires integration with AI services. Implementing JSON parsing, caching, and error handling adds complexity. The high priority indicates its importance to the cultural understanding features. Testing requires verifying explanation accuracy and proper JSON handling."
+		},
+		{
+			"taskId": 147,
+			"taskTitle": "Implement Smart Reply Service with Style Learning",
+			"complexityScore": 7,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the Smart Reply Service implementation into subtasks for style analysis, semantic search, reply generation, and caching. Consider performance optimization and testing strategies.",
+			"reasoning": "This task involves creating a service for generating context-aware smart replies, which requires integration with AI services and vector search. Implementing style analysis, semantic search, reply generation, and caching adds significant complexity. The high priority indicates its importance to the user experience. Testing requires verifying reply quality and style matching."
+		},
+		{
+			"taskId": 148,
+			"taskTitle": "Implement Comprehensive Error Handling and Retry Logic",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the error handling implementation into subtasks for error categorization, retry strategy, and graceful degradation. Consider monitoring integration and testing strategies.",
+			"reasoning": "This task involves creating a robust error handling and retry system, which requires understanding of error management patterns. Implementing error categorization, exponential backoff, circuit breaker, and graceful degradation adds complexity. Testing requires simulating various error scenarios and verifying proper handling and recovery."
+		}
+	]
+}
