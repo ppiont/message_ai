@@ -28,12 +28,23 @@ class FCMService {
 
   /// Initializes FCM for the given user.
   ///
+  /// - Requests notification permissions
   /// - Retrieves current FCM token
   /// - Saves token to Firestore
   /// - Listens for token refresh events
   ///
   /// Should be called after user logs in.
   Future<void> initialize({required String userId}) async {
+    // Request permissions first (required for iOS, helpful for Android 13+)
+    final status = await requestPermission();
+
+    // Only proceed if permissions granted
+    if (status != AuthorizationStatus.authorized &&
+        status != AuthorizationStatus.provisional) {
+      // Permissions denied - can't get token
+      return;
+    }
+
     // Get current token
     final token = await getToken();
     if (token != null) {

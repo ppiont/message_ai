@@ -311,9 +311,7 @@ PresenceService presenceService(Ref ref) {
 /// Provides the [FCMService] instance for push notifications.
 @Riverpod(keepAlive: true)
 FCMService fcmService(Ref ref) {
-  final service = FCMService(
-    firestore: ref.watch(messagingFirestoreProvider),
-  );
+  final service = FCMService(firestore: ref.watch(messagingFirestoreProvider));
 
   // Dispose when provider is disposed
   ref.onDispose(() {
