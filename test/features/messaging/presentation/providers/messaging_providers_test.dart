@@ -191,7 +191,10 @@ void main() {
       addTearDown(container.dispose);
 
       when(
-        () => mockWatchMessages(conversationId: any(named: 'conversationId')),
+        () => mockWatchMessages(
+          conversationId: any(named: 'conversationId'),
+          currentUserId: any(named: 'currentUserId'),
+        ),
       ).thenAnswer((_) => Stream.value(Right([testMessage])));
 
       // Act
@@ -227,7 +230,10 @@ void main() {
       addTearDown(container.dispose);
 
       when(
-        () => mockWatchMessages(conversationId: any(named: 'conversationId')),
+        () => mockWatchMessages(
+          conversationId: any(named: 'conversationId'),
+          currentUserId: any(named: 'currentUserId'),
+        ),
       ).thenAnswer((_) => Stream.value(const Right([])));
 
       // Act
@@ -252,7 +258,10 @@ void main() {
       addTearDown(container.dispose);
 
       when(
-        () => mockWatchMessages(conversationId: any(named: 'conversationId')),
+        () => mockWatchMessages(
+          conversationId: any(named: 'conversationId'),
+          currentUserId: any(named: 'currentUserId'),
+        ),
       ).thenAnswer(
         (_) => Stream.value(
           const Left(ServerFailure(message: 'Connection failed')),
