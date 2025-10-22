@@ -218,25 +218,6 @@ class MessageRepositoryImpl implements MessageRepository {
 
               // Upsert to local database (updates existing, inserts new)
               await _localDataSource.insertMessages(conversationId, messages);
-
-              // Update conversation's last message with the most recent message
-              if (messages.isNotEmpty) {
-                // Messages are sorted by timestamp (oldest first from Firestore)
-                final latestMessage = messages.last;
-                final lastMessage = LastMessage(
-                  text: latestMessage.text,
-                  senderId: latestMessage.senderId,
-                  senderName: latestMessage.senderName,
-                  timestamp: latestMessage.timestamp,
-                  type: latestMessage.type,
-                );
-
-                // Update local conversation's last message
-                await _conversationLocalDataSource.updateLastMessage(
-                  documentId: conversationId,
-                  lastMessage: lastMessage,
-                );
-              }
             } catch (e) {
               // Silently fail - local stream will still work
             }
