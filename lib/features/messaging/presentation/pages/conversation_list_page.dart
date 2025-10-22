@@ -132,6 +132,8 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
               }
               final otherParticipantName =
                   otherParticipant['name'] as String? ?? 'Unknown';
+              final otherParticipantId =
+                  otherParticipant['uid'] as String? ?? '';
 
               return ConversationListItem(
                 conversationId: conversationId,
@@ -146,6 +148,7 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
                       builder: (context) => ChatPage(
                         conversationId: conversationId,
                         otherParticipantName: otherParticipantName,
+                        otherParticipantId: otherParticipantId,
                       ),
                     ),
                   );

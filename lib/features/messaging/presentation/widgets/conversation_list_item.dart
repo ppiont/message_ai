@@ -2,12 +2,14 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
 
 /// Widget displaying a single conversation in the conversation list.
 ///
-/// Shows participant info, last message preview, timestamp, and unread badge.
-class ConversationListItem extends StatelessWidget {
+/// Shows participant info, last message preview, timestamp, unread badge, and online status.
+class ConversationListItem extends ConsumerWidget {
   const ConversationListItem({
     required this.conversationId,
     required this.participants,
@@ -28,7 +30,7 @@ class ConversationListItem extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     // Get the other participant (for 1-to-1 conversations)
     Map<String, dynamic> otherParticipant;
     try {
@@ -44,10 +46,14 @@ class ConversationListItem extends StatelessWidget {
 
     final name = otherParticipant['name'] as String? ?? 'Unknown';
     final imageUrl = otherParticipant['imageUrl'] as String?;
+    final otherUserId = otherParticipant['uid'] as String? ?? '';
+
+    // Watch presence for the other user
+    final presenceAsync = ref.watch(userPresenceProvider(otherUserId));
 
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      leading: _buildAvatar(name, imageUrl),
+      leading: _buildAvatarWithPresence(name, imageUrl, presenceAsync),
       title: Row(
         children: [
           Expanded(
@@ -95,6 +101,44 @@ class ConversationListItem extends StatelessWidget {
         ],
       ),
       onTap: onTap,
+    );
+  }
+
+  Widget _buildAvatarWithPresence(
+    String name,
+    String? imageUrl,
+    AsyncValue<Map<String, dynamic>?> presenceAsync,
+  ) {
+    return Stack(
+      children: [
+        _buildAvatar(name, imageUrl),
+        // Presence indicator (bottom-right of avatar)
+        presenceAsync.when(
+          data: (presence) {
+            if (presence == null) return const SizedBox.shrink();
+
+            final isOnline = presence['isOnline'] as bool? ?? false;
+            return Positioned(
+              right: 0,
+              bottom: 0,
+              child: Container(
+                width: 14,
+                height: 14,
+                decoration: BoxDecoration(
+                  color: isOnline ? Colors.green : Colors.grey,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white,
+                    width: 2,
+                  ),
+                ),
+              ),
+            );
+          },
+          loading: () => const SizedBox.shrink(),
+          error: (_, __) => const SizedBox.shrink(),
+        ),
+      ],
     );
   }
 

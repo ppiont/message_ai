@@ -26,6 +26,10 @@ class App extends ConsumerWidget {
     ref.watch(messageSyncServiceProvider);
     ref.watch(messageQueueProvider);
 
+    // Initialize presence controller
+    // Automatically manages online/offline status based on auth
+    ref.watch(presenceControllerProvider);
+
     // Watch authentication state
     final authState = ref.watch(authStateProvider);
 

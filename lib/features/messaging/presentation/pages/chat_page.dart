@@ -17,11 +17,13 @@ class ChatPage extends ConsumerStatefulWidget {
   const ChatPage({
     required this.conversationId,
     required this.otherParticipantName,
+    required this.otherParticipantId,
     super.key,
   });
 
   final String conversationId;
   final String otherParticipantName;
+  final String otherParticipantId;
 
   @override
   ConsumerState<ChatPage> createState() => _ChatPageState();
@@ -75,7 +77,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(widget.otherParticipantName),
-            // TODO: Add online status / typing indicator
+            _buildPresenceStatus(),
           ],
         ),
         actions: [
@@ -105,6 +107,65 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         ],
       ),
     );
+  }
+
+  Widget _buildPresenceStatus() {
+    final presenceAsync = ref.watch(
+      userPresenceProvider(widget.otherParticipantId),
+    );
+
+    return presenceAsync.when(
+      data: (presence) {
+        if (presence == null) {
+          return const SizedBox.shrink();
+        }
+
+        final isOnline = presence['isOnline'] as bool? ?? false;
+        final lastSeen = presence['lastSeen'] as DateTime?;
+
+        if (isOnline) {
+          return const Text(
+            'Online',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.green,
+              fontWeight: FontWeight.w500,
+            ),
+          );
+        } else if (lastSeen != null) {
+          return Text(
+            'Last seen ${_formatLastSeen(lastSeen)}',
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.grey,
+            ),
+          );
+        }
+
+        return const SizedBox.shrink();
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+
+  String _formatLastSeen(DateTime lastSeen) {
+    final now = DateTime.now();
+    final difference = now.difference(lastSeen);
+
+    if (difference.inMinutes < 1) {
+      return 'just now';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes}m ago';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours}h ago';
+    } else if (difference.inDays == 1) {
+      return 'yesterday';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays}d ago';
+    } else {
+      return 'a while ago';
+    }
   }
 
   Widget _buildTypingIndicator(String currentUserId) {

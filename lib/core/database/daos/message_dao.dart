@@ -143,7 +143,8 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
       batch.insertAll(
         messages,
         messageList,
-        mode: InsertMode.insertOrReplace, // Upsert: insert new or update existing
+        mode:
+            InsertMode.insertOrReplace, // Upsert: insert new or update existing
       );
     });
   }

@@ -13,6 +13,7 @@ import 'package:message_ai/features/authentication/domain/usecases/sync_user_to_
 import 'package:message_ai/features/authentication/domain/usecases/update_user_profile.dart';
 import 'package:message_ai/features/authentication/domain/usecases/watch_auth_state.dart';
 import 'package:message_ai/features/authentication/presentation/providers/user_providers.dart';
+import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'auth_providers.g.dart';
@@ -134,4 +135,38 @@ User? currentUser(Ref ref) {
 bool isAuthenticated(Ref ref) {
   final user = ref.watch(currentUserProvider);
   return user != null;
+}
+
+// ========== Presence Management ==========
+
+/// Automatically manages user presence based on auth state.
+///
+/// This provider watches the auth state and:
+/// - Sets user as online when they sign in
+/// - Sets user as offline when they sign out
+@Riverpod(keepAlive: true)
+void presenceController(Ref ref) {
+  final presenceService = ref.watch(presenceServiceProvider);
+
+  // Watch auth state changes
+  ref.listen(authStateProvider, (previous, next) {
+    next.whenData((user) async {
+      if (user != null) {
+        // User logged in - set online
+        await presenceService.setOnline(
+          userId: user.uid,
+          userName: user.displayName,
+        );
+      } else {
+        // User logged out - set offline
+        final prevUser = previous?.value;
+        if (prevUser != null) {
+          await presenceService.setOffline(
+            userId: prevUser.uid,
+            userName: prevUser.displayName,
+          );
+        }
+      }
+    });
+  });
 }

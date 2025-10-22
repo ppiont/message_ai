@@ -1034,6 +1034,164 @@ final class ConversationTypingUsersFamily extends $Family
   String toString() => r'conversationTypingUsersProvider';
 }
 
+/// Provides the [PresenceService] instance.
+
+@ProviderFor(presenceService)
+const presenceServiceProvider = PresenceServiceProvider._();
+
+/// Provides the [PresenceService] instance.
+
+final class PresenceServiceProvider
+    extends
+        $FunctionalProvider<PresenceService, PresenceService, PresenceService>
+    with $Provider<PresenceService> {
+  /// Provides the [PresenceService] instance.
+  const PresenceServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'presenceServiceProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$presenceServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<PresenceService> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  PresenceService create(Ref ref) {
+    return presenceService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(PresenceService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<PresenceService>(value),
+    );
+  }
+}
+
+String _$presenceServiceHash() => r'dc32f854480383c033d4c735e4ba8284bd1cef22';
+
+/// Watches presence status for a specific user.
+///
+/// Returns a stream of presence data including:
+/// - isOnline: true if user is currently online
+/// - lastSeen: timestamp of last activity
+/// - userName: display name
+
+@ProviderFor(userPresence)
+const userPresenceProvider = UserPresenceFamily._();
+
+/// Watches presence status for a specific user.
+///
+/// Returns a stream of presence data including:
+/// - isOnline: true if user is currently online
+/// - lastSeen: timestamp of last activity
+/// - userName: display name
+
+final class UserPresenceProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<Map<String, dynamic>?>,
+          Map<String, dynamic>?,
+          Stream<Map<String, dynamic>?>
+        >
+    with
+        $FutureModifier<Map<String, dynamic>?>,
+        $StreamProvider<Map<String, dynamic>?> {
+  /// Watches presence status for a specific user.
+  ///
+  /// Returns a stream of presence data including:
+  /// - isOnline: true if user is currently online
+  /// - lastSeen: timestamp of last activity
+  /// - userName: display name
+  const UserPresenceProvider._({
+    required UserPresenceFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'userPresenceProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$userPresenceHash();
+
+  @override
+  String toString() {
+    return r'userPresenceProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<Map<String, dynamic>?> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<Map<String, dynamic>?> create(Ref ref) {
+    final argument = this.argument as String;
+    return userPresence(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is UserPresenceProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$userPresenceHash() => r'9f951929604a78b91a32e2cd74b6d5e6ef5f38f5';
+
+/// Watches presence status for a specific user.
+///
+/// Returns a stream of presence data including:
+/// - isOnline: true if user is currently online
+/// - lastSeen: timestamp of last activity
+/// - userName: display name
+
+final class UserPresenceFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<Map<String, dynamic>?>, String> {
+  const UserPresenceFamily._()
+    : super(
+        retry: null,
+        name: r'userPresenceProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Watches presence status for a specific user.
+  ///
+  /// Returns a stream of presence data including:
+  /// - isOnline: true if user is currently online
+  /// - lastSeen: timestamp of last activity
+  /// - userName: display name
+
+  UserPresenceProvider call(String userId) =>
+      UserPresenceProvider._(argument: userId, from: this);
+
+  @override
+  String toString() => r'userPresenceProvider';
+}
+
 /// Provides the [MessageSyncService] instance.
 ///
 /// Handles background synchronization between local and remote storage.

@@ -757,3 +757,62 @@ final class IsAuthenticatedProvider
 }
 
 String _$isAuthenticatedHash() => r'ec341d95b490bda54e8278477e26f7b345844931';
+
+/// Automatically manages user presence based on auth state.
+///
+/// This provider watches the auth state and:
+/// - Sets user as online when they sign in
+/// - Sets user as offline when they sign out
+
+@ProviderFor(presenceController)
+const presenceControllerProvider = PresenceControllerProvider._();
+
+/// Automatically manages user presence based on auth state.
+///
+/// This provider watches the auth state and:
+/// - Sets user as online when they sign in
+/// - Sets user as offline when they sign out
+
+final class PresenceControllerProvider
+    extends $FunctionalProvider<void, void, void>
+    with $Provider<void> {
+  /// Automatically manages user presence based on auth state.
+  ///
+  /// This provider watches the auth state and:
+  /// - Sets user as online when they sign in
+  /// - Sets user as offline when they sign out
+  const PresenceControllerProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'presenceControllerProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$presenceControllerHash();
+
+  @$internal
+  @override
+  $ProviderElement<void> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  void create(Ref ref) {
+    return presenceController(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(void value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<void>(value),
+    );
+  }
+}
+
+String _$presenceControllerHash() =>
+    r'025abd1ac47fb344bae688b1c160715a39d5536d';

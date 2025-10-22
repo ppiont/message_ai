@@ -1,281 +1,189 @@
 # Active Context
 
-## Current Focus: Riverpod 3.x Upgrade (COMPLETE)
-**Status**: Successfully migrated to Riverpod 3.x with all tests passing ✅
-**Achievement**: 688 passing tests, 2 skipped, 0 lint errors
+## 🎯 Current Focus: Online/Offline Presence Indicators
 
-## What We Just Completed
+**Session Goal**: Implement UI for online/offline status indicators to complete this MVP requirement
 
-### Riverpod 3.x Upgrade (Complete)
+**Status**: PresenceService fully implemented (22 tests passing), needs UI integration only
 
-**Motivation**: User noticed project was using Riverpod 2.x, wanted to upgrade to 3.x
+## 📍 Where We Are
 
-**Challenges Encountered:**
-1. **Dependency Conflict**: `build_runner ^2.10.0` incompatible with `flutter_test` when using `flutter_riverpod ^3.0.3`
-2. **Type Ambiguity**: Domain `User` entity conflicted with `firebase_auth.User`
-3. **Generated Code Issues**: Riverpod 3.x required regeneration of all provider code
-4. **Widget Test Failures**: Async provider lifecycle changes in Riverpod 3.x
-5. **Lint Warnings**: Unnecessary `flutter_riverpod` imports
+### Just Completed (This Session)
+1. ✅ Fixed bidirectional message sync (Firestore ↔ Local ↔ UI)
+2. ✅ Fixed message ordering (ascending, oldest first)
+3. ✅ Fixed ROLLBACK errors with upsert mode
+4. ✅ Updated memory bank with Sprint 4 completion
+5. ✅ Verified Taskmaster status vs actual code
 
-**Solutions Applied:**
+### Current Implementation Status
 
-1. **Dependency Resolution** ✅
-   - Downgraded `build_runner` from `^2.10.0` to `^2.4.13`
-   - Kept `flutter_riverpod: ^3.0.3` and related Riverpod packages
-   - All dependencies now compatible
+**Offline-First Architecture**: FULLY WORKING ✅
+- Messages save locally immediately
+- Background sync to Firestore
+- Incoming messages: Firestore → Local DB → UI
+- Optimistic UI with instant feedback
+- Works offline, syncs when online
 
-2. **Type Conflict Fix** ✅
-   - Modified import: `import 'package:firebase_auth/firebase_auth.dart' as firebase_auth hide User;`
-   - This hides `firebase_auth.User` while keeping firebase_auth prefix for other types
-   - Domain `User` is now the default, no aliases needed
+**PresenceService**: IMPLEMENTED but NOT IN UI ⚠️
+- Service class exists: `lib/features/messaging/data/services/presence_service.dart`
+- 22 passing tests
+- Methods: `setOnline()`, `setOffline()`, `watchUser()`, heartbeat timer
+- **Missing**: Provider integration, UI components
 
-3. **Code Regeneration** ✅
-   - Ran `dart run build_runner build --delete-conflicting-outputs`
-   - All Riverpod provider files regenerated successfully
-   - Generated code now uses Riverpod 3.x API
+## 🎯 Next Task: Online/Offline Indicators
 
-4. **Test Fixes** ✅
-   - Fixed async cleanup in `sign_in_page_test.dart` (added `pumpAndSettle`)
-   - Simplified `app_test.dart` to avoid Firebase initialization complexity
-   - Marked 2 provider lifecycle tests as skipped (with clear reasoning)
-   - All 688 tests now passing
+### Implementation Plan
 
-5. **Lint Cleanup** ✅
-   - Removed unnecessary `flutter_riverpod` imports from provider files
-   - `riverpod_annotation` provides all needed types
-   - Zero lint errors remaining
+**Step 1: Add Provider** (5 min)
+```dart
+// In messaging_providers.dart
+@Riverpod(keepAlive: true)
+PresenceService presenceService(Ref ref) {
+  final service = PresenceService(firestore: ref.watch(firestoreProvider));
+  ref.onDispose(() => service.dispose());
+  return service;
+}
 
-**Final State:**
-- ✅ **688 tests passing**
-- ✅ **2 tests skipped** (documented as Riverpod 3.x lifecycle changes)
-- ✅ **0 tests failing**
-- ✅ **0 lint errors**
-- ✅ **All dependencies resolved**
-
-**Files Modified:**
-- `pubspec.yaml` - Dependency versions
-- `lib/features/authentication/presentation/providers/auth_providers.dart` - Import fix
-- `lib/core/providers/database_provider.dart` - Removed unnecessary import
-- `lib/features/authentication/presentation/providers/user_providers.dart` - Removed unnecessary import
-- `lib/features/messaging/presentation/providers/messaging_providers.dart` - Removed unnecessary import
-- `test/features/authentication/presentation/pages/sign_in_page_test.dart` - Async cleanup fix
-- `test/app_test.dart` - Simplified test
-- `test/features/authentication/presentation/providers/auth_providers_test.dart` - Skipped 2 tests
-- All `*.g.dart` files regenerated
-
-## Recent Changes (Last Session)
-
-### Bug Fixes
-1. **Firestore Timestamp Casting Issue**:
-   - Problem: `Timestamp` vs `String` type mismatch in ConversationModel
-   - Fix: Updated `updateLastMessage` to use `Timestamp.fromDate()`
-   - Added `type: 'text'` field to lastMessage
-
-2. **Error Mapper Missing Exception**:
-   - Problem: `RecordAlreadyExistsException` not mapped
-   - Fix: Added mapping to `DatabaseFailure` in error_mapper.dart
-
-3. **AppException Wrapping Bug**:
-   - Problem: `createUser` wrapped `RecordAlreadyExistsException` in `UnknownException`
-   - Fix: Added `if (e is AppException) rethrow;` before wrapping
-
-### Tests Written (Today)
-- user_remote_datasource_impl_test.dart (17 tests)
-- user_repository_impl_test.dart (22 tests)
-- send_message_test.dart (6 tests)
-- watch_messages_test.dart (5 tests)
-- mark_message_as_read_test.dart (5 tests)
-- find_or_create_direct_conversation_test.dart (7 tests)
-- watch_conversations_test.dart (5 tests)
-- get_conversation_by_id_test.dart (5 tests)
-
-### Documentation Created
-- `.cursor/rules/testing.mdc`: Comprehensive TDD guidelines
-  - RED-GREEN-REFACTOR cycle
-  - Test hierarchy (unit, widget, integration)
-  - Coverage goals by layer
-  - Testing tools and patterns
-  - When to write tests (always!)
-
-## Next Actions (Immediate)
-
-### Option A: Continue with MVP Features
-Now that we're on Riverpod 3.x with all tests passing, we can proceed with:
-
-1. **AI Features Integration**
-   - Set up Cloud Functions for OpenAI proxy
-   - Implement translation service
-   - Add smart reply generation
-   - Cultural context analysis
-   - Sentiment detection
-
-2. **Offline Support**
-   - Complete Drift integration for local persistence
-   - Message queue with retry logic
-   - Background sync
-   - Offline indicators
-
-3. **Group Chat**
-   - Group conversation entity & model
-   - Multi-participant management
-   - Group-specific UI updates
-
-4. **Advanced Features**
-   - Push notifications
-   - Media messages (images)
-   - Message reactions
-   - Typing indicators
-
-### Option B: Further Testing & Polish
-Before moving to new features:
-
-1. **Coverage Verification**
-   ```bash
-   flutter test --coverage
-   genhtml coverage/lcov.info -o coverage/html
-   open coverage/html/index.html
-   ```
-   - Verify 85%+ overall coverage
-   - Check layer-specific coverage targets
-
-2. **Performance Testing**
-   - Test with large message histories (100+ messages)
-   - Profile real-time updates
-   - Measure memory usage
-
-3. **Integration Tests**
-   - Add end-to-end flow tests
-   - Test complete user journeys
-   - Verify offline-online transitions
-
-## Key Technical Decisions
-
-### Testing Approach
-- **TDD**: Write tests before/during implementation
-- **fake_cloud_firestore**: Use for Firestore testing (not mocks)
-- **Mocktail**: Use for mocking repositories and use cases
-- **AAA Pattern**: Arrange-Act-Assert for all tests
-- **Comprehensive Coverage**: Validation, success, error cases
-
-### Test File Organization
-```
-test/
-├── features/
-│   ├── authentication/
-│   │   ├── domain/usecases/
-│   │   ├── data/datasources/
-│   │   ├── data/repositories/
-│   │   └── presentation/pages/
-│   └── messaging/
-│       ├── domain/usecases/
-│       ├── data/datasources/
-│       ├── data/repositories/
-│       └── presentation/widgets/
+@riverpod
+Stream<Map<String, dynamic>?> userPresence(
+  Ref ref,
+  String userId,
+) {
+  final service = ref.watch(presenceServiceProvider);
+  return service.watchUser(userId: userId);
+}
 ```
 
-### Dependencies for Testing
-```yaml
-dev_dependencies:
-  flutter_test: sdk: flutter
-  mocktail: ^1.0.4
-  fake_cloud_firestore: ^3.0.3
-  firebase_auth_mocks: ^0.14.1
+**Step 2: Update Auth to Set Presence** (5 min)
+```dart
+// In auth flow after successful login
+await presenceService.setOnline(
+  userId: currentUser.uid,
+  userName: currentUser.displayName,
+);
 ```
 
-## Current Architecture State
+**Step 3: UI - Conversation List Item** (10 min)
+```dart
+// In conversation_list_item.dart
+final presenceAsync = ref.watch(userPresenceProvider(otherParticipantUid));
 
-### Fully Implemented & Tested
-- ✅ Authentication domain layer (entities, use cases, repositories)
-- ✅ Authentication data layer (models, datasources, repositories)
-- ✅ Authentication presentation layer (pages, providers)
-- ✅ Messaging domain layer (entities, use cases)
-- ✅ User Firestore integration (datasource + repository)
+presenceAsync.when(
+  data: (presence) {
+    final isOnline = presence?['isOnline'] as bool? ?? false;
+    // Show green dot if online, grey if offline
+  },
+  loading: () => ...,
+  error: (_, __) => ...,
+)
+```
 
-### Partially Tested
-- 🚧 Messaging data layer (models exist, tests needed)
-- 🚧 Messaging presentation layer (UI exists, widget tests needed)
+**Step 4: UI - Chat Page Header** (10 min)
+```dart
+// In chat_page.dart AppBar
+final presenceAsync = ref.watch(userPresenceProvider(otherParticipantId));
+// Show "Online" or "Last seen X ago" below name
+```
 
-### Not Yet Started
-- ⏳ Group chat feature
-- ⏳ Offline support (Drift integration)
-- ⏳ Message delivery status
-- ⏳ Push notifications
-- ⏳ AI features (all 5 + advanced)
+**Step 5: Cleanup on Logout** (5 min)
+```dart
+// In sign out flow
+await presenceService.setOffline(userId: currentUserId);
+```
 
-## Blockers & Decisions Needed
+**Estimated Time**: 30-45 minutes
 
-### Current Blockers
-- None (all tests passing, clear path forward)
+## 📊 MVP Progress
 
-### Upcoming Decisions
-1. **Group Chat Model**: How to structure participants list?
-2. **Offline Queue**: How to handle message retry logic?
-3. **AI Integration**: Which Cloud Functions framework to use?
-4. **Advanced Feature**: Smart replies or data extraction?
+| Feature | Status | Notes |
+|---------|--------|-------|
+| One-on-one chat | ✅ | Done |
+| Real-time delivery | ✅ | Done |
+| Message persistence | ✅ | Drift |
+| Optimistic UI | ✅ | Done |
+| **Online/offline status** | 🔄 | **Next task (backend done)** |
+| Timestamps | ✅ | Done |
+| Authentication | ✅ | Done |
+| Read receipts | ✅ | Done |
+| **Push notifications** | ❌ | After presence |
+| **Group chat** | ❌ | After push |
 
-## Context for Next Session
+**MVP Completion**: 70% → **80%** (after presence indicators)
 
-### When Resuming
-1. **Current Status**: Project successfully upgraded to Riverpod 3.x ✅
-2. **Test Suite**: 688 passing, 2 skipped, 0 failing
-3. **Lint Status**: 0 errors
-4. **Dependencies**: All resolved and compatible
-5. **Ready For**: MVP features or further polish
+## 🔍 Key Files for This Task
 
-### Key Points About Riverpod 3.x
-1. **Import Pattern**: `import 'package:firebase_auth/firebase_auth.dart' as firebase_auth hide User;`
-   - This hides `firebase_auth.User` to avoid conflicts with domain `User`
-   - Keep using `firebase_auth` prefix for other Firebase Auth types
+**Providers**:
+- `lib/features/messaging/presentation/providers/messaging_providers.dart`
+- `lib/features/authentication/presentation/providers/auth_providers.dart`
 
-2. **Dependencies**:
-   - `flutter_riverpod: ^3.0.3`
-   - `riverpod_annotation: ^3.0.3`
-   - `build_runner: ^2.4.13` (downgraded for compatibility)
+**UI Components**:
+- `lib/features/messaging/presentation/widgets/conversation_list_item.dart`
+- `lib/features/messaging/presentation/pages/chat_page.dart`
 
-3. **Provider Generation**:
-   - Run `dart run build_runner build --delete-conflicting-outputs` after changes
-   - All providers use `@riverpod` annotation
+**Service (already done)**:
+- `lib/features/messaging/data/services/presence_service.dart` ✅
 
-4. **Testing**:
-   - 2 async provider lifecycle tests skipped (documented why)
-   - Rest of test suite fully compatible with Riverpod 3.x
+**Tests (already done)**:
+- `test/features/messaging/data/services/presence_service_test.dart` ✅ (22 tests)
 
-### Known Best Practices
-- Don't import `flutter_riverpod` in provider files (use `riverpod_annotation`)
-- Always regenerate after modifying `@riverpod` annotated providers
-- Use `hide User` pattern for firebase_auth imports
-- Keep tests using `pumpAndSettle()` for async cleanup
+## 💭 Current Architecture Understanding
 
-## Success Criteria for This Phase
+### Data Flow
+```
+User logs in
+  ↓
+Auth provider calls presenceService.setOnline()
+  ↓
+Firestore /presence/{userId} updated with isOnline: true
+  ↓
+Heartbeat timer keeps updating lastSeen every 30s
+  ↓
+UI watches userPresenceProvider(userId)
+  ↓
+Stream emits presence updates → UI rebuilds
+  ↓
+User logs out → presenceService.setOffline()
+```
 
-### Riverpod 3.x Upgrade - COMPLETE ✅
-- [x] All dependencies resolved
-- [x] Type conflicts fixed
-- [x] Code regenerated successfully
-- [x] All tests passing (688 tests)
-- [x] Zero lint errors
-- [x] No failing tests
-- [x] Documentation updated
+### Firestore Structure
+```json
+{
+  "presence/{userId}": {
+    "uid": "userId",
+    "userName": "John Doe",
+    "isOnline": true,
+    "lastSeen": Timestamp,
+    "lastUpdated": Timestamp
+  }
+}
+```
 
-### Ready for Next Phase ✅
-- [x] Upgrade complete and stable
-- [x] All tests passing
-- [x] Memory bank updated
-- [x] Ready to implement MVP features OR further polish
+## ⚠️ Important Considerations
 
-## Links & References
+1. **Battery Life**: Heartbeat every 30s - acceptable for MVP
+2. **Offline Detection**: Firestore onDisconnect() not yet implemented (use manual setOffline)
+3. **Privacy**: Consider letting users hide online status (post-MVP)
+4. **Accuracy**: Heartbeat approach is "good enough" for MVP
 
-### Documentation
-- `.cursor/rules/testing.mdc` - TDD guidelines
-- `.cursor/rules/drift.mdc` - Drift ORM patterns
-- `.cursor/rules/dart_flutter_mcp.mdc` - Dart MCP usage
+## 🎯 Success Criteria
 
-### Key Files
-- `lib/core/error/error_mapper.dart` - Exception mapping
-- `lib/core/error/failures.dart` - Failure types
-- `lib/core/error/exceptions.dart` - Exception types
+After implementing presence indicators:
+- [ ] Green dot shows on conversation list for online users
+- [ ] Grey dot shows for offline users
+- [ ] Chat page shows "Online" or "Last seen X ago"
+- [ ] Presence updates in real-time (within 30s)
+- [ ] Tests verify provider integration
+- [ ] No performance impact
 
-### Test Examples
-- `test/features/authentication/data/datasources/user_remote_datasource_impl_test.dart` - Firestore testing pattern
-- `test/features/authentication/data/repositories/user_repository_impl_test.dart` - Repository testing pattern
-- `test/features/messaging/domain/usecases/send_message_test.dart` - Use case testing pattern
+## 📝 Next After This
+
+1. **Push Notifications** (Task #42) - 2-3 hours
+2. **Group Chat** (Tasks #49-58) - 4-6 hours
+3. **MVP Complete!** 🎉
+
+---
+
+**Last Updated**: 2025-10-22
+**Current Task**: Online/Offline Presence Indicators
+**Estimated Completion**: 30-45 minutes
+**Blocker**: None

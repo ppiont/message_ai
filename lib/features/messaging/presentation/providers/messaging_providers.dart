@@ -18,6 +18,7 @@ import 'package:message_ai/features/messaging/domain/usecases/send_message.dart'
 import 'package:message_ai/features/messaging/domain/usecases/watch_conversations.dart';
 import 'package:message_ai/features/messaging/domain/usecases/watch_messages.dart';
 import 'package:message_ai/features/messaging/data/services/typing_indicator_service.dart';
+import 'package:message_ai/features/messaging/data/services/presence_service.dart';
 import 'package:message_ai/features/messaging/data/services/message_sync_service.dart';
 import 'package:message_ai/features/messaging/data/services/message_queue.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -234,6 +235,45 @@ Stream<List<TypingUser>> conversationTypingUsers(
     conversationId: conversationId,
     currentUserId: currentUserId,
   );
+}
+
+// ========== Presence Providers ==========
+
+/// Provides the [PresenceService] instance.
+@Riverpod(keepAlive: true)
+PresenceService presenceService(Ref ref) {
+  final service = PresenceService(
+    firestore: ref.watch(messagingFirestoreProvider),
+  );
+
+  // Dispose when provider is disposed
+  ref.onDispose(() {
+    service.dispose();
+  });
+
+  return service;
+}
+
+/// Watches presence status for a specific user.
+///
+/// Returns a stream of presence data including:
+/// - isOnline: true if user is currently online
+/// - lastSeen: timestamp of last activity
+/// - userName: display name
+@riverpod
+Stream<Map<String, dynamic>?> userPresence(
+  Ref ref,
+  String userId,
+) {
+  final service = ref.watch(presenceServiceProvider);
+  return service.watchUserPresence(userId: userId).map((presence) {
+    if (presence == null) return null;
+    return {
+      'isOnline': presence.isOnline,
+      'lastSeen': presence.lastSeen,
+      'userName': presence.userName,
+    };
+  });
 }
 
 // ========== Offline & Sync Providers ==========
