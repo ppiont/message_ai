@@ -46,10 +46,7 @@ void main() {
         'should return ValidationFailure when conversationId is empty',
         () async {
           // Act
-          final stream = useCase(
-            conversationId: '',
-            currentUserId: 'user-123',
-          );
+          final stream = useCase(conversationId: '', currentUserId: 'user-123');
 
           // Assert
           await expectLater(
@@ -91,13 +88,13 @@ void main() {
         // Arrange
         when(
           () => mockRepository.watchMessages(
-            conversationId: any(named: 'conversationId'),
+            conversationId: any(named: 'conversationId'), currentUserId: any(named: 'currentUserId'),
             limit: any(named: 'limit'),
           ),
         ).thenAnswer((_) => Stream.value(Right(testMessages)));
 
         // Act
-        final stream = useCase(conversationId: 'conv-123');
+        final stream = useCase(conversationId: 'conv-123', currentUserId: 'user-123');
 
         // Assert
         await expectLater(
@@ -122,13 +119,13 @@ void main() {
         // Arrange
         when(
           () => mockRepository.watchMessages(
-            conversationId: any(named: 'conversationId'),
+            conversationId: any(named: 'conversationId'), currentUserId: any(named: 'currentUserId'),
             limit: any(named: 'limit'),
           ),
         ).thenAnswer((_) => Stream.value(Right(testMessages)));
 
         // Act
-        final stream = useCase(conversationId: 'conv-123', limit: 100);
+        final stream = useCase(conversationId: 'conv-123', currentUserId: 'user-123', limit: 100);
 
         // Assert
         await expectLater(stream.first, completes);
@@ -145,13 +142,13 @@ void main() {
         // Arrange
         when(
           () => mockRepository.watchMessages(
-            conversationId: any(named: 'conversationId'),
+            conversationId: any(named: 'conversationId'), currentUserId: any(named: 'currentUserId'),
             limit: any(named: 'limit'),
           ),
         ).thenAnswer((_) => Stream.value(const Right([])));
 
         // Act
-        final stream = useCase(conversationId: 'conv-123');
+        final stream = useCase(conversationId: 'conv-123', currentUserId: 'user-123');
 
         // Assert
         await expectLater(
