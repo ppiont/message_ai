@@ -556,24 +556,22 @@ Stream<Map<String, dynamic>> groupPresenceStatus(
   String groupId,
 ) async* {
   final groupRepository = ref.watch(groupConversationRepositoryProvider);
+  final presenceService = ref.watch(presenceServiceProvider);
 
-  // Get the group to know who the members are
-  final groupResult = await groupRepository.getGroupById(groupId);
+  // Poll both group members and their presence every 2 seconds
+  await for (final _ in Stream.periodic(const Duration(seconds: 2))) {
+    // Refresh group to get current member list (handles add/remove)
+    final groupResult = await groupRepository.getGroupById(groupId);
 
-  yield* groupResult.fold(
-    (failure) => Stream.value({
-      'onlineCount': 0,
-      'totalCount': 0,
-      'onlineMembers': <String>[],
-      'displayText': 'Unknown',
-    }),
-    (group) async* {
-      final presenceService = ref.watch(presenceServiceProvider);
-      final participantIds = group.participantIds;
-
-      // Combine all presence streams
-      await for (final _ in Stream.periodic(const Duration(seconds: 2))) {
-        // Poll presence for all members
+    final presenceData = await groupResult.fold(
+      (failure) async => <String, dynamic>{
+        'onlineCount': 0,
+        'totalCount': 0,
+        'onlineMembers': <String>[],
+        'displayText': 'Unknown',
+      },
+      (group) async {
+        final participantIds = group.participantIds;
         final onlineMembers = <String>[];
 
         for (final userId in participantIds) {
@@ -588,7 +586,7 @@ Stream<Map<String, dynamic>> groupPresenceStatus(
           }
         }
 
-        yield {
+        return <String, dynamic>{
           'onlineCount': onlineMembers.length,
           'totalCount': participantIds.length,
           'onlineMembers': onlineMembers,
@@ -596,7 +594,9 @@ Stream<Map<String, dynamic>> groupPresenceStatus(
               ? 'All offline'
               : '${onlineMembers.length}/${participantIds.length} online',
         };
-      }
-    },
-  );
+      },
+    );
+
+    yield presenceData;
+  }
 }
