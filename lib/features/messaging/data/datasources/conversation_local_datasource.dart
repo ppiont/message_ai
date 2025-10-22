@@ -579,10 +579,16 @@ class ConversationLocalDataSourceImpl implements ConversationLocalDataSource {
       return _conversationDao
           .watchConversationsByParticipant(userId, limit: limit)
           .map(
-            (entities) => entities
-                .map(_entityToConversation)
-                .cast<Conversation>()
-                .toList(),
+            (entities) {
+              print('📤 Local DB emitting ${entities.length} conversations for user $userId');
+              for (final entity in entities) {
+                print('   - Conv ${entity.documentId}: lastMessage="${entity.lastMessageText}"');
+              }
+              return entities
+                  .map(_entityToConversation)
+                  .cast<Conversation>()
+                  .toList();
+            },
           );
     } catch (e) {
       throw DatabaseException(
