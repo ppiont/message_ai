@@ -1,0 +1,11 @@
+# Task ID: 96
+# Title: Set up Fastlane for Android deployment
+# Status: pending
+# Dependencies: 94
+# Priority: medium
+# Description: Configure Fastlane for automated Android deployment
+# Details:
+Create Fastfile in the android/fastlane directory. Implement beta lane for internal testing deployment. Configure supply for Play Store deployment. Set up production lane for production deployment. Add version code and name management.
+
+# Test Strategy:
+Test Fastlane setup with manual execution. Verify internal testing deployment works correctly. Test Play Store deployment. Verify version management.

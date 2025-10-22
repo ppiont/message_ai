@@ -1,0 +1,11 @@
+# Task ID: 106
+# Title: Set up Secret Manager for API keys
+# Status: pending
+# Dependencies: 59
+# Priority: high
+# Description: Configure Secret Manager for secure storage of API keys
+# Details:
+Set up Google Secret Manager for storing OpenAI API keys as described in the PRD. Configure access control for Cloud Functions. Implement key rotation strategy. Add fallback mechanism for API key failures. Implement logging for key usage.
+
+# Test Strategy:
+Test Secret Manager integration. Verify that Cloud Functions can access secrets. Test key rotation. Verify fallback mechanism works correctly.

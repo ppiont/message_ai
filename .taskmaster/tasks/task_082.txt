@@ -1,0 +1,11 @@
+# Task ID: 82
+# Title: Implement translation use cases
+# Status: pending
+# Dependencies: 81
+# Priority: medium
+# Description: Create use cases for translation operations
+# Details:
+Create translate_message.dart and detect_language.dart in features/translation/domain/usecases directory. Implement the use cases using the translation repository. Handle input validation and error cases. Return appropriate results or failures.
+
+# Test Strategy:
+Write unit tests with mocked repositories. Test success and failure scenarios. Verify input validation works correctly.

@@ -10,10 +10,50 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # Firebase (updated to latest versions)
+  firebase_core: ^4.2.0
+  firebase_auth: ^6.1.1
+  cloud_firestore: ^6.0.3
+  firebase_storage: ^13.0.3
+  firebase_messaging: ^16.0.3
+  firebase_crashlytics: ^5.0.3
+  cloud_functions: ^6.0.3
+
+  # State Management (Riverpod)
+  flutter_riverpod: ^3.0.3
+  riverpod_annotation: ^3.0.3
+
+  # Utilities
+  equatable: ^2.0.7
+  connectivity_plus: ^6.1.2
+  dartz: ^0.10.1
+  uuid: ^4.5.1
+
+  # Local Storage (drift)
+  drift: ^2.29.0
+  sqlite3_flutter_libs: ^0.5.24
+  path_provider: ^2.1.5
+  path: ^1.9.0
+  image_picker: ^1.2.0
+  intl: ^0.20.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
+
+  # Testing
+  mocktail: ^1.0.4
+
+  # Firebase testing (updated to latest versions)
+  fake_cloud_firestore: ^4.0.0
+  firebase_auth_mocks: ^0.15.1
+
+  # Code generation
+  drift_dev: ^2.29.0
+  riverpod_generator: ^3.0.3
+  riverpod_lint: ^3.0.3
+  build_runner: ^2.4.13
 
 flutter:
   uses-material-design: true

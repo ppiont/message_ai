@@ -1,0 +1,11 @@
+# Task ID: 42
+# Title: Set up Firebase Cloud Messaging
+# Status: pending
+# Dependencies: 2
+# Priority: high
+# Description: Integrate FCM for push notifications
+# Details:
+Add firebase_messaging dependency to pubspec.yaml. Configure FCM in the Firebase console. Implement FCM token retrieval and storage. Create notification handlers for foreground and background messages. Implement notification permission request. Add click handling for notifications.
+
+# Test Strategy:
+Test FCM token retrieval and storage. Verify notification handling in foreground and background. Test notification click handling.

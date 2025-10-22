@@ -1,0 +1,1774 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Set up Flutter project structure",
+        "description": "Initialize the Flutter project with the clean architecture structure as defined in the PRD",
+        "details": "Create the initial Flutter project using 'flutter create' command. Set up the folder structure following the clean architecture pattern with features-first organization. Create core directories (core/, features/, config/, l10n/) and set up the main.dart and app.dart files. Initialize Git repository and add .gitignore file.\n<info added on 2025-10-20T21:09:52.881Z>\nTask completed successfully. \n\nCompleted actions:\n1. ✅ Ran 'flutter create .' to initialize Flutter project\n2. ✅ Created complete clean architecture folder structure:\n   - core/ (database, error, network, constants, utils)\n   - features/ (authentication, messaging, ai_features, translation)\n   - config/ (routes, theme)\n   - l10n/\n3. ✅ Created app.dart with basic MaterialApp configuration\n4. ✅ Updated main.dart to use app.dart as entry point\n5. ✅ Added .gitkeep files to track empty directories\n6. ✅ Created test/ directory structure matching lib/\n7. ✅ Wrote test/app_test.dart with basic widget tests\n8. ✅ Created docs/ARCHITECTURE.md documenting project structure\n\nVerification:\n- flutter analyze: ✅ No issues found\n- flutter test: ✅ 2/2 tests passing\n- Directory structure: ✅ Matches PRD specification exactly\n\nThe project is now ready for Task 2 (Firebase configuration).\n</info added on 2025-10-20T21:09:52.881Z>",
+        "testStrategy": "Verify that the project structure matches the PRD specification. Ensure the project builds without errors using 'flutter build' command.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Configure Firebase projects",
+        "description": "Set up three Firebase projects for development, staging, and production environments",
+        "details": "Create three Firebase projects in Firebase console: myapp-dev, myapp-staging, and myapp-prod. Enable required Firebase services (Authentication, Firestore, Storage, Functions, Messaging, Crashlytics). Configure Firebase project settings, including default GCP resource location. Download and add google-services.json and GoogleService-Info.plist files for each environment.\n<info added on 2025-10-20T21:14:51.819Z>\nFirebase integration infrastructure has been prepared with the following components:\n\n1. Added Firebase dependencies to pubspec.yaml:\n   - firebase_core, firebase_auth, cloud_firestore, firebase_storage\n   - firebase_messaging, firebase_crashlytics, cloud_functions\n   - Testing: fake_cloud_firestore, firebase_auth_mocks\n\n2. Android configuration updated:\n   - Added Google Services plugin to settings.gradle.kts\n   - Applied plugin in app/build.gradle.kts\n   - Changed package name to com.gauntlet.message_ai\n   - Updated app label to \"MessageAI\"\n\n3. Created firebase/ directory structure (dev/staging/prod)\n4. Created comprehensive setup guide: docs/FIREBASE_SETUP.md\n5. Created status tracker: firebase/SETUP_STATUS.md\n\nPending user actions:\n- Create Firebase projects in console (messageai-dev, messageai-staging, messageai-prod)\n- Enable required services in each project\n- Register Android and iOS apps with proper package names\n- Download configuration files and place in appropriate locations\n\nNext steps after console setup:\n- Update main.dart with Firebase initialization\n- Complete iOS configuration\n- Test Firebase connection\n</info added on 2025-10-20T21:14:51.819Z>\n<info added on 2025-10-20T21:16:09.206Z>\nEnvironment configuration has been updated to use only TWO environments (dev and prod) instead of three:\n\n1. Removed firebase/staging/ directory\n2. Updated documentation:\n   - docs/FIREBASE_SETUP.md now reflects dev and prod environments only\n   - docs/ARCHITECTURE.md updated with two-environment approach\n   - firebase/SETUP_STATUS.md updated to track only dev and prod setup\n\n3. Pending user actions revised:\n   - Create Firebase projects in console (messageai-dev and messageai-prod only)\n   - Enable required services in both projects\n   - Register Android and iOS apps with proper package names for both environments\n\n4. This change aligns with the 7-day sprint scope where a staging environment is unnecessary for the current development timeline.\n</info added on 2025-10-20T21:16:09.206Z>\n<info added on 2025-10-20T21:27:14.833Z>\nFirebase Functions setup has been initiated for the Firebase project configuration:\n\nCreated comprehensive Functions setup guide: docs/FIREBASE_FUNCTIONS_SETUP.md\n\nGuide covers:\n- Step-by-step firebase init instructions with exact selections\n- What to select during interactive prompts\n- OpenAI SDK installation steps\n- Billing plan requirements (Blaze plan needed)\n- List of 7 functions we'll implement for International Communicator persona\n\nUser should run: firebase init\nSelect: Functions only, existing project (messageai-dev), JavaScript, ESLint yes, install deps yes\n\nAfter firebase init completes, the following steps will be taken:\n1. Install OpenAI SDK in functions\n2. Set up Secret Manager for API keys\n3. Implement the AI proxy functions\n4. Configure CORS and rate limiting\n5. Test functions locally before deployment\n\nCurrent status: Waiting for user to complete firebase init\n</info added on 2025-10-20T21:27:14.833Z>",
+        "testStrategy": "Verify that all three Firebase projects are created and accessible. Confirm that all required services are enabled in each project.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Set up Flutter flavors",
+        "description": "Configure Flutter flavors for development and production environments",
+        "status": "done",
+        "dependencies": [
+          1,
+          2
+        ],
+        "priority": "high",
+        "details": "Create flavor-specific entry points (main_dev.dart and main_prod.dart). Configure Android build.gradle and iOS project settings to support multiple flavors. Set up flavor-specific app IDs, app names, and icons. Create environment-specific configuration files to store environment variables for dev and prod environments.",
+        "testStrategy": "Verify that the app can be built and run with each flavor using the commands specified in the PRD. Ensure that the correct Firebase project is used for each flavor (dev and prod).",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create flavor-specific entry points",
+            "description": "Create main_dev.dart and main_prod.dart entry point files that initialize the appropriate environment configurations.",
+            "dependencies": [],
+            "details": "Create two separate entry point files that will be used for different build flavors. Each file should initialize the app with the appropriate environment configuration. Ensure that the correct Firebase project is initialized based on the flavor.",
+            "status": "done",
+            "testStrategy": "Verify that each entry point correctly initializes the app with the appropriate environment configuration."
+          },
+          {
+            "id": 2,
+            "title": "Configure Android build.gradle for flavors",
+            "description": "Modify the Android build.gradle file to support dev and prod flavors with different application IDs and names.",
+            "dependencies": [],
+            "details": "Update the Android build.gradle file to define productFlavors for 'dev' and 'prod'. Configure each flavor with a unique applicationId suffix, app name, and icon. Set up signing configurations for the production flavor.",
+            "status": "done",
+            "testStrategy": "Build the app with each flavor and verify that the correct application ID, name, and icon are used."
+          },
+          {
+            "id": 3,
+            "title": "Configure iOS project for flavors",
+            "description": "Set up iOS project with schemes and configurations for dev and prod environments.",
+            "dependencies": [],
+            "details": "Create development and production schemes in the iOS project. Configure each scheme with the appropriate bundle identifier, display name, and app icon. Set up Info.plist configurations for each environment.",
+            "status": "done",
+            "testStrategy": "Build the iOS app with each scheme and verify that the correct bundle identifier, display name, and app icon are used."
+          },
+          {
+            "id": 4,
+            "title": "Create environment configuration files",
+            "description": "Create configuration files to store environment-specific variables for dev and prod environments.",
+            "dependencies": [],
+            "details": "Create a config class that loads different environment variables based on the current flavor. Implement a mechanism to access these configurations throughout the app. Include configurations for API endpoints, feature flags, and logging levels.",
+            "status": "done",
+            "testStrategy": "Write unit tests to verify that the correct configuration is loaded for each environment."
+          },
+          {
+            "id": 5,
+            "title": "Set up launch configurations",
+            "description": "Create launch configurations in VS Code and/or Android Studio for easily running the app with different flavors.",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "Set up launch configurations that allow developers to easily run the app with different flavors. Document the commands for building and running the app with each flavor in the README.md file.",
+            "status": "done",
+            "testStrategy": "Verify that the app can be launched with each flavor using the configured launch settings."
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Implement core database module with drift",
+        "description": "Set up the drift database for local storage and offline persistence",
+        "details": "Add drift and sqlite3_flutter_libs dependencies to pubspec.yaml. Create the app_database.dart file in the core/database directory. Define the database connection and configuration. Set up database encryption for secure storage. Configure database migration strategy for future updates.",
+        "testStrategy": "Write unit tests to verify database connection and basic CRUD operations. Test database encryption and verify that data is properly secured.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Define database tables for users",
+        "description": "Create the users table schema in drift for local storage",
+        "details": "Create users_table.dart in core/database/tables directory. Define the users table schema with fields matching the Firestore users collection (uid, email, phoneNumber, name, imageUrl, fcmToken, preferredLanguage, createdAt, lastSeen, isOnline). Add appropriate indexes for efficient querying. Implement data class generation using drift.",
+        "testStrategy": "Write unit tests to verify table creation and schema. Test CRUD operations on the users table. Verify that indexes are properly created.",
+        "priority": "high",
+        "dependencies": [
+          4
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Define database tables for conversations",
+        "description": "Create the conversations table schema in drift for local storage",
+        "details": "Create conversations_table.dart in core/database/tables directory. Define the conversations table schema with fields matching the Firestore conversations collection (documentId, type, participantIds, participants, lastMessage, lastUpdatedAt, initiatedAt, unreadCount, translationEnabled, autoDetectLanguage). Add appropriate indexes for efficient querying. Implement data class generation using drift.",
+        "testStrategy": "Write unit tests to verify table creation and schema. Test CRUD operations on the conversations table. Verify that indexes are properly created.",
+        "priority": "high",
+        "dependencies": [
+          4
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Define database tables for messages",
+        "description": "Create the messages table schema in drift for local storage",
+        "details": "Create messages_table.dart in core/database/tables directory. Define the messages table schema with fields matching the Firestore messages subcollection (id, text, senderId, senderName, timestamp, type, status, detectedLanguage, translations, replyTo, metadata, embedding, aiAnalysis). Add appropriate indexes for efficient querying, especially on timestamp and conversationId. Implement data class generation using drift.",
+        "testStrategy": "Write unit tests to verify table creation and schema. Test CRUD operations on the messages table. Verify that indexes are properly created.",
+        "priority": "high",
+        "dependencies": [
+          4
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Implement message DAO",
+        "description": "Create the Data Access Object for messages to handle local database operations",
+        "details": "Create message_dao.dart in core/database/daos directory. Implement methods for inserting, updating, deleting, and querying messages. Add methods for batch operations. Implement methods for querying messages by conversation ID with pagination. Create methods for handling unsynced messages and tracking sync status. Implement reactive streams for real-time UI updates.",
+        "testStrategy": "Write unit tests for all DAO methods. Test reactive streams with mock data. Verify pagination works correctly. Test edge cases like empty results and error handling.",
+        "priority": "high",
+        "dependencies": [
+          7
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 9,
+        "title": "Implement conversation DAO",
+        "description": "Create the Data Access Object for conversations to handle local database operations",
+        "details": "Create conversation_dao.dart in core/database/daos directory. Implement methods for inserting, updating, deleting, and querying conversations. Add methods for updating last message and unread counts. Implement methods for querying conversations by participant ID with sorting by lastUpdatedAt. Create reactive streams for real-time UI updates.",
+        "testStrategy": "Write unit tests for all DAO methods. Test reactive streams with mock data. Verify sorting works correctly. Test edge cases like empty results and error handling.",
+        "priority": "high",
+        "dependencies": [
+          6
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 10,
+        "title": "Implement user DAO",
+        "description": "Create the Data Access Object for users to handle local database operations",
+        "details": "Create user_dao.dart in core/database/daos directory. Implement methods for inserting, updating, deleting, and querying users. Add methods for updating user status and FCM token. Implement methods for searching users by name or phone number. Create reactive streams for real-time UI updates.",
+        "testStrategy": "Write unit tests for all DAO methods. Test reactive streams with mock data. Verify search functionality works correctly. Test edge cases like empty results and error handling.",
+        "priority": "high",
+        "dependencies": [
+          5
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 11,
+        "title": "Set up Riverpod for state management",
+        "description": "Configure Riverpod as the state management solution for the application",
+        "details": "Add flutter_riverpod and riverpod_annotation dependencies to pubspec.yaml. Set up build_runner and riverpod_generator for code generation. Create the providers.dart file in the config directory to define global providers. Set up the ProviderScope at the root of the application in main.dart. Configure provider logging for development environment.",
+        "testStrategy": "Write unit tests to verify provider initialization. Test provider overrides for testing. Verify that providers are properly scoped and disposed.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 12,
+        "title": "Implement core error handling",
+        "description": "Create the error handling infrastructure for the application",
+        "details": "Create failures.dart and exceptions.dart in the core/error directory. Define custom exception classes for different error scenarios (network, authentication, database, etc.). Implement failure classes that can be returned from repositories. Create utility functions for converting exceptions to failures. Implement error logging with Firebase Crashlytics.",
+        "testStrategy": "Write unit tests for exception to failure conversion. Test error logging functionality. Verify that all error scenarios are properly handled.",
+        "priority": "medium",
+        "dependencies": [
+          1
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 13,
+        "title": "Set up network connectivity monitoring",
+        "description": "Implement network connectivity monitoring to support offline-first functionality",
+        "details": "Add connectivity_plus dependency to pubspec.yaml. Create network_info.dart in the core/network directory. Implement a service to monitor network connectivity changes. Create a Riverpod provider for network status. Implement callbacks for network state changes to trigger sync operations.",
+        "testStrategy": "Write unit tests with mocked connectivity service. Test behavior when network status changes. Verify that appropriate actions are triggered on connectivity changes.",
+        "priority": "high",
+        "dependencies": [
+          11
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 14,
+        "title": "Implement utility functions",
+        "description": "Create common utility functions for the application",
+        "details": "Create utility classes in the core/utils directory. Implement date_formatter.dart for consistent date formatting across the app. Create validators.dart for input validation functions. Add utility functions for string manipulation, file handling, and other common operations.",
+        "testStrategy": "Write unit tests for all utility functions. Test edge cases and input validation. Verify internationalization support for date formatting.",
+        "priority": "medium",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 15,
+        "title": "Set up Firebase authentication",
+        "description": "Integrate Firebase Authentication for user authentication",
+        "details": "Add firebase_auth dependency to pubspec.yaml. Configure Firebase Authentication in the Firebase console, enabling phone authentication. Create auth_remote_datasource.dart in features/authentication/data/datasources directory. Implement methods for phone authentication, verification, and sign out. Handle authentication state persistence.",
+        "testStrategy": "Write unit tests with firebase_auth_mocks. Test authentication flow with test phone numbers. Verify error handling for authentication failures.",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 16,
+        "title": "Create user entity and model",
+        "description": "Define the user domain entity and data model",
+        "details": "Create user.dart in features/authentication/domain/entities directory. Define the User entity with required properties. Create user_model.dart in features/authentication/data/models directory. Implement fromJson and toJson methods for serialization. Add methods for converting between entity and model. Implement equality comparison using Equatable.",
+        "testStrategy": "Write unit tests for serialization and deserialization. Test conversion between entity and model. Verify equality comparison works correctly.",
+        "priority": "high",
+        "dependencies": [
+          15
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 17,
+        "title": "Implement authentication repository",
+        "description": "Create the repository for authentication operations",
+        "details": "Create auth_repository.dart interface in features/authentication/domain/repositories directory. Define methods for sign in, sign out, and getting current user. Create auth_repository_impl.dart in features/authentication/data/repositories directory. Implement the repository using the remote data source. Handle error cases and convert exceptions to failures.",
+        "testStrategy": "Write unit tests with mocked data sources. Test success and failure scenarios. Verify error handling and conversion to failures.",
+        "priority": "high",
+        "dependencies": [
+          15,
+          16
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 18,
+        "title": "Implement authentication use cases",
+        "description": "Create use cases for authentication operations",
+        "details": "Create sign_in.dart and sign_out.dart in features/authentication/domain/usecases directory. Implement the use cases using the repository. Handle input validation and error cases. Return appropriate results or failures.",
+        "testStrategy": "Write unit tests with mocked repositories. Test success and failure scenarios. Verify input validation works correctly.",
+        "priority": "high",
+        "dependencies": [
+          17
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 19,
+        "title": "Create authentication providers",
+        "description": "Implement Riverpod providers for authentication state",
+        "details": "Create auth_provider.dart in features/authentication/presentation/providers directory. Implement providers for authentication state, current user, and authentication operations. Use riverpod_annotation for code generation. Handle authentication state changes and update UI accordingly.",
+        "testStrategy": "Write unit tests with provider overrides. Test authentication state changes. Verify that UI updates correctly based on authentication state.",
+        "priority": "high",
+        "dependencies": [
+          11,
+          18
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 20,
+        "title": "Implement phone verification UI",
+        "description": "Create the UI for phone number verification",
+        "details": "Create phone_verification_page.dart in features/authentication/presentation/pages directory. Implement UI for entering phone number and verification code. Add validation for phone number input. Handle verification code submission and error cases. Show loading indicators during verification process.\n<info added on 2025-10-21T05:35:51.781Z>\n**Reference Implementation for Email Authentication**\n\nBased on the email authentication implementation, adapt the phone verification UI with similar structure and features:\n\n**Pages to Implement:**\n- PhoneVerificationPage: Main page with phone input and verification code sections\n- PhoneInputSection: For entering and validating phone numbers\n- CodeVerificationSection: For entering the verification code sent via SMS\n\n**Features to Include:**\n- Form validation for phone number format (country code handling)\n- Visual feedback during verification process\n- Error messages with clear styling\n- Resend code functionality with cooldown timer\n- Success/error snackbar messages\n- Riverpod integration with auth providers\n\n**UI Components:**\n- Country code selector dropdown\n- Phone number input field with formatting\n- Verification code input with digit separation\n- Loading indicators during SMS sending and verification\n- Error state handling with retry options\n\n**Implementation Notes:**\n- Use ScrollView to prevent overflow issues in different screen sizes\n- Implement responsive design for various device dimensions\n- Consider adding biometric authentication option if available\n</info added on 2025-10-21T05:35:51.781Z>",
+        "testStrategy": "Write widget tests for UI components. Test input validation. Verify error messages are displayed correctly. Test loading indicators.",
+        "priority": "high",
+        "dependencies": [
+          19
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 21,
+        "title": "Implement user profile setup UI",
+        "description": "Create the UI for setting up user profile after authentication",
+        "details": "Create profile_setup_page.dart in features/authentication/presentation/pages directory. Implement UI for entering name and uploading profile picture. Add validation for name input. Handle profile picture selection from gallery or camera. Implement profile data submission and error handling.\n<info added on 2025-10-21T15:12:37.063Z>\nImplementation complete for profile setup UI with the following details:\n\n- UpdateUserProfile use case implemented with validation (2-50 characters)\n- Full repository and datasource implementation completed\n- ProfileSetupPage built with name input field and image picker functionality\n- Routing logic implemented to display profile setup page for new users\n- Image selection from camera and gallery with preview functionality working\n- Skip functionality added for users who prefer quick onboarding\n\nThe user flow is now: Sign Up → ProfileSetupPage (if displayName empty) → HomePage\n\nImage handling is partially implemented:\n- UI for image selection is complete and functional\n- Firebase Storage upload is pending (will be implemented with Task 46)\n- Currently, the implementation only updates the user's displayName\n\nWidget tests are still pending and need to be written comprehensively for the ProfileSetupPage.\n</info added on 2025-10-21T15:12:37.063Z>",
+        "testStrategy": "Write widget tests for UI components. Test input validation. Verify image selection and upload. Test error handling and loading states.",
+        "priority": "high",
+        "dependencies": [
+          19
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 22,
+        "title": "Set up Firestore for users collection",
+        "description": "Configure Firestore for storing user data",
+        "details": "Add cloud_firestore dependency to pubspec.yaml. Create Firestore indexes for users collection as specified in the PRD. Implement security rules for users collection to ensure proper access control. Create utility functions for user document operations.",
+        "testStrategy": "Write unit tests with fake_cloud_firestore. Test CRUD operations on users collection. Verify that security rules work as expected using Firebase emulator.",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Add cloud_firestore dependency to pubspec.yaml",
+            "description": "Add the cloud_firestore package to the project dependencies and configure initial Firebase setup",
+            "dependencies": [],
+            "details": "Add cloud_firestore: ^latest_version to pubspec.yaml. Run flutter pub get to install the dependency. Ensure Firebase core is properly initialized in the main.dart file with Firebase.initializeApp() before using Firestore.",
+            "status": "done",
+            "testStrategy": "Verify the dependency is correctly added and the app builds without errors. Check Firebase initialization in debug logs."
+          },
+          {
+            "id": 2,
+            "title": "Create Firestore indexes for users collection",
+            "description": "Set up the necessary indexes for the users collection as specified in the PRD",
+            "dependencies": [
+              1
+            ],
+            "details": "Review the PRD for required indexes. Create composite indexes for frequently queried fields in the users collection. Configure indexes for efficient querying by email, displayName, and lastActive fields. Deploy the indexes using Firebase CLI or Firebase console.",
+            "status": "done",
+            "testStrategy": "Test query performance with the created indexes. Verify that queries using these indexes execute efficiently without index warnings in the Firebase console."
+          },
+          {
+            "id": 3,
+            "title": "Implement security rules for users collection",
+            "description": "Create and deploy Firestore security rules to ensure proper access control for user data",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Write security rules that restrict read access to user documents based on authentication. Allow users to read only their own documents or specific fields of other users. Implement write rules that prevent unauthorized modifications. Test rules in the Firebase emulator before deployment.",
+            "status": "done",
+            "testStrategy": "Use Firebase emulator to test security rules. Write tests that verify authorized and unauthorized access patterns. Ensure rules prevent unauthorized reads and writes while allowing legitimate operations."
+          },
+          {
+            "id": 4,
+            "title": "Create user document model and CRUD operations",
+            "description": "Implement the User model class and utility functions for user document operations",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "Create a User model class that maps to Firestore document structure. Implement toJson() and fromJson() methods for serialization. Create utility functions for creating, reading, updating, and deleting user documents. Include methods for handling user profile updates and user status changes.",
+            "status": "done",
+            "testStrategy": "Write unit tests using fake_cloud_firestore to test CRUD operations. Verify that data is correctly serialized and deserialized. Test edge cases like handling missing fields or invalid data."
+          },
+          {
+            "id": 5,
+            "title": "Implement user data service and repository",
+            "description": "Create a service layer and repository for managing user data operations",
+            "dependencies": [
+              4
+            ],
+            "details": "Implement a UserRepository class that handles all Firestore operations for users. Create a UserService that uses the repository and provides business logic. Implement methods for user registration, profile updates, and user queries. Add error handling and logging for Firestore operations. Ensure proper cleanup of listeners when not needed.",
+            "status": "done",
+            "testStrategy": "Write unit tests for the repository and service layers. Mock dependencies to isolate testing. Test error handling and edge cases. Verify that listeners are properly managed and cleaned up."
+          }
+        ]
+      },
+      {
+        "id": 23,
+        "title": "Set up Firestore for conversations collection",
+        "description": "Configure Firestore for storing conversation data",
+        "details": "Create Firestore indexes for conversations collection as specified in the PRD, especially for participantIds array and lastUpdatedAt. Implement security rules for conversations collection to ensure only participants can access conversations. Create utility functions for conversation document operations.",
+        "testStrategy": "Write unit tests with fake_cloud_firestore. Test CRUD operations on conversations collection. Verify that security rules work as expected using Firebase emulator.",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 24,
+        "title": "Set up Firestore for messages subcollection",
+        "description": "Configure Firestore for storing message data",
+        "details": "Create Firestore indexes for messages subcollection as specified in the PRD, especially for timestamp. Implement security rules for messages subcollection to ensure only conversation participants can access messages. Create utility functions for message document operations.",
+        "testStrategy": "Write unit tests with fake_cloud_firestore. Test CRUD operations on messages subcollection. Verify that security rules work as expected using Firebase emulator.",
+        "priority": "high",
+        "dependencies": [
+          2,
+          23
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 25,
+        "title": "Create message entity and model",
+        "description": "Define the message domain entity and data model",
+        "details": "Create message.dart in features/messaging/domain/entities directory. Define the Message entity with required properties as specified in the PRD. Create message_model.dart in features/messaging/data/models directory. Implement fromJson and toJson methods for serialization. Add methods for converting between entity and model. Implement equality comparison using Equatable.",
+        "testStrategy": "Write unit tests for serialization and deserialization. Test conversion between entity and model. Verify equality comparison works correctly.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 26,
+        "title": "Create conversation entity and model",
+        "description": "Define the conversation domain entity and data model",
+        "details": "Create conversation.dart in features/messaging/domain/entities directory. Define the Conversation entity with required properties as specified in the PRD. Create conversation_model.dart in features/messaging/data/models directory. Implement fromJson and toJson methods for serialization. Add methods for converting between entity and model. Implement equality comparison using Equatable.",
+        "testStrategy": "Write unit tests for serialization and deserialization. Test conversion between entity and model. Verify equality comparison works correctly.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 27,
+        "title": "Implement message remote data source",
+        "description": "Create the remote data source for message operations",
+        "details": "Create message_remote_datasource.dart in features/messaging/data/datasources directory. Implement methods for sending, retrieving, updating, and deleting messages using Firestore. Add methods for listening to message changes in real-time. Implement pagination for message retrieval. Handle Firestore errors and convert to appropriate exceptions.",
+        "testStrategy": "Write unit tests with fake_cloud_firestore. Test CRUD operations and real-time listeners. Verify pagination works correctly. Test error handling.",
+        "priority": "high",
+        "dependencies": [
+          24,
+          25
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 28,
+        "title": "Implement message local data source",
+        "description": "Create the local data source for message operations",
+        "details": "Create message_local_datasource.dart in features/messaging/data/datasources directory. Implement methods for storing, retrieving, updating, and deleting messages using drift. Add methods for handling unsynced messages. Implement pagination for message retrieval. Create methods for tracking message sync status.",
+        "testStrategy": "Write unit tests with mocked drift database. Test CRUD operations and pagination. Verify unsynced message handling works correctly. Test error handling.",
+        "priority": "high",
+        "dependencies": [
+          8,
+          25
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create message local data source interface and implementation structure",
+            "description": "Define the interface and implementation structure for the message local data source with required methods.",
+            "dependencies": [],
+            "details": "Create message_local_datasource.dart in features/messaging/data/datasources directory. Define the interface with all required method signatures including CRUD operations, pagination, and sync status tracking. Create the implementation class that uses MessageDao. Set up dependency injection for the data source.",
+            "status": "done",
+            "testStrategy": "Write unit tests for the interface contract. Verify that all required methods are properly defined with correct signatures."
+          },
+          {
+            "id": 2,
+            "title": "Implement basic CRUD operations for messages",
+            "description": "Implement methods for storing, retrieving, updating, and deleting messages using drift.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement createMessage(), getMessage(), updateMessage(), and deleteMessage() methods using the MessageDao. Handle error cases and return appropriate results. Ensure proper data mapping between entity and domain models. Implement batch operations where appropriate for efficiency.",
+            "status": "done",
+            "testStrategy": "Write unit tests with mocked drift database to verify CRUD operations work correctly. Test success cases and error handling for each operation."
+          },
+          {
+            "id": 3,
+            "title": "Implement pagination for message retrieval",
+            "description": "Add pagination support for retrieving messages with efficient loading of large message histories.",
+            "dependencies": [
+              2
+            ],
+            "details": "Implement getMessages() method with pagination parameters (limit, offset or cursor-based). Add sorting options (by timestamp, etc.). Optimize query performance with proper indices. Support filtering by conversation ID, message status, etc. Ensure consistent ordering of messages.",
+            "status": "done",
+            "testStrategy": "Test pagination with different page sizes and offsets. Verify correct message ordering. Test edge cases like empty results and last page scenarios."
+          },
+          {
+            "id": 4,
+            "title": "Implement sync status tracking for messages",
+            "description": "Add methods for tracking message sync status and handling unsynced messages.",
+            "dependencies": [
+              2
+            ],
+            "details": "Implement methods to mark messages as synced/unsynced. Create getUnsyncedMessages() method to retrieve messages that need to be synced with the server. Add updateSyncStatus() method to update sync status after server operations. Implement optimistic updates with proper status tracking.",
+            "status": "done",
+            "testStrategy": "Test sync status tracking with various scenarios. Verify unsynced messages can be properly identified and tracked. Test status transitions through the sync lifecycle."
+          },
+          {
+            "id": 5,
+            "title": "Implement conflict resolution for message operations",
+            "description": "Add conflict resolution logic for handling concurrent updates and sync conflicts.",
+            "dependencies": [
+              4
+            ],
+            "details": "Implement conflict detection by comparing local and remote versions. Create resolveConflict() method with strategies like server-wins, client-wins, or merge-based resolution. Add version tracking for messages. Implement retry logic for failed sync operations. Create methods for handling edge cases like deleted messages that were modified remotely.",
+            "status": "done",
+            "testStrategy": "Test conflict resolution with simulated concurrent updates. Verify each resolution strategy works correctly. Test edge cases like conflicts during deletion or with missing data."
+          }
+        ]
+      },
+      {
+        "id": 29,
+        "title": "Implement conversation remote data source",
+        "description": "Create the remote data source for conversation operations",
+        "details": "Create conversation_remote_datasource.dart in features/messaging/data/datasources directory. Implement methods for creating, retrieving, updating, and deleting conversations using Firestore. Add methods for listening to conversation changes in real-time. Implement methods for updating last message and unread counts. Handle Firestore errors and convert to appropriate exceptions.",
+        "testStrategy": "Write unit tests with fake_cloud_firestore. Test CRUD operations and real-time listeners. Verify last message updates work correctly. Test error handling.",
+        "priority": "high",
+        "dependencies": [
+          23,
+          26
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 30,
+        "title": "Implement conversation local data source",
+        "description": "Create the local data source for conversation operations",
+        "details": "Create conversation_local_datasource.dart in features/messaging/data/datasources directory. Implement methods for storing, retrieving, updating, and deleting conversations using drift. Add methods for updating last message and unread counts. Create methods for tracking conversation sync status.",
+        "testStrategy": "Write unit tests with mocked drift database. Test CRUD operations. Verify last message updates work correctly. Test error handling.",
+        "priority": "high",
+        "dependencies": [
+          9,
+          26
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 31,
+        "title": "Implement message repository",
+        "description": "Create the repository for message operations",
+        "details": "Create message_repository.dart interface in features/messaging/domain/repositories directory. Define methods for sending, retrieving, updating, and deleting messages. Create message_repository_impl.dart in features/messaging/data/repositories directory. Implement the repository using remote and local data sources. Implement offline-first strategy with optimistic updates. Handle error cases and convert exceptions to failures.",
+        "testStrategy": "Write unit tests with mocked data sources. Test success and failure scenarios. Verify offline-first strategy works correctly. Test error handling and conversion to failures.",
+        "priority": "high",
+        "dependencies": [
+          27,
+          28
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 32,
+        "title": "Implement conversation repository",
+        "description": "Create the repository for conversation operations",
+        "details": "Create conversation_repository.dart interface in features/messaging/domain/repositories directory. Define methods for creating, retrieving, updating, and deleting conversations. Create conversation_repository_impl.dart in features/messaging/data/repositories directory. Implement the repository using remote and local data sources. Implement offline-first strategy. Handle error cases and convert exceptions to failures.",
+        "testStrategy": "Write unit tests with mocked data sources. Test success and failure scenarios. Verify offline-first strategy works correctly. Test error handling and conversion to failures.",
+        "priority": "high",
+        "dependencies": [
+          29,
+          30
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 33,
+        "title": "Implement message use cases",
+        "description": "Create use cases for message operations",
+        "details": "Create send_message.dart, get_messages.dart, and sync_messages.dart in features/messaging/domain/usecases directory. Implement the use cases using the message repository. Handle input validation and error cases. Return appropriate results or failures. Implement pagination for message retrieval.",
+        "testStrategy": "Write unit tests with mocked repositories. Test success and failure scenarios. Verify input validation works correctly. Test pagination.",
+        "priority": "high",
+        "dependencies": [
+          31
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 34,
+        "title": "Implement conversation use cases",
+        "description": "Create use cases for conversation operations",
+        "details": "Create create_conversation.dart, get_conversations.dart, and update_conversation.dart in features/messaging/domain/usecases directory. Implement the use cases using the conversation repository. Handle input validation and error cases. Return appropriate results or failures.",
+        "testStrategy": "Write unit tests with mocked repositories. Test success and failure scenarios. Verify input validation works correctly.",
+        "priority": "high",
+        "dependencies": [
+          32
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 35,
+        "title": "Create message providers",
+        "description": "Implement Riverpod providers for message state",
+        "details": "Create message_provider.dart in features/messaging/presentation/providers directory. Implement providers for message state and operations. Use riverpod_annotation for code generation. Create providers for real-time message streams. Implement optimistic UI updates for message sending as described in the PRD.",
+        "testStrategy": "Write unit tests with provider overrides. Test message state changes. Verify optimistic updates work correctly. Test error handling and recovery.",
+        "priority": "high",
+        "dependencies": [
+          11,
+          33
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 36,
+        "title": "Create conversation providers",
+        "description": "Implement Riverpod providers for conversation state",
+        "details": "Create conversation_provider.dart in features/messaging/presentation/providers directory. Implement providers for conversation state and operations. Use riverpod_annotation for code generation. Create providers for real-time conversation streams. Implement sorting by lastUpdatedAt.",
+        "testStrategy": "Write unit tests with provider overrides. Test conversation state changes. Verify sorting works correctly. Test error handling.",
+        "priority": "high",
+        "dependencies": [
+          11,
+          34
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 37,
+        "title": "Implement conversation list UI",
+        "description": "Create the UI for displaying the list of conversations",
+        "details": "Create conversation_list_page.dart in features/messaging/presentation/pages directory. Implement UI for displaying conversations sorted by lastUpdatedAt. Show last message, timestamp, and unread count. Add pull-to-refresh functionality. Implement search functionality. Handle empty state and loading state.",
+        "testStrategy": "Write widget tests for UI components. Test sorting and filtering. Verify pull-to-refresh works correctly. Test empty and loading states.",
+        "priority": "high",
+        "dependencies": [
+          36
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 38,
+        "title": "Implement chat UI",
+        "description": "Create the UI for the chat screen",
+        "details": "Create chat_page.dart in features/messaging/presentation/pages directory. Implement UI for displaying messages with pagination. Show message bubbles with sender information and timestamp. Add message input field with send button. Implement loading more messages when scrolling up. Handle empty state and loading state.",
+        "testStrategy": "Write widget tests for UI components. Test pagination and scrolling. Verify message input works correctly. Test empty and loading states.",
+        "priority": "high",
+        "dependencies": [
+          35
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 39,
+        "title": "Create message bubble widget",
+        "description": "Implement the widget for displaying a message bubble",
+        "details": "Create message_bubble.dart in features/messaging/presentation/widgets directory. Implement UI for displaying a message with sender information, timestamp, and status. Support different message types (text, image, etc.). Show different styles for sent and received messages. Add support for displaying translations.",
+        "testStrategy": "Write widget tests for different message types and states. Test layout for different screen sizes. Verify translations display correctly.",
+        "priority": "high",
+        "dependencies": [
+          38
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 40,
+        "title": "Create message input widget",
+        "description": "Implement the widget for entering and sending messages",
+        "details": "Create message_input.dart in features/messaging/presentation/widgets directory. Implement UI for text input with send button. Add support for attaching images. Show typing indicator when the user is typing. Handle input validation and empty input. Implement send button state based on input validity.",
+        "testStrategy": "Write widget tests for input validation and button states. Test image attachment functionality. Verify typing indicator works correctly.",
+        "priority": "high",
+        "dependencies": [
+          38
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 41,
+        "title": "Implement typing indicator",
+        "description": "Create the typing indicator functionality and UI",
+        "details": "Create typing_indicator.dart in features/messaging/presentation/widgets directory. Implement UI for showing when someone is typing. Create Firestore document for tracking typing status. Implement debouncing for typing status updates. Add timeout for clearing typing status.",
+        "testStrategy": "Write widget tests for typing indicator display. Test debouncing functionality. Verify timeout works correctly.",
+        "priority": "medium",
+        "dependencies": [
+          38
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 42,
+        "title": "Set up Firebase Cloud Messaging",
+        "description": "Integrate FCM for push notifications",
+        "details": "Add firebase_messaging dependency to pubspec.yaml. Configure FCM in the Firebase console. Implement FCM token retrieval and storage. Create notification handlers for foreground and background messages. Implement notification permission request. Add click handling for notifications.",
+        "testStrategy": "Test FCM token retrieval and storage. Verify notification handling in foreground and background. Test notification click handling.",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 43,
+        "title": "Implement message sync service",
+        "description": "Create the service for syncing messages between local and remote",
+        "details": "Create message_sync_service.dart in features/messaging/data/services directory. Implement the sync logic as described in the PRD, including conflict resolution with Last-Write-Wins strategy. Add methods for syncing unsynced messages. Implement background sync using WorkManager.",
+        "testStrategy": "Write unit tests for sync logic. Test conflict resolution. Verify background sync works correctly. Test error handling and retry logic.",
+        "priority": "high",
+        "dependencies": [
+          31
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 44,
+        "title": "Implement message queue with retry logic",
+        "description": "Create the message queue for handling message sending with retry",
+        "details": "Create message_queue.dart in features/messaging/data/services directory. Implement the queue processing logic with exponential backoff retry as described in the PRD. Add methods for adding messages to the queue. Implement dead letter handling after 5 failures.",
+        "testStrategy": "Write unit tests for queue processing. Test retry logic with exponential backoff. Verify dead letter handling works correctly. Test error recovery.",
+        "priority": "high",
+        "dependencies": [
+          31
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 45,
+        "title": "Set up WorkManager for background tasks",
+        "description": "Integrate WorkManager for handling background tasks",
+        "details": "Add workmanager dependency to pubspec.yaml. Configure WorkManager in the application. Create background tasks for message syncing. Implement periodic sync task. Add one-time tasks for immediate sync needs. Handle task constraints like network availability.",
+        "testStrategy": "Test WorkManager initialization. Verify background tasks execute correctly. Test periodic and one-time tasks. Verify constraint handling.",
+        "priority": "high",
+        "dependencies": [
+          43,
+          44
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 46,
+        "title": "Implement Firebase Storage integration",
+        "description": "Set up Firebase Storage for media file storage",
+        "details": "Add firebase_storage dependency to pubspec.yaml. Configure Firebase Storage in the Firebase console. Implement methods for uploading, downloading, and deleting files. Add progress tracking for uploads. Implement security rules for Firebase Storage.",
+        "testStrategy": "Write unit tests for upload and download operations. Test progress tracking. Verify security rules work as expected using Firebase emulator.",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 47,
+        "title": "Implement image compression and thumbnails",
+        "description": "Create functionality for compressing images and generating thumbnails",
+        "details": "Add image_picker and image dependency to pubspec.yaml. Implement image compression to reduce storage and bandwidth usage. Create thumbnail generation for faster loading in conversation list. Add methods for handling different image resolutions based on device screen size.",
+        "testStrategy": "Test image compression with different image sizes. Verify thumbnail generation produces correct sizes. Test image loading performance.",
+        "priority": "medium",
+        "dependencies": [
+          46
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 48,
+        "title": "Integrate cached_network_image",
+        "description": "Set up cached_network_image for efficient image loading",
+        "details": "Add cached_network_image and flutter_cache_manager dependencies to pubspec.yaml. Configure cache settings for optimal performance. Implement image loading with placeholders and error handling. Add methods for clearing cache when needed.",
+        "testStrategy": "Test image caching with network images. Verify placeholder and error displays. Test cache clearing functionality.",
+        "priority": "medium",
+        "dependencies": [
+          46
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 49,
+        "title": "Create group conversation entity and model",
+        "description": "Define the group conversation domain entity and data model",
+        "details": "Create group_conversation.dart in features/messaging/domain/entities directory. Define the GroupConversation entity with required properties as specified in the PRD. Create group_conversation_model.dart in features/messaging/data/models directory. Implement fromJson and toJson methods for serialization. Add methods for converting between entity and model.",
+        "testStrategy": "Write unit tests for serialization and deserialization. Test conversion between entity and model. Verify equality comparison works correctly.",
+        "priority": "medium",
+        "dependencies": [
+          26
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 50,
+        "title": "Set up Firestore for group conversations",
+        "description": "Configure Firestore for storing group conversation data",
+        "details": "Create Firestore indexes for group-conversations collection as specified in the PRD. Implement security rules for group-conversations collection to ensure only participants can access group conversations. Create utility functions for group conversation document operations.",
+        "testStrategy": "Write unit tests with fake_cloud_firestore. Test CRUD operations on group-conversations collection. Verify that security rules work as expected using Firebase emulator.",
+        "priority": "medium",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 51,
+        "title": "Implement group conversation remote data source",
+        "description": "Create the remote data source for group conversation operations",
+        "details": "Create group_conversation_remote_datasource.dart in features/messaging/data/datasources directory. Implement methods for creating, retrieving, updating, and deleting group conversations using Firestore. Add methods for listening to group conversation changes in real-time. Implement methods for managing group members and admins.",
+        "testStrategy": "Write unit tests with fake_cloud_firestore. Test CRUD operations and real-time listeners. Verify group member management works correctly. Test error handling.",
+        "priority": "medium",
+        "dependencies": [
+          50,
+          49
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 52,
+        "title": "Implement group conversation local data source",
+        "description": "Create the local data source for group conversation operations",
+        "details": "Create group_conversation_local_datasource.dart in features/messaging/data/datasources directory. Implement methods for storing, retrieving, updating, and deleting group conversations using drift. Add methods for managing group members and admins. Create methods for tracking group conversation sync status.",
+        "testStrategy": "Write unit tests with mocked drift database. Test CRUD operations. Verify group member management works correctly. Test error handling.",
+        "priority": "medium",
+        "dependencies": [
+          9,
+          49
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 53,
+        "title": "Implement group conversation repository",
+        "description": "Create the repository for group conversation operations",
+        "details": "Create group_conversation_repository.dart interface in features/messaging/domain/repositories directory. Define methods for creating, retrieving, updating, and deleting group conversations. Create group_conversation_repository_impl.dart in features/messaging/data/repositories directory. Implement the repository using remote and local data sources. Handle error cases and convert exceptions to failures.",
+        "testStrategy": "Write unit tests with mocked data sources. Test success and failure scenarios. Verify error handling and conversion to failures.",
+        "priority": "medium",
+        "dependencies": [
+          51,
+          52
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 54,
+        "title": "Implement group conversation use cases",
+        "description": "Create use cases for group conversation operations",
+        "details": "Create create_group.dart, get_groups.dart, update_group.dart, and manage_members.dart in features/messaging/domain/usecases directory. Implement the use cases using the group conversation repository. Handle input validation and error cases. Return appropriate results or failures.",
+        "testStrategy": "Write unit tests with mocked repositories. Test success and failure scenarios. Verify input validation works correctly.",
+        "priority": "medium",
+        "dependencies": [
+          53
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 55,
+        "title": "Create group conversation providers",
+        "description": "Implement Riverpod providers for group conversation state",
+        "details": "Create group_conversation_provider.dart in features/messaging/presentation/providers directory. Implement providers for group conversation state and operations. Use riverpod_annotation for code generation. Create providers for real-time group conversation streams. Implement sorting by lastUpdatedAt.",
+        "testStrategy": "Write unit tests with provider overrides. Test group conversation state changes. Verify sorting works correctly. Test error handling.",
+        "priority": "medium",
+        "dependencies": [
+          11,
+          54
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 56,
+        "title": "Implement group creation UI",
+        "description": "Create the UI for creating a new group conversation",
+        "details": "Create group_creation_page.dart in features/messaging/presentation/pages directory. Implement UI for entering group name and selecting participants. Add functionality for uploading group image. Implement validation for group name and participants. Handle creation process with loading state.",
+        "testStrategy": "Write widget tests for UI components. Test validation logic. Verify image upload functionality. Test loading state during creation.",
+        "priority": "medium",
+        "dependencies": [
+          55
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 57,
+        "title": "Implement group chat UI",
+        "description": "Create the UI for the group chat screen",
+        "details": "Create group_chat_page.dart in features/messaging/presentation/pages directory. Implement UI for displaying group messages with pagination. Show message bubbles with sender information and timestamp. Add group info header with participant count and image. Implement loading more messages when scrolling up.",
+        "testStrategy": "Write widget tests for UI components. Test pagination and scrolling. Verify group info display. Test empty and loading states.",
+        "priority": "medium",
+        "dependencies": [
+          55,
+          38
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 58,
+        "title": "Implement group management UI",
+        "description": "Create the UI for managing group settings and members",
+        "details": "Create group_management_page.dart in features/messaging/presentation/pages directory. Implement UI for viewing and editing group information. Add functionality for adding and removing members. Implement admin controls for group admins. Add confirmation dialogs for destructive actions.",
+        "testStrategy": "Write widget tests for UI components. Test member management functionality. Verify admin controls work correctly. Test confirmation dialogs.",
+        "priority": "medium",
+        "dependencies": [
+          55
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 59,
+        "title": "Set up Firebase Cloud Functions",
+        "description": "Configure Firebase Cloud Functions for AI feature integration",
+        "details": "Set up Firebase Cloud Functions project. Configure Secret Manager for storing OpenAI API keys. Implement the proxy function for OpenAI API calls as described in the PRD. Add rate limiting and App Check verification. Set up proper error handling and logging.",
+        "testStrategy": "Test Cloud Functions deployment. Verify Secret Manager integration. Test rate limiting and App Check verification. Test error handling and logging.",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 60,
+        "title": "Implement thread summarization Cloud Function",
+        "description": "Create the Cloud Function for summarizing conversation threads",
+        "details": "Implement the summarizeThread function as described in the PRD. Add caching with 1-hour TTL. Implement the system prompt for extracting key topics, decisions, and open questions. Configure the function to use gpt-4o-mini model. Add error handling and retry logic.",
+        "testStrategy": "Test the function with sample conversation data. Verify caching works correctly. Test error handling and retry logic. Evaluate summary quality with different conversation types.",
+        "priority": "medium",
+        "dependencies": [
+          59
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 61,
+        "title": "Implement action item extraction Cloud Function",
+        "description": "Create the Cloud Function for extracting action items from conversations",
+        "details": "Implement the extractActionItems function as described in the PRD. Configure the function to return structured JSON output. Implement the system prompt for identifying tasks, assignees, deadlines, and status. Add error handling and validation of the returned JSON.",
+        "testStrategy": "Test the function with sample conversation data. Verify JSON structure is correct. Test error handling. Evaluate extraction quality with different conversation types.",
+        "priority": "medium",
+        "dependencies": [
+          59
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 62,
+        "title": "Implement smart search Cloud Function",
+        "description": "Create the Cloud Function for semantic search using RAG",
+        "details": "Implement the smartSearch function as described in the PRD. Integrate with text-embedding-3-small model for generating embeddings. Implement vector search in Firestore. Add filtering by user ID for privacy. Configure result limit and distance measure.",
+        "testStrategy": "Test the function with sample queries. Verify vector search returns relevant results. Test filtering by user ID. Evaluate search quality with different query types.",
+        "priority": "medium",
+        "dependencies": [
+          59
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 63,
+        "title": "Implement priority detection Cloud Function",
+        "description": "Create the Cloud Function for detecting message priority",
+        "details": "Implement the detectPriority function as described in the PRD. Configure the function to trigger on new message creation. Implement the system prompt for analyzing priority levels. Add notification sending for high-priority messages. Update the message document with the detected priority.",
+        "testStrategy": "Test the function with sample messages of different priorities. Verify priority detection accuracy. Test notification sending for high-priority messages. Verify document updates.",
+        "priority": "medium",
+        "dependencies": [
+          59
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 64,
+        "title": "Implement decision tracking Cloud Function",
+        "description": "Create the Cloud Function for tracking decisions in conversations",
+        "details": "Implement the trackDecisions function as described in the PRD. Configure the function to return structured JSON with decisions, rationale, alternatives, decider, and impact. Implement storage of decisions in Firestore. Add 24-hour caching for efficiency.",
+        "testStrategy": "Test the function with sample conversation data. Verify JSON structure is correct. Test decision storage in Firestore. Evaluate extraction quality with different conversation types.",
+        "priority": "medium",
+        "dependencies": [
+          59
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 65,
+        "title": "Implement smart replies Cloud Function",
+        "description": "Create the Cloud Function for generating context-aware smart replies",
+        "details": "Implement the generateSmartReplies function as described in the PRD. Configure the function to analyze conversation context and generate replies in the same language as the last message. Implement caching with 2-minute TTL. Add language detection and tone matching.",
+        "testStrategy": "Test the function with sample conversation data in different languages. Verify reply quality and relevance. Test caching functionality. Evaluate reply appropriateness with different conversation contexts.",
+        "priority": "high",
+        "dependencies": [
+          59
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 66,
+        "title": "Implement message indexing Cloud Function",
+        "description": "Create the Cloud Function for indexing messages with embeddings",
+        "details": "Implement the indexMessage function as described in the PRD. Configure the function to trigger on new message creation. Integrate with text-embedding-3-small model for generating embeddings. Update the message document with the embedding vector. Add context information to improve embedding quality.",
+        "testStrategy": "Test the function with sample messages. Verify embedding generation and storage. Test with different message types and languages. Verify document updates.",
+        "priority": "medium",
+        "dependencies": [
+          59
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 67,
+        "title": "Create AI feature entities and models",
+        "description": "Define the domain entities and data models for AI features",
+        "details": "Create entities and models in the features/ai_features/domain/entities and features/ai_features/data/models directories. Define models for thread summaries, action items, smart replies, and decisions. Implement serialization and deserialization methods.",
+        "testStrategy": "Write unit tests for serialization and deserialization. Test conversion between entities and models. Verify equality comparison works correctly.",
+        "priority": "medium",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 68,
+        "title": "Implement AI feature remote data source",
+        "description": "Create the remote data source for AI feature operations",
+        "details": "Create ai_remote_datasource.dart in features/ai_features/data/datasources directory. Implement methods for calling Cloud Functions for different AI features. Handle error cases and convert to appropriate exceptions. Add retry logic for transient failures.",
+        "testStrategy": "Write unit tests with mocked Cloud Functions. Test success and failure scenarios. Verify retry logic works correctly. Test error handling.",
+        "priority": "medium",
+        "dependencies": [
+          59,
+          67
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 69,
+        "title": "Implement AI feature repository",
+        "description": "Create the repository for AI feature operations",
+        "details": "Create ai_repository.dart interface in features/ai_features/domain/repositories directory. Define methods for different AI features. Create ai_repository_impl.dart in features/ai_features/data/repositories directory. Implement the repository using the remote data source. Handle error cases and convert exceptions to failures.",
+        "testStrategy": "Write unit tests with mocked data sources. Test success and failure scenarios. Verify error handling and conversion to failures.",
+        "priority": "medium",
+        "dependencies": [
+          68
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 70,
+        "title": "Implement AI feature use cases",
+        "description": "Create use cases for AI feature operations",
+        "details": "Create generate_smart_replies.dart, summarize_thread.dart, extract_action_items.dart, detect_priority.dart, and track_decisions.dart in features/ai_features/domain/usecases directory. Implement the use cases using the AI repository. Handle input validation and error cases. Return appropriate results or failures.",
+        "testStrategy": "Write unit tests with mocked repositories. Test success and failure scenarios. Verify input validation works correctly.",
+        "priority": "medium",
+        "dependencies": [
+          69
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 71,
+        "title": "Create AI feature providers",
+        "description": "Implement Riverpod providers for AI feature state",
+        "details": "Create ai_provider.dart in features/ai_features/presentation/providers directory. Implement providers for different AI features. Use riverpod_annotation for code generation. Handle loading, error, and success states. Implement caching for improved performance.",
+        "testStrategy": "Write unit tests with provider overrides. Test state changes for different AI features. Verify caching works correctly. Test error handling.",
+        "priority": "medium",
+        "dependencies": [
+          11,
+          70
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 72,
+        "title": "Implement smart reply chips widget",
+        "description": "Create the UI widget for displaying smart reply suggestions",
+        "details": "Create smart_reply_chips.dart in features/ai_features/presentation/widgets directory. Implement UI for displaying smart reply suggestions as tappable chips. Handle loading and error states. Implement onTap callback to automatically fill the message input. Add animation for smooth appearance.",
+        "testStrategy": "Write widget tests for UI components. Test loading and error states. Verify tap functionality works correctly. Test animation.",
+        "priority": "high",
+        "dependencies": [
+          71,
+          40
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 73,
+        "title": "Implement thread summary card widget",
+        "description": "Create the UI widget for displaying conversation summaries",
+        "details": "Create thread_summary_card.dart in features/ai_features/presentation/widgets directory. Implement UI for displaying conversation summaries with key topics, decisions, and open questions. Handle loading and error states. Add expandable/collapsible functionality for long summaries.",
+        "testStrategy": "Write widget tests for UI components. Test loading and error states. Verify expandable functionality works correctly. Test with different summary lengths.",
+        "priority": "medium",
+        "dependencies": [
+          71
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 74,
+        "title": "Implement action items widget",
+        "description": "Create the UI widget for displaying extracted action items",
+        "details": "Create action_items_widget.dart in features/ai_features/presentation/widgets directory. Implement UI for displaying action items with assignee, deadline, and status. Add functionality for marking items as complete. Implement sorting by deadline or priority. Handle empty state and loading state.",
+        "testStrategy": "Write widget tests for UI components. Test sorting functionality. Verify item completion works correctly. Test empty and loading states.",
+        "priority": "medium",
+        "dependencies": [
+          71
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 75,
+        "title": "Implement decisions widget",
+        "description": "Create the UI widget for displaying tracked decisions",
+        "details": "Create decisions_widget.dart in features/ai_features/presentation/widgets directory. Implement UI for displaying decisions with rationale, alternatives, decider, and impact. Add expandable/collapsible functionality for details. Implement filtering by impact level. Handle empty state and loading state.",
+        "testStrategy": "Write widget tests for UI components. Test filtering functionality. Verify expandable functionality works correctly. Test empty and loading states.",
+        "priority": "medium",
+        "dependencies": [
+          71
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 76,
+        "title": "Integrate smart search in chat UI",
+        "description": "Add smart search functionality to the chat screen",
+        "details": "Add search bar to chat_page.dart. Implement search functionality using the smart search Cloud Function. Display search results with highlighting. Add functionality to jump to specific messages from search results. Handle empty results and loading state.",
+        "testStrategy": "Write widget tests for search functionality. Test result display and highlighting. Verify jump-to-message works correctly. Test empty results and loading state.",
+        "priority": "medium",
+        "dependencies": [
+          71,
+          38
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 77,
+        "title": "Implement language detection with ML Kit",
+        "description": "Integrate Google ML Kit for on-device language detection",
+        "details": "Add google_mlkit_language_id dependency to pubspec.yaml. Create language_detector.dart in features/translation/data/services directory. Implement the detectLanguage method as described in the PRD. Configure confidence threshold for reliable detection. Add caching for improved performance.",
+        "testStrategy": "Write unit tests with mocked ML Kit. Test detection with different languages. Verify confidence threshold works correctly. Test caching functionality.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 78,
+        "title": "Implement translation service",
+        "description": "Create the service for translating messages",
+        "details": "Create translation_service.dart in features/translation/data/services directory. Implement the translateMessage method as described in the PRD. Add caching with appropriate TTL. Implement batch translation for efficiency. Add error handling and retry logic.",
+        "testStrategy": "Write unit tests with mocked translation API. Test translation with different languages. Verify caching works correctly. Test batch translation and error handling.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 79,
+        "title": "Create translation entities and models",
+        "description": "Define the domain entities and data models for translation features",
+        "details": "Create entities and models in the features/translation/domain/entities and features/translation/data/models directories. Define models for translated messages and language preferences. Implement serialization and deserialization methods.",
+        "testStrategy": "Write unit tests for serialization and deserialization. Test conversion between entities and models. Verify equality comparison works correctly.",
+        "priority": "medium",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 80,
+        "title": "Implement translation remote data source",
+        "description": "Create the remote data source for translation operations",
+        "details": "Create translation_remote_datasource.dart in features/translation/data/datasources directory. Implement methods for calling translation APIs. Handle error cases and convert to appropriate exceptions. Add retry logic for transient failures. Implement API key management.",
+        "testStrategy": "Write unit tests with mocked translation API. Test success and failure scenarios. Verify retry logic works correctly. Test error handling.",
+        "priority": "medium",
+        "dependencies": [
+          78,
+          79
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 81,
+        "title": "Implement translation repository",
+        "description": "Create the repository for translation operations",
+        "details": "Create translation_repository.dart interface in features/translation/domain/repositories directory. Define methods for language detection and translation. Create translation_repository_impl.dart in features/translation/data/repositories directory. Implement the repository using the remote data source and language detector. Handle error cases and convert exceptions to failures.",
+        "testStrategy": "Write unit tests with mocked data sources. Test success and failure scenarios. Verify error handling and conversion to failures.",
+        "priority": "medium",
+        "dependencies": [
+          77,
+          80
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 82,
+        "title": "Implement translation use cases",
+        "description": "Create use cases for translation operations",
+        "details": "Create translate_message.dart and detect_language.dart in features/translation/domain/usecases directory. Implement the use cases using the translation repository. Handle input validation and error cases. Return appropriate results or failures.",
+        "testStrategy": "Write unit tests with mocked repositories. Test success and failure scenarios. Verify input validation works correctly.",
+        "priority": "medium",
+        "dependencies": [
+          81
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 83,
+        "title": "Create translation providers",
+        "description": "Implement Riverpod providers for translation state",
+        "details": "Create translation_provider.dart in features/translation/presentation/providers directory. Implement providers for language detection and translation. Use riverpod_annotation for code generation. Handle loading, error, and success states. Implement caching for improved performance.",
+        "testStrategy": "Write unit tests with provider overrides. Test state changes for translation operations. Verify caching works correctly. Test error handling.",
+        "priority": "medium",
+        "dependencies": [
+          11,
+          82
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 84,
+        "title": "Implement translation toggle in chat UI",
+        "description": "Add translation controls to the chat screen",
+        "details": "Add translation toggle button to chat_page.dart. Implement functionality to enable/disable automatic translation. Add UI for displaying original and translated messages. Store user preference for translation settings. Handle loading state during translation.",
+        "testStrategy": "Write widget tests for translation controls. Test toggle functionality. Verify message display with and without translation. Test loading state during translation.",
+        "priority": "high",
+        "dependencies": [
+          83,
+          38
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 85,
+        "title": "Implement language settings UI",
+        "description": "Create the UI for managing language preferences",
+        "details": "Create language_settings_page.dart in features/translation/presentation/pages directory. Implement UI for selecting preferred language. Add option for automatic language detection. Implement UI for managing translation settings. Store user language preferences.",
+        "testStrategy": "Write widget tests for UI components. Test language selection. Verify preference storage works correctly. Test automatic detection option.",
+        "priority": "medium",
+        "dependencies": [
+          83
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 86,
+        "title": "Implement formality detection Cloud Function",
+        "description": "Create the Cloud Function for detecting message formality",
+        "details": "Implement the detectFormality function as described in the PRD. Configure the function to analyze formality level and provide explanation. Implement the system prompt for distinguishing between formal, informal, and neutral language. Add language-specific considerations.",
+        "testStrategy": "Test the function with sample messages in different languages and formality levels. Verify detection accuracy. Test with different languages to ensure cross-cultural awareness.",
+        "priority": "low",
+        "dependencies": [
+          59
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 87,
+        "title": "Set up internationalization",
+        "description": "Configure the app for multi-language support",
+        "details": "Add intl dependency to pubspec.yaml. Create ARB files for different languages (intl_en.arb, intl_es.arb, intl_fr.arb) in the l10n directory. Set up the Flutter localization delegates. Implement the generated localization class. Add language switching functionality.",
+        "testStrategy": "Write unit tests for localization. Test language switching. Verify that all strings are properly localized. Test with different locales.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 88,
+        "title": "Implement app theme",
+        "description": "Create the theme configuration for the application",
+        "details": "Create app_theme.dart in the config/theme directory. Define light and dark theme configurations. Implement theme switching functionality. Create custom theme extensions for app-specific styling. Add responsive design considerations for different screen sizes.",
+        "testStrategy": "Write widget tests for theme application. Test theme switching. Verify that all UI components respect the theme. Test with different screen sizes.",
+        "priority": "medium",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 89,
+        "title": "Set up app routing",
+        "description": "Configure the navigation system for the application",
+        "details": "Create app_router.dart in the config/routes directory. Implement route definitions for all screens. Add route guards for authentication. Implement deep linking support. Create navigation utility functions.",
+        "testStrategy": "Write unit tests for routing logic. Test route guards. Verify deep linking works correctly. Test navigation between screens.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 90,
+        "title": "Implement Firebase Crashlytics",
+        "description": "Integrate Firebase Crashlytics for crash reporting",
+        "details": "Add firebase_crashlytics dependency to pubspec.yaml. Configure Crashlytics in the Firebase console. Implement crash reporting in the application. Add custom keys and logs for better debugging. Set up non-fatal error reporting.",
+        "testStrategy": "Test crash reporting with forced crashes. Verify custom keys and logs are captured. Test non-fatal error reporting.",
+        "priority": "medium",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 91,
+        "title": "Set up Firebase App Check",
+        "description": "Configure Firebase App Check for enhanced security",
+        "details": "Add firebase_app_check dependency to pubspec.yaml. Configure App Check in the Firebase console. Implement App Check attestation providers for different platforms. Set up enforcement for Firestore, Storage, and Functions. Add error handling for App Check failures.",
+        "testStrategy": "Test App Check initialization. Verify that protected resources are accessible with valid attestation. Test error handling for App Check failures.",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 92,
+        "title": "Implement Firestore security rules",
+        "description": "Configure security rules for Firestore collections",
+        "details": "Create security rules for users, conversations, and messages collections. Implement rules to ensure only participants can access conversations and messages. Add validation rules for data integrity. Implement rate limiting rules to prevent abuse.",
+        "testStrategy": "Test security rules using the Firebase emulator. Verify that unauthorized access is blocked. Test data validation rules. Verify rate limiting works correctly.",
+        "priority": "high",
+        "dependencies": [
+          22,
+          23,
+          24
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 93,
+        "title": "Implement Storage security rules",
+        "description": "Configure security rules for Firebase Storage",
+        "details": "Create security rules for profile pictures, message attachments, and group images. Implement rules to ensure only authorized users can upload and access files. Add validation rules for file types and sizes. Implement path-based access control.",
+        "testStrategy": "Test security rules using the Firebase emulator. Verify that unauthorized access is blocked. Test file validation rules. Verify path-based access control works correctly.",
+        "priority": "high",
+        "dependencies": [
+          46
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 94,
+        "title": "Set up CI/CD with GitHub Actions",
+        "description": "Configure continuous integration and deployment pipeline",
+        "details": "Create GitHub Actions workflow files as described in the PRD. Implement test job with coverage checking. Set up deployment jobs for iOS and Android. Configure environment-specific builds. Add workflow for pull request validation.",
+        "testStrategy": "Test the CI/CD pipeline with sample commits. Verify that tests run correctly. Test deployment to test environments. Verify coverage checking works correctly.",
+        "priority": "medium",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 95,
+        "title": "Set up Fastlane for iOS deployment",
+        "description": "Configure Fastlane for automated iOS deployment",
+        "details": "Create Fastfile in the ios/fastlane directory as described in the PRD. Implement beta lane for TestFlight deployment. Configure match for certificate and provisioning profile management. Set up app store lane for production deployment. Add version bump automation.",
+        "testStrategy": "Test Fastlane setup with manual execution. Verify TestFlight deployment works correctly. Test certificate and provisioning profile management. Verify version bump automation.",
+        "priority": "medium",
+        "dependencies": [
+          94
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 96,
+        "title": "Set up Fastlane for Android deployment",
+        "description": "Configure Fastlane for automated Android deployment",
+        "details": "Create Fastfile in the android/fastlane directory. Implement beta lane for internal testing deployment. Configure supply for Play Store deployment. Set up production lane for production deployment. Add version code and name management.",
+        "testStrategy": "Test Fastlane setup with manual execution. Verify internal testing deployment works correctly. Test Play Store deployment. Verify version management.",
+        "priority": "medium",
+        "dependencies": [
+          94
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 97,
+        "title": "Implement pagination for Firestore queries",
+        "description": "Add pagination to Firestore queries for improved performance",
+        "details": "Implement pagination for conversation list and message list queries as described in the PRD. Use limit and startAfter for efficient pagination. Add infinite scrolling in the UI. Implement cursor-based pagination for message history.",
+        "testStrategy": "Write unit tests for pagination logic. Test with large datasets. Verify that only necessary data is loaded. Test infinite scrolling in the UI.",
+        "priority": "high",
+        "dependencies": [
+          27,
+          29
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 98,
+        "title": "Configure Firestore offline persistence",
+        "description": "Set up Firestore offline caching for improved performance",
+        "details": "Configure Firestore settings with persistenceEnabled and unlimited cache size as described in the PRD. Implement cache size management for different devices. Add cache clearing functionality for troubleshooting. Configure offline persistence for web platform.",
+        "testStrategy": "Test offline functionality by disabling network. Verify that cached data is accessible offline. Test cache size management. Verify cache clearing functionality.",
+        "priority": "high",
+        "dependencies": [
+          22,
+          23,
+          24
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 99,
+        "title": "Implement denormalization for Firestore",
+        "description": "Apply denormalization techniques for improved query performance",
+        "details": "Implement denormalization for conversation list by storing lastMessage in conversation document as described in the PRD. Add denormalization for user data in conversation participants. Implement update propagation for denormalized data. Add consistency checks for data integrity.",
+        "testStrategy": "Write unit tests for denormalization logic. Test update propagation. Verify query performance improvement. Test consistency checks.",
+        "priority": "high",
+        "dependencies": [
+          22,
+          23,
+          24
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 100,
+        "title": "Optimize Firestore listeners",
+        "description": "Improve Firestore listener efficiency",
+        "details": "Implement scoped Firestore listeners as described in the PRD. Use array-contains queries for participant filtering. Add limit to reduce unnecessary document listening. Implement listener cleanup when not needed. Add listener pause/resume functionality based on app state.",
+        "testStrategy": "Write unit tests for listener management. Test with different query patterns. Verify listener cleanup works correctly. Test pause/resume functionality.",
+        "priority": "high",
+        "dependencies": [
+          27,
+          29
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 101,
+        "title": "Implement OpenAI API caching",
+        "description": "Add caching for OpenAI API calls to reduce costs",
+        "details": "Implement caching strategy for different AI features as described in the PRD. Use Firestore for long-lived caches (summaries, decisions). Implement Redis or in-memory cache for short-lived data (smart replies). Add cache invalidation based on conversation updates.",
+        "testStrategy": "Write unit tests for caching logic. Test cache hit rates. Verify cache invalidation works correctly. Test with different cache durations.",
+        "priority": "high",
+        "dependencies": [
+          59
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 102,
+        "title": "Implement batch API for OpenAI",
+        "description": "Use batch API calls for non-real-time AI features",
+        "details": "Implement batching for non-real-time AI features as described in the PRD. Combine multiple requests into single API calls where possible. Add queue for collecting requests. Implement timeout-based flushing for the queue. Balance between latency and efficiency.",
+        "testStrategy": "Write unit tests for batching logic. Test with different batch sizes. Verify timeout-based flushing works correctly. Test efficiency improvement.",
+        "priority": "medium",
+        "dependencies": [
+          59
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 103,
+        "title": "Implement token limiting for OpenAI",
+        "description": "Add token limiting for OpenAI API calls to reduce costs",
+        "details": "Implement token counting and limiting for OpenAI API calls. Set appropriate max_tokens for different features. Add context truncation for long conversations. Implement sliding window approach for thread summarization. Balance between quality and cost.",
+        "testStrategy": "Write unit tests for token counting and limiting. Test with different input sizes. Verify context truncation works correctly. Test quality impact of token limiting.",
+        "priority": "medium",
+        "dependencies": [
+          59
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 104,
+        "title": "Implement PII detection",
+        "description": "Add PII detection before sending data to OpenAI",
+        "details": "Implement PII detection for sensitive information like phone numbers, emails, and addresses. Add redaction or masking of detected PII. Implement allowlist for certain types of PII that can be sent. Add user control for PII handling.",
+        "testStrategy": "Write unit tests for PII detection. Test with different types of PII. Verify redaction works correctly. Test allowlist functionality.",
+        "priority": "high",
+        "dependencies": [
+          59
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 105,
+        "title": "Implement rate limiting for Cloud Functions",
+        "description": "Add rate limiting to prevent abuse of AI features",
+        "details": "Implement rate limiting for Cloud Functions as described in the PRD (100 req/hour per user). Use Firebase Extensions or custom implementation. Add quota tracking in Firestore. Implement graceful degradation when limits are reached. Add user feedback for rate limiting.",
+        "testStrategy": "Write unit tests for rate limiting logic. Test with high request rates. Verify quota tracking works correctly. Test user feedback for rate limiting.",
+        "priority": "high",
+        "dependencies": [
+          59
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 106,
+        "title": "Set up Secret Manager for API keys",
+        "description": "Configure Secret Manager for secure storage of API keys",
+        "details": "Set up Google Secret Manager for storing OpenAI API keys as described in the PRD. Configure access control for Cloud Functions. Implement key rotation strategy. Add fallback mechanism for API key failures. Implement logging for key usage.",
+        "testStrategy": "Test Secret Manager integration. Verify that Cloud Functions can access secrets. Test key rotation. Verify fallback mechanism works correctly.",
+        "priority": "high",
+        "dependencies": [
+          59
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 107,
+        "title": "Implement vector search indexing",
+        "description": "Set up vector search for semantic message search",
+        "details": "Configure Firestore vector indexes as specified in the PRD. Implement the indexMessage Cloud Function for generating and storing embeddings. Set up vector dimensions and distance measure. Add context information to improve embedding quality.",
+        "testStrategy": "Test vector index creation. Verify embedding generation and storage. Test search functionality with different queries. Evaluate search quality.",
+        "priority": "medium",
+        "dependencies": [
+          66
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 108,
+        "title": "Implement translation memory",
+        "description": "Add translation memory for improved translation efficiency",
+        "details": "Implement translation memory to reuse previous translations of common phrases. Store translations in Firestore or local database. Add fuzzy matching for similar phrases. Implement memory update when better translations are available.",
+        "testStrategy": "Write unit tests for translation memory. Test with repeated phrases. Verify fuzzy matching works correctly. Test memory update logic.",
+        "priority": "medium",
+        "dependencies": [
+          78
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 109,
+        "title": "Implement batch translation",
+        "description": "Add batch translation for group chats",
+        "details": "Implement batch translation for multiple messages in group chats. Combine translation requests to reduce API calls. Add queue for collecting translation requests. Implement timeout-based flushing for the queue. Balance between latency and efficiency.",
+        "testStrategy": "Write unit tests for batch translation. Test with different batch sizes. Verify timeout-based flushing works correctly. Test efficiency improvement.",
+        "priority": "medium",
+        "dependencies": [
+          78
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 110,
+        "title": "Implement translation optimization",
+        "description": "Add optimizations to reduce translation costs",
+        "details": "Implement translation optimization strategies as described in the PRD. Skip translation for same-language pairs. Add language detection caching. Implement translation caching with 70% target hit rate. Add user control for translation settings.",
+        "testStrategy": "Write unit tests for translation optimization. Test with different language scenarios. Verify cache hit rate meets target. Test user control functionality.",
+        "priority": "medium",
+        "dependencies": [
+          78
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 111,
+        "title": "Set up performance monitoring",
+        "description": "Configure performance monitoring for the application",
+        "details": "Add firebase_performance dependency to pubspec.yaml. Configure performance monitoring in the Firebase console. Implement custom traces for critical operations. Add HTTP request monitoring. Set up automatic performance collection for app start time and UI rendering.",
+        "testStrategy": "Test performance monitoring with sample operations. Verify that traces are recorded correctly. Test HTTP request monitoring. Verify automatic performance collection.",
+        "priority": "medium",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 112,
+        "title": "Implement error boundary widget",
+        "description": "Create an error boundary widget for graceful error handling",
+        "details": "Create error_boundary.dart widget for catching and displaying errors in the UI. Implement error reporting to Crashlytics. Add retry functionality for recoverable errors. Implement fallback UI for critical components. Add user feedback for errors.",
+        "testStrategy": "Write widget tests for error boundary. Test with different error scenarios. Verify error reporting works correctly. Test retry and fallback functionality.",
+        "priority": "medium",
+        "dependencies": [
+          90
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 113,
+        "title": "Implement animations and transitions",
+        "description": "Add animations and transitions for improved user experience",
+        "details": "Implement page transitions for navigation. Add micro-interactions for user actions. Implement loading animations. Add staggered animations for list items. Ensure animations are smooth (60 FPS) and not excessive.",
+        "testStrategy": "Write widget tests for animations. Test performance on different devices. Verify that animations meet the 60 FPS target. Test accessibility considerations.",
+        "priority": "low",
+        "dependencies": [
+          38,
+          37
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 114,
+        "title": "Implement deep linking",
+        "description": "Add deep linking support for direct navigation",
+        "details": "Configure deep linking in Android and iOS projects. Implement deep link handlers in the application. Add support for conversation and message deep links. Implement authentication handling for deep links. Add analytics for deep link usage.",
+        "testStrategy": "Test deep linking with different link formats. Verify that navigation works correctly. Test authentication handling. Verify analytics tracking.",
+        "priority": "low",
+        "dependencies": [
+          89
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 115,
+        "title": "Set up analytics",
+        "description": "Configure analytics for user behavior tracking",
+        "details": "Add firebase_analytics dependency to pubspec.yaml. Configure analytics in the Firebase console. Implement screen tracking. Add custom events for important user actions. Implement user property tracking. Add conversion tracking for key actions.",
+        "testStrategy": "Test analytics with sample user actions. Verify that events are recorded correctly. Test screen tracking. Verify user property tracking.",
+        "priority": "medium",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 116,
+        "title": "Implement A/B testing",
+        "description": "Set up A/B testing for feature optimization",
+        "details": "Add firebase_remote_config dependency to pubspec.yaml. Configure A/B testing in the Firebase console. Implement feature flags for new features. Add experiment tracking. Implement variant assignment and persistence. Add analytics integration for experiment results.",
+        "testStrategy": "Test A/B testing with sample experiments. Verify that variants are assigned correctly. Test feature flag functionality. Verify analytics integration.",
+        "priority": "low",
+        "dependencies": [
+          115
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 117,
+        "title": "Implement app review prompts",
+        "description": "Add prompts for app store reviews",
+        "details": "Add in_app_review dependency to pubspec.yaml. Implement logic for determining when to show review prompts. Add user action tracking to identify satisfied users. Implement frequency limiting for prompts. Add analytics for prompt effectiveness.",
+        "testStrategy": "Test review prompt logic with different scenarios. Verify that frequency limiting works correctly. Test analytics integration. Verify prompt UI.",
+        "priority": "low",
+        "dependencies": [
+          115
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 118,
+        "title": "Conduct security audit",
+        "description": "Perform a comprehensive security audit of the application",
+        "details": "Review authentication implementation for security vulnerabilities. Audit Firestore and Storage security rules. Review Cloud Function security. Check for sensitive data exposure. Verify secure communication. Test input validation and sanitization. Review dependency vulnerabilities.",
+        "testStrategy": "Conduct penetration testing. Verify that security rules block unauthorized access. Test input validation with malicious inputs. Verify secure storage of sensitive data.",
+        "priority": "high",
+        "dependencies": [
+          92,
+          93,
+          104
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 119,
+        "title": "Conduct load testing",
+        "description": "Perform load testing to verify scalability",
+        "details": "Set up load testing environment. Create test scenarios for different user loads. Test Firestore query performance under load. Verify Cloud Function scalability. Test message sending with high concurrency. Analyze results and optimize bottlenecks.",
+        "testStrategy": "Run load tests with different user counts. Verify that the system meets performance targets under load. Test recovery from high load. Analyze metrics for optimization opportunities.",
+        "priority": "high",
+        "dependencies": [
+          97,
+          98,
+          99,
+          100
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 120,
+        "title": "Prepare for app store submission",
+        "description": "Complete final preparations for app store submission",
+        "details": "Create app store listings for iOS and Android. Prepare screenshots and promotional materials. Complete app store compliance requirements. Set up app store connect and Google Play console. Configure in-app purchases if applicable. Prepare privacy policy and terms of service.",
+        "testStrategy": "Verify app store listing information. Test app store screenshots on different devices. Verify compliance with app store guidelines. Test in-app purchases if applicable.",
+        "priority": "high",
+        "dependencies": [
+          118,
+          119
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 121,
+        "title": "Implement User Selection Screen for New Conversations",
+        "description": "Create a user selection screen that allows users to search for and select other users to start a new 1-to-1 conversation, with functionality to navigate to the chat screen after selection.",
+        "details": "Create a new file `user_selection_page.dart` in the `features/messaging/presentation/pages` directory. This page will allow users to find and start conversations with other users.\n\nKey implementation steps:\n1. Create the `UserSelectionPage` widget with a search bar at the top and a scrollable list of users below.\n2. Implement the `UserListItem` widget to display each user's avatar, display name, and email.\n3. Add search functionality that filters users in real-time based on email or display name.\n4. Query the Firestore users collection to fetch all available users, filtering out the current user.\n5. Implement loading state with a shimmer effect while users are being fetched.\n6. Create an empty state view for when no users match the search criteria.\n7. Implement the tap handler for each user item that:\n   - Calls the `FindOrCreateDirectConversation` use case\n   - Navigates to the chat screen with the selected user once the conversation is created/found\n8. Add error handling for failed user fetches or conversation creation.\n9. Implement pull-to-refresh functionality to reload the user list.\n10. Ensure the UI follows the app's design system for consistency.\n\nCode structure:\n```dart\nclass UserSelectionPage extends ConsumerStatefulWidget {\n  const UserSelectionPage({Key? key}) : super(key: key);\n  \n  @override\n  ConsumerState<UserSelectionPage> createState() => _UserSelectionPageState();\n}\n\nclass _UserSelectionPageState extends ConsumerState<UserSelectionPage> {\n  final TextEditingController _searchController = TextEditingController();\n  String _searchQuery = '';\n  \n  @override\n  void dispose() {\n    _searchController.dispose();\n    super.dispose();\n  }\n  \n  @override\n  Widget build(BuildContext context) {\n    final usersAsyncValue = ref.watch(filteredUsersProvider(_searchQuery));\n    final currentUser = ref.watch(currentUserProvider);\n    \n    return Scaffold(\n      appBar: AppBar(\n        title: const Text('New Conversation'),\n      ),\n      body: Column(\n        children: [\n          // Search bar implementation\n          Padding(\n            padding: const EdgeInsets.all(16.0),\n            child: TextField(\n              controller: _searchController,\n              decoration: InputDecoration(\n                hintText: 'Search by name or email',\n                prefixIcon: const Icon(Icons.search),\n                border: OutlineInputBorder(\n                  borderRadius: BorderRadius.circular(10),\n                ),\n              ),\n              onChanged: (value) {\n                setState(() {\n                  _searchQuery = value;\n                });\n              },\n            ),\n          ),\n          \n          // User list implementation with loading, empty, and error states\n          Expanded(\n            child: usersAsyncValue.when(\n              data: (users) => users.isEmpty\n                  ? const EmptyUserListView()\n                  : ListView.builder(\n                      itemCount: users.length,\n                      itemBuilder: (context, index) {\n                        final user = users[index];\n                        return UserListItem(\n                          user: user,\n                          onTap: () => _handleUserSelection(user),\n                        );\n                      },\n                    ),\n              loading: () => const LoadingUserListView(),\n              error: (error, stackTrace) => ErrorView(\n                message: 'Failed to load users',\n                onRetry: () => ref.refresh(filteredUsersProvider(_searchQuery)),\n              ),\n            ),\n          ),\n        ],\n      ),\n    );\n  }\n  \n  void _handleUserSelection(User selectedUser) async {\n    final conversationAsyncValue = await ref.read(\n      findOrCreateDirectConversationProvider(selectedUser.id).future,\n    );\n    \n    conversationAsyncValue.when(\n      data: (conversation) {\n        // Navigate to chat screen with the conversation\n        Navigator.of(context).pushNamed(\n          '/chat',\n          arguments: ChatPageArguments(conversationId: conversation.id),\n        );\n      },\n      error: (error, stackTrace) {\n        ScaffoldMessenger.of(context).showSnackBar(\n          SnackBar(content: Text('Failed to create conversation: $error')),\n        );\n      },\n      loading: () {\n        // Show loading indicator\n      },\n    );\n  }\n}",
+        "testStrategy": "1. **Unit Tests**:\n   - Test the user filtering logic to ensure it correctly filters by email and display name.\n   - Test the FindOrCreateDirectConversation use case integration.\n   - Verify that the current user is properly excluded from the results.\n\n2. **Widget Tests**:\n   - Test the UserSelectionPage widget with various mock data scenarios:\n     - With multiple users\n     - With no users\n     - With loading state\n     - With error state\n   - Test the search functionality by entering text and verifying filtered results.\n   - Test the UserListItem widget to ensure it displays user information correctly.\n   - Verify that tapping a user correctly triggers the conversation creation flow.\n   - Test empty state and loading state widgets.\n\n3. **Integration Tests**:\n   - Test the complete flow from opening the user selection screen to selecting a user and navigating to the chat screen.\n   - Verify that the correct conversation is created or retrieved when selecting a user.\n   - Test the search functionality with real-time filtering against a test database.\n   - Verify that the UI correctly updates as search queries change.\n\n4. **Manual Testing**:\n   - Verify the UI matches design specifications.\n   - Test with a large number of users to ensure performance.\n   - Test with various screen sizes to ensure responsive design.\n   - Verify accessibility features work correctly.\n   - Test edge cases like selecting a user with whom a conversation already exists.",
+        "status": "done",
+        "dependencies": [
+          19,
+          36,
+          37,
+          38
+        ],
+        "priority": "high",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-10-20T21:03:23.979Z",
+      "updated": "2025-10-22T00:41:33.258Z",
+      "description": "Tasks for master context"
+    }
+  }
+}

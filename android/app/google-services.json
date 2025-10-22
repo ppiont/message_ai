@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "879407660035",
+    "project_id": "message-ai-fad19",
+    "storage_bucket": "message-ai-fad19.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:879407660035:android:29e7da0b3b80ef67b4e236",
+        "android_client_info": {
+          "package_name": "com.gauntlet.message_ai"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAA0R-3HtbYJ0N9T77t88xIyo9PCdlAyLw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

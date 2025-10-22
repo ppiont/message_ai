@@ -1,0 +1,11 @@
+# Task ID: 54
+# Title: Implement group conversation use cases
+# Status: pending
+# Dependencies: 53
+# Priority: medium
+# Description: Create use cases for group conversation operations
+# Details:
+Create create_group.dart, get_groups.dart, update_group.dart, and manage_members.dart in features/messaging/domain/usecases directory. Implement the use cases using the group conversation repository. Handle input validation and error cases. Return appropriate results or failures.
+
+# Test Strategy:
+Write unit tests with mocked repositories. Test success and failure scenarios. Verify input validation works correctly.

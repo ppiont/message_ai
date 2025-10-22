@@ -1,0 +1,11 @@
+# Task ID: 64
+# Title: Implement decision tracking Cloud Function
+# Status: pending
+# Dependencies: 59
+# Priority: medium
+# Description: Create the Cloud Function for tracking decisions in conversations
+# Details:
+Implement the trackDecisions function as described in the PRD. Configure the function to return structured JSON with decisions, rationale, alternatives, decider, and impact. Implement storage of decisions in Firestore. Add 24-hour caching for efficiency.
+
+# Test Strategy:
+Test the function with sample conversation data. Verify JSON structure is correct. Test decision storage in Firestore. Evaluate extraction quality with different conversation types.

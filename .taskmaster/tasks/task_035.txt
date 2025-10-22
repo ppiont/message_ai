@@ -1,0 +1,11 @@
+# Task ID: 35
+# Title: Create message providers
+# Status: pending
+# Dependencies: 11, 33
+# Priority: high
+# Description: Implement Riverpod providers for message state
+# Details:
+Create message_provider.dart in features/messaging/presentation/providers directory. Implement providers for message state and operations. Use riverpod_annotation for code generation. Create providers for real-time message streams. Implement optimistic UI updates for message sending as described in the PRD.
+
+# Test Strategy:
+Write unit tests with provider overrides. Test message state changes. Verify optimistic updates work correctly. Test error handling and recovery.

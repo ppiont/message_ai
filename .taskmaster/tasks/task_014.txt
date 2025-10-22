@@ -1,0 +1,11 @@
+# Task ID: 14
+# Title: Implement utility functions
+# Status: pending
+# Dependencies: 1
+# Priority: medium
+# Description: Create common utility functions for the application
+# Details:
+Create utility classes in the core/utils directory. Implement date_formatter.dart for consistent date formatting across the app. Create validators.dart for input validation functions. Add utility functions for string manipulation, file handling, and other common operations.
+
+# Test Strategy:
+Write unit tests for all utility functions. Test edge cases and input validation. Verify internationalization support for date formatting.

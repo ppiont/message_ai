@@ -1,0 +1,11 @@
+# Task ID: 75
+# Title: Implement decisions widget
+# Status: pending
+# Dependencies: 71
+# Priority: medium
+# Description: Create the UI widget for displaying tracked decisions
+# Details:
+Create decisions_widget.dart in features/ai_features/presentation/widgets directory. Implement UI for displaying decisions with rationale, alternatives, decider, and impact. Add expandable/collapsible functionality for details. Implement filtering by impact level. Handle empty state and loading state.
+
+# Test Strategy:
+Write widget tests for UI components. Test filtering functionality. Verify expandable functionality works correctly. Test empty and loading states.

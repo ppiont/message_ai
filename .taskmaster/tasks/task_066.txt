@@ -1,0 +1,11 @@
+# Task ID: 66
+# Title: Implement message indexing Cloud Function
+# Status: pending
+# Dependencies: 59
+# Priority: medium
+# Description: Create the Cloud Function for indexing messages with embeddings
+# Details:
+Implement the indexMessage function as described in the PRD. Configure the function to trigger on new message creation. Integrate with text-embedding-3-small model for generating embeddings. Update the message document with the embedding vector. Add context information to improve embedding quality.
+
+# Test Strategy:
+Test the function with sample messages. Verify embedding generation and storage. Test with different message types and languages. Verify document updates.
