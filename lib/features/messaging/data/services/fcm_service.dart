@@ -28,70 +28,37 @@ class FCMService {
 
   /// Initializes FCM for the given user.
   ///
-  /// - Requests notification permissions
-  /// - Waits for APNs token (iOS only)
-  /// - Retrieves current FCM token
-  /// - Saves token to Firestore
-  /// - Listens for token refresh events
+  /// Flow:
+  /// 1. Request notification permissions
+  /// 2. Attempt to get current FCM token (may be null on first launch)
+  /// 3. Save token to Firestore if available
+  /// 4. Set up token refresh listener (handles token availability/changes)
   ///
-  /// Should be called after user logs in.
+  /// On iOS: Token may not be available immediately if APNs hasn't registered yet.
+  /// The token refresh listener will catch it when it becomes available.
+  ///
+  /// Should be called once after user logs in.
   Future<void> initialize({required String userId}) async {
-    print('FCM: Starting initialization for user $userId');
-
-    // Request permissions first (required for iOS, helpful for Android 13+)
+    // Request permissions (required for iOS, Android 13+)
     final status = await requestPermission();
-    print('FCM: Permission status: $status');
 
-    // Only proceed if permissions granted
     if (status != AuthorizationStatus.authorized &&
         status != AuthorizationStatus.provisional) {
-      // Permissions denied - can't get token
-      print('FCM: Permissions not granted, aborting initialization');
+      // User denied permissions - cannot receive notifications
       return;
     }
 
-    // For iOS: Wait for APNs token before making FCM API calls
-    // This is required in iOS SDK 10.4.0+
-    String? apnsToken;
-    try {
-      apnsToken = await _messaging.getAPNSToken();
-      print('FCM: APNs token: ${apnsToken != null ? "present" : "null"}');
-
-      // On iOS, if APNs token is null, wait a bit and retry
-      if (apnsToken == null) {
-        print('FCM: APNs token null, waiting 2 seconds and retrying...');
-        await Future.delayed(const Duration(seconds: 2));
-        apnsToken = await _messaging.getAPNSToken();
-        print('FCM: APNs token after retry: ${apnsToken != null ? "present" : "null"}');
-
-        if (apnsToken == null) {
-          print('FCM: APNs token still null. Token will be saved when it arrives via refresh listener.');
-        }
-      }
-    } catch (e) {
-      // getAPNSToken() might throw on non-iOS platforms
-      // This is expected, continue normally
-      print('FCM: getAPNSToken threw (expected on non-iOS): $e');
-    }
-
-    // Get current token
-    print('FCM: Attempting to get FCM token...');
-    final token = await getToken();
-    print('FCM: Token retrieved: ${token != null ? "${token.substring(0, 20)}..." : "null"}');
-
-    if (token != null) {
-      print('FCM: Saving token to Firestore...');
-      await _saveTokenToFirestore(userId: userId, token: token);
-      print('FCM: Token saved successfully');
-    } else {
-      print('FCM: No token available yet. Token will be saved when it arrives via refresh listener.');
-    }
-
-    // Listen for token refresh
-    // This is crucial for iOS - when APNs token arrives, FCM token will be generated
-    // and this listener will catch it
-    print('FCM: Setting up token refresh listener');
+    // Set up token refresh listener FIRST
+    // This ensures we catch the token when it becomes available (especially iOS)
     _listenForTokenRefresh(userId: userId);
+
+    // Try to get current token
+    // May be null on iOS if APNs hasn't registered yet - that's ok,
+    // the refresh listener will handle it when it arrives
+    final token = await getToken();
+    if (token != null) {
+      await _saveTokenToFirestore(userId: userId, token: token);
+    }
   }
 
   /// Retrieves the current FCM token.
@@ -181,23 +148,19 @@ class FCMService {
     required String token,
   }) async {
     try {
-      print('FCM: Attempting update on users/$userId');
+      // Try to update existing document
       await _firestore.collection('users').doc(userId).update({
         'fcmTokens': FieldValue.arrayUnion([token]),
       });
-      print('FCM: Update successful');
     } catch (e) {
       // Document might not exist yet (race condition on signup)
-      // Try creating it with the token
-      print('FCM: Update failed: $e, trying merge instead...');
+      // Fall back to merge operation
       try {
         await _firestore.collection('users').doc(userId).set({
           'fcmTokens': [token],
         }, SetOptions(merge: true));
-        print('FCM: Merge successful');
       } catch (e) {
         // Silently fail - not critical for app functionality
-        print('FCM: Merge also failed: $e');
       }
     }
   }
