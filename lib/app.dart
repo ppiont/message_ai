@@ -44,6 +44,16 @@ class App extends ConsumerWidget {
       } catch (e) {
         // Silently fail if marker can't be initialized
       }
+
+      // Initialize FCM for push notifications
+      // This is done here (not in sign-in/sign-up pages) to avoid unmounted widget issues
+      try {
+        final fcmService = ref.read(fcmServiceProvider);
+        fcmService.initialize(userId: user.uid);
+      } catch (e) {
+        // Silently fail if FCM can't be initialized
+        print('FCM initialization failed: $e');
+      }
     }
 
     return MaterialApp(
