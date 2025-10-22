@@ -32,9 +32,5 @@ void main() async {
   debugPrint('🐛 Debug logging: ${envConfig.enableDebugLogging}');
 
   // Run the app with Riverpod's ProviderScope
-  runApp(
-    const ProviderScope(
-      child: App(),
-    ),
-  );
+  runApp(const ProviderScope(child: App()));
 }

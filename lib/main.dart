@@ -25,9 +25,5 @@ void main() async {
   await ErrorLogger.initialize();
 
   // Run the app with Riverpod
-  runApp(
-    const ProviderScope(
-      child: App(),
-    ),
-  );
+  runApp(const ProviderScope(child: App()));
 }

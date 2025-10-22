@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 /// Background message handler.
 ///
@@ -43,9 +44,9 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
           .collection('messages')
           .doc(messageId)
           .update({
-        'status': 'delivered',
-        'deliveredAt': FieldValue.serverTimestamp(),
-      });
+            'status': 'delivered',
+            'deliveredAt': FieldValue.serverTimestamp(),
+          });
 
       print('Marked message $messageId as delivered');
     } catch (e) {
@@ -57,10 +58,8 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 /// Callback for handling notification navigation.
 ///
 /// Called when user taps a notification with conversation data.
-typedef NotificationTapCallback = void Function({
-  required String conversationId,
-  required String senderId,
-});
+typedef NotificationTapCallback =
+    void Function({required String conversationId, required String senderId});
 
 /// Service for managing Firebase Cloud Messaging tokens and notifications.
 ///
@@ -75,17 +74,22 @@ typedef NotificationTapCallback = void Function({
 class FCMService {
   final FirebaseMessaging _messaging;
   final FirebaseFirestore _firestore;
+  final FlutterLocalNotificationsPlugin _localNotifications;
 
   // State
   StreamSubscription<String>? _tokenRefreshSubscription;
   StreamSubscription<RemoteMessage>? _foregroundMessageSubscription;
   StreamSubscription<RemoteMessage>? _notificationTapSubscription;
+  bool _notificationsInitialized = false;
 
   FCMService({
     FirebaseMessaging? messaging,
     FirebaseFirestore? firestore,
+    FlutterLocalNotificationsPlugin? localNotifications,
   })  : _messaging = messaging ?? FirebaseMessaging.instance,
-        _firestore = firestore ?? FirebaseFirestore.instance;
+        _firestore = firestore ?? FirebaseFirestore.instance,
+        _localNotifications =
+            localNotifications ?? FlutterLocalNotificationsPlugin();
 
   // ============================================================================
   // Public API
@@ -94,12 +98,13 @@ class FCMService {
   /// Initializes FCM for the given user.
   ///
   /// Flow:
-  /// 1. Request notification permissions
-  /// 2. Set up notification handlers (foreground, background, tap)
-  /// 3. Check for initial message (notification tap when app was terminated)
-  /// 4. Attempt to get current FCM token (may be null on first launch)
-  /// 5. Save token to Firestore if available
-  /// 6. Set up token refresh listener (handles token availability/changes)
+  /// 1. Initialize local notifications with Android channel
+  /// 2. Request notification permissions
+  /// 3. Set up notification handlers (foreground, background, tap)
+  /// 4. Check for initial message (notification tap when app was terminated)
+  /// 5. Attempt to get current FCM token (may be null on first launch)
+  /// 6. Save token to Firestore if available
+  /// 7. Set up token refresh listener (handles token availability/changes)
   ///
   /// On iOS: Token may not be available immediately if APNs hasn't registered yet.
   /// The token refresh listener will catch it when it becomes available.
@@ -109,6 +114,9 @@ class FCMService {
     required String userId,
     NotificationTapCallback? onNotificationTap,
   }) async {
+    // Initialize local notifications
+    await _initializeLocalNotifications();
+
     // Request permissions (required for iOS, Android 13+)
     final status = await requestPermission();
 
@@ -214,10 +222,49 @@ class FCMService {
   // Private Helpers
   // ============================================================================
 
+  /// Initializes local notifications with Android channel.
+  ///
+  /// Creates the "messages" notification channel for Android with
+  /// WhatsApp-like configuration (sound, vibration, banner).
+  Future<void> _initializeLocalNotifications() async {
+    if (_notificationsInitialized) return;
+
+    // Android notification channel (required for Android 8.0+)
+    const androidChannel = AndroidNotificationChannel(
+      'messages', // Must match Cloud Function channel_id
+      'Messages',
+      description: 'New message notifications',
+      importance: Importance.high,
+      sound: RawResourceAndroidNotificationSound('default'),
+      playSound: true,
+      enableVibration: true,
+      showBadge: true,
+    );
+
+    // Create the channel on Android
+    await _localNotifications
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(androidChannel);
+
+    // Initialize plugin
+    const initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const initializationSettingsIOS = DarwinInitializationSettings();
+    const initializationSettings = InitializationSettings(
+      android: initializationSettingsAndroid,
+      iOS: initializationSettingsIOS,
+    );
+
+    await _localNotifications.initialize(initializationSettings);
+
+    _notificationsInitialized = true;
+  }
+
   /// Sets up handlers for incoming notifications.
   ///
   /// Configures:
-  /// - Foreground message handler (app is open)
+  /// - Foreground message handler (app is open) - shows local notification
   /// - Notification tap handler (app in background or foreground)
   void _setupNotificationHandlers({
     NotificationTapCallback? onNotificationTap,
@@ -227,21 +274,61 @@ class FCMService {
     _notificationTapSubscription?.cancel();
 
     // Handle messages when app is in foreground
-    _foregroundMessageSubscription =
-        FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      // In foreground: System doesn't show notification automatically
-      // We could show an in-app notification here if desired
-      // For now, just log it - the message will still sync via Firestore
-      print('Foreground notification: ${message.notification?.title}');
+    _foregroundMessageSubscription = FirebaseMessaging.onMessage.listen((
+      RemoteMessage message,
+    ) {
+      // Show local notification (Firebase doesn't auto-show in foreground)
+      _showForegroundNotification(message);
     });
 
     // Handle notification tap when app is in background or foreground
     if (onNotificationTap != null) {
       _notificationTapSubscription = FirebaseMessaging.onMessageOpenedApp
           .listen((RemoteMessage message) {
-        _handleNotificationTap(message, onNotificationTap);
-      });
+            _handleNotificationTap(message, onNotificationTap);
+          });
     }
+  }
+
+  /// Shows a WhatsApp-style notification banner in foreground.
+  ///
+  /// Displays sender name as title and message preview as body.
+  Future<void> _showForegroundNotification(RemoteMessage message) async {
+    final notification = message.notification;
+    if (notification == null) return;
+
+    const androidDetails = AndroidNotificationDetails(
+      'messages', // Must match channel created in _initializeLocalNotifications
+      'Messages',
+      channelDescription: 'New message notifications',
+      importance: Importance.high,
+      priority: Priority.high,
+      icon: '@mipmap/ic_launcher',
+      playSound: true,
+      enableVibration: true,
+      styleInformation: BigTextStyleInformation(''), // WhatsApp-style
+    );
+
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    const notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    // Use message timestamp as notification ID to avoid duplicates
+    final notificationId = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+
+    await _localNotifications.show(
+      notificationId,
+      notification.title, // Sender name
+      notification.body, // Message preview
+      notificationDetails,
+    );
   }
 
   /// Handles notification tap events.
@@ -256,10 +343,7 @@ class FCMService {
     final senderId = data['senderId'] as String?;
 
     if (conversationId != null && senderId != null) {
-      callback(
-        conversationId: conversationId,
-        senderId: senderId,
-      );
+      callback(conversationId: conversationId, senderId: senderId);
     }
   }
 

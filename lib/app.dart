@@ -26,8 +26,10 @@ Future<void> _handleNotificationNavigation({
     final collection = isGroup ? 'group-conversations' : 'conversations';
 
     // Fetch conversation to get participant details
-    final conversationDoc =
-        await firestore.collection(collection).doc(conversationId).get();
+    final conversationDoc = await firestore
+        .collection(collection)
+        .doc(conversationId)
+        .get();
 
     if (!conversationDoc.exists) {
       print('Conversation $conversationId not found');
@@ -53,7 +55,8 @@ Future<void> _handleNotificationNavigation({
       // For direct chats, fetch sender's name
       final senderDoc = await firestore.collection('users').doc(senderId).get();
 
-      final senderName = senderDoc.data()?['displayName'] as String? ??
+      final senderName =
+          senderDoc.data()?['displayName'] as String? ??
           senderDoc.data()?['email'] as String? ??
           'Unknown User';
 
@@ -118,21 +121,19 @@ class App extends ConsumerWidget {
         final fcmService = ref.read(fcmServiceProvider);
         fcmService.initialize(
           userId: user.uid,
-          onNotificationTap: ({
-            required String conversationId,
-            required String senderId,
-          }) {
-            // Navigate to chat page when notification is tapped
-            // Using global navigator key to handle navigation from any app state
-            final navigator = navigatorKey.currentState;
-            if (navigator != null) {
-              _handleNotificationNavigation(
-                conversationId: conversationId,
-                senderId: senderId,
-                navigator: navigator,
-              );
-            }
-          },
+          onNotificationTap:
+              ({required String conversationId, required String senderId}) {
+                // Navigate to chat page when notification is tapped
+                // Using global navigator key to handle navigation from any app state
+                final navigator = navigatorKey.currentState;
+                if (navigator != null) {
+                  _handleNotificationNavigation(
+                    conversationId: conversationId,
+                    senderId: senderId,
+                    navigator: navigator,
+                  );
+                }
+              },
         );
       } catch (e) {
         // Silently fail if FCM can't be initialized
@@ -148,9 +149,7 @@ class App extends ConsumerWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
         inputDecorationTheme: InputDecorationTheme(
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
             vertical: 16,
@@ -177,21 +176,14 @@ class App extends ConsumerWidget {
             return const AuthPage();
           }
         },
-        loading: () => const Scaffold(
-          body: Center(
-            child: CircularProgressIndicator(),
-          ),
-        ),
+        loading: () =>
+            const Scaffold(body: Center(child: CircularProgressIndicator())),
         error: (error, stack) => Scaffold(
           body: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
-                  Icons.error,
-                  color: Colors.red,
-                  size: 48,
-                ),
+                const Icon(Icons.error, color: Colors.red, size: 48),
                 const SizedBox(height: 16),
                 Text(
                   'Error: $error',
