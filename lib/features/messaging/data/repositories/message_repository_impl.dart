@@ -115,9 +115,6 @@ class MessageRepositoryImpl implements MessageRepository {
         offset: 0,
       );
 
-      // Background sync from remote (fire and forget)
-      _syncMessagesFromRemote(conversationId, limit, before);
-
       return Right(localMessages);
     } on AppException catch (e) {
       return Left(ErrorMapper.mapExceptionToFailure(e));
@@ -126,27 +123,6 @@ class MessageRepositoryImpl implements MessageRepository {
     }
   }
 
-  /// Background sync from remote to local
-  Future<void> _syncMessagesFromRemote(
-    String conversationId,
-    int limit,
-    DateTime? before,
-  ) async {
-    try {
-      final messageModels = await _remoteDataSource.getMessages(
-        conversationId: conversationId,
-        limit: limit,
-        before: before,
-      );
-
-      final messages = messageModels.map((model) => model.toEntity()).toList();
-
-      // Upsert to local database
-      await _localDataSource.insertMessages(conversationId, messages);
-    } catch (e) {
-      // Silently fail - user has local data
-    }
-  }
 
   @override
   Future<Either<Failure, Message>> updateMessage(
@@ -218,15 +194,26 @@ class MessageRepositoryImpl implements MessageRepository {
     int limit = 50,
   }) {
     try {
-      // Offline-first: Watch from local database
-      // This provides instant updates and works offline
+      // Watch Firestore for incoming messages
+      // When new messages arrive, save them to local DB
+      _remoteDataSource
+          .watchMessages(conversationId: conversationId, limit: limit)
+          .listen((messageModels) async {
+        try {
+          final messages =
+              messageModels.map((model) => model.toEntity()).toList();
+          // Upsert to local database (updates existing, inserts new)
+          await _localDataSource.insertMessages(conversationId, messages);
+        } catch (e) {
+          // Silently fail - local stream will still work
+        }
+      });
+
+      // Return local stream (which now gets updates from Firestore)
       final localStream = _localDataSource.watchMessages(
         conversationId: conversationId,
         limit: limit,
       );
-
-      // Background sync from remote (fire and forget)
-      _syncMessagesFromRemote(conversationId, limit, null);
 
       return localStream.map(
         (messages) => Right<Failure, List<Message>>(messages),

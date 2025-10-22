@@ -145,15 +145,26 @@ class ConversationRepositoryImpl implements ConversationRepository {
     int limit = 50,
   }) {
     try {
-      // Offline-first: Watch from local database
-      // This provides instant updates and works offline
+      // Watch Firestore for conversation updates
+      // When conversations change, save them to local DB
+      _remoteDataSource
+          .watchConversationsForUser(userId, limit: limit)
+          .listen((conversationModels) async {
+        try {
+          final conversations =
+              conversationModels.map((model) => model.toEntity()).toList();
+          // Upsert to local database (updates existing, inserts new)
+          await _localDataSource.insertConversations(conversations);
+        } catch (e) {
+          // Silently fail - local stream will still work
+        }
+      });
+
+      // Return local stream (which now gets updates from Firestore)
       final localStream = _localDataSource.watchConversationsByParticipant(
         userId,
         limit: limit,
       );
-
-      // Background sync from remote (fire and forget)
-      _syncConversationsFromRemote(userId, limit);
 
       return localStream.map(
         (conversations) => Right<Failure, List<Conversation>>(conversations),
@@ -165,21 +176,6 @@ class ConversationRepositoryImpl implements ConversationRepository {
     }
   }
 
-  /// Background sync from remote to local
-  Future<void> _syncConversationsFromRemote(String userId, int limit) async {
-    try {
-      final conversationModels =
-          await _remoteDataSource.getConversationsForUser(userId, limit: limit);
-
-      final conversations =
-          conversationModels.map((model) => model.toEntity()).toList();
-
-      // Upsert to local database
-      await _localDataSource.insertConversations(conversations);
-    } catch (e) {
-      // Silently fail - user has local data
-    }
-  }
 
   @override
   Future<Either<Failure, Conversation?>> findDirectConversation(

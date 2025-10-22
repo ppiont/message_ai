@@ -28,7 +28,7 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
 
   /// Get messages for a conversation with pagination
   ///
-  /// Orders by timestamp descending (newest first) for chat UI
+  /// Orders by timestamp ascending (oldest first) for standard chat UI
   /// Use [limit] and [offset] for pagination
   Future<List<MessageEntity>> getMessagesForConversation(
     String conversationId, {
@@ -37,7 +37,7 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
   }) {
     return (select(messages)
           ..where((m) => m.conversationId.equals(conversationId))
-          ..orderBy([(m) => OrderingTerm.desc(m.timestamp)])
+          ..orderBy([(m) => OrderingTerm.asc(m.timestamp)])
           ..limit(limit, offset: offset))
         .get();
   }
@@ -46,13 +46,14 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
   ///
   /// Returns a stream that emits new values whenever messages change
   /// Perfect for real-time chat UI updates
+  /// Orders by timestamp ascending (oldest first) for standard chat UI
   Stream<List<MessageEntity>> watchMessagesForConversation(
     String conversationId, {
     int limit = 50,
   }) {
     return (select(messages)
           ..where((m) => m.conversationId.equals(conversationId))
-          ..orderBy([(m) => OrderingTerm.desc(m.timestamp)])
+          ..orderBy([(m) => OrderingTerm.asc(m.timestamp)])
           ..limit(limit))
         .watch();
   }
