@@ -278,6 +278,7 @@ class _UserSelectionPageState extends ConsumerState<UserSelectionPage> {
                 otherParticipantName: otherUserName.isEmpty
                     ? otherUserEmail
                     : otherUserName,
+                otherParticipantId: otherUserId,
               ),
             ),
           );

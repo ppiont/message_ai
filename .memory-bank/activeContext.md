@@ -1,19 +1,23 @@
 # Active Context
 
-## 🎯 Current Focus: Online/Offline Presence Indicators
+## 🎯 Current Focus: MVP Features - 80% Complete! 🎉
 
-**Session Goal**: Implement UI for online/offline status indicators to complete this MVP requirement
+**Session Goal**: Just completed online/offline presence indicators. Ready for next MVP feature.
 
-**Status**: PresenceService fully implemented (22 tests passing), needs UI integration only
+**Status**: 8/10 MVP features complete!
 
 ## 📍 Where We Are
 
 ### Just Completed (This Session)
 1. ✅ Fixed bidirectional message sync (Firestore ↔ Local ↔ UI)
 2. ✅ Fixed message ordering (ascending, oldest first)
-3. ✅ Fixed ROLLBACK errors with upsert mode
-4. ✅ Updated memory bank with Sprint 4 completion
-5. ✅ Verified Taskmaster status vs actual code
+3. ✅ Fixed ROLLBACK errors with upsert mode in batch inserts
+4. ✅ Implemented online/offline presence indicators (Task 46)
+   - Presence providers with automatic management
+   - Green/grey dots on conversation list avatars
+   - "Online" / "Last seen X ago" in chat header
+   - Integrated with auth flow (auto online/offline on login/logout)
+5. ✅ Updated memory bank and Taskmaster status
 
 ### Current Implementation Status
 
@@ -21,169 +25,82 @@
 - Messages save locally immediately
 - Background sync to Firestore
 - Incoming messages: Firestore → Local DB → UI
-- Optimistic UI with instant feedback
+- Bidirectional sync with upsert mode (no more rollbacks!)
 - Works offline, syncs when online
 
-**PresenceService**: IMPLEMENTED but NOT IN UI ⚠️
-- Service class exists: `lib/features/messaging/data/services/presence_service.dart`
-- 22 passing tests
-- Methods: `setOnline()`, `setOffline()`, `watchUser()`, heartbeat timer
-- **Missing**: Provider integration, UI components
+**Messaging Features**: COMPLETE ✅
+- ✅ One-on-one chat
+- ✅ Real-time delivery
+- ✅ Message persistence (drift + Firestore)
+- ✅ Optimistic UI
+- ✅ Timestamps
+- ✅ Typing indicators
+- ✅ Read receipts (checkmarks)
+- ✅ Online/offline status
 
-## 🎯 Next Task: Online/Offline Indicators
+**What's Left for MVP**: 2 features remaining
+1. **Push notifications** (Task 42) - Estimated 2-3 hours
+2. **Group chat** (Tasks 49-58) - Estimated 4-6 hours
 
-### Implementation Plan
+## 📊 Progress Update
 
-**Step 1: Add Provider** (5 min)
-```dart
-// In messaging_providers.dart
-@Riverpod(keepAlive: true)
-PresenceService presenceService(Ref ref) {
-  final service = PresenceService(firestore: ref.watch(firestoreProvider));
-  ref.onDispose(() => service.dispose());
-  return service;
-}
+**MVP Completion: 80%** (8/10 features)
 
-@riverpod
-Stream<Map<String, dynamic>?> userPresence(
-  Ref ref,
-  String userId,
-) {
-  final service = ref.watch(presenceServiceProvider);
-  return service.watchUser(userId: userId);
-}
+### Completed This Sprint
+- Sprint 4: Offline-first architecture (Tasks 28-44)
+- Online/offline indicators (Task 46)
+
+### Ready to Start
+- **Task 42: Push notifications** (Next quick win!)
+  - FCM setup
+  - Notification handling
+  - Background notifications
+- **OR Tasks 49-58: Group chat** (Bigger feature)
+
+## 🎯 Next Steps
+
+**Immediate**: Choose next feature
+1. Push notifications (quick, 2-3 hours)
+2. Group chat (comprehensive, 4-6 hours)
+
+**For Group Chat** (when ready):
+- Will need to:
+  - Extend conversation model for group metadata
+  - Update UI for group member management
+  - Add group-specific features (admin roles, member list, etc.)
+
+## 💡 Technical Notes
+
+### Presence Implementation
+- `PresenceService` with heartbeat (30s interval)
+- Automatic lifecycle via `presenceController` provider
+- Firestore `presence` collection
+- Real-time updates via streams
+- Smart time formatting for "last seen"
+
+### Current Architecture
 ```
-
-**Step 2: Update Auth to Set Presence** (5 min)
-```dart
-// In auth flow after successful login
-await presenceService.setOnline(
-  userId: currentUser.uid,
-  userName: currentUser.displayName,
-);
-```
-
-**Step 3: UI - Conversation List Item** (10 min)
-```dart
-// In conversation_list_item.dart
-final presenceAsync = ref.watch(userPresenceProvider(otherParticipantUid));
-
-presenceAsync.when(
-  data: (presence) {
-    final isOnline = presence?['isOnline'] as bool? ?? false;
-    // Show green dot if online, grey if offline
-  },
-  loading: () => ...,
-  error: (_, __) => ...,
-)
-```
-
-**Step 4: UI - Chat Page Header** (10 min)
-```dart
-// In chat_page.dart AppBar
-final presenceAsync = ref.watch(userPresenceProvider(otherParticipantId));
-// Show "Online" or "Last seen X ago" below name
-```
-
-**Step 5: Cleanup on Logout** (5 min)
-```dart
-// In sign out flow
-await presenceService.setOffline(userId: currentUserId);
-```
-
-**Estimated Time**: 30-45 minutes
-
-## 📊 MVP Progress
-
-| Feature | Status | Notes |
-|---------|--------|-------|
-| One-on-one chat | ✅ | Done |
-| Real-time delivery | ✅ | Done |
-| Message persistence | ✅ | Drift |
-| Optimistic UI | ✅ | Done |
-| **Online/offline status** | 🔄 | **Next task (backend done)** |
-| Timestamps | ✅ | Done |
-| Authentication | ✅ | Done |
-| Read receipts | ✅ | Done |
-| **Push notifications** | ❌ | After presence |
-| **Group chat** | ❌ | After push |
-
-**MVP Completion**: 70% → **80%** (after presence indicators)
-
-## 🔍 Key Files for This Task
-
-**Providers**:
-- `lib/features/messaging/presentation/providers/messaging_providers.dart`
-- `lib/features/authentication/presentation/providers/auth_providers.dart`
-
-**UI Components**:
-- `lib/features/messaging/presentation/widgets/conversation_list_item.dart`
-- `lib/features/messaging/presentation/pages/chat_page.dart`
-
-**Service (already done)**:
-- `lib/features/messaging/data/services/presence_service.dart` ✅
-
-**Tests (already done)**:
-- `test/features/messaging/data/services/presence_service_test.dart` ✅ (22 tests)
-
-## 💭 Current Architecture Understanding
-
-### Data Flow
-```
-User logs in
+UI Layer (Presentation)
   ↓
-Auth provider calls presenceService.setOnline()
+Domain Layer (Use Cases + Entities)
   ↓
-Firestore /presence/{userId} updated with isOnline: true
+Data Layer (Repositories + Models)
   ↓
-Heartbeat timer keeps updating lastSeen every 30s
-  ↓
-UI watches userPresenceProvider(userId)
-  ↓
-Stream emits presence updates → UI rebuilds
-  ↓
-User logs out → presenceService.setOffline()
+Local DB (Drift/SQLite) ← Bidirectional → Remote DB (Firestore)
 ```
 
-### Firestore Structure
-```json
-{
-  "presence/{userId}": {
-    "uid": "userId",
-    "userName": "John Doe",
-    "isOnline": true,
-    "lastSeen": Timestamp,
-    "lastUpdated": Timestamp
-  }
-}
-```
+### Key Services Running
+- MessageSyncService (bidirectional sync)
+- MessageQueue (optimistic UI + retry)
+- TypingIndicatorService (real-time typing)
+- PresenceService (online/offline + heartbeat)
 
-## ⚠️ Important Considerations
+## 📝 Recent Learnings
 
-1. **Battery Life**: Heartbeat every 30s - acceptable for MVP
-2. **Offline Detection**: Firestore onDisconnect() not yet implemented (use manual setOffline)
-3. **Privacy**: Consider letting users hide online status (post-MVP)
-4. **Accuracy**: Heartbeat approach is "good enough" for MVP
+1. **Upsert Mode**: Using `InsertMode.insertOrReplace` in batch operations prevents ROLLBACK errors when syncing duplicate data
+2. **Presence Lifecycle**: Automatic presence management tied to auth state provides seamless online/offline tracking
+3. **Stream Mapping**: Converting domain objects (e.g., `UserPresence`) to simple maps for UI consumption simplifies state management
 
-## 🎯 Success Criteria
+## 🚨 Known Issues
 
-After implementing presence indicators:
-- [ ] Green dot shows on conversation list for online users
-- [ ] Grey dot shows for offline users
-- [ ] Chat page shows "Online" or "Last seen X ago"
-- [ ] Presence updates in real-time (within 30s)
-- [ ] Tests verify provider integration
-- [ ] No performance impact
-
-## 📝 Next After This
-
-1. **Push Notifications** (Task #42) - 2-3 hours
-2. **Group Chat** (Tasks #49-58) - 4-6 hours
-3. **MVP Complete!** 🎉
-
----
-
-**Last Updated**: 2025-10-22
-**Current Task**: Online/Offline Presence Indicators
-**Estimated Completion**: 30-45 minutes
-**Blocker**: None
+None currently! All major issues from this sprint resolved.

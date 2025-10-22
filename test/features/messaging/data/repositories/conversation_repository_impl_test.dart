@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:message_ai/core/error/exceptions.dart';
 import 'package:message_ai/core/error/failures.dart';
 import 'package:message_ai/features/messaging/data/datasources/conversation_remote_datasource.dart';
+import 'package:message_ai/features/messaging/data/datasources/conversation_local_datasource.dart';
 import 'package:message_ai/features/messaging/data/models/conversation_model.dart';
 import 'package:message_ai/features/messaging/data/repositories/conversation_repository_impl.dart';
 import 'package:message_ai/features/messaging/domain/entities/conversation.dart';
@@ -11,19 +12,27 @@ import 'package:mocktail/mocktail.dart';
 class MockConversationRemoteDataSource extends Mock
     implements ConversationRemoteDataSource {}
 
+class MockConversationLocalDataSource extends Mock
+    implements ConversationLocalDataSource {}
+
 class FakeConversationModel extends Fake implements ConversationModel {}
 
 void main() {
   late ConversationRepositoryImpl repository;
-  late MockConversationRemoteDataSource mockDataSource;
+  late MockConversationRemoteDataSource mockRemoteDataSource;
+  late MockConversationLocalDataSource mockLocalDataSource;
 
   setUpAll(() {
     registerFallbackValue(FakeConversationModel());
   });
 
   setUp(() {
-    mockDataSource = MockConversationRemoteDataSource();
-    repository = ConversationRepositoryImpl(remoteDataSource: mockDataSource);
+    mockRemoteDataSource = MockConversationRemoteDataSource();
+    mockLocalDataSource = MockConversationLocalDataSource();
+    repository = ConversationRepositoryImpl(
+      remoteDataSource: mockRemoteDataSource,
+      localDataSource: mockLocalDataSource,
+    );
   });
 
   final testConversation = ConversationModel(
@@ -45,7 +54,7 @@ void main() {
     group('createConversation', () {
       test('should return Conversation when datasource succeeds', () async {
         // Arrange
-        when(() => mockDataSource.createConversation(any()))
+        when(() => mockRemoteDataSource.createConversation(any()))
             .thenAnswer((_) async => testConversation);
 
         // Act
@@ -60,14 +69,14 @@ void main() {
             expect(r.type, testConversation.type);
           },
         );
-        verify(() => mockDataSource.createConversation(testConversation))
+        verify(() => mockRemoteDataSource.createConversation(testConversation))
             .called(1);
       });
 
       test('should return ServerFailure when datasource throws exception',
           () async {
         // Arrange
-        when(() => mockDataSource.createConversation(any()))
+        when(() => mockRemoteDataSource.createConversation(any()))
             .thenThrow(const ServerException(message: 'Error'));
 
         // Act
@@ -85,7 +94,7 @@ void main() {
     group('getConversationById', () {
       test('should return Conversation when datasource succeeds', () async {
         // Arrange
-        when(() => mockDataSource.getConversationById(any()))
+        when(() => mockRemoteDataSource.getConversationById(any()))
             .thenAnswer((_) async => testConversation);
 
         // Act
@@ -93,12 +102,12 @@ void main() {
 
         // Assert
         expect(result.isRight(), true);
-        verify(() => mockDataSource.getConversationById('conv-123')).called(1);
+        verify(() => mockRemoteDataSource.getConversationById('conv-123')).called(1);
       });
 
       test('should return RecordNotFoundFailure when not found', () async {
         // Arrange
-        when(() => mockDataSource.getConversationById(any())).thenThrow(
+        when(() => mockRemoteDataSource.getConversationById(any())).thenThrow(
           const RecordNotFoundException(recordType: 'Conversation'),
         );
 
@@ -118,7 +127,7 @@ void main() {
       test('should return list of Conversations when datasource succeeds',
           () async {
         // Arrange
-        when(() => mockDataSource.getConversationsForUser(
+        when(() => mockRemoteDataSource.getConversationsForUser(
               any(),
               limit: any(named: 'limit'),
               before: any(named: 'before'),
@@ -138,7 +147,7 @@ void main() {
       test('should return ServerFailure when datasource throws exception',
           () async {
         // Arrange
-        when(() => mockDataSource.getConversationsForUser(
+        when(() => mockRemoteDataSource.getConversationsForUser(
               any(),
               limit: any(named: 'limit'),
               before: any(named: 'before'),
@@ -156,7 +165,7 @@ void main() {
       test('should return updated Conversation when datasource succeeds',
           () async {
         // Arrange
-        when(() => mockDataSource.updateConversation(any()))
+        when(() => mockRemoteDataSource.updateConversation(any()))
             .thenAnswer((_) async => testConversation);
 
         // Act
@@ -164,13 +173,13 @@ void main() {
 
         // Assert
         expect(result.isRight(), true);
-        verify(() => mockDataSource.updateConversation(testConversation))
+        verify(() => mockRemoteDataSource.updateConversation(testConversation))
             .called(1);
       });
 
       test('should return RecordNotFoundFailure when not found', () async {
         // Arrange
-        when(() => mockDataSource.updateConversation(any())).thenThrow(
+        when(() => mockRemoteDataSource.updateConversation(any())).thenThrow(
           const RecordNotFoundException(recordType: 'Conversation'),
         );
 
@@ -189,7 +198,7 @@ void main() {
     group('deleteConversation', () {
       test('should return Right when datasource succeeds', () async {
         // Arrange
-        when(() => mockDataSource.deleteConversation(any()))
+        when(() => mockRemoteDataSource.deleteConversation(any()))
             .thenAnswer((_) async {});
 
         // Act
@@ -197,13 +206,13 @@ void main() {
 
         // Assert
         expect(result.isRight(), true);
-        verify(() => mockDataSource.deleteConversation('conv-123')).called(1);
+        verify(() => mockRemoteDataSource.deleteConversation('conv-123')).called(1);
       });
 
       test('should return ServerFailure when datasource throws exception',
           () async {
         // Arrange
-        when(() => mockDataSource.deleteConversation(any()))
+        when(() => mockRemoteDataSource.deleteConversation(any()))
             .thenThrow(const ServerException(message: 'Error'));
 
         // Act
@@ -218,7 +227,7 @@ void main() {
       test('should return stream of Conversations when datasource succeeds',
           () async {
         // Arrange
-        when(() => mockDataSource.watchConversationsForUser(
+        when(() => mockRemoteDataSource.watchConversationsForUser(
               any(),
               limit: any(named: 'limit'),
             )).thenAnswer((_) => Stream.value([testConversation]));
@@ -240,7 +249,7 @@ void main() {
     group('findDirectConversation', () {
       test('should return Conversation when found', () async {
         // Arrange
-        when(() => mockDataSource.findDirectConversation(any(), any()))
+        when(() => mockRemoteDataSource.findDirectConversation(any(), any()))
             .thenAnswer((_) async => testConversation);
 
         // Act
@@ -257,7 +266,7 @@ void main() {
 
       test('should return null when not found', () async {
         // Arrange
-        when(() => mockDataSource.findDirectConversation(any(), any()))
+        when(() => mockRemoteDataSource.findDirectConversation(any(), any()))
             .thenAnswer((_) async => null);
 
         // Act
@@ -275,7 +284,7 @@ void main() {
       test('should return ServerFailure when datasource throws exception',
           () async {
         // Arrange
-        when(() => mockDataSource.findDirectConversation(any(), any()))
+        when(() => mockRemoteDataSource.findDirectConversation(any(), any()))
             .thenThrow(const ServerException(message: 'Error'));
 
         // Act
@@ -290,7 +299,7 @@ void main() {
     group('updateLastMessage', () {
       test('should return Right when datasource succeeds', () async {
         // Arrange
-        when(() => mockDataSource.updateLastMessage(
+        when(() => mockRemoteDataSource.updateLastMessage(
               any(),
               any(),
               any(),
@@ -314,7 +323,7 @@ void main() {
       test('should return ServerFailure when datasource throws exception',
           () async {
         // Arrange
-        when(() => mockDataSource.updateLastMessage(
+        when(() => mockRemoteDataSource.updateLastMessage(
               any(),
               any(),
               any(),
@@ -339,7 +348,7 @@ void main() {
     group('updateUnreadCount', () {
       test('should return Right when datasource succeeds', () async {
         // Arrange
-        when(() => mockDataSource.updateUnreadCount(any(), any(), any()))
+        when(() => mockRemoteDataSource.updateUnreadCount(any(), any(), any()))
             .thenAnswer((_) async {});
 
         // Act
@@ -348,14 +357,14 @@ void main() {
 
         // Assert
         expect(result.isRight(), true);
-        verify(() => mockDataSource.updateUnreadCount('conv-123', 'user-1', 5))
+        verify(() => mockRemoteDataSource.updateUnreadCount('conv-123', 'user-1', 5))
             .called(1);
       });
 
       test('should return ServerFailure when datasource throws exception',
           () async {
         // Arrange
-        when(() => mockDataSource.updateUnreadCount(any(), any(), any()))
+        when(() => mockRemoteDataSource.updateUnreadCount(any(), any(), any()))
             .thenThrow(const ServerException(message: 'Error'));
 
         // Act

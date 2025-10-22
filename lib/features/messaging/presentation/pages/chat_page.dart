@@ -75,10 +75,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(widget.otherParticipantName),
-            _buildPresenceStatus(),
-          ],
+          children: [Text(widget.otherParticipantName), _buildPresenceStatus()],
         ),
         actions: [
           // TODO: Add menu for conversation settings
@@ -135,10 +132,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         } else if (lastSeen != null) {
           return Text(
             'Last seen ${_formatLastSeen(lastSeen)}',
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.grey,
-            ),
+            style: const TextStyle(fontSize: 12, color: Colors.grey),
           );
         }
 

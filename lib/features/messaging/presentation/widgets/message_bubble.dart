@@ -136,9 +136,6 @@ class MessageBubble extends StatelessWidget {
   }
 
   Widget _buildStatusIcon(BuildContext context) {
-    // Debug: Print status to see what we're getting
-    print('MessageBubble status: "$status" for isMe=$isMe');
-
     switch (status) {
       case 'sent':
         return Icon(
@@ -159,9 +156,6 @@ class MessageBubble extends StatelessWidget {
           color: Colors.lightBlueAccent, // More visible color for read status
         );
       default:
-        print(
-          'MessageBubble: Unknown status "$status", returning empty widget',
-        );
         return const SizedBox.shrink();
     }
   }

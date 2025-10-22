@@ -7,23 +7,32 @@ import 'package:message_ai/features/messaging/data/repositories/message_reposito
 import 'package:message_ai/features/messaging/domain/entities/message.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:message_ai/features/messaging/data/datasources/message_remote_datasource.dart';
+import 'package:message_ai/features/messaging/data/datasources/message_local_datasource.dart';
 
 class MockMessageRemoteDataSource extends Mock
     implements MessageRemoteDataSource {}
+
+class MockMessageLocalDataSource extends Mock
+    implements MessageLocalDataSource {}
 
 class FakeMessageModel extends Fake implements MessageModel {}
 
 void main() {
   late MessageRepositoryImpl repository;
-  late MockMessageRemoteDataSource mockDataSource;
+  late MockMessageRemoteDataSource mockRemoteDataSource;
+  late MockMessageLocalDataSource mockLocalDataSource;
 
   setUpAll(() {
     registerFallbackValue(FakeMessageModel());
   });
 
   setUp(() {
-    mockDataSource = MockMessageRemoteDataSource();
-    repository = MessageRepositoryImpl(remoteDataSource: mockDataSource);
+    mockRemoteDataSource = MockMessageRemoteDataSource();
+    mockLocalDataSource = MockMessageLocalDataSource();
+    repository = MessageRepositoryImpl(
+      remoteDataSource: mockRemoteDataSource,
+      localDataSource: mockLocalDataSource,
+    );
   });
 
   final testMessage = MessageModel(
@@ -46,7 +55,7 @@ void main() {
     group('createMessage', () {
       test('should return Message when datasource succeeds', () async {
         // Arrange
-        when(() => mockDataSource.createMessage(any(), any()))
+        when(() => mockRemoteDataSource.createMessage(any(), any()))
             .thenAnswer((_) async => testMessage);
 
         // Act
@@ -61,14 +70,14 @@ void main() {
             expect(r.text, testMessage.text);
           },
         );
-        verify(() => mockDataSource.createMessage('conv-123', testMessage))
+        verify(() => mockRemoteDataSource.createMessage('conv-123', testMessage))
             .called(1);
       });
 
       test('should return DatabaseFailure when datasource throws exception',
           () async {
         // Arrange
-        when(() => mockDataSource.createMessage(any(), any()))
+        when(() => mockRemoteDataSource.createMessage(any(), any()))
             .thenThrow(const ServerException(message: 'Server error'));
 
         // Act
@@ -86,7 +95,7 @@ void main() {
     group('getMessageById', () {
       test('should return Message when datasource succeeds', () async {
         // Arrange
-        when(() => mockDataSource.getMessageById(any(), any()))
+        when(() => mockRemoteDataSource.getMessageById(any(), any()))
             .thenAnswer((_) async => testMessage);
 
         // Act
@@ -94,14 +103,14 @@ void main() {
 
         // Assert
         expect(result.isRight(), true);
-        verify(() => mockDataSource.getMessageById('conv-123', 'msg-123'))
+        verify(() => mockRemoteDataSource.getMessageById('conv-123', 'msg-123'))
             .called(1);
       });
 
       test('should return RecordNotFoundFailure when message not found',
           () async {
         // Arrange
-        when(() => mockDataSource.getMessageById(any(), any())).thenThrow(
+        when(() => mockRemoteDataSource.getMessageById(any(), any())).thenThrow(
           const RecordNotFoundException(
             recordType: 'Message',
             recordId: 'msg-123',
@@ -124,7 +133,7 @@ void main() {
       test('should return list of Messages when datasource succeeds',
           () async {
         // Arrange
-        when(() => mockDataSource.getMessages(
+        when(() => mockRemoteDataSource.getMessages(
               conversationId: any(named: 'conversationId'),
               limit: any(named: 'limit'),
               before: any(named: 'before'),
@@ -144,7 +153,7 @@ void main() {
       test('should return ServerFailure when datasource throws exception',
           () async {
         // Arrange
-        when(() => mockDataSource.getMessages(
+        when(() => mockRemoteDataSource.getMessages(
               conversationId: any(named: 'conversationId'),
               limit: any(named: 'limit'),
               before: any(named: 'before'),
@@ -161,7 +170,7 @@ void main() {
     group('updateMessage', () {
       test('should return updated Message when datasource succeeds', () async {
         // Arrange
-        when(() => mockDataSource.updateMessage(any(), any()))
+        when(() => mockRemoteDataSource.updateMessage(any(), any()))
             .thenAnswer((_) async => testMessage);
 
         // Act
@@ -169,14 +178,14 @@ void main() {
 
         // Assert
         expect(result.isRight(), true);
-        verify(() => mockDataSource.updateMessage('conv-123', testMessage))
+        verify(() => mockRemoteDataSource.updateMessage('conv-123', testMessage))
             .called(1);
       });
 
       test('should return RecordNotFoundFailure when message not found',
           () async {
         // Arrange
-        when(() => mockDataSource.updateMessage(any(), any())).thenThrow(
+        when(() => mockRemoteDataSource.updateMessage(any(), any())).thenThrow(
           const RecordNotFoundException(recordType: 'Message'),
         );
 
@@ -195,7 +204,7 @@ void main() {
     group('deleteMessage', () {
       test('should return Right when datasource succeeds', () async {
         // Arrange
-        when(() => mockDataSource.deleteMessage(any(), any()))
+        when(() => mockRemoteDataSource.deleteMessage(any(), any()))
             .thenAnswer((_) async {});
 
         // Act
@@ -203,14 +212,14 @@ void main() {
 
         // Assert
         expect(result.isRight(), true);
-        verify(() => mockDataSource.deleteMessage('conv-123', 'msg-123'))
+        verify(() => mockRemoteDataSource.deleteMessage('conv-123', 'msg-123'))
             .called(1);
       });
 
       test('should return ServerFailure when datasource throws exception',
           () async {
         // Arrange
-        when(() => mockDataSource.deleteMessage(any(), any()))
+        when(() => mockRemoteDataSource.deleteMessage(any(), any()))
             .thenThrow(const ServerException(message: 'Error'));
 
         // Act
@@ -225,7 +234,7 @@ void main() {
       test('should return stream of Messages when datasource succeeds',
           () async {
         // Arrange
-        when(() => mockDataSource.watchMessages(
+        when(() => mockRemoteDataSource.watchMessages(
               conversationId: any(named: 'conversationId'),
               limit: any(named: 'limit'),
             )).thenAnswer((_) => Stream.value([testMessage]));
@@ -247,7 +256,7 @@ void main() {
     group('markAsDelivered', () {
       test('should return Right when datasource succeeds', () async {
         // Arrange
-        when(() => mockDataSource.markAsDelivered(any(), any()))
+        when(() => mockRemoteDataSource.markAsDelivered(any(), any()))
             .thenAnswer((_) async {});
 
         // Act
@@ -256,14 +265,14 @@ void main() {
 
         // Assert
         expect(result.isRight(), true);
-        verify(() => mockDataSource.markAsDelivered('conv-123', 'msg-123'))
+        verify(() => mockRemoteDataSource.markAsDelivered('conv-123', 'msg-123'))
             .called(1);
       });
 
       test('should return ServerFailure when datasource throws exception',
           () async {
         // Arrange
-        when(() => mockDataSource.markAsDelivered(any(), any()))
+        when(() => mockRemoteDataSource.markAsDelivered(any(), any()))
             .thenThrow(const ServerException(message: 'Error'));
 
         // Act
@@ -278,7 +287,7 @@ void main() {
     group('markAsRead', () {
       test('should return Right when datasource succeeds', () async {
         // Arrange
-        when(() => mockDataSource.markAsRead(any(), any()))
+        when(() => mockRemoteDataSource.markAsRead(any(), any()))
             .thenAnswer((_) async {});
 
         // Act
@@ -286,14 +295,14 @@ void main() {
 
         // Assert
         expect(result.isRight(), true);
-        verify(() => mockDataSource.markAsRead('conv-123', 'msg-123'))
+        verify(() => mockRemoteDataSource.markAsRead('conv-123', 'msg-123'))
             .called(1);
       });
 
       test('should return ServerFailure when datasource throws exception',
           () async {
         // Arrange
-        when(() => mockDataSource.markAsRead(any(), any()))
+        when(() => mockRemoteDataSource.markAsRead(any(), any()))
             .thenThrow(const ServerException(message: 'Error'));
 
         // Act
