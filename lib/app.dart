@@ -5,6 +5,7 @@ import 'package:message_ai/features/authentication/presentation/pages/auth_page.
 import 'package:message_ai/features/authentication/presentation/pages/profile_setup_page.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
 import 'package:message_ai/features/messaging/presentation/pages/conversation_list_page.dart';
+import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
 
 /// Root application widget
 ///
@@ -14,11 +15,17 @@ import 'package:message_ai/features/messaging/presentation/pages/conversation_li
 /// - Routing setup
 /// - State management (Riverpod)
 /// - Authentication state handling
+/// - Offline-first sync services
 class App extends ConsumerWidget {
   const App({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Initialize offline-first services
+    // These are keepAlive providers, so watching them ensures they start
+    ref.watch(messageSyncServiceProvider);
+    ref.watch(messageQueueProvider);
+
     // Watch authentication state
     final authState = ref.watch(authStateProvider);
 

@@ -18,6 +18,9 @@ import 'package:message_ai/features/messaging/domain/usecases/send_message.dart'
 import 'package:message_ai/features/messaging/domain/usecases/watch_conversations.dart';
 import 'package:message_ai/features/messaging/domain/usecases/watch_messages.dart';
 import 'package:message_ai/features/messaging/data/services/typing_indicator_service.dart';
+import 'package:message_ai/features/messaging/data/services/message_sync_service.dart';
+import 'package:message_ai/features/messaging/data/services/message_queue.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'messaging_providers.g.dart';
@@ -231,4 +234,51 @@ Stream<List<TypingUser>> conversationTypingUsers(
     conversationId: conversationId,
     currentUserId: currentUserId,
   );
+}
+
+// ========== Offline & Sync Providers ==========
+
+/// Provides the [MessageSyncService] instance.
+///
+/// Handles background synchronization between local and remote storage.
+@Riverpod(keepAlive: true)
+MessageSyncService messageSyncService(Ref ref) {
+  final service = MessageSyncService(
+    messageLocalDataSource: ref.watch(messageLocalDataSourceProvider),
+    messageRepository: ref.watch(messageRepositoryProvider),
+    conversationLocalDataSource: ref.watch(conversationLocalDataSourceProvider),
+    conversationRepository: ref.watch(conversationRepositoryProvider),
+    connectivity: Connectivity(),
+  );
+
+  // Start monitoring connectivity and syncing
+  service.start();
+
+  // Dispose when provider is disposed
+  ref.onDispose(() {
+    service.stop();
+  });
+
+  return service;
+}
+
+/// Provides the [MessageQueue] instance.
+///
+/// Handles optimistic UI updates and background message processing.
+@Riverpod(keepAlive: true)
+MessageQueue messageQueue(Ref ref) {
+  final queue = MessageQueue(
+    localDataSource: ref.watch(messageLocalDataSourceProvider),
+    syncService: ref.watch(messageSyncServiceProvider),
+  );
+
+  // Start processing queue
+  queue.start();
+
+  // Dispose when provider is disposed
+  ref.onDispose(() {
+    queue.stop();
+  });
+
+  return queue;
 }

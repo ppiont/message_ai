@@ -1033,3 +1033,114 @@ final class ConversationTypingUsersFamily extends $Family
   @override
   String toString() => r'conversationTypingUsersProvider';
 }
+
+/// Provides the [MessageSyncService] instance.
+///
+/// Handles background synchronization between local and remote storage.
+
+@ProviderFor(messageSyncService)
+const messageSyncServiceProvider = MessageSyncServiceProvider._();
+
+/// Provides the [MessageSyncService] instance.
+///
+/// Handles background synchronization between local and remote storage.
+
+final class MessageSyncServiceProvider
+    extends
+        $FunctionalProvider<
+          MessageSyncService,
+          MessageSyncService,
+          MessageSyncService
+        >
+    with $Provider<MessageSyncService> {
+  /// Provides the [MessageSyncService] instance.
+  ///
+  /// Handles background synchronization between local and remote storage.
+  const MessageSyncServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'messageSyncServiceProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$messageSyncServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<MessageSyncService> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  MessageSyncService create(Ref ref) {
+    return messageSyncService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(MessageSyncService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<MessageSyncService>(value),
+    );
+  }
+}
+
+String _$messageSyncServiceHash() =>
+    r'b106c9e58b489f174052c88b24060e1743e49637';
+
+/// Provides the [MessageQueue] instance.
+///
+/// Handles optimistic UI updates and background message processing.
+
+@ProviderFor(messageQueue)
+const messageQueueProvider = MessageQueueProvider._();
+
+/// Provides the [MessageQueue] instance.
+///
+/// Handles optimistic UI updates and background message processing.
+
+final class MessageQueueProvider
+    extends $FunctionalProvider<MessageQueue, MessageQueue, MessageQueue>
+    with $Provider<MessageQueue> {
+  /// Provides the [MessageQueue] instance.
+  ///
+  /// Handles optimistic UI updates and background message processing.
+  const MessageQueueProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'messageQueueProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$messageQueueHash();
+
+  @$internal
+  @override
+  $ProviderElement<MessageQueue> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  MessageQueue create(Ref ref) {
+    return messageQueue(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(MessageQueue value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<MessageQueue>(value),
+    );
+  }
+}
+
+String _$messageQueueHash() => r'9b2185063af10745cd105b6528f0ead3e2b8d842';
