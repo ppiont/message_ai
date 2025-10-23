@@ -230,6 +230,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 backgroundColor: Colors.green,
               ),
             );
+
+            // Force rebuild to update UI
+            setState(() {});
           },
         );
       }
@@ -436,21 +439,26 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                                 ),
                           ),
                           const SizedBox(height: 12),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: supportedLanguages.entries
+                          DropdownButtonFormField<String>(
+                            value: currentUser.preferredLanguage,
+                            decoration: InputDecoration(
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            items: supportedLanguages.entries
                                 .map(
-                                  (entry) => ChoiceChip(
-                                    label: Text(entry.value),
-                                    selected:
-                                        currentUser.preferredLanguage ==
-                                            entry.key,
-                                    onSelected: (_) =>
-                                        _changePreferredLanguage(entry.key),
+                                  (entry) => DropdownMenuItem(
+                                    value: entry.key,
+                                    child: Text(entry.value),
                                   ),
                                 )
                                 .toList(),
+                            onChanged: (String? newValue) {
+                              if (newValue != null) {
+                                _changePreferredLanguage(newValue);
+                              }
+                            },
                           ),
                         ],
                       ),
