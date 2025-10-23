@@ -439,13 +439,16 @@ Stream<List<Map<String, dynamic>>> allConversationsStream(
   final directStream = watchConversationsUseCase(userId: userId).map(
     (result) =>
         result.fold((failure) => <Map<String, dynamic>>[], (conversations) {
-          // Sync all participant users to Drift for offline access
+          // Sync all participant users to Drift for offline access (fire-and-forget)
+          // Do this asynchronously to avoid blocking the stream
           final allParticipantIds = conversations
               .expand((conv) => conv.participants.map((p) => p.uid))
               .toSet()
               .toList();
           if (allParticipantIds.isNotEmpty) {
-            userSyncService.syncConversationUsers(allParticipantIds);
+            // Fire-and-forget: don't await, don't block the stream
+            Future.microtask(
+                () => userSyncService.syncConversationUsers(allParticipantIds));
           }
 
           return conversations
@@ -477,13 +480,16 @@ Stream<List<Map<String, dynamic>>> allConversationsStream(
       .map(
         (result) =>
             result.fold((failure) => <Map<String, dynamic>>[], (groups) {
-              // Sync all participant users to Drift for offline access
+              // Sync all participant users to Drift for offline access (fire-and-forget)
+              // Do this asynchronously to avoid blocking the stream
               final allParticipantIds = groups
                   .expand((group) => group.participants.map((p) => p.uid))
                   .toSet()
                   .toList();
               if (allParticipantIds.isNotEmpty) {
-                userSyncService.syncConversationUsers(allParticipantIds);
+                // Fire-and-forget: don't await, don't block the stream
+                Future.microtask(
+                    () => userSyncService.syncConversationUsers(allParticipantIds));
               }
 
               return groups
