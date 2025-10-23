@@ -589,8 +589,9 @@ Stream<Map<String, dynamic>> groupPresenceStatus(
   final groupRepository = ref.watch(groupConversationRepositoryProvider);
   final presenceService = ref.watch(presenceServiceProvider);
 
-  // Poll both group members and their presence every 2 seconds
-  await for (final _ in Stream.periodic(const Duration(seconds: 2))) {
+  // Poll both group members and their presence every 30 seconds
+  // TODO: Replace with Firestore real-time listener
+  await for (final _ in Stream.periodic(const Duration(seconds: 30))) {
     // Refresh group to get current member list (handles add/remove)
     final groupResult = await groupRepository.getGroupById(groupId);
 
