@@ -3,10 +3,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:message_ai/core/database/tables/users_table.dart';
+import 'package:message_ai/core/providers/database_provider.dart';
+import 'package:message_ai/features/authentication/domain/entities/user.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
 import 'package:message_ai/features/authentication/presentation/providers/user_providers.dart';
 
 /// Settings page where users can manage their profile and preferences
+/// Uses offline-first approach: updates local Drift database, syncs to Firestore in background
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
 
@@ -23,7 +27,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   String? _errorMessage;
   String? _successMessage;
 
-  // Supported languages for translation
   static const Map<String, String> supportedLanguages = {
     'en': '🇺🇸 English',
     'es': '🇪🇸 Español',
@@ -133,7 +136,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
       final displayName = _displayNameController.text.trim();
 
-      // Validate display name
       if (displayName.isEmpty) {
         setState(() {
           _errorMessage = 'Display name cannot be empty';
@@ -150,10 +152,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         return;
       }
 
-      // Update user profile with new display name and photo
       final updateUseCase = ref.read(updateUserProfileUseCaseProvider);
       final result = await updateUseCase(
-        displayName: displayName != currentUser.displayName ? displayName : null,
+        displayName:
+            displayName != currentUser.displayName ? displayName : null,
         photoURL: _selectedImage != null ? null : currentUser.photoURL,
       );
 
@@ -166,7 +168,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             });
           },
           (updatedUser) {
-            // Invalidate the current user provider to refresh the user data
             ref.invalidate(currentUserProvider);
 
             setState(() {
@@ -175,7 +176,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               _isSaving = false;
             });
 
-            // Show success message for a few seconds
             Future.delayed(const Duration(seconds: 2), () {
               if (mounted) {
                 setState(() {
@@ -201,327 +201,346 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     if (currentUser == null) return;
 
     try {
-      // Create updated user with new preferred language
-      final updatedUser = currentUser.copyWith(
-        preferredLanguage: languageCode,
+      // Update local Drift database first (offline-first)
+      final updatedUser = currentUser.copyWith(preferredLanguage: languageCode);
+      final db = ref.read(databaseProvider);
+
+      // Convert to UsersCompanion for Drift
+      await db.userDao.updatePreferredLanguage(
+        uid: updatedUser.uid,
+        languageCode: languageCode,
       );
 
-      // Update user in Firestore
+      // Sync to Firestore in background
       final userRepository = ref.read(userRepositoryProvider);
-      final result = await userRepository.updateUser(updatedUser);
+      userRepository.updateUser(updatedUser).ignore();
 
       if (mounted) {
-        result.fold(
-          (failure) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Failed to update language: ${failure.message}'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          },
-          (_) {
-            // Invalidate the current user provider to refresh the user data
-            ref.invalidate(currentUserProvider);
-
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Language preference updated!'),
-                backgroundColor: Colors.green,
-              ),
-            );
-
-            // Force rebuild to update UI
-            setState(() {});
-          },
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Language preference updated!'),
+            backgroundColor: Colors.green,
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
         );
       }
     }
+  }
+
+  String _getUserName(dynamic user) {
+    if (user == null) return '';
+    // Try Drift UserEntity's 'name' property first
+    if (user is! User && user.name != null) {
+      return user.name as String? ?? '';
+    }
+    // Fall back to auth User's 'displayName'
+    return (user as User).displayName ?? '';
+  }
+
+  String? _getUserPhoto(dynamic user) {
+    if (user == null) return null;
+    // Try Drift UserEntity's 'imageUrl' property first
+    if (user is! User && user.imageUrl != null) {
+      return user.imageUrl as String?;
+    }
+    // Fall back to auth User's 'photoURL'
+    return (user as User).photoURL;
+  }
+
+  String _getPreferredLanguage(dynamic user) {
+    if (user == null) return 'en';
+    // Try Drift UserEntity first
+    if (user is! User && user.preferredLanguage != null) {
+      return user.preferredLanguage as String? ?? 'en';
+    }
+    // Fall back to auth User
+    return (user as User).preferredLanguage ?? 'en';
+  }
+
+  String _getUserEmail(dynamic user) {
+    if (user == null) return 'N/A';
+    // Try Drift UserEntity first
+    if (user is! User && user.email != null) {
+      return user.email as String? ?? 'N/A';
+    }
+    // Fall back to auth User
+    return (user as User).email ?? 'N/A';
+  }
+
+  String _getUserUID(dynamic user) {
+    if (user == null) return '';
+    // Both have uid property
+    if (user is! User && user.uid != null) {
+      return user.uid as String? ?? '';
+    }
+    return (user as User).uid;
+  }
+
+  DateTime _getUserCreatedAt(dynamic user) {
+    if (user == null) return DateTime.now();
+    // Try Drift UserEntity first
+    if (user is! User && user.createdAt != null) {
+      return user.createdAt as DateTime? ?? DateTime.now();
+    }
+    // Fall back to auth User
+    return (user as User).createdAt;
   }
 
   @override
   Widget build(BuildContext context) {
     final currentUser = ref.watch(currentUserProvider);
 
+    if (currentUser == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Settings'), elevation: 0),
+        body: const Center(
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: Text('Please sign in to access settings'),
+          ),
+        ),
+      );
+    }
+
+    // Watch local Drift database for offline-first updates
+    final db = ref.watch(databaseProvider);
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-        elevation: 0,
-      ),
-      body: SingleChildScrollView(
-        child: currentUser == null
-            ? const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text('Please sign in to access settings'),
-                ),
-              )
-            : Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Error message
-                    if (_errorMessage != null)
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.red.shade50,
-                          border: Border.all(color: Colors.red.shade300),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.error_outline, color: Colors.red.shade700),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _errorMessage!,
-                                style: TextStyle(color: Colors.red.shade700),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+      appBar: AppBar(title: const Text('Settings'), elevation: 0),
+      body: StreamBuilder<dynamic>(
+        stream: db.userDao.watchUser(currentUser.uid),
+        builder: (context, snapshot) {
+          // Use local user from Drift if available, fallback to auth user
+          // Drift UserEntity has properties like name, imageUrl, preferredLanguage, etc.
+          final localUser = snapshot.data;
+          final user = localUser ?? currentUser;
 
-                    // Success message
-                    if (_successMessage != null) ...[
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.green.shade50,
-                          border: Border.all(color: Colors.green.shade300),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.check_circle_outline,
-                                color: Colors.green.shade700),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _successMessage!,
-                                style: TextStyle(color: Colors.green.shade700),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
-
-                    // Profile section header
-                    Text(
-                      'Profile',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Profile picture
-                    Center(
-                      child: GestureDetector(
-                        onTap: _showImageSourceDialog,
-                        child: Stack(
-                          children: [
-                            Container(
-                              width: 120,
-                              height: 120,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.grey[200],
-                                border: Border.all(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  width: 2,
-                                ),
-                              ),
-                              child: _selectedImage != null
-                                  ? ClipOval(
-                                      child: Image.file(
-                                        _selectedImage!,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    )
-                                  : currentUser.photoURL != null
-                                      ? ClipOval(
-                                          child: Image.network(
-                                            currentUser.photoURL!,
-                                            fit: BoxFit.cover,
-                                            errorBuilder:
-                                                (context, error, stackTrace) =>
-                                                    const Icon(
-                                              Icons.person,
-                                              size: 60,
-                                            ),
-                                          ),
-                                        )
-                                      : const Icon(
-                                          Icons.person,
-                                          size: 60,
-                                        ),
-                            ),
-                            Positioned(
-                              bottom: 0,
-                              right: 0,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color:
-                                      Theme.of(context).colorScheme.primary,
-                                ),
-                                padding: const EdgeInsets.all(8),
-                                child: const Icon(
-                                  Icons.camera_alt,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Display name field
-                    TextField(
-                      controller: _displayNameController,
-                      decoration: InputDecoration(
-                        labelText: 'Display Name',
-                        hintText: 'Enter your name',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        prefixIcon: const Icon(Icons.person),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Preferences section header
-                    Text(
-                      'Preferences',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Preferred language selection
+          return SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Error message
+                  if (_errorMessage != null)
                     Container(
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey[300]!),
+                        color: Colors.red.shade50,
+                        border: Border.all(color: Colors.red.shade300),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Row(
                         children: [
-                          Text(
-                            'Preferred Language for Translations',
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Current: ${supportedLanguages[currentUser.preferredLanguage] ?? currentUser.preferredLanguage}',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .primary,
-                                ),
-                          ),
-                          const SizedBox(height: 12),
-                          DropdownButtonFormField<String>(
-                            value: currentUser.preferredLanguage,
-                            decoration: InputDecoration(
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
+                          Icon(Icons.error_outline,
+                              color: Colors.red.shade700),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _errorMessage!,
+                              style: TextStyle(color: Colors.red.shade700),
                             ),
-                            items: supportedLanguages.entries
-                                .map(
-                                  (entry) => DropdownMenuItem(
-                                    value: entry.key,
-                                    child: Text(entry.value),
-                                  ),
-                                )
-                                .toList(),
-                            onChanged: (String? newValue) {
-                              if (newValue != null) {
-                                _changePreferredLanguage(newValue);
-                              }
-                            },
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 32),
 
-                    // Save button
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _isSaving ? null : _saveChanges,
-                        child: _isSaving
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Text('Save Changes'),
+                  // Success message
+                  if (_successMessage != null) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
+                        border: Border.all(color: Colors.green.shade300),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.check_circle_outline,
+                              color: Colors.green.shade700),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _successMessage!,
+                              style: TextStyle(color: Colors.green.shade700),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 16),
-
-                    // Account info section
-                    Text(
-                      'Account Information',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildInfoTile('Email', currentUser.email ?? 'N/A'),
-                    _buildInfoTile(
-                      'User ID',
-                      '${currentUser.uid.substring(0, 8)}...',
-                    ),
-                    _buildInfoTile(
-                      'Member Since',
-                      currentUser.createdAt.toLocal().toString().split(' ')[0],
-                    ),
                   ],
-                ),
+
+                  // Profile section
+                  Text('Profile',
+                      style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 16),
+
+                  // Profile picture
+                  Center(
+                    child: GestureDetector(
+                      onTap: _showImageSourceDialog,
+                      child: Stack(
+                        children: [
+                          Container(
+                            width: 120,
+                            height: 120,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.grey[200],
+                              border: Border.all(
+                                color:
+                                    Theme.of(context).colorScheme.primary,
+                                width: 2,
+                              ),
+                            ),
+                            child: _getUserPhoto(user) != null
+                                ? ClipOval(
+                                    child: Image.network(
+                                      _getUserPhoto(user)!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (_, __, ___) =>
+                                              const Icon(Icons.person,
+                                                  size: 60),
+                                    ),
+                                  )
+                                : const Icon(Icons.person, size: 60),
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                              padding: const EdgeInsets.all(8),
+                              child: const Icon(Icons.camera_alt,
+                                  color: Colors.white, size: 20),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Display name
+                  TextField(
+                    controller: _displayNameController,
+                    decoration: InputDecoration(
+                      labelText: 'Display Name',
+                      hintText: 'Enter your name',
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                      prefixIcon: const Icon(Icons.person),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Preferences section
+                  Text('Preferences',
+                      style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 16),
+
+                  // Language dropdown
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey[300]!),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Preferred Language for Translations',
+                            style: Theme.of(context).textTheme.bodyMedium),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Current: ${supportedLanguages[_getPreferredLanguage(user)] ?? _getPreferredLanguage(user)}',
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primary,
+                              ),
+                        ),
+                        const SizedBox(height: 12),
+                        DropdownButtonFormField<String>(
+                          value: _getPreferredLanguage(user),
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8)),
+                          ),
+                          items: supportedLanguages.entries
+                              .map((entry) => DropdownMenuItem(
+                                    value: entry.key,
+                                    child: Text(entry.value),
+                                  ))
+                              .toList(),
+                          onChanged: (String? newValue) {
+                            if (newValue != null) {
+                              _changePreferredLanguage(newValue);
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+
+                  // Save button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _isSaving ? null : _saveChanges,
+                      child: _isSaving
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2),
+                            )
+                          : const Text('Save Changes'),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Account info
+                  Text('Account Information',
+                      style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 12),
+                  _buildInfoTile('Email', _getUserEmail(user)),
+                  _buildInfoTile(
+                    'User ID',
+                    '${_getUserUID(user).substring(0, 8)}...'),
+                  _buildInfoTile('Member Since',
+                      _getUserCreatedAt(user).toLocal().toString().split(' ')[0]),
+                ],
               ),
+            ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildInfoTile(String label, String value) =>
-      Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            Text(
-              value,
-              style: TextStyle(color: Colors.grey[600]),
-            ),
-          ],
-        ),
-      );
+  Widget _buildInfoTile(String label, String value) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
+        Text(value, style: TextStyle(color: Colors.grey[600])),
+      ],
+    ),
+  );
 }
