@@ -4,6 +4,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:message_ai/features/authentication/presentation/providers/user_lookup_provider.dart';
 import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
 
 /// Widget displaying a single conversation in the conversation list.
@@ -151,33 +152,36 @@ class ConversationListItem extends ConsumerWidget {
         // Fallback to first participant if not found
         otherParticipant = participants.isNotEmpty
             ? participants.first
-            : {'name': 'Unknown', 'uid': '', 'imageUrl': null};
+            : {'uid': '', 'imageUrl': null};
       }
 
-      final name = otherParticipant['name'] as String? ?? 'Unknown';
       final imageUrl = otherParticipant['imageUrl'] as String?;
       final otherUserId = otherParticipant['uid'] as String? ?? '';
 
       // Watch presence for the other user
       final presenceAsync = ref.watch(userPresenceProvider(otherUserId));
 
-      return ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: _buildAvatarWithPresence(name, imageUrl, presenceAsync),
-        title: Row(
-          children: [
-            Expanded(
-              child: Text(
-                name,
-                style: TextStyle(
-                  fontWeight: unreadCount > 0
-                      ? FontWeight.bold
-                      : FontWeight.w500,
-                  fontSize: 16,
+      // Dynamically look up display name
+      final displayNameAsync = ref.watch(userDisplayNameProvider(otherUserId));
+
+      return displayNameAsync.when(
+        data: (displayName) => ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          leading: _buildAvatarWithPresence(displayName, imageUrl, presenceAsync),
+          title: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  displayName,
+                  style: TextStyle(
+                    fontWeight: unreadCount > 0
+                        ? FontWeight.bold
+                        : FontWeight.w500,
+                    fontSize: 16,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-                overflow: TextOverflow.ellipsis,
               ),
-            ),
             const SizedBox(width: 8),
             Text(
               _formatTimestamp(lastUpdatedAt),
@@ -193,28 +197,41 @@ class ConversationListItem extends ConsumerWidget {
             ),
           ],
         ),
-        subtitle: Row(
-          children: [
-            Expanded(
-              child: Text(
-                lastMessage ?? 'No messages yet',
-                style: TextStyle(
-                  color: lastMessage == null ? Colors.grey : Colors.grey[700],
-                  fontWeight: unreadCount > 0
-                      ? FontWeight.w500
-                      : FontWeight.normal,
+          subtitle: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  lastMessage ?? 'No messages yet',
+                  style: TextStyle(
+                    color: lastMessage == null ? Colors.grey : Colors.grey[700],
+                    fontWeight: unreadCount > 0
+                        ? FontWeight.w500
+                        : FontWeight.normal,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
-            ),
-            if (unreadCount > 0) ...[
-              const SizedBox(width: 8),
-              _buildUnreadBadge(context),
+              if (unreadCount > 0) ...[
+                const SizedBox(width: 8),
+                _buildUnreadBadge(context),
+              ],
             ],
-          ],
+          ),
+          onTap: onTap,
         ),
-        onTap: onTap,
+        loading: () => ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          leading: _buildAvatarWithPresence('Loading...', imageUrl, presenceAsync),
+          title: const Text('Loading...'),
+          onTap: onTap,
+        ),
+        error: (_, __) => ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          leading: _buildAvatarWithPresence('Unknown', imageUrl, presenceAsync),
+          title: const Text('Unknown'),
+          onTap: onTap,
+        ),
       );
     }
   }
