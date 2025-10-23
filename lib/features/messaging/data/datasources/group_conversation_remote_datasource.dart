@@ -347,8 +347,8 @@ class GroupConversationRemoteDataSourceImpl
 
       // Get current participants
       final participants = data['participants'] as List<dynamic>? ?? [];
-      // ignore: avoid_dynamic_calls
       final updatedParticipants = participants
+          // ignore: avoid_dynamic_calls
           .where((p) => p['uid'] != userId)
           .toList();
 

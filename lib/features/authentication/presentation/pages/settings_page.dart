@@ -278,6 +278,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     }
     try {
       // Handle both UserEntity (name) and Firebase User (displayName)
+      // ignore: avoid_dynamic_calls
       final dynamic u = user;
       return (u.name ?? u.displayName ?? '') as String;
     } catch (_) {
@@ -291,6 +292,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     }
     try {
       // Handle both UserEntity (imageUrl) and Firebase User (photoURL)
+      // ignore: avoid_dynamic_calls
       final dynamic u = user;
       return (u.imageUrl ?? u.photoURL) as String?;
     } catch (_) {
@@ -304,6 +306,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     }
     try {
       // Only UserEntity has preferredLanguage
+      // ignore: avoid_dynamic_calls
       final dynamic u = user;
       return (u.preferredLanguage ?? 'en') as String;
     } catch (_) {
@@ -316,6 +319,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       return 'N/A';
     }
     try {
+      // ignore: avoid_dynamic_calls
       final dynamic u = user;
       return (u.email ?? 'N/A') as String;
     } catch (_) {
@@ -328,6 +332,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       return '';
     }
     try {
+      // ignore: avoid_dynamic_calls
       final dynamic u = user;
       return (u.uid ?? '') as String;
     } catch (_) {
@@ -340,6 +345,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       return DateTime.now();
     }
     try {
+      // ignore: avoid_dynamic_calls
       final dynamic u = user;
       return (u.createdAt ?? DateTime.now()) as DateTime;
     } catch (_) {
