@@ -6,11 +6,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:message_ai/features/authentication/domain/entities/user.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
 import 'package:message_ai/features/authentication/presentation/providers/user_lookup_provider.dart';
+import 'package:message_ai/features/messaging/data/services/typing_indicator_service.dart';
+import 'package:message_ai/features/messaging/domain/entities/message.dart';
 import 'package:message_ai/features/messaging/presentation/pages/group_management_page.dart';
 import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:message_ai/features/messaging/presentation/widgets/message_bubble.dart';
 import 'package:message_ai/features/messaging/presentation/widgets/message_input.dart';
 import 'package:message_ai/features/messaging/presentation/widgets/typing_indicator.dart';
+import 'package:message_ai/features/smart_replies/presentation/widgets/smart_reply_bar.dart';
 
 /// Main chat screen for displaying and sending messages.
 ///
@@ -39,10 +42,15 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   final ScrollController _scrollController = ScrollController();
   final Set<String> _markedAsRead =
       {}; // Track which messages we've marked as read
+  final TextEditingController _messageInputController = TextEditingController();
+
+  /// Latest incoming message (for smart reply generation)
+  Message? _latestIncomingMessage;
 
   @override
   void dispose() {
     _scrollController.dispose();
+    _messageInputController.dispose();
     super.dispose();
   }
 
@@ -96,61 +104,73 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   }
 
   Widget _buildChatScaffold(BuildContext context, User currentUser) => Scaffold(
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // For direct conversations, dynamically look up the name
-            // For groups, use the static group name
-            if (widget.isGroup)
-              Text(widget.otherParticipantName)
-            else
-              Consumer(
-                builder: (context, ref, _) {
-                  final displayNameAsync = ref.watch(
-                    userDisplayNameProvider(widget.otherParticipantId),
-                  );
-                  return displayNameAsync.when(
-                    data: Text.new,
-                    loading: () =>
-                        Text(widget.otherParticipantName), // Fallback
-                    error: (error, stackTrace) =>
-                        Text(widget.otherParticipantName), // Fallback
-                  );
-                },
-              ),
-            _buildPresenceStatus(),
-          ],
-        ),
-        actions: [
+    appBar: AppBar(
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // For direct conversations, dynamically look up the name
+          // For groups, use the static group name
           if (widget.isGroup)
-            IconButton(
-              icon: const Icon(Icons.info_outline),
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (context) => GroupManagementPage(
-                      conversationId: widget.conversationId,
-                    ),
-                  ),
+            Text(widget.otherParticipantName)
+          else
+            Consumer(
+              builder: (context, ref, _) {
+                final displayNameAsync = ref.watch(
+                  userDisplayNameProvider(widget.otherParticipantId),
+                );
+                return displayNameAsync.when(
+                  data: Text.new,
+                  loading: () => Text(widget.otherParticipantName), // Fallback
+                  error: (error, stackTrace) =>
+                      Text(widget.otherParticipantName), // Fallback
                 );
               },
             ),
+          _buildPresenceStatus(),
         ],
       ),
-      body: Column(
-        children: [
-          Expanded(child: _buildMessageList(currentUser)),
-          _buildTypingIndicator(currentUser.uid),
-          MessageInput(
-            conversationId: widget.conversationId,
-            currentUserId: currentUser.uid,
-            currentUserName: currentUser.displayName,
-            onMessageSent: _scrollToBottom,
+      actions: [
+        if (widget.isGroup)
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (context) => GroupManagementPage(
+                    conversationId: widget.conversationId,
+                  ),
+                ),
+              );
+            },
           ),
-        ],
-      ),
-    );
+      ],
+    ),
+    body: Column(
+      children: [
+        Expanded(child: _buildMessageList(currentUser)),
+        _buildTypingIndicator(currentUser.uid),
+        SmartReplyBar(
+          conversationId: widget.conversationId,
+          currentUserId: currentUser.uid,
+          onReplySelected: (replyText) {
+            _messageInputController.text = replyText;
+            // Move cursor to end
+            _messageInputController.selection = TextSelection.fromPosition(
+              TextPosition(offset: replyText.length),
+            );
+          },
+          incomingMessage: _latestIncomingMessage,
+        ),
+        MessageInput(
+          conversationId: widget.conversationId,
+          currentUserId: currentUser.uid,
+          currentUserName: currentUser.displayName,
+          onMessageSent: _scrollToBottom,
+          controller: _messageInputController,
+        ),
+      ],
+    ),
+  );
 
   Widget _buildPresenceStatus() {
     if (widget.isGroup) {
@@ -169,7 +189,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           );
 
           return groupPresenceAsync.when(
-            data: (presence) {
+            data: (Map<String, dynamic> presence) {
               final displayText = presence['displayText'] as String? ?? '';
               final onlineCount = presence['onlineCount'] as int? ?? 0;
 
@@ -202,7 +222,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       );
 
       return presenceAsync.when(
-        data: (presence) {
+        data: (Map<String, dynamic>? presence) {
           if (presence == null) {
             return const SizedBox.shrink();
           }
@@ -259,24 +279,63 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     );
 
     return typingUsersAsync.when(
-      data: (typingUsers) {
-        final typingNames = typingUsers.map((u) => u.userName).toList();
+      data: (List<TypingUser> typingUsers) {
+        final typingNames = typingUsers
+            .map<String>((TypingUser u) => u.userName)
+            .toList();
         return TypingIndicator(typingUserNames: typingNames);
       },
       loading: () => const SizedBox.shrink(),
-      error: (_, _) => const SizedBox.shrink(),
+      error: (Object _, StackTrace _) => const SizedBox.shrink(),
     );
   }
 
   Widget _buildMessageList(User currentUser) {
     final messagesStream = ref.watch(
-      conversationMessagesStreamProvider(widget.conversationId, currentUser.uid),
+      conversationMessagesStreamProvider(
+        widget.conversationId,
+        currentUser.uid,
+      ),
     );
 
     return messagesStream.when(
       data: (messages) {
         if (messages.isEmpty) {
           return _buildEmptyState();
+        }
+
+        // Track latest incoming message for smart replies
+        // Get the most recent message that's not from current user
+        for (final msg in messages.reversed) {
+          final senderId = msg['senderId'] as String;
+          if (senderId != currentUser.uid) {
+            final messageId = msg['id'] as String;
+            // Only update if it's a new message
+            if (_latestIncomingMessage?.id != messageId) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  setState(() {
+                    _latestIncomingMessage = Message(
+                      id: messageId,
+                      text: msg['text'] as String,
+                      senderId: senderId,
+                      timestamp: msg['timestamp'] as DateTime,
+                      type: msg['type'] as String? ?? 'text',
+                      status: msg['status'] as String? ?? 'sent',
+                      metadata: MessageMetadata.defaultMetadata(),
+                      detectedLanguage: msg['detectedLanguage'] as String?,
+                      translations: msg['translations'] != null
+                          ? Map<String, String>.from(
+                              msg['translations'] as Map<String, dynamic>,
+                            )
+                          : null,
+                    );
+                  });
+                }
+              });
+            }
+            break;
+          }
         }
 
         // Scroll to bottom when messages first load
@@ -290,7 +349,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           controller: _scrollController,
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
           itemCount: messages.length,
-          itemBuilder: (context, index) {
+          itemBuilder: (BuildContext context, int index) {
             final message = messages[index];
             final isMe = message['senderId'] == currentUser.uid;
             final messageId = message['id'] as String;
@@ -320,7 +379,9 @@ class _ChatPageState extends ConsumerState<ChatPage> {
               status: status,
               detectedLanguage: message['detectedLanguage'] as String?,
               translations: message['translations'] != null
-                  ? Map<String, String>.from(message['translations'] as Map)
+                  ? Map<String, String>.from(
+                      message['translations'] as Map<String, dynamic>,
+                    )
                   : null,
               userPreferredLanguage: currentUser.preferredLanguage,
               culturalHint: message['culturalHint'] as String?,
@@ -375,7 +436,10 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     ),
   );
 
-  bool _shouldShowTimestamp(List<Map<String, dynamic>> messages, int index) {
+  bool _shouldShowTimestamp(
+    List<Map<String, dynamic>> messages,
+    int index,
+  ) {
     if (index == 0) {
       return true; // Always show for first message
     }

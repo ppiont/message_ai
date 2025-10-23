@@ -223,7 +223,7 @@ final class GenerateSmartRepliesProvider
 }
 
 String _$generateSmartRepliesHash() =>
-    r'c7ced61d8e816525583244e6aea2bc19930b1412';
+    r'87fde756ba9ffe0e99b16cb8db54a4c3bacc6688';
 
 /// Provider for generating smart replies for a specific message
 ///

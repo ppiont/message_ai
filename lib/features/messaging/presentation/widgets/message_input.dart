@@ -17,6 +17,7 @@ class MessageInput extends ConsumerStatefulWidget {
     required this.currentUserId,
     required this.currentUserName,
     this.onMessageSent,
+    this.controller,
     super.key,
   });
 
@@ -24,13 +25,14 @@ class MessageInput extends ConsumerStatefulWidget {
   final String currentUserId;
   final String currentUserName;
   final VoidCallback? onMessageSent;
+  final TextEditingController? controller;
 
   @override
   ConsumerState<MessageInput> createState() => _MessageInputState();
 }
 
 class _MessageInputState extends ConsumerState<MessageInput> {
-  final TextEditingController _controller = TextEditingController();
+  late TextEditingController _controller;
   final Uuid _uuid = const Uuid();
   bool _isSending = false;
   String _currentText = '';
@@ -38,15 +40,19 @@ class _MessageInputState extends ConsumerState<MessageInput> {
   @override
   void initState() {
     super.initState();
+    // Use provided controller or create a local one
+    _controller = widget.controller ?? TextEditingController();
     // Listen to text changes for typing indicator
     _controller.addListener(_onTextChanged);
   }
 
   @override
   void dispose() {
-    _controller
-      ..removeListener(_onTextChanged)
-      ..dispose();
+    _controller.removeListener(_onTextChanged);
+    // Only dispose if we created it locally
+    if (widget.controller == null) {
+      _controller.dispose();
+    }
     // Note: Don't use ref in dispose - typing will auto-clear after timeout
     super.dispose();
   }
@@ -56,8 +62,10 @@ class _MessageInputState extends ConsumerState<MessageInput> {
     setState(() {
       _currentText = text;
     });
-    final _ = ref.read(typingIndicatorServiceProvider)
-      ..setTyping(
+    final typingService = ref.read(typingIndicatorServiceProvider);
+    // ignore: cascade_invocations
+    typingService
+      .setTyping(
         conversationId: widget.conversationId,
         userId: widget.currentUserId,
         userName: widget.currentUserName,
@@ -66,8 +74,10 @@ class _MessageInputState extends ConsumerState<MessageInput> {
   }
 
   void _clearTypingStatus() {
-    final _ = ref.read(typingIndicatorServiceProvider)
-      ..clearTyping(
+    final typingService = ref.read(typingIndicatorServiceProvider);
+    // ignore: cascade_invocations
+    typingService
+      .clearTyping(
         conversationId: widget.conversationId,
         userId: widget.currentUserId,
         userName: widget.currentUserName,
