@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:message_ai/core/providers/database_providers.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
+import 'package:message_ai/features/authentication/presentation/providers/user_providers.dart';
 import 'package:message_ai/features/messaging/data/datasources/conversation_local_datasource.dart';
 import 'package:message_ai/features/messaging/data/datasources/conversation_remote_datasource.dart';
 import 'package:message_ai/features/messaging/data/datasources/group_conversation_remote_datasource.dart';
@@ -174,6 +175,7 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
   String currentUserId,
 ) async* {
   final watchUseCase = ref.watch(watchMessagesUseCaseProvider);
+  final userSyncService = ref.watch(userSyncServiceProvider);
 
   await for (final result in watchUseCase(
     conversationId: conversationId,
@@ -184,7 +186,16 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
         // Log error but return empty list to keep UI functional
         return [];
       },
-      (messages) => messages
+      (messages) {
+        // Sync all message senders to Drift for offline access
+        final allSenderIds = messages.map((msg) => msg.senderId).toSet().toList();
+        if (allSenderIds.isNotEmpty) {
+          for (final senderId in allSenderIds) {
+            userSyncService.syncMessageSender(senderId);
+          }
+        }
+
+        return messages
             .map(
               (msg) => {
                 'id': msg.id,
@@ -197,7 +208,8 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
                 'translations': msg.translations,
               },
             )
-            .toList(),
+            .toList();
+      },
     );
   }
 }
@@ -400,11 +412,22 @@ Stream<List<Map<String, dynamic>>> allConversationsStream(
     watchConversationsUseCaseProvider,
   );
   final groupRepository = ref.watch(groupConversationRepositoryProvider);
+  final userSyncService = ref.watch(userSyncServiceProvider);
 
   // Watch direct conversations
   final directStream = watchConversationsUseCase(userId: userId).map((result) => result.fold(
       (failure) => <Map<String, dynamic>>[],
-      (conversations) => conversations.map((conv) => <String, dynamic>{
+      (conversations) {
+        // Sync all participant users to Drift for offline access
+        final allParticipantIds = conversations
+            .expand((conv) => conv.participants.map((p) => p.uid))
+            .toSet()
+            .toList();
+        if (allParticipantIds.isNotEmpty) {
+          userSyncService.syncConversationUsers(allParticipantIds);
+        }
+
+        return conversations.map((conv) => <String, dynamic>{
           'id': conv.documentId,
           'type': 'direct',
           'participants': conv.participants
@@ -419,13 +442,24 @@ Stream<List<Map<String, dynamic>>> allConversationsStream(
           'lastMessage': conv.lastMessage?.text,
           'lastUpdatedAt': conv.lastUpdatedAt,
           'unreadCount': conv.getUnreadCountForUser(userId),
-        }).toList(),
+        }).toList();
+      },
     ));
 
   // Watch groups
   final groupStream = groupRepository.watchGroupsForUser(userId).map((result) => result.fold(
       (failure) => <Map<String, dynamic>>[],
-      (groups) => groups.map((group) => <String, dynamic>{
+      (groups) {
+        // Sync all participant users to Drift for offline access
+        final allParticipantIds = groups
+            .expand((group) => group.participants.map((p) => p.uid))
+            .toSet()
+            .toList();
+        if (allParticipantIds.isNotEmpty) {
+          userSyncService.syncConversationUsers(allParticipantIds);
+        }
+
+        return groups.map((group) => <String, dynamic>{
           'id': group.documentId,
           'type': 'group',
           'groupName': group.groupName,
@@ -443,7 +477,8 @@ Stream<List<Map<String, dynamic>>> allConversationsStream(
           'lastMessage': group.lastMessage?.text,
           'lastUpdatedAt': group.lastUpdatedAt,
           'unreadCount': group.getUnreadCountForUser(userId),
-        }).toList(),
+        }).toList();
+      },
     ));
 
   // Merge the two streams using combineLatest2

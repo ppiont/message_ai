@@ -4,6 +4,7 @@
 /// Automatically syncs users encountered in conversations and messages.
 library;
 
+import 'package:drift/drift.dart';
 import 'package:message_ai/core/database/app_database.dart';
 import 'package:message_ai/features/authentication/data/models/user_model.dart';
 import 'package:message_ai/features/authentication/domain/entities/user.dart';
