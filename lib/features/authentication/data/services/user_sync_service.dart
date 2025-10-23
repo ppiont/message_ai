@@ -42,9 +42,6 @@ class UserSyncService {
   ///
   /// Call this when the app starts and user is authenticated
   void startBackgroundSync() {
-    // Start watching all cached users for real-time updates
-    _startWatchingCachedUsers();
-
     // Refresh all cached users every hour
     _refreshTimer?.cancel();
     _refreshTimer = Timer.periodic(
@@ -53,24 +50,6 @@ class UserSyncService {
     );
 
     print('✅ UserSync: Background sync started');
-  }
-
-  /// Start watching all cached users for real-time updates
-  ///
-  /// This ensures we get real-time updates for users we've interacted with
-  Future<void> _startWatchingCachedUsers() async {
-    try {
-      final cachedUsers = await _database.userDao.getAllUsers();
-      final userIds = cachedUsers.map((u) => u.uid).toList();
-      
-      print('👀 UserSync: Starting watchers for ${userIds.length} cached users');
-      
-      for (final userId in userIds) {
-        _watchUser(userId);
-      }
-    } catch (e) {
-      print('❌ UserSync: Failed to start watchers: $e');
-    }
   }
 
   /// Stop background syncing

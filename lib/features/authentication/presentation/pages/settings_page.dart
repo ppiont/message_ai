@@ -173,7 +173,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         // Display name changes propagate via UserLookupProvider cache invalidation
         final updateUseCase = ref.read(updateUserProfileUseCaseProvider);
         final userRepository = ref.read(userRepositoryProvider);
-
+        
         // Update both Firebase Auth and Firestore
         Future.wait([
           updateUseCase(displayName: displayName).then((result) {
@@ -182,15 +182,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               (_) => print('✅ Firebase Auth updated'),
             );
           }),
-          userRepository
-              .updateUser(currentUser.copyWith(displayName: displayName))
-              .then((result) {
-                result.fold(
-                  (failure) =>
-                      print('❌ Firestore update failed: ${failure.message}'),
-                  (_) => print('✅ Firestore updated'),
-                );
-              }),
+          userRepository.updateUser(
+            currentUser.copyWith(displayName: displayName),
+          ).then((result) {
+            result.fold(
+              (failure) => print('❌ Firestore update failed: ${failure.message}'),
+              (_) => print('✅ Firestore updated'),
+            );
+          }),
         ]).then((_) {
           // Invalidate UserLookupProvider cache so UI fetches new name
           ref
