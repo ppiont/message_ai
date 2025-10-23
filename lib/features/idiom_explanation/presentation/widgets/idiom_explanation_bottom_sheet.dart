@@ -14,8 +14,7 @@ class IdiomExplanationBottomSheet extends StatelessWidget {
   final IdiomExplanationResult result;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       padding: const EdgeInsets.all(20),
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -102,10 +101,8 @@ class IdiomExplanationBottomSheet extends StatelessWidget {
         ],
       ),
     );
-  }
 
-  Widget _buildIdiomCard(BuildContext context, IdiomExplanation idiom) {
-    return Card(
+  Widget _buildIdiomCard(BuildContext context, IdiomExplanation idiom) => Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -196,7 +193,6 @@ class IdiomExplanationBottomSheet extends StatelessWidget {
         ),
       ),
     );
-  }
 
   /// Get language name from language code
   String _getLanguageName(String code) {

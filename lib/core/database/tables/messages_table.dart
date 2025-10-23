@@ -43,6 +43,9 @@ class Messages extends Table {
   /// AI analysis results as JSON
   TextColumn get aiAnalysis => text().nullable()();
 
+  /// Cultural context hint explaining nuances, idioms, or formality
+  TextColumn get culturalHint => text().nullable()();
+
   /// Embedding vector for RAG (stored as JSON array)
   TextColumn get embedding => text().nullable()();
 

@@ -176,11 +176,13 @@ class UserLookupCache extends _$UserLookupCache {
       // Create a stream from the repository's watch method
       final subscription = userRepository.watchUser(userId).listen(
         (result) async {
-          if (!ref.mounted) return;
+          if (!ref.mounted) {
+            return;
+          }
 
           // Handle Either<Failure, User> result
-          result.fold(
-            (failure) {
+          await result.fold(
+            (failure) async {
               debugPrint(
                 '❌ User watch failure for $userId: ${failure.message}',
               );

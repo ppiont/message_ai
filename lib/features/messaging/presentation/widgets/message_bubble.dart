@@ -30,6 +30,7 @@ class MessageBubble extends ConsumerStatefulWidget {
     this.detectedLanguage,
     this.translations,
     this.userPreferredLanguage,
+    this.culturalHint,
     super.key,
   });
 
@@ -44,6 +45,7 @@ class MessageBubble extends ConsumerStatefulWidget {
   final String? detectedLanguage;
   final Map<String, String>? translations;
   final String? userPreferredLanguage;
+  final String? culturalHint;
 
   @override
   ConsumerState<MessageBubble> createState() => _MessageBubbleState();
@@ -234,6 +236,18 @@ class _MessageBubbleState extends ConsumerState<MessageBubble> {
                               color: widget.isMe ? Colors.white70 : Colors.grey[600],
                             ),
                           ),
+                          // Cultural context badge (only for received messages with hints)
+                          if (!widget.isMe && widget.culturalHint != null) ...[
+                            const SizedBox(width: 6),
+                            GestureDetector(
+                              onTap: () => _showCulturalContextDialog(context),
+                              child: Icon(
+                                Icons.public,
+                                size: 14,
+                                color: widget.isMe ? Colors.white70 : Colors.grey[600],
+                              ),
+                            ),
+                          ],
                           if (widget.isMe) ...[
                             const SizedBox(width: 4),
                             _buildStatusIcon(context),
@@ -432,10 +446,12 @@ class _MessageBubbleState extends ConsumerState<MessageBubble> {
     LongPressStartDetails details,
     WidgetRef ref,
   ) async {
-    final RenderBox? overlay =
+    final overlay =
         Overlay.of(context).context.findRenderObject() as RenderBox?;
 
-    if (overlay == null) return;
+    if (overlay == null) {
+      return;
+    }
 
     final result = await showMenu<String>(
       context: context,
@@ -444,13 +460,13 @@ class _MessageBubbleState extends ConsumerState<MessageBubble> {
         Offset.zero & overlay.size,
       ),
       items: [
-        PopupMenuItem<String>(
+        const PopupMenuItem<String>(
           value: 'explain_idioms',
           child: Row(
             children: [
-              const Icon(Icons.lightbulb, size: 20, color: Colors.amber),
-              const SizedBox(width: 12),
-              const Text('Explain idioms'),
+              Icon(Icons.lightbulb, size: 20, color: Colors.amber),
+              SizedBox(width: 12),
+              Text('Explain idioms'),
             ],
           ),
         ),
@@ -465,11 +481,13 @@ class _MessageBubbleState extends ConsumerState<MessageBubble> {
   /// Handle explain idioms action
   Future<void> _handleExplainIdioms(BuildContext context, WidgetRef ref) async {
     // Show loading indicator
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(),
+    unawaited(
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
       ),
     );
 
@@ -488,7 +506,9 @@ class _MessageBubbleState extends ConsumerState<MessageBubble> {
         targetLanguage: targetLang,
       );
 
-      if (!context.mounted) return;
+      if (!context.mounted) {
+        return;
+      }
 
       // Close loading dialog
       Navigator.of(context).pop();
@@ -509,7 +529,9 @@ class _MessageBubbleState extends ConsumerState<MessageBubble> {
         },
       );
     } catch (e) {
-      if (!context.mounted) return;
+      if (!context.mounted) {
+        return;
+      }
 
       // Close loading dialog if still open
       Navigator.of(context).pop();
@@ -521,6 +543,36 @@ class _MessageBubbleState extends ConsumerState<MessageBubble> {
         ),
       );
     }
+  }
+
+  /// Show cultural context dialog
+  void _showCulturalContextDialog(BuildContext context) {
+    if (widget.culturalHint == null) {
+      return;
+    }
+
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.public, color: Colors.blue),
+            SizedBox(width: 8),
+            Text('Cultural Context'),
+          ],
+        ),
+        content: Text(
+          widget.culturalHint!,
+          style: const TextStyle(fontSize: 15, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
   }
 
   /// Handle translation button tap

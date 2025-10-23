@@ -6,6 +6,8 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:message_ai/core/providers/database_provider.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
 import 'package:message_ai/features/authentication/presentation/providers/user_providers.dart';
+import 'package:message_ai/features/cultural_context/data/services/cultural_context_analyzer.dart';
+import 'package:message_ai/features/cultural_context/presentation/providers/cultural_context_providers.dart';
 import 'package:message_ai/features/messaging/data/datasources/conversation_local_datasource.dart';
 import 'package:message_ai/features/messaging/data/datasources/conversation_remote_datasource.dart';
 import 'package:message_ai/features/messaging/data/datasources/group_conversation_remote_datasource.dart';
@@ -94,6 +96,22 @@ ConversationRepository conversationRepository(Ref ref) =>
       localDataSource: ref.watch(conversationLocalDataSourceProvider),
     );
 
+// ========== Cultural Context Providers ==========
+
+/// Provides the [CulturalContextAnalyzer] service for background analysis
+@riverpod
+CulturalContextAnalyzer culturalContextAnalyzer(Ref ref) {
+  final analyzer = CulturalContextAnalyzer(
+    analyzeCulturalContext: ref.watch(analyzeMessageCulturalContextProvider),
+    messageRepository: ref.watch(messageRepositoryProvider),
+  );
+
+  // Clear cache when provider is disposed
+  ref.onDispose(analyzer.clearCache);
+
+  return analyzer;
+}
+
 // ========== Use Case Providers ==========
 
 /// Provides the [SendMessage] use case with language detection.
@@ -177,6 +195,7 @@ Stream<List<Map<String, dynamic>>> userConversationsStream(
 ///
 /// Automatically updates when messages change in Firestore.
 /// Automatically marks incoming messages as delivered.
+/// Automatically analyzes cultural context for received messages.
 @riverpod
 Stream<List<Map<String, dynamic>>> conversationMessagesStream(
   Ref ref,
@@ -185,6 +204,8 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
 ) async* {
   final watchUseCase = ref.watch(watchMessagesUseCaseProvider);
   final userSyncService = ref.watch(userSyncServiceProvider);
+  final culturalAnalyzer = ref.watch(culturalContextAnalyzerProvider);
+  final currentUserAsync = ref.watch(currentUserWithFirestoreProvider);
 
   await for (final result in watchUseCase(
     conversationId: conversationId,
@@ -204,6 +225,22 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
           allSenderIds.forEach(userSyncService.syncMessageSender);
         }
 
+        // Analyze cultural context for received messages (background, fire-and-forget)
+        currentUserAsync.whenData((currentUser) {
+          if (currentUser != null) {
+            for (final msg in messages) {
+              // Only analyze received messages without cultural hints
+              if (msg.senderId != currentUserId && msg.culturalHint == null) {
+                culturalAnalyzer.analyzeMessageInBackground(
+                  conversationId: conversationId,
+                  message: msg,
+                  currentUser: currentUser,
+                );
+              }
+            }
+          }
+        });
+
         return messages
             .map(
               (msg) => {
@@ -215,6 +252,7 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
                 'type': msg.type,
                 'detectedLanguage': msg.detectedLanguage,
                 'translations': msg.translations,
+                'culturalHint': msg.culturalHint,
               },
             )
             .toList();

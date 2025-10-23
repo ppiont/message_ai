@@ -1938,6 +1938,17 @@ class $MessagesTable extends Messages
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _culturalHintMeta = const VerificationMeta(
+    'culturalHint',
+  );
+  @override
+  late final GeneratedColumn<String> culturalHint = GeneratedColumn<String>(
+    'cultural_hint',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _embeddingMeta = const VerificationMeta(
     'embedding',
   );
@@ -2008,6 +2019,7 @@ class $MessagesTable extends Messages
     replyTo,
     metadata,
     aiAnalysis,
+    culturalHint,
     embedding,
     syncStatus,
     retryCount,
@@ -2120,6 +2132,15 @@ class $MessagesTable extends Messages
         aiAnalysis.isAcceptableOrUnknown(data['ai_analysis']!, _aiAnalysisMeta),
       );
     }
+    if (data.containsKey('cultural_hint')) {
+      context.handle(
+        _culturalHintMeta,
+        culturalHint.isAcceptableOrUnknown(
+          data['cultural_hint']!,
+          _culturalHintMeta,
+        ),
+      );
+    }
     if (data.containsKey('embedding')) {
       context.handle(
         _embeddingMeta,
@@ -2210,6 +2231,10 @@ class $MessagesTable extends Messages
         DriftSqlType.string,
         data['${effectivePrefix}ai_analysis'],
       ),
+      culturalHint: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cultural_hint'],
+      ),
       embedding: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}embedding'],
@@ -2277,6 +2302,9 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
   /// AI analysis results as JSON
   final String? aiAnalysis;
 
+  /// Cultural context hint explaining nuances, idioms, or formality
+  final String? culturalHint;
+
   /// Embedding vector for RAG (stored as JSON array)
   final String? embedding;
 
@@ -2304,6 +2332,7 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
     this.replyTo,
     this.metadata,
     this.aiAnalysis,
+    this.culturalHint,
     this.embedding,
     required this.syncStatus,
     required this.retryCount,
@@ -2334,6 +2363,9 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
     }
     if (!nullToAbsent || aiAnalysis != null) {
       map['ai_analysis'] = Variable<String>(aiAnalysis);
+    }
+    if (!nullToAbsent || culturalHint != null) {
+      map['cultural_hint'] = Variable<String>(culturalHint);
     }
     if (!nullToAbsent || embedding != null) {
       map['embedding'] = Variable<String>(embedding);
@@ -2373,6 +2405,9 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
       aiAnalysis: aiAnalysis == null && nullToAbsent
           ? const Value.absent()
           : Value(aiAnalysis),
+      culturalHint: culturalHint == null && nullToAbsent
+          ? const Value.absent()
+          : Value(culturalHint),
       embedding: embedding == null && nullToAbsent
           ? const Value.absent()
           : Value(embedding),
@@ -2405,6 +2440,7 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
       replyTo: serializer.fromJson<String?>(json['replyTo']),
       metadata: serializer.fromJson<String?>(json['metadata']),
       aiAnalysis: serializer.fromJson<String?>(json['aiAnalysis']),
+      culturalHint: serializer.fromJson<String?>(json['culturalHint']),
       embedding: serializer.fromJson<String?>(json['embedding']),
       syncStatus: serializer.fromJson<String>(json['syncStatus']),
       retryCount: serializer.fromJson<int>(json['retryCount']),
@@ -2428,6 +2464,7 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
       'replyTo': serializer.toJson<String?>(replyTo),
       'metadata': serializer.toJson<String?>(metadata),
       'aiAnalysis': serializer.toJson<String?>(aiAnalysis),
+      'culturalHint': serializer.toJson<String?>(culturalHint),
       'embedding': serializer.toJson<String?>(embedding),
       'syncStatus': serializer.toJson<String>(syncStatus),
       'retryCount': serializer.toJson<int>(retryCount),
@@ -2449,6 +2486,7 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
     Value<String?> replyTo = const Value.absent(),
     Value<String?> metadata = const Value.absent(),
     Value<String?> aiAnalysis = const Value.absent(),
+    Value<String?> culturalHint = const Value.absent(),
     Value<String?> embedding = const Value.absent(),
     String? syncStatus,
     int? retryCount,
@@ -2469,6 +2507,7 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
     replyTo: replyTo.present ? replyTo.value : this.replyTo,
     metadata: metadata.present ? metadata.value : this.metadata,
     aiAnalysis: aiAnalysis.present ? aiAnalysis.value : this.aiAnalysis,
+    culturalHint: culturalHint.present ? culturalHint.value : this.culturalHint,
     embedding: embedding.present ? embedding.value : this.embedding,
     syncStatus: syncStatus ?? this.syncStatus,
     retryCount: retryCount ?? this.retryCount,
@@ -2503,6 +2542,9 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
       aiAnalysis: data.aiAnalysis.present
           ? data.aiAnalysis.value
           : this.aiAnalysis,
+      culturalHint: data.culturalHint.present
+          ? data.culturalHint.value
+          : this.culturalHint,
       embedding: data.embedding.present ? data.embedding.value : this.embedding,
       syncStatus: data.syncStatus.present
           ? data.syncStatus.value
@@ -2532,6 +2574,7 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
           ..write('replyTo: $replyTo, ')
           ..write('metadata: $metadata, ')
           ..write('aiAnalysis: $aiAnalysis, ')
+          ..write('culturalHint: $culturalHint, ')
           ..write('embedding: $embedding, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('retryCount: $retryCount, ')
@@ -2555,6 +2598,7 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
     replyTo,
     metadata,
     aiAnalysis,
+    culturalHint,
     embedding,
     syncStatus,
     retryCount,
@@ -2577,6 +2621,7 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
           other.replyTo == this.replyTo &&
           other.metadata == this.metadata &&
           other.aiAnalysis == this.aiAnalysis &&
+          other.culturalHint == this.culturalHint &&
           other.embedding == this.embedding &&
           other.syncStatus == this.syncStatus &&
           other.retryCount == this.retryCount &&
@@ -2597,6 +2642,7 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
   final Value<String?> replyTo;
   final Value<String?> metadata;
   final Value<String?> aiAnalysis;
+  final Value<String?> culturalHint;
   final Value<String?> embedding;
   final Value<String> syncStatus;
   final Value<int> retryCount;
@@ -2616,6 +2662,7 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
     this.replyTo = const Value.absent(),
     this.metadata = const Value.absent(),
     this.aiAnalysis = const Value.absent(),
+    this.culturalHint = const Value.absent(),
     this.embedding = const Value.absent(),
     this.syncStatus = const Value.absent(),
     this.retryCount = const Value.absent(),
@@ -2636,6 +2683,7 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
     this.replyTo = const Value.absent(),
     this.metadata = const Value.absent(),
     this.aiAnalysis = const Value.absent(),
+    this.culturalHint = const Value.absent(),
     this.embedding = const Value.absent(),
     this.syncStatus = const Value.absent(),
     this.retryCount = const Value.absent(),
@@ -2660,6 +2708,7 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
     Expression<String>? replyTo,
     Expression<String>? metadata,
     Expression<String>? aiAnalysis,
+    Expression<String>? culturalHint,
     Expression<String>? embedding,
     Expression<String>? syncStatus,
     Expression<int>? retryCount,
@@ -2680,6 +2729,7 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
       if (replyTo != null) 'reply_to': replyTo,
       if (metadata != null) 'metadata': metadata,
       if (aiAnalysis != null) 'ai_analysis': aiAnalysis,
+      if (culturalHint != null) 'cultural_hint': culturalHint,
       if (embedding != null) 'embedding': embedding,
       if (syncStatus != null) 'sync_status': syncStatus,
       if (retryCount != null) 'retry_count': retryCount,
@@ -2702,6 +2752,7 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
     Value<String?>? replyTo,
     Value<String?>? metadata,
     Value<String?>? aiAnalysis,
+    Value<String?>? culturalHint,
     Value<String?>? embedding,
     Value<String>? syncStatus,
     Value<int>? retryCount,
@@ -2722,6 +2773,7 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
       replyTo: replyTo ?? this.replyTo,
       metadata: metadata ?? this.metadata,
       aiAnalysis: aiAnalysis ?? this.aiAnalysis,
+      culturalHint: culturalHint ?? this.culturalHint,
       embedding: embedding ?? this.embedding,
       syncStatus: syncStatus ?? this.syncStatus,
       retryCount: retryCount ?? this.retryCount,
@@ -2770,6 +2822,9 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
     if (aiAnalysis.present) {
       map['ai_analysis'] = Variable<String>(aiAnalysis.value);
     }
+    if (culturalHint.present) {
+      map['cultural_hint'] = Variable<String>(culturalHint.value);
+    }
     if (embedding.present) {
       map['embedding'] = Variable<String>(embedding.value);
     }
@@ -2806,6 +2861,7 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
           ..write('replyTo: $replyTo, ')
           ..write('metadata: $metadata, ')
           ..write('aiAnalysis: $aiAnalysis, ')
+          ..write('culturalHint: $culturalHint, ')
           ..write('embedding: $embedding, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('retryCount: $retryCount, ')
@@ -3628,6 +3684,7 @@ typedef $$MessagesTableCreateCompanionBuilder =
       Value<String?> replyTo,
       Value<String?> metadata,
       Value<String?> aiAnalysis,
+      Value<String?> culturalHint,
       Value<String?> embedding,
       Value<String> syncStatus,
       Value<int> retryCount,
@@ -3649,6 +3706,7 @@ typedef $$MessagesTableUpdateCompanionBuilder =
       Value<String?> replyTo,
       Value<String?> metadata,
       Value<String?> aiAnalysis,
+      Value<String?> culturalHint,
       Value<String?> embedding,
       Value<String> syncStatus,
       Value<int> retryCount,
@@ -3723,6 +3781,11 @@ class $$MessagesTableFilterComposer
 
   ColumnFilters<String> get aiAnalysis => $composableBuilder(
     column: $table.aiAnalysis,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get culturalHint => $composableBuilder(
+    column: $table.culturalHint,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3821,6 +3884,11 @@ class $$MessagesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get culturalHint => $composableBuilder(
+    column: $table.culturalHint,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get embedding => $composableBuilder(
     column: $table.embedding,
     builder: (column) => ColumnOrderings(column),
@@ -3904,6 +3972,11 @@ class $$MessagesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get culturalHint => $composableBuilder(
+    column: $table.culturalHint,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get embedding =>
       $composableBuilder(column: $table.embedding, builder: (column) => column);
 
@@ -3969,6 +4042,7 @@ class $$MessagesTableTableManager
                 Value<String?> replyTo = const Value.absent(),
                 Value<String?> metadata = const Value.absent(),
                 Value<String?> aiAnalysis = const Value.absent(),
+                Value<String?> culturalHint = const Value.absent(),
                 Value<String?> embedding = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
                 Value<int> retryCount = const Value.absent(),
@@ -3988,6 +4062,7 @@ class $$MessagesTableTableManager
                 replyTo: replyTo,
                 metadata: metadata,
                 aiAnalysis: aiAnalysis,
+                culturalHint: culturalHint,
                 embedding: embedding,
                 syncStatus: syncStatus,
                 retryCount: retryCount,
@@ -4009,6 +4084,7 @@ class $$MessagesTableTableManager
                 Value<String?> replyTo = const Value.absent(),
                 Value<String?> metadata = const Value.absent(),
                 Value<String?> aiAnalysis = const Value.absent(),
+                Value<String?> culturalHint = const Value.absent(),
                 Value<String?> embedding = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
                 Value<int> retryCount = const Value.absent(),
@@ -4028,6 +4104,7 @@ class $$MessagesTableTableManager
                 replyTo: replyTo,
                 metadata: metadata,
                 aiAnalysis: aiAnalysis,
+                culturalHint: culturalHint,
                 embedding: embedding,
                 syncStatus: syncStatus,
                 retryCount: retryCount,

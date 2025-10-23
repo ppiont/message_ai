@@ -18,6 +18,7 @@ class MessageModel extends Message {
     super.replyTo,
     super.embedding,
     super.aiAnalysis,
+    super.culturalHint,
   });
 
   /// Creates a MessageModel from a domain Message entity
@@ -34,6 +35,7 @@ class MessageModel extends Message {
       metadata: message.metadata,
       embedding: message.embedding,
       aiAnalysis: message.aiAnalysis,
+      culturalHint: message.culturalHint,
     );
 
   /// Creates a MessageModel from JSON (Firestore document)
@@ -62,6 +64,7 @@ class MessageModel extends Message {
               json['aiAnalysis'] as Map<String, dynamic>,
             )
           : null,
+      culturalHint: json['culturalHint'] as String?,
     );
 
   /// Helper method to parse DateTime from either Timestamp or String
@@ -90,6 +93,7 @@ class MessageModel extends Message {
       if (embedding != null) 'embedding': embedding,
       if (aiAnalysis != null)
         'aiAnalysis': MessageAIAnalysisModel.fromEntity(aiAnalysis!).toJson(),
+      if (culturalHint != null) 'culturalHint': culturalHint,
     };
 
   /// Converts this model to a domain entity
@@ -106,6 +110,7 @@ class MessageModel extends Message {
       metadata: metadata,
       embedding: embedding,
       aiAnalysis: aiAnalysis,
+      culturalHint: culturalHint,
     );
 
   /// Creates a copy of this model with the given fields replaced
@@ -123,6 +128,7 @@ class MessageModel extends Message {
     MessageMetadata? metadata,
     List<double>? embedding,
     MessageAIAnalysis? aiAnalysis,
+    String? culturalHint,
   }) => MessageModel(
       id: id ?? this.id,
       text: text ?? this.text,
@@ -136,6 +142,7 @@ class MessageModel extends Message {
       metadata: metadata ?? this.metadata,
       embedding: embedding ?? this.embedding,
       aiAnalysis: aiAnalysis ?? this.aiAnalysis,
+      culturalHint: culturalHint ?? this.culturalHint,
     );
 }
 

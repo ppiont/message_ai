@@ -19,6 +19,7 @@ class Message extends Equatable {
     this.replyTo,
     this.embedding,
     this.aiAnalysis,
+    this.culturalHint,
   });
   /// Unique identifier for the message
   final String id;
@@ -58,6 +59,9 @@ class Message extends Equatable {
   /// AI-generated analysis of the message
   final MessageAIAnalysis? aiAnalysis;
 
+  /// Cultural context hint explaining nuances, idioms, or formality
+  final String? culturalHint;
+
   /// Creates a copy of this message with the given fields replaced
   Message copyWith({
     String? id,
@@ -72,6 +76,7 @@ class Message extends Equatable {
     MessageMetadata? metadata,
     List<double>? embedding,
     MessageAIAnalysis? aiAnalysis,
+    String? culturalHint,
   }) => Message(
       id: id ?? this.id,
       text: text ?? this.text,
@@ -85,6 +90,7 @@ class Message extends Equatable {
       metadata: metadata ?? this.metadata,
       embedding: embedding ?? this.embedding,
       aiAnalysis: aiAnalysis ?? this.aiAnalysis,
+      culturalHint: culturalHint ?? this.culturalHint,
     );
 
   @override
@@ -101,6 +107,7 @@ class Message extends Equatable {
         metadata,
         embedding,
         aiAnalysis,
+        culturalHint,
       ];
 }
 

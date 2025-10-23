@@ -95,8 +95,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     );
   }
 
-  Widget _buildChatScaffold(BuildContext context, User currentUser) {
-    return Scaffold(
+  Widget _buildChatScaffold(BuildContext context, User currentUser) => Scaffold(
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -152,7 +151,6 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         ],
       ),
     );
-  }
 
   Widget _buildPresenceStatus() {
     if (widget.isGroup) {
@@ -325,6 +323,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                   ? Map<String, String>.from(message['translations'] as Map)
                   : null,
               userPreferredLanguage: currentUser.preferredLanguage,
+              culturalHint: message['culturalHint'] as String?,
             );
           },
         );

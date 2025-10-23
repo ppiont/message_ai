@@ -249,6 +249,7 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
           ? _serializeAIAnalysis(message.aiAnalysis!)
           : null,
     ),
+    culturalHint: Value(message.culturalHint),
     syncStatus: const Value('pending'),
     retryCount: const Value(0),
   );
@@ -272,6 +273,7 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
     aiAnalysis: entity.aiAnalysis != null
         ? _deserializeAIAnalysis(entity.aiAnalysis!)
         : null,
+    culturalHint: entity.culturalHint,
   );
 
   // JSON serialization methods

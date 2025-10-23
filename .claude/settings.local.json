@@ -28,7 +28,9 @@
       "Bash(flutter pub get:*)",
       "Bash(open:*)",
       "Bash(git reset:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(dart fix:*)"
     ],
     "deny": [],
     "ask": []

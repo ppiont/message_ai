@@ -467,6 +467,152 @@ Only return the JSON, no additional text."""
         )
 
 
+@https_fn.on_call(secrets=[OPENAI_API_KEY])
+def analyze_cultural_context(req: https_fn.CallableRequest) -> dict[str, Any]:
+    """
+    Analyzes a message for cultural nuances, idioms, or formality using GPT-4o-mini.
+
+    Args:
+        req.data should contain:
+            - text (str): The text to analyze
+            - language (str): Language code (e.g., 'en', 'es')
+
+    Returns:
+        dict: {
+            'culturalHint': str | None  # null if no cultural context needed
+        }
+
+    Raises:
+        https_fn.HttpsError: If validation fails or analysis errors occur
+    """
+    # Extract and validate request data
+    data = req.data
+
+    if not isinstance(data, dict):
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="Request data must be a dictionary"
+        )
+
+    text = data.get("text")
+    language = data.get("language", "en")
+
+    # Validate required fields
+    if not text or not isinstance(text, str):
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="'text' field is required and must be a string"
+        )
+
+    if len(text.strip()) == 0:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="'text' cannot be empty"
+        )
+
+    # Log cultural context request
+    print(f"Cultural context analysis request: '{text[:50]}...' (lang: {language})")
+
+    try:
+        start_time = time.time()
+
+        # Step 1: Check cache first (30-day TTL for cost reduction)
+        db = firestore.client()
+        cache_collection = db.collection("cultural_context_cache")
+
+        # Create cache key from text + language
+        cache_key = f"{text}_{language}"
+        cache_ref = cache_collection.document(cache_key)
+        cache_doc = cache_ref.get()
+
+        # Check if cache entry exists and is not expired (30 days = 2592000 seconds)
+        if cache_doc.exists:
+            cache_data = cache_doc.to_dict()
+            timestamp = cache_data.get("timestamp")
+
+            if timestamp:
+                # Check if cache is still valid (30 days)
+                age_seconds = time.time() - timestamp
+                if age_seconds < 2592000:  # 30 days
+                    # Cache hit!
+                    elapsed_time = time.time() - start_time
+                    print(f"Cultural context cache HIT in {elapsed_time:.3f}s (age: {age_seconds/86400:.1f} days)")
+
+                    return {
+                        "culturalHint": cache_data.get("culturalHint"),
+                        "cached": True,
+                        "cacheAge": age_seconds,
+                    }
+
+        # Step 2: Cache miss - call OpenAI API
+        print("Cultural context cache MISS - calling OpenAI API")
+
+        # Get OpenAI client
+        client = get_openai_client(OPENAI_API_KEY.value)
+
+        # Construct the prompt for GPT-4o-mini
+        system_prompt = (
+            "Analyze this message for cultural nuances, idioms, or formality that might not be obvious to non-native speakers. "
+            "Focus on: Cultural greetings or expressions, Formal vs informal language use, Idioms or colloquialisms, Cultural references. "
+            "Keep explanations under 50 words. If the message is straightforward with no cultural context needed, return null."
+        )
+
+        user_prompt = f"""Analyze this message for cultural context:
+
+Language: {language}
+Message: "{text}"
+
+If the message contains cultural nuances, idioms, formal greetings, or references that might not be obvious to non-native speakers, provide a brief explanation (under 50 words).
+
+If the message is straightforward and doesn't require cultural explanation, respond with exactly: null
+
+Return only the explanation or null, no additional formatting."""
+
+        # Call OpenAI API (GPT-4o-mini)
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.3,  # Lower temperature for consistent analysis
+            max_tokens=100,   # Keep explanations short
+        )
+
+        elapsed_time = time.time() - start_time
+
+        # Extract cultural hint
+        cultural_hint_raw = response.choices[0].message.content.strip()
+
+        # Parse response - handle "null" or actual explanation
+        cultural_hint = None
+        if cultural_hint_raw.lower() != "null":
+            cultural_hint = cultural_hint_raw
+
+        # Step 3: Store in cache for future requests (30-day TTL)
+        cache_ref.set({
+            "text": text,
+            "language": language,
+            "culturalHint": cultural_hint,
+            "timestamp": time.time(),
+        })
+
+        print(f"Cultural context analysis successful in {elapsed_time:.2f}s: "
+              f"{'Found context' if cultural_hint else 'No context needed'}")
+
+        return {
+            "culturalHint": cultural_hint,
+            "cached": False,
+        }
+
+    except Exception as e:
+        print(f"Cultural context analysis error: {e}")
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INTERNAL,
+            message=f"Cultural context analysis failed: {str(e)}"
+        )
+
+
 @https_fn.on_call()
 def translate_message(req: https_fn.CallableRequest) -> dict[str, Any]:
     """
@@ -824,12 +970,45 @@ def clean_translation_cache(req: https_fn.Request) -> https_fn.Response:
             batch.commit()
 
         print(f"Formality rate limit cleanup: deleted {formality_rate_limit_deleted} entries")
+
+        # === Clean cultural context cache (30-day TTL) ===
+        cultural_cache_collection = db.collection("cultural_context_cache")
+        cultural_cache_cutoff_time = time.time() - 2592000  # 30 days ago
+
+        expired_cultural_cache_query = cultural_cache_collection.where("timestamp", "<", cultural_cache_cutoff_time)
+        expired_cultural_cache_docs = expired_cultural_cache_query.stream()
+
+        cultural_cache_deleted = 0
+        batch = db.batch()
+        batch_count = 0
+
+        for doc in expired_cultural_cache_docs:
+            try:
+                batch.delete(doc.reference)
+                batch_count += 1
+                cultural_cache_deleted += 1
+
+                if batch_count >= 500:
+                    batch.commit()
+                    batch = db.batch()
+                    batch_count = 0
+            except Exception as e:
+                error_count += 1
+                print(f"Error deleting cultural context cache entry {doc.id}: {e}")
+
+        # Commit remaining cultural context cache deletions
+        if batch_count > 0:
+            batch.commit()
+
+        print(f"Cultural context cache cleanup: deleted {cultural_cache_deleted} entries")
         print(f"Total cleanup complete: translationCache={cache_deleted}, formalityCache={formality_cache_deleted}, "
+              f"culturalContextCache={cultural_cache_deleted}, "
               f"translationRateLimit={rate_limit_deleted}, formalityRateLimit={formality_rate_limit_deleted}, "
               f"errors={error_count}")
 
         return https_fn.Response(
             response=f'{{"translationCacheDeleted": {cache_deleted}, "formalityCacheDeleted": {formality_cache_deleted}, '
+                    f'"culturalContextCacheDeleted": {cultural_cache_deleted}, '
                     f'"translationRateLimitDeleted": {rate_limit_deleted}, "formalityRateLimitDeleted": {formality_rate_limit_deleted}, '
                     f'"errors": {error_count}}}',
             status=200,
