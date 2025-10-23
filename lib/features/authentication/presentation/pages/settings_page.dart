@@ -345,6 +345,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           final localUser = snapshot.data;
           final user = localUser ?? currentUser;
 
+          // Update controller when stream emits new data
+          final userName = _getUserName(user);
+          if (_displayNameController.text != userName) {
+            _displayNameController.text = userName;
+          }
+
           // DEBUG: Log stream updates
           if (localUser != null) {
             print(
