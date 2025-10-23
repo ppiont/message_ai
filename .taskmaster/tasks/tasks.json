@@ -2017,7 +2017,7 @@
         "dependencies": [
           126
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": []
       },
       {
@@ -2052,7 +2052,7 @@
         "dependencies": [
           126
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [
           {
             "id": 1,
@@ -2060,7 +2060,7 @@
             "description": "Create a system to generate and store embeddings for messages using text-embedding-3-small model",
             "dependencies": [],
             "details": "Develop a service that uses OpenAI's text-embedding-3-small model to generate embeddings for messages at $0.02/1M tokens. Implement efficient tokenization and batching to minimize API costs. Store the generated embeddings in the existing embedding field of the Message entity in the database. Add background processing for historical messages and real-time embedding generation for new messages. Include error handling and retry logic for API failures.",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": "Test embedding generation with various message types (short, long, emojis, different languages). Verify correct storage in the database. Benchmark performance and cost efficiency. Test error handling with simulated API failures."
           },
           {
@@ -2425,7 +2425,7 @@
     ],
     "metadata": {
       "created": "2025-10-20T21:03:23.979Z",
-      "updated": "2025-10-23T20:57:55.838Z",
+      "updated": "2025-10-23T21:14:49.566Z",
       "description": "Tasks for master context"
     }
   }

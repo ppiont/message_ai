@@ -468,6 +468,139 @@ Only return the JSON, no additional text."""
 
 
 @https_fn.on_call(secrets=[OPENAI_API_KEY])
+def generate_embedding(req: https_fn.CallableRequest) -> dict[str, Any]:
+    """
+    Generates a 1536-dimensional embedding vector for text using text-embedding-3-small.
+
+    This function is designed for the Smart Replies RAG pipeline to enable semantic search
+    over message history. Embeddings are cached in Firestore to avoid redundant API calls.
+
+    Args:
+        req.data should contain:
+            - text (str): The text to embed (required)
+
+    Returns:
+        dict: {
+            'embedding': List[float],  # 1536-dimensional vector
+            'model': str,              # Model used (text-embedding-3-small)
+            'tokenCount': int,         # Approximate token count
+            'cached': bool             # Whether result was from cache
+        }
+
+    Raises:
+        https_fn.HttpsError: If validation fails or embedding generation errors occur
+
+    Cost: ~$0.02 per 1M tokens (very cheap)
+    """
+    # Extract and validate request data
+    data = req.data
+
+    if not isinstance(data, dict):
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="Request data must be a dictionary"
+        )
+
+    text = data.get("text")
+
+    # Validate required fields
+    if not text or not isinstance(text, str):
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="'text' field is required and must be a string"
+        )
+
+    if len(text.strip()) == 0:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="'text' cannot be empty"
+        )
+
+    # Don't generate embeddings for very short messages (<5 characters)
+    if len(text.strip()) < 5:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="Text must be at least 5 characters long for meaningful embeddings"
+        )
+
+    # Log embedding request
+    print(f"Embedding generation request: '{text[:50]}...' ({len(text)} chars)")
+
+    try:
+        start_time = time.time()
+
+        # Step 1: Check cache first (embeddings are deterministic, cache indefinitely)
+        db = firestore.client()
+        cache_collection = db.collection("embedding_cache")
+
+        # Create cache key from text hash (embeddings are deterministic)
+        import hashlib
+        text_hash = hashlib.sha256(text.encode('utf-8')).hexdigest()
+        cache_ref = cache_collection.document(text_hash)
+        cache_doc = cache_ref.get()
+
+        # Check if cache entry exists
+        if cache_doc.exists:
+            cache_data = cache_doc.to_dict()
+            elapsed_time = time.time() - start_time
+            print(f"Embedding cache HIT in {elapsed_time:.3f}s")
+
+            return {
+                "embedding": cache_data["embedding"],
+                "model": cache_data["model"],
+                "tokenCount": cache_data.get("tokenCount", 0),
+                "cached": True,
+            }
+
+        # Step 2: Cache miss - call OpenAI Embeddings API
+        print("Embedding cache MISS - calling OpenAI Embeddings API")
+
+        # Get OpenAI client
+        client = get_openai_client(OPENAI_API_KEY.value)
+
+        # Call OpenAI Embeddings API (text-embedding-3-small)
+        # This model produces 1536-dimensional vectors
+        response = client.embeddings.create(
+            model="text-embedding-3-small",
+            input=text,
+            encoding_format="float"  # Returns floats instead of base64
+        )
+
+        elapsed_time = time.time() - start_time
+
+        # Extract embedding vector
+        embedding = response.data[0].embedding
+        token_count = response.usage.total_tokens
+
+        # Step 3: Store in cache (embeddings are deterministic, cache indefinitely)
+        cache_ref.set({
+            "text": text,  # Store text for debugging
+            "textHash": text_hash,
+            "embedding": embedding,
+            "model": "text-embedding-3-small",
+            "tokenCount": token_count,
+            "timestamp": time.time(),
+        })
+
+        print(f"Embedding generation successful in {elapsed_time:.2f}s: "
+              f"{len(embedding)} dimensions, {token_count} tokens")
+
+        return {
+            "embedding": embedding,
+            "model": "text-embedding-3-small",
+            "tokenCount": token_count,
+            "cached": False,
+        }
+
+    except Exception as e:
+        print(f"Embedding generation error: {e}")
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INTERNAL,
+            message=f"Embedding generation failed: {str(e)}"
+        )
+
+
+@https_fn.on_call(secrets=[OPENAI_API_KEY])
 def analyze_cultural_context(req: https_fn.CallableRequest) -> dict[str, Any]:
     """
     Analyzes a message for cultural nuances, idioms, or formality using GPT-4o-mini.

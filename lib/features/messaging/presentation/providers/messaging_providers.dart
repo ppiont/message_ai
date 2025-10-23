@@ -37,6 +37,7 @@ import 'package:message_ai/features/messaging/domain/usecases/send_message.dart'
 import 'package:message_ai/features/messaging/domain/usecases/update_group_info.dart';
 import 'package:message_ai/features/messaging/domain/usecases/watch_conversations.dart';
 import 'package:message_ai/features/messaging/domain/usecases/watch_messages.dart';
+import 'package:message_ai/features/smart_replies/presentation/providers/embedding_providers.dart';
 import 'package:message_ai/features/translation/presentation/providers/language_detection_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:rxdart/rxdart.dart';
@@ -120,6 +121,7 @@ SendMessage sendMessageUseCase(Ref ref) => SendMessage(
   messageRepository: ref.watch(messageRepositoryProvider),
   conversationRepository: ref.watch(conversationRepositoryProvider),
   languageDetectionService: ref.watch(languageDetectionServiceProvider),
+  embeddingGenerator: ref.watch(embeddingGeneratorProvider),
 );
 
 /// Provides the [WatchMessages] use case.

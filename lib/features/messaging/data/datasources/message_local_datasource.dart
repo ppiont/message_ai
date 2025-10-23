@@ -249,6 +249,11 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
           ? _serializeAIAnalysis(message.aiAnalysis!)
           : null,
     ),
+    embedding: Value(
+      message.embedding != null
+          ? _serializeEmbedding(message.embedding!)
+          : null,
+    ),
     culturalHint: Value(message.culturalHint),
     syncStatus: const Value('pending'),
     retryCount: const Value(0),
@@ -270,6 +275,9 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
     metadata: entity.metadata != null
         ? _deserializeMetadata(entity.metadata!)
         : MessageMetadata.defaultMetadata(),
+    embedding: entity.embedding != null
+        ? _deserializeEmbedding(entity.embedding!)
+        : null,
     aiAnalysis: entity.aiAnalysis != null
         ? _deserializeAIAnalysis(entity.aiAnalysis!)
         : null,
@@ -320,6 +328,17 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
             [],
         sentiment: decoded['sentiment'] as String? ?? 'neutral',
       );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  String _serializeEmbedding(List<double> embedding) => jsonEncode(embedding);
+
+  List<double>? _deserializeEmbedding(String json) {
+    try {
+      final decoded = jsonDecode(json) as List<dynamic>;
+      return decoded.map((e) => (e as num).toDouble()).toList();
     } catch (e) {
       return null;
     }

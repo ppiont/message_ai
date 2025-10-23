@@ -478,7 +478,7 @@ final class SendMessageUseCaseProvider
 }
 
 String _$sendMessageUseCaseHash() =>
-    r'd2eff0e069317ba222183fd88cc05f4b3d816f82';
+    r'e4bb4f985403f02ef67dee98d62c8fc2f3d8f733';
 
 /// Provides the [WatchMessages] use case.
 
