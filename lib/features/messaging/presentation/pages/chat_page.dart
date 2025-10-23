@@ -288,6 +288,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             final currentUser = ref.read(currentUserProvider);
 
             return MessageBubble(
+              conversationId: widget.conversationId,
               messageId: messageId,
               message: message['text'] as String,
               senderId: message['senderId'] as String,

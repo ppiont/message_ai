@@ -1,6 +1,4 @@
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-
-part 'translation_controller.g.dart';
+import 'package:riverpod/riverpod.dart';
 
 /// Translation state for a single message
 class MessageTranslationState {
@@ -27,12 +25,11 @@ class MessageTranslationState {
 }
 
 /// Controller for managing translation state across all messages
-@riverpod
-class TranslationController extends _$TranslationController {
-  @override
-  Map<String, MessageTranslationState> build() => {};
+class TranslationController extends StateNotifier<Map<String, MessageTranslationState>> {
+  TranslationController() : super({});
 
-  /// Toggle translation for a specific message
+  /// Toggle translation display for a message
+  /// Just toggles the UI state - translation should already exist
   void toggleTranslation(String messageId) {
     final currentState = state[messageId] ?? const MessageTranslationState();
     state = {
@@ -79,3 +76,9 @@ class TranslationController extends _$TranslationController {
   MessageTranslationState getState(String messageId) =>
       state[messageId] ?? const MessageTranslationState();
 }
+
+/// Provider for TranslationController
+final translationControllerProvider =
+    StateNotifierProvider<TranslationController, Map<String, MessageTranslationState>>(
+  (ref) => TranslationController(),
+);

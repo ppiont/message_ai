@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:message_ai/features/authentication/presentation/providers/user_lookup_provider.dart';
+import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:message_ai/features/translation/presentation/controllers/translation_controller.dart';
+import 'package:message_ai/features/translation/presentation/providers/translation_providers.dart';
 
 /// Widget displaying a single message bubble in the chat.
 ///
@@ -13,6 +15,7 @@ import 'package:message_ai/features/translation/presentation/controllers/transla
 /// includes sender name (looked up dynamically), timestamp, delivery status, and translation functionality.
 class MessageBubble extends ConsumerWidget {
   const MessageBubble({
+    required this.conversationId,
     required this.messageId,
     required this.message,
     required this.senderId,
@@ -26,6 +29,7 @@ class MessageBubble extends ConsumerWidget {
     super.key,
   });
 
+  final String conversationId;
   final String messageId;
   final String message;
   final String senderId;
@@ -184,21 +188,19 @@ class MessageBubble extends ConsumerWidget {
     return translations?[targetLanguage] ?? message;
   }
 
-  /// Check if translation is available for this message
+  /// Check if translation should be offered for this message
   bool _canTranslate() {
     // Only show translate button for received messages
     if (isMe) return false;
 
-    // Need user preferred language and translations map
-    if (userPreferredLanguage == null || translations == null) return false;
-
-    // Check if translation exists for user's language
-    final hasTranslation = translations!.containsKey(userPreferredLanguage);
+    // Need user preferred language and detected language
+    if (userPreferredLanguage == null || detectedLanguage == null) return false;
 
     // Don't show translate button if message is already in user's language
     final isAlreadyInUserLanguage = detectedLanguage == userPreferredLanguage;
 
-    return hasTranslation && !isAlreadyInUserLanguage;
+    // Show translate button if languages differ
+    return !isAlreadyInUserLanguage;
   }
 
   /// Build the translation button widget
@@ -243,7 +245,7 @@ class MessageBubble extends ConsumerWidget {
     }
 
     return TextButton(
-      onPressed: () => translationController.toggleTranslation(messageId),
+      onPressed: () => _handleTranslationTap(ref, translationController),
       style: TextButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         minimumSize: const Size(0, 0),
@@ -329,5 +331,95 @@ class MessageBubble extends ConsumerWidget {
     } else {
       return DateFormat.yMMMd().format(timestamp); // e.g., "Jan 15, 2024"
     }
+  }
+
+  /// Handle translation button tap
+  Future<void> _handleTranslationTap(
+    WidgetRef ref,
+    TranslationController translationController,
+  ) async {
+    final translationState =
+        ref.read(translationControllerProvider)[messageId] ??
+        const MessageTranslationState();
+
+    // If already translated, just toggle back to original
+    if (translationState.isTranslated) {
+      translationController.toggleTranslation(messageId);
+      return;
+    }
+
+    // Check if translation already exists
+    final targetLanguage = userPreferredLanguage!;
+    if (translations != null && translations!.containsKey(targetLanguage)) {
+      // Translation exists, just toggle display
+      translationController.toggleTranslation(messageId);
+      return;
+    }
+
+    // Need to fetch translation
+    translationController.setLoading(messageId, true);
+
+    final translateUseCase = ref.read(translateMessageProvider);
+    final messageRepository = ref.read(messageRepositoryProvider);
+
+    final result = await translateUseCase(
+      messageId: messageId,
+      text: message,
+      sourceLanguage: detectedLanguage!,
+      targetLanguage: targetLanguage,
+    );
+
+    result.fold(
+      (failure) {
+        translationController.setError(messageId, failure.message);
+      },
+      (translatedText) async {
+        // Update message with new translation
+        final updatedTranslations = {
+          ...?translations,
+          targetLanguage: translatedText,
+        };
+
+        // Get the full message entity to update it
+        final messageResult = await messageRepository.getMessageById(
+          conversationId,
+          messageId,
+        );
+
+        await messageResult.fold(
+          (failure) async {
+            translationController.setError(
+              messageId,
+              'Failed to save translation',
+            );
+          },
+          (messageEntity) async {
+            // Update the message with new translation
+            final updatedMessage = messageEntity.copyWith(
+              translations: Map<String, String>.from(updatedTranslations),
+            );
+
+            final updateResult = await messageRepository.updateMessage(
+              conversationId,
+              updatedMessage,
+            );
+
+            updateResult.fold(
+              (failure) {
+                translationController.setError(
+                  messageId,
+                  'Failed to save translation',
+                );
+              },
+              (_) {
+                // Success! Toggle to show translation
+                translationController.setLoading(messageId, false);
+                translationController.toggleTranslation(messageId);
+              },
+            );
+          },
+        );
+      },
+    );
   }
 }
