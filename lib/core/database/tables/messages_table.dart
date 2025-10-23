@@ -16,10 +16,8 @@ class Messages extends Table {
   TextColumn get messageText => text()();
 
   /// Sender user ID
+  /// Display name is looked up dynamically via UserLookupProvider
   TextColumn get senderId => text()();
-
-  /// Sender display name (cached for quick display)
-  TextColumn get senderName => text()();
 
   /// Message timestamp
   DateTimeColumn get timestamp => dateTime()();

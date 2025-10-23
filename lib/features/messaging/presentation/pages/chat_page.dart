@@ -259,8 +259,8 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             return MessageBubble(
               messageId: messageId,
               message: message['text'] as String,
+              senderId: message['senderId'] as String,
               isMe: isMe,
-              senderName: message['senderName'] as String? ?? 'Unknown',
               timestamp: message['timestamp'] as DateTime,
               showTimestamp: showTimestamp,
               status: status,

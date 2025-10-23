@@ -1850,17 +1850,6 @@ class $MessagesTable extends Messages
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _senderNameMeta = const VerificationMeta(
-    'senderName',
-  );
-  @override
-  late final GeneratedColumn<String> senderName = GeneratedColumn<String>(
-    'sender_name',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
   static const VerificationMeta _timestampMeta = const VerificationMeta(
     'timestamp',
   );
@@ -2011,7 +2000,6 @@ class $MessagesTable extends Messages
     conversationId,
     messageText,
     senderId,
-    senderName,
     timestamp,
     messageType,
     status,
@@ -2072,14 +2060,6 @@ class $MessagesTable extends Messages
       );
     } else if (isInserting) {
       context.missing(_senderIdMeta);
-    }
-    if (data.containsKey('sender_name')) {
-      context.handle(
-        _senderNameMeta,
-        senderName.isAcceptableOrUnknown(data['sender_name']!, _senderNameMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_senderNameMeta);
     }
     if (data.containsKey('timestamp')) {
       context.handle(
@@ -2198,10 +2178,6 @@ class $MessagesTable extends Messages
         DriftSqlType.string,
         data['${effectivePrefix}sender_id'],
       )!,
-      senderName: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}sender_name'],
-      )!,
       timestamp: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}timestamp'],
@@ -2274,10 +2250,8 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
   final String messageText;
 
   /// Sender user ID
+  /// Display name is looked up dynamically via UserLookupProvider
   final String senderId;
-
-  /// Sender display name (cached for quick display)
-  final String senderName;
 
   /// Message timestamp
   final DateTime timestamp;
@@ -2322,7 +2296,6 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
     required this.conversationId,
     required this.messageText,
     required this.senderId,
-    required this.senderName,
     required this.timestamp,
     required this.messageType,
     required this.status,
@@ -2344,7 +2317,6 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
     map['conversation_id'] = Variable<String>(conversationId);
     map['message_text'] = Variable<String>(messageText);
     map['sender_id'] = Variable<String>(senderId);
-    map['sender_name'] = Variable<String>(senderName);
     map['timestamp'] = Variable<DateTime>(timestamp);
     map['message_type'] = Variable<String>(messageType);
     map['status'] = Variable<String>(status);
@@ -2383,7 +2355,6 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
       conversationId: Value(conversationId),
       messageText: Value(messageText),
       senderId: Value(senderId),
-      senderName: Value(senderName),
       timestamp: Value(timestamp),
       messageType: Value(messageType),
       status: Value(status),
@@ -2426,7 +2397,6 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
       conversationId: serializer.fromJson<String>(json['conversationId']),
       messageText: serializer.fromJson<String>(json['messageText']),
       senderId: serializer.fromJson<String>(json['senderId']),
-      senderName: serializer.fromJson<String>(json['senderName']),
       timestamp: serializer.fromJson<DateTime>(json['timestamp']),
       messageType: serializer.fromJson<String>(json['messageType']),
       status: serializer.fromJson<String>(json['status']),
@@ -2450,7 +2420,6 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
       'conversationId': serializer.toJson<String>(conversationId),
       'messageText': serializer.toJson<String>(messageText),
       'senderId': serializer.toJson<String>(senderId),
-      'senderName': serializer.toJson<String>(senderName),
       'timestamp': serializer.toJson<DateTime>(timestamp),
       'messageType': serializer.toJson<String>(messageType),
       'status': serializer.toJson<String>(status),
@@ -2472,7 +2441,6 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
     String? conversationId,
     String? messageText,
     String? senderId,
-    String? senderName,
     DateTime? timestamp,
     String? messageType,
     String? status,
@@ -2491,7 +2459,6 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
     conversationId: conversationId ?? this.conversationId,
     messageText: messageText ?? this.messageText,
     senderId: senderId ?? this.senderId,
-    senderName: senderName ?? this.senderName,
     timestamp: timestamp ?? this.timestamp,
     messageType: messageType ?? this.messageType,
     status: status ?? this.status,
@@ -2520,9 +2487,6 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
           ? data.messageText.value
           : this.messageText,
       senderId: data.senderId.present ? data.senderId.value : this.senderId,
-      senderName: data.senderName.present
-          ? data.senderName.value
-          : this.senderName,
       timestamp: data.timestamp.present ? data.timestamp.value : this.timestamp,
       messageType: data.messageType.present
           ? data.messageType.value
@@ -2560,7 +2524,6 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
           ..write('conversationId: $conversationId, ')
           ..write('messageText: $messageText, ')
           ..write('senderId: $senderId, ')
-          ..write('senderName: $senderName, ')
           ..write('timestamp: $timestamp, ')
           ..write('messageType: $messageType, ')
           ..write('status: $status, ')
@@ -2584,7 +2547,6 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
     conversationId,
     messageText,
     senderId,
-    senderName,
     timestamp,
     messageType,
     status,
@@ -2607,7 +2569,6 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
           other.conversationId == this.conversationId &&
           other.messageText == this.messageText &&
           other.senderId == this.senderId &&
-          other.senderName == this.senderName &&
           other.timestamp == this.timestamp &&
           other.messageType == this.messageType &&
           other.status == this.status &&
@@ -2628,7 +2589,6 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
   final Value<String> conversationId;
   final Value<String> messageText;
   final Value<String> senderId;
-  final Value<String> senderName;
   final Value<DateTime> timestamp;
   final Value<String> messageType;
   final Value<String> status;
@@ -2648,7 +2608,6 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
     this.conversationId = const Value.absent(),
     this.messageText = const Value.absent(),
     this.senderId = const Value.absent(),
-    this.senderName = const Value.absent(),
     this.timestamp = const Value.absent(),
     this.messageType = const Value.absent(),
     this.status = const Value.absent(),
@@ -2669,7 +2628,6 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
     required String conversationId,
     required String messageText,
     required String senderId,
-    required String senderName,
     required DateTime timestamp,
     this.messageType = const Value.absent(),
     this.status = const Value.absent(),
@@ -2688,14 +2646,12 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
        conversationId = Value(conversationId),
        messageText = Value(messageText),
        senderId = Value(senderId),
-       senderName = Value(senderName),
        timestamp = Value(timestamp);
   static Insertable<MessageEntity> custom({
     Expression<String>? id,
     Expression<String>? conversationId,
     Expression<String>? messageText,
     Expression<String>? senderId,
-    Expression<String>? senderName,
     Expression<DateTime>? timestamp,
     Expression<String>? messageType,
     Expression<String>? status,
@@ -2716,7 +2672,6 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
       if (conversationId != null) 'conversation_id': conversationId,
       if (messageText != null) 'message_text': messageText,
       if (senderId != null) 'sender_id': senderId,
-      if (senderName != null) 'sender_name': senderName,
       if (timestamp != null) 'timestamp': timestamp,
       if (messageType != null) 'message_type': messageType,
       if (status != null) 'status': status,
@@ -2739,7 +2694,6 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
     Value<String>? conversationId,
     Value<String>? messageText,
     Value<String>? senderId,
-    Value<String>? senderName,
     Value<DateTime>? timestamp,
     Value<String>? messageType,
     Value<String>? status,
@@ -2760,7 +2714,6 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
       conversationId: conversationId ?? this.conversationId,
       messageText: messageText ?? this.messageText,
       senderId: senderId ?? this.senderId,
-      senderName: senderName ?? this.senderName,
       timestamp: timestamp ?? this.timestamp,
       messageType: messageType ?? this.messageType,
       status: status ?? this.status,
@@ -2792,9 +2745,6 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
     }
     if (senderId.present) {
       map['sender_id'] = Variable<String>(senderId.value);
-    }
-    if (senderName.present) {
-      map['sender_name'] = Variable<String>(senderName.value);
     }
     if (timestamp.present) {
       map['timestamp'] = Variable<DateTime>(timestamp.value);
@@ -2848,7 +2798,6 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
           ..write('conversationId: $conversationId, ')
           ..write('messageText: $messageText, ')
           ..write('senderId: $senderId, ')
-          ..write('senderName: $senderName, ')
           ..write('timestamp: $timestamp, ')
           ..write('messageType: $messageType, ')
           ..write('status: $status, ')
@@ -3671,7 +3620,6 @@ typedef $$MessagesTableCreateCompanionBuilder =
       required String conversationId,
       required String messageText,
       required String senderId,
-      required String senderName,
       required DateTime timestamp,
       Value<String> messageType,
       Value<String> status,
@@ -3693,7 +3641,6 @@ typedef $$MessagesTableUpdateCompanionBuilder =
       Value<String> conversationId,
       Value<String> messageText,
       Value<String> senderId,
-      Value<String> senderName,
       Value<DateTime> timestamp,
       Value<String> messageType,
       Value<String> status,
@@ -3736,11 +3683,6 @@ class $$MessagesTableFilterComposer
 
   ColumnFilters<String> get senderId => $composableBuilder(
     column: $table.senderId,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get senderName => $composableBuilder(
-    column: $table.senderName,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3839,11 +3781,6 @@ class $$MessagesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get senderName => $composableBuilder(
-    column: $table.senderName,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<DateTime> get timestamp => $composableBuilder(
     column: $table.timestamp,
     builder: (column) => ColumnOrderings(column),
@@ -3935,11 +3872,6 @@ class $$MessagesTableAnnotationComposer
   GeneratedColumn<String> get senderId =>
       $composableBuilder(column: $table.senderId, builder: (column) => column);
 
-  GeneratedColumn<String> get senderName => $composableBuilder(
-    column: $table.senderName,
-    builder: (column) => column,
-  );
-
   GeneratedColumn<DateTime> get timestamp =>
       $composableBuilder(column: $table.timestamp, builder: (column) => column);
 
@@ -4029,7 +3961,6 @@ class $$MessagesTableTableManager
                 Value<String> conversationId = const Value.absent(),
                 Value<String> messageText = const Value.absent(),
                 Value<String> senderId = const Value.absent(),
-                Value<String> senderName = const Value.absent(),
                 Value<DateTime> timestamp = const Value.absent(),
                 Value<String> messageType = const Value.absent(),
                 Value<String> status = const Value.absent(),
@@ -4049,7 +3980,6 @@ class $$MessagesTableTableManager
                 conversationId: conversationId,
                 messageText: messageText,
                 senderId: senderId,
-                senderName: senderName,
                 timestamp: timestamp,
                 messageType: messageType,
                 status: status,
@@ -4071,7 +4001,6 @@ class $$MessagesTableTableManager
                 required String conversationId,
                 required String messageText,
                 required String senderId,
-                required String senderName,
                 required DateTime timestamp,
                 Value<String> messageType = const Value.absent(),
                 Value<String> status = const Value.absent(),
@@ -4091,7 +4020,6 @@ class $$MessagesTableTableManager
                 conversationId: conversationId,
                 messageText: messageText,
                 senderId: senderId,
-                senderName: senderName,
                 timestamp: timestamp,
                 messageType: messageType,
                 status: status,

@@ -4,18 +4,19 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:message_ai/features/authentication/presentation/providers/user_lookup_provider.dart';
 import 'package:message_ai/features/translation/presentation/controllers/translation_controller.dart';
 
 /// Widget displaying a single message bubble in the chat.
 ///
 /// Shows different styling for sent vs received messages,
-/// includes sender name, timestamp, delivery status, and translation functionality.
+/// includes sender name (looked up dynamically), timestamp, delivery status, and translation functionality.
 class MessageBubble extends ConsumerWidget {
   const MessageBubble({
     required this.messageId,
     required this.message,
+    required this.senderId,
     required this.isMe,
-    required this.senderName,
     required this.timestamp,
     this.showTimestamp = false,
     this.status = 'sent',
@@ -27,8 +28,8 @@ class MessageBubble extends ConsumerWidget {
 
   final String messageId;
   final String message;
+  final String senderId;
   final bool isMe;
-  final String senderName;
   final DateTime timestamp;
   final bool showTimestamp;
   final String status;
@@ -41,6 +42,9 @@ class MessageBubble extends ConsumerWidget {
     final translationState = ref.watch(translationControllerProvider)[messageId] ??
         const MessageTranslationState();
     final translationController = ref.read(translationControllerProvider.notifier);
+
+    // Look up sender name dynamically (cached for performance)
+    final senderNameAsync = ref.watch(userDisplayNameProvider(senderId));
 
     // Determine what text to show
     final displayText = _getDisplayText(translationState);
@@ -63,12 +67,30 @@ class MessageBubble extends ConsumerWidget {
               if (!isMe)
                 Padding(
                   padding: const EdgeInsets.only(left: 12, bottom: 4),
-                  child: Text(
-                    senderName,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.w500,
+                  child: senderNameAsync.when(
+                    data: (senderName) => Text(
+                      senderName,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    loading: () => Text(
+                      'Loading...',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[400],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    error: (_, __) => Text(
+                      'Unknown',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                 ),

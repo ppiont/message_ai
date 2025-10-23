@@ -35,7 +35,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -43,7 +43,66 @@ class AppDatabase extends _$AppDatabase {
         await m.createAll();
       },
       onUpgrade: (Migrator m, int from, int to) async {
-        // Future migrations will be handled here
+        // Migration from v1 to v2: Remove senderName column from messages
+        if (from == 1 && to == 2) {
+          // SQLite doesn't support DROP COLUMN directly, so we need to:
+          // 1. Create new table without senderName
+          // 2. Copy data from old table
+          // 3. Drop old table
+          // 4. Rename new table
+
+          await customStatement('''
+            CREATE TABLE messages_new (
+              id TEXT NOT NULL PRIMARY KEY,
+              conversation_id TEXT NOT NULL,
+              message_text TEXT NOT NULL,
+              sender_id TEXT NOT NULL,
+              timestamp INTEGER NOT NULL,
+              message_type TEXT NOT NULL DEFAULT 'text',
+              status TEXT NOT NULL DEFAULT 'sending',
+              detected_language TEXT,
+              translations TEXT,
+              reply_to TEXT,
+              metadata TEXT,
+              ai_analysis TEXT,
+              embedding TEXT,
+              sync_status TEXT NOT NULL DEFAULT 'pending',
+              retry_count INTEGER NOT NULL DEFAULT 0,
+              temp_id TEXT,
+              last_sync_attempt INTEGER
+            );
+          ''');
+
+          await customStatement('''
+            INSERT INTO messages_new
+            SELECT
+              id,
+              conversation_id,
+              message_text,
+              sender_id,
+              timestamp,
+              message_type,
+              status,
+              detected_language,
+              translations,
+              reply_to,
+              metadata,
+              ai_analysis,
+              embedding,
+              sync_status,
+              retry_count,
+              temp_id,
+              last_sync_attempt
+            FROM messages;
+          ''');
+
+          await customStatement('DROP TABLE messages;');
+          await customStatement(
+            'ALTER TABLE messages_new RENAME TO messages;',
+          );
+
+          print('✅ Migration v1→v2: Removed senderName column from messages');
+        }
       },
       beforeOpen: (details) async {
         // Enable foreign keys
