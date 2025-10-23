@@ -114,6 +114,20 @@ LazyDatabase _openConnection() => LazyDatabase(() async {
   final dbFolder = await getApplicationDocumentsDirectory();
   final file = File(p.join(dbFolder.path, 'messageai.db'));
 
+  // TEMPORARY: Delete existing database to force WAL mode
+  // The database is stuck in rollback journal mode and can't switch to WAL
+  // This is a one-time fix - remove this code after first successful run
+  if (await file.exists()) {
+    print('🗑️ Deleting old database to enable WAL mode...');
+    await file.delete();
+    // Also delete WAL and SHM files if they exist
+    final walFile = File('${file.path}-wal');
+    final shmFile = File('${file.path}-shm');
+    if (await walFile.exists()) await walFile.delete();
+    if (await shmFile.exists()) await shmFile.delete();
+    print('✅ Old database deleted, will recreate with WAL mode');
+  }
+
   // Use single-isolate database to avoid lock contention
   // Background isolate creates separate connection → database locks
   // Write queue ensures sequential writes within single isolate
@@ -122,9 +136,9 @@ LazyDatabase _openConnection() => LazyDatabase(() async {
     logStatements: true, // Enable logging in debug mode
     setup: (db) {
       // Enable WAL mode for better concurrency
-      // Must be set here (not in beforeOpen) to avoid lock conflicts
       // WAL allows multiple readers + one writer simultaneously
       db.execute('PRAGMA journal_mode = WAL');
+      print('✅ WAL mode enabled successfully');
     },
   );
 });
