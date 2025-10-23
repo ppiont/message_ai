@@ -190,7 +190,6 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
           conversationId: tempMessage.conversationId,
           messageText: tempMessage.messageText,
           senderId: tempMessage.senderId,
-          senderName: tempMessage.senderName,
           timestamp: tempMessage.timestamp,
           messageType: Value(tempMessage.messageType),
           status: Value(tempMessage.status),
@@ -314,14 +313,4 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
             ..orderBy([(m) => OrderingTerm.asc(m.timestamp)]))
           .watch();
 
-  /// Update sender name for all messages from a specific user
-  ///
-  /// Used when a user changes their display name to propagate
-  /// the change to all their cached messages for real-time UI updates
-  Future<void> updateSenderNameForUser({
-    required String userId,
-    required String newSenderName,
-  }) => (update(messages)..where((m) => m.senderId.equals(userId))).write(
-    MessagesCompanion(senderName: Value(newSenderName)),
-  );
 }

@@ -39,9 +39,12 @@ class MessageBubble extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final translationState = ref.watch(translationControllerProvider)[messageId] ??
+    final translationState =
+        ref.watch(translationControllerProvider)[messageId] ??
         const MessageTranslationState();
-    final translationController = ref.read(translationControllerProvider.notifier);
+    final translationController = ref.read(
+      translationControllerProvider.notifier,
+    );
 
     // Look up sender name dynamically (cached for performance)
     final senderNameAsync = ref.watch(userDisplayNameProvider(senderId));
@@ -51,7 +54,9 @@ class MessageBubble extends ConsumerWidget {
     final canTranslate = _canTranslate();
 
     return Column(
-      crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      crossAxisAlignment: isMe
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
       children: [
         if (showTimestamp) _buildTimestampDivider(context),
         Padding(
@@ -62,7 +67,9 @@ class MessageBubble extends ConsumerWidget {
             bottom: 4,
           ),
           child: Column(
-            crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+            crossAxisAlignment: isMe
+                ? CrossAxisAlignment.end
+                : CrossAxisAlignment.start,
             children: [
               if (!isMe)
                 Padding(
@@ -96,7 +103,9 @@ class MessageBubble extends ConsumerWidget {
                 ),
               Container(
                 decoration: BoxDecoration(
-                  color: isMe ? Theme.of(context).colorScheme.primary : Colors.grey[200],
+                  color: isMe
+                      ? Theme.of(context).colorScheme.primary
+                      : Colors.grey[200],
                   borderRadius: BorderRadius.only(
                     topLeft: const Radius.circular(16),
                     topRight: const Radius.circular(16),
@@ -114,10 +123,9 @@ class MessageBubble extends ConsumerWidget {
                     // Message text with animation
                     AnimatedSwitcher(
                       duration: const Duration(milliseconds: 300),
-                      transitionBuilder: (Widget child, Animation<double> animation) => FadeTransition(
-                        opacity: animation,
-                        child: child,
-                      ),
+                      transitionBuilder:
+                          (Widget child, Animation<double> animation) =>
+                              FadeTransition(opacity: animation, child: child),
                       child: Text(
                         displayText,
                         key: ValueKey(translationState.isTranslated),
@@ -214,10 +222,7 @@ class MessageBubble extends ConsumerWidget {
           const SizedBox(width: 6),
           Text(
             'Translating...',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
           ),
         ],
       );
@@ -231,10 +236,7 @@ class MessageBubble extends ConsumerWidget {
           const SizedBox(width: 4),
           Text(
             'Translation unavailable',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.red[400],
-            ),
+            style: TextStyle(fontSize: 12, color: Colors.red[400]),
           ),
         ],
       );
@@ -269,25 +271,25 @@ class MessageBubble extends ConsumerWidget {
   }
 
   Widget _buildTimestampDivider(BuildContext context) => Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      child: Row(
-        children: [
-          Expanded(child: Divider(color: Colors.grey[300])),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              _formatTimestampDivider(timestamp),
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
-              ),
+    padding: const EdgeInsets.symmetric(vertical: 16),
+    child: Row(
+      children: [
+        Expanded(child: Divider(color: Colors.grey[300])),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            _formatTimestampDivider(timestamp),
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
             ),
           ),
-          Expanded(child: Divider(color: Colors.grey[300])),
-        ],
-      ),
-    );
+        ),
+        Expanded(child: Divider(color: Colors.grey[300])),
+      ],
+    ),
+  );
 
   Widget _buildStatusIcon(BuildContext context) {
     switch (status) {

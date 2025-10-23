@@ -298,27 +298,27 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   }
 
   Widget _buildEmptyState() => Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.chat_bubble_outline, size: 80, color: Colors.grey[400]),
-          const SizedBox(height: 24),
-          Text(
-            'No messages yet',
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(color: Colors.grey[600]),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Send a message to start the conversation',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[500]),
-          ),
-        ],
-      ),
-    );
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.chat_bubble_outline, size: 80, color: Colors.grey[400]),
+        const SizedBox(height: 24),
+        Text(
+          'No messages yet',
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(color: Colors.grey[600]),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Send a message to start the conversation',
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: Colors.grey[500]),
+        ),
+      ],
+    ),
+  );
 
   bool _shouldShowTimestamp(List<Map<String, dynamic>> messages, int index) {
     if (index == 0) return true; // Always show for first message

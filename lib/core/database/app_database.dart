@@ -39,19 +39,19 @@ class AppDatabase extends _$AppDatabase {
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-      onCreate: (Migrator m) async {
-        await m.createAll();
-      },
-      onUpgrade: (Migrator m, int from, int to) async {
-        // Migration from v1 to v2: Remove senderName column from messages
-        if (from == 1 && to == 2) {
-          // SQLite doesn't support DROP COLUMN directly, so we need to:
-          // 1. Create new table without senderName
-          // 2. Copy data from old table
-          // 3. Drop old table
-          // 4. Rename new table
+    onCreate: (Migrator m) async {
+      await m.createAll();
+    },
+    onUpgrade: (Migrator m, int from, int to) async {
+      // Migration from v1 to v2: Remove senderName column from messages
+      if (from == 1 && to == 2) {
+        // SQLite doesn't support DROP COLUMN directly, so we need to:
+        // 1. Create new table without senderName
+        // 2. Copy data from old table
+        // 3. Drop old table
+        // 4. Rename new table
 
-          await customStatement('''
+        await customStatement('''
             CREATE TABLE messages_new (
               id TEXT NOT NULL PRIMARY KEY,
               conversation_id TEXT NOT NULL,
@@ -73,7 +73,7 @@ class AppDatabase extends _$AppDatabase {
             );
           ''');
 
-          await customStatement('''
+        await customStatement('''
             INSERT INTO messages_new
             SELECT
               id,
@@ -96,28 +96,26 @@ class AppDatabase extends _$AppDatabase {
             FROM messages;
           ''');
 
-          await customStatement('DROP TABLE messages;');
-          await customStatement(
-            'ALTER TABLE messages_new RENAME TO messages;',
-          );
+        await customStatement('DROP TABLE messages;');
+        await customStatement('ALTER TABLE messages_new RENAME TO messages;');
 
-          print('✅ Migration v1→v2: Removed senderName column from messages');
-        }
-      },
-      beforeOpen: (details) async {
-        // Enable foreign keys
-        await customStatement('PRAGMA foreign_keys = ON');
-      },
-    );
+        print('✅ Migration v1→v2: Removed senderName column from messages');
+      }
+    },
+    beforeOpen: (details) async {
+      // Enable foreign keys
+      await customStatement('PRAGMA foreign_keys = ON');
+    },
+  );
 }
 
 /// Opens a connection to the database
 LazyDatabase _openConnection() => LazyDatabase(() async {
-    final dbFolder = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dbFolder.path, 'messageai.db'));
+  final dbFolder = await getApplicationDocumentsDirectory();
+  final file = File(p.join(dbFolder.path, 'messageai.db'));
 
-    return NativeDatabase.createInBackground(
-      file,
-      logStatements: true, // Enable logging in debug mode
-    );
-  });
+  return NativeDatabase.createInBackground(
+    file,
+    logStatements: true, // Enable logging in debug mode
+  );
+});

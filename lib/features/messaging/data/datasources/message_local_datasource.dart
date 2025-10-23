@@ -234,7 +234,6 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
       conversationId: conversationId,
       messageText: message.text,
       senderId: message.senderId,
-      senderName: message.senderName,
       timestamp: message.timestamp,
       messageType: Value(message.type),
       status: Value(message.status),
@@ -260,7 +259,6 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
       id: entity.id,
       text: entity.messageText,
       senderId: entity.senderId,
-      senderName: entity.senderName,
       timestamp: entity.timestamp,
       type: entity.messageType,
       status: entity.status,
@@ -877,7 +875,6 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
       id: remoteMessage.id,
       text: remoteMessage.text, // Server text is source of truth
       senderId: remoteMessage.senderId,
-      senderName: remoteMessage.senderName,
       timestamp: remoteMessage.timestamp, // Server timestamp wins
       type: remoteMessage.type,
       status: mergedStatus,

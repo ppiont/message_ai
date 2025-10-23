@@ -165,23 +165,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         );
         print('✅ Drift updated: displayName=$displayName');
 
-        // Update all messages from this user with the new name (propagate to other users' views)
-        await db.messageDao.updateSenderNameForUser(
-          userId: currentUser.uid,
-          newSenderName: displayName,
-        );
-        print('✅ Updated sender name in all messages');
-
-        // Update conversation last message sender name
-        await db.conversationDao.updateLastMessageSenderNameForUser(
-          userId: currentUser.uid,
-          newSenderName: displayName,
-        );
-        print('✅ Updated sender name in conversation previews');
-
         // Sync to Firebase Auth and Firestore in background
+        // Display name changes propagate via UserLookupProvider cache invalidation
         final updateUseCase = ref.read(updateUserProfileUseCaseProvider);
-        updateUseCase(displayName: displayName).ignore();
+        updateUseCase(displayName: displayName).then((_) {
+          // Invalidate UserLookupProvider cache so UI fetches new name
+          ref.invalidate(userLookupControllerProvider);
+          print('✅ UserLookup cache invalidated - new name will load');
+        }).ignore();
       }
 
       if (mounted) {
