@@ -216,7 +216,6 @@ abstract class MessageLocalDataSource {
 /// Handles all local database operations for messages, including CRUD operations,
 /// sync status tracking, and reactive streams for real-time UI updates.
 class MessageLocalDataSourceImpl implements MessageLocalDataSource {
-
   MessageLocalDataSourceImpl({required MessageDao messageDao})
     : _messageDao = messageDao;
   final MessageDao _messageDao;
@@ -230,53 +229,54 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
     String conversationId,
     Message message,
   ) => MessagesCompanion.insert(
-      id: message.id,
-      conversationId: conversationId,
-      messageText: message.text,
-      senderId: message.senderId,
-      timestamp: message.timestamp,
-      messageType: Value(message.type),
-      status: Value(message.status),
-      detectedLanguage: Value(message.detectedLanguage),
-      translations: Value(
-        message.translations != null
-            ? _serializeTranslations(message.translations!)
-            : null,
-      ),
-      replyTo: Value(message.replyTo),
-      metadata: Value(_serializeMetadata(message.metadata)),
-      aiAnalysis: Value(
-        message.aiAnalysis != null
-            ? _serializeAIAnalysis(message.aiAnalysis!)
-            : null,
-      ),
-      syncStatus: const Value('pending'),
-      retryCount: const Value(0),
-    );
+    id: message.id,
+    conversationId: conversationId,
+    messageText: message.text,
+    senderId: message.senderId,
+    timestamp: message.timestamp,
+    messageType: Value(message.type),
+    status: Value(message.status),
+    detectedLanguage: Value(message.detectedLanguage),
+    translations: Value(
+      message.translations != null
+          ? _serializeTranslations(message.translations!)
+          : null,
+    ),
+    replyTo: Value(message.replyTo),
+    metadata: Value(_serializeMetadata(message.metadata)),
+    aiAnalysis: Value(
+      message.aiAnalysis != null
+          ? _serializeAIAnalysis(message.aiAnalysis!)
+          : null,
+    ),
+    syncStatus: const Value('pending'),
+    retryCount: const Value(0),
+  );
 
   /// Converts a Drift MessageEntity to a domain Message entity.
   Message _entityToMessage(MessageEntity entity) => MessageModel(
-      id: entity.id,
-      text: entity.messageText,
-      senderId: entity.senderId,
-      timestamp: entity.timestamp,
-      type: entity.messageType,
-      status: entity.status,
-      detectedLanguage: entity.detectedLanguage,
-      translations: entity.translations != null
-          ? _deserializeTranslations(entity.translations!)
-          : null,
-      replyTo: entity.replyTo,
-      metadata: entity.metadata != null
-          ? _deserializeMetadata(entity.metadata!)
-          : MessageMetadata.defaultMetadata(),
-      aiAnalysis: entity.aiAnalysis != null
-          ? _deserializeAIAnalysis(entity.aiAnalysis!)
-          : null,
-    );
+    id: entity.id,
+    text: entity.messageText,
+    senderId: entity.senderId,
+    timestamp: entity.timestamp,
+    type: entity.messageType,
+    status: entity.status,
+    detectedLanguage: entity.detectedLanguage,
+    translations: entity.translations != null
+        ? _deserializeTranslations(entity.translations!)
+        : null,
+    replyTo: entity.replyTo,
+    metadata: entity.metadata != null
+        ? _deserializeMetadata(entity.metadata!)
+        : MessageMetadata.defaultMetadata(),
+    aiAnalysis: entity.aiAnalysis != null
+        ? _deserializeAIAnalysis(entity.aiAnalysis!)
+        : null,
+  );
 
   // JSON serialization methods
-  String _serializeTranslations(Map<String, String> translations) => jsonEncode(translations);
+  String _serializeTranslations(Map<String, String> translations) =>
+      jsonEncode(translations);
 
   Map<String, String> _deserializeTranslations(String json) {
     final decoded = jsonDecode(json) as Map<String, dynamic>;
@@ -284,11 +284,11 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
   }
 
   String _serializeMetadata(MessageMetadata metadata) => jsonEncode({
-      'edited': metadata.edited,
-      'deleted': metadata.deleted,
-      'priority': metadata.priority,
-      'hasIdioms': metadata.hasIdioms,
-    });
+    'edited': metadata.edited,
+    'deleted': metadata.deleted,
+    'priority': metadata.priority,
+    'hasIdioms': metadata.hasIdioms,
+  });
 
   MessageMetadata _deserializeMetadata(String json) {
     final decoded = jsonDecode(json) as Map<String, dynamic>;
@@ -301,10 +301,10 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
   }
 
   String _serializeAIAnalysis(MessageAIAnalysis analysis) => jsonEncode({
-      'priority': analysis.priority,
-      'actionItems': analysis.actionItems,
-      'sentiment': analysis.sentiment,
-    });
+    'priority': analysis.priority,
+    'actionItems': analysis.actionItems,
+    'sentiment': analysis.sentiment,
+  });
 
   MessageAIAnalysis? _deserializeAIAnalysis(String json) {
     try {

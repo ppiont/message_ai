@@ -815,7 +815,7 @@ final class UserConversationsStreamProvider
 }
 
 String _$userConversationsStreamHash() =>
-    r'8972032af6182c1ceed3baf92686667dde0e7891';
+    r'aa5b3879b0ff6de30968027ef9d4e2efee01407e';
 
 /// Stream provider for watching user's conversations in real-time.
 ///
@@ -916,7 +916,7 @@ final class ConversationMessagesStreamProvider
 }
 
 String _$conversationMessagesStreamHash() =>
-    r'af5316ba60a553f99e47dec886d687a6f7878c42';
+    r'30767a806a4750ee8a183024be1d1960a0528e96';
 
 /// Stream provider for watching messages in a conversation in real-time.
 ///
@@ -1156,7 +1156,7 @@ final class AutoDeliveryMarkerProvider
 }
 
 String _$autoDeliveryMarkerHash() =>
-    r'320fcfc1e29cdf279b41949ddaa7f6c0f9dc512b';
+    r'df83ba6c61fcf8a41585782cd90d68ee8cea85cb';
 
 /// Provides the [PresenceService] instance.
 
@@ -1328,7 +1328,7 @@ final class UserPresenceProvider
   }
 }
 
-String _$userPresenceHash() => r'9f951929604a78b91a32e2cd74b6d5e6ef5f38f5';
+String _$userPresenceHash() => r'b49e76812a23aaac3acf6a1a3ad87634fc5c3584';
 
 /// Watches presence status for a specific user.
 ///
@@ -1419,7 +1419,7 @@ final class MessageSyncServiceProvider
 }
 
 String _$messageSyncServiceHash() =>
-    r'c44b14d93509b2cd70b134a4ac6e7c9601bd315b';
+    r'a0cf5b7c229ea25611a5931a112c39284592bea0';
 
 /// Provides the [MessageQueue] instance.
 ///
@@ -1471,7 +1471,7 @@ final class MessageQueueProvider
   }
 }
 
-String _$messageQueueHash() => r'ae9b0c6e4d7a84e3207b32f1df7ca2bd13871ab1';
+String _$messageQueueHash() => r'58a6d1448bd786b5e80aea7a47a72991717725bb';
 
 /// Provides the [GroupConversationRemoteDataSource] implementation.
 
@@ -1898,7 +1898,7 @@ final class AllConversationsStreamProvider
 }
 
 String _$allConversationsStreamHash() =>
-    r'9bc2b3a272536092209e649356dfe679c44d8cf6';
+    r'aac9559750e8ace127a03fcde04e451efef8145c';
 
 /// Stream provider for watching all conversations (both direct and groups) in real-time.
 ///

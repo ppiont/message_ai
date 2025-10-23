@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:message_ai/features/formality_adjustment/presentation/widgets/formality_adjuster.dart';
 import 'package:message_ai/features/messaging/domain/entities/message.dart';
 import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:uuid/uuid.dart';
@@ -32,6 +33,7 @@ class _MessageInputState extends ConsumerState<MessageInput> {
   final TextEditingController _controller = TextEditingController();
   final Uuid _uuid = const Uuid();
   bool _isSending = false;
+  String _currentText = '';
 
   @override
   void initState() {
@@ -51,6 +53,9 @@ class _MessageInputState extends ConsumerState<MessageInput> {
 
   void _onTextChanged() {
     final text = _controller.text;
+    setState(() {
+      _currentText = text;
+    });
     final _ = ref.read(typingIndicatorServiceProvider)
       ..setTyping(
         conversationId: widget.conversationId,
@@ -87,56 +92,72 @@ class _MessageInputState extends ConsumerState<MessageInput> {
       top: 8,
       bottom: MediaQuery.of(context).viewInsets.bottom + 8,
     ),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        // TODO: Add attachment button
-        // IconButton(
-        //   icon: const Icon(Icons.attach_file),
-        //   onPressed: () {},
-        // ),
-        Expanded(
-          child: TextField(
-            controller: _controller,
-            decoration: InputDecoration(
-              hintText: 'Type a message...',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(24),
-                borderSide: BorderSide.none,
-              ),
-              filled: true,
-              fillColor: Colors.grey[100],
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 12,
+        // Formality adjuster (shown only when typing)
+        FormalityAdjuster(
+          text: _currentText,
+          onTextAdjusted: (adjustedText) {
+            _controller.text = adjustedText;
+            // Move cursor to end
+            _controller.selection = TextSelection.fromPosition(
+              TextPosition(offset: adjustedText.length),
+            );
+          },
+        ),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            // TODO: Add attachment button
+            // IconButton(
+            //   icon: const Icon(Icons.attach_file),
+            //   onPressed: () {},
+            // ),
+            Expanded(
+              child: TextField(
+                controller: _controller,
+                decoration: InputDecoration(
+                  hintText: 'Type a message...',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide.none,
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
+                ),
+                maxLines: null,
+                textCapitalization: TextCapitalization.sentences,
+                enabled: !_isSending,
+                onSubmitted: (_) => _sendMessage(),
               ),
             ),
-            maxLines: null,
-            textCapitalization: TextCapitalization.sentences,
-            enabled: !_isSending,
-            onSubmitted: (_) => _sendMessage(),
-          ),
-        ),
-        const SizedBox(width: 8),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primary,
-            shape: BoxShape.circle,
-          ),
-          child: IconButton(
-            icon: _isSending
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Icon(Icons.send),
-            color: Colors.white,
-            onPressed: _isSending ? null : _sendMessage,
-          ),
+            const SizedBox(width: 8),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary,
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: _isSending
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.send),
+                color: Colors.white,
+                onPressed: _isSending ? null : _sendMessage,
+              ),
+            ),
+          ],
         ),
       ],
     ),

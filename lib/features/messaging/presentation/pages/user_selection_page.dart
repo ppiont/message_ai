@@ -250,8 +250,8 @@ class _UserSelectionPageState extends ConsumerState<UserSelectionPage> {
       );
 
       if (!mounted) {
-      return;
-    }
+        return;
+      }
 
       result.fold(
         (failure) {

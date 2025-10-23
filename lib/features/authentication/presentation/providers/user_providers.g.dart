@@ -255,4 +255,4 @@ final class UserSyncServiceProvider
   }
 }
 
-String _$userSyncServiceHash() => r'e130f71fd921022203ad1276004489d65f30bcb7';
+String _$userSyncServiceHash() => r'62597f96b25e9b1dfc1b89998a44633ffd03ca0a';

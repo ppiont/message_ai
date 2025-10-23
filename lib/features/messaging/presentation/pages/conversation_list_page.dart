@@ -344,8 +344,8 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
     result.fold(
       (failure) {
         if (!mounted) {
-        return;
-      }
+          return;
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Sign out failed: ${failure.message}'),
@@ -356,8 +356,8 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
       (_) {
         // Navigation handled by auth state listener in app.dart
         if (!mounted) {
-        return;
-      }
+          return;
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Signed out successfully'),

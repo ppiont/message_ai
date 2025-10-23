@@ -267,8 +267,8 @@ class ConversationListItem extends ConsumerWidget {
         data: (presence) {
           final onlineCount = presence['onlineCount'] as int? ?? 0;
           if (onlineCount == 0) {
-          return const SizedBox.shrink();
-        }
+            return const SizedBox.shrink();
+          }
 
           return Positioned(
             right: 0,
@@ -301,8 +301,8 @@ class ConversationListItem extends ConsumerWidget {
       presenceAsync.when(
         data: (presence) {
           if (presence == null) {
-          return const SizedBox.shrink();
-        }
+            return const SizedBox.shrink();
+          }
 
           final isOnline = presence['isOnline'] as bool? ?? false;
           return Positioned(

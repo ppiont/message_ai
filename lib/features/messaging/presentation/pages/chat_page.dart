@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:message_ai/features/authentication/domain/entities/user.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
 import 'package:message_ai/features/authentication/presentation/providers/user_lookup_provider.dart';
 import 'package:message_ai/features/messaging/presentation/pages/group_management_page.dart';
@@ -69,15 +70,32 @@ class _ChatPageState extends ConsumerState<ChatPage> {
 
   @override
   Widget build(BuildContext context) {
-    final currentUser = ref.watch(currentUserProvider);
+    // Use currentUserWithFirestoreProvider to get actual preferredLanguage from Firestore
+    final currentUserAsync = ref.watch(currentUserWithFirestoreProvider);
 
-    if (currentUser == null) {
-      return Scaffold(
+    return currentUserAsync.when(
+      data: (currentUser) {
+        if (currentUser == null) {
+          return Scaffold(
+            appBar: AppBar(title: Text(widget.otherParticipantName)),
+            body: const Center(child: Text('Please sign in to view messages')),
+          );
+        }
+
+        return _buildChatScaffold(context, currentUser);
+      },
+      loading: () => Scaffold(
         appBar: AppBar(title: Text(widget.otherParticipantName)),
-        body: const Center(child: Text('Please sign in to view messages')),
-      );
-    }
+        body: const Center(child: CircularProgressIndicator()),
+      ),
+      error: (error, stack) => Scaffold(
+        appBar: AppBar(title: Text(widget.otherParticipantName)),
+        body: Center(child: Text('Error loading user data: $error')),
+      ),
+    );
+  }
 
+  Widget _buildChatScaffold(BuildContext context, User currentUser) {
     return Scaffold(
       appBar: AppBar(
         title: Column(
@@ -123,7 +141,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       ),
       body: Column(
         children: [
-          Expanded(child: _buildMessageList(currentUser.uid)),
+          Expanded(child: _buildMessageList(currentUser)),
           _buildTypingIndicator(currentUser.uid),
           MessageInput(
             conversationId: widget.conversationId,
@@ -252,9 +270,9 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     );
   }
 
-  Widget _buildMessageList(String currentUserId) {
+  Widget _buildMessageList(User currentUser) {
     final messagesStream = ref.watch(
-      conversationMessagesStreamProvider(widget.conversationId, currentUserId),
+      conversationMessagesStreamProvider(widget.conversationId, currentUser.uid),
     );
 
     return messagesStream.when(
@@ -276,7 +294,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           itemCount: messages.length,
           itemBuilder: (context, index) {
             final message = messages[index];
-            final isMe = message['senderId'] == currentUserId;
+            final isMe = message['senderId'] == currentUser.uid;
             final messageId = message['id'] as String;
             final status = message['status'] as String? ?? 'sent';
 
@@ -292,9 +310,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             // Check if we should show timestamp
             final showTimestamp = _shouldShowTimestamp(messages, index);
 
-            // Get current user for translation preferences
-            final currentUser = ref.read(currentUserProvider);
-
+            // currentUser is now passed from _buildChatScaffold with Firestore data
             return MessageBubble(
               conversationId: widget.conversationId,
               messageId: messageId,
@@ -308,7 +324,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
               translations: message['translations'] != null
                   ? Map<String, String>.from(message['translations'] as Map)
                   : null,
-              userPreferredLanguage: currentUser?.preferredLanguage,
+              userPreferredLanguage: currentUser.preferredLanguage,
             );
           },
         );
@@ -326,7 +342,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
               onPressed: () => ref.invalidate(
                 conversationMessagesStreamProvider(
                   widget.conversationId,
-                  currentUserId,
+                  currentUser.uid,
                 ),
               ),
               child: const Text('Retry'),

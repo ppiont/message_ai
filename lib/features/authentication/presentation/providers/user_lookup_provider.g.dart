@@ -13,11 +13,11 @@ part of 'user_lookup_provider.dart';
 /// This provider implements the proper pattern for chat apps:
 /// - Messages store only senderId (not senderName)
 /// - UI looks up display names on-demand
-/// - Results are cached in memory with TTL
+/// - Results are cached in memory with real-time updates
 /// - Single source of truth (users collection)
 ///
 /// Benefits:
-/// - Name changes appear instantly everywhere
+/// - Name changes appear instantly everywhere via Firestore listeners
 /// - Zero writes to messages when name changes
 /// - Scalable (no need to update millions of message documents)
 
@@ -29,11 +29,11 @@ const userLookupCacheProvider = UserLookupCacheProvider._();
 /// This provider implements the proper pattern for chat apps:
 /// - Messages store only senderId (not senderName)
 /// - UI looks up display names on-demand
-/// - Results are cached in memory with TTL
+/// - Results are cached in memory with real-time updates
 /// - Single source of truth (users collection)
 ///
 /// Benefits:
-/// - Name changes appear instantly everywhere
+/// - Name changes appear instantly everywhere via Firestore listeners
 /// - Zero writes to messages when name changes
 /// - Scalable (no need to update millions of message documents)
 final class UserLookupCacheProvider
@@ -43,11 +43,11 @@ final class UserLookupCacheProvider
   /// This provider implements the proper pattern for chat apps:
   /// - Messages store only senderId (not senderName)
   /// - UI looks up display names on-demand
-  /// - Results are cached in memory with TTL
+  /// - Results are cached in memory with real-time updates
   /// - Single source of truth (users collection)
   ///
   /// Benefits:
-  /// - Name changes appear instantly everywhere
+  /// - Name changes appear instantly everywhere via Firestore listeners
   /// - Zero writes to messages when name changes
   /// - Scalable (no need to update millions of message documents)
   const UserLookupCacheProvider._()
@@ -77,18 +77,18 @@ final class UserLookupCacheProvider
   }
 }
 
-String _$userLookupCacheHash() => r'4c2ddf50526e150c6187939da437c0676b8e94cc';
+String _$userLookupCacheHash() => r'bcbe122ad1a2bf6cfa263b221f7f6a398997c3da';
 
 /// In-memory cache for user lookups to avoid repeated Firestore queries
 ///
 /// This provider implements the proper pattern for chat apps:
 /// - Messages store only senderId (not senderName)
 /// - UI looks up display names on-demand
-/// - Results are cached in memory with TTL
+/// - Results are cached in memory with real-time updates
 /// - Single source of truth (users collection)
 ///
 /// Benefits:
-/// - Name changes appear instantly everywhere
+/// - Name changes appear instantly everywhere via Firestore listeners
 /// - Zero writes to messages when name changes
 /// - Scalable (no need to update millions of message documents)
 

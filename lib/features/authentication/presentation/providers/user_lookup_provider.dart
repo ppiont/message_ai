@@ -1,5 +1,6 @@
-import 'package:flutter/foundation.dart';
+import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:message_ai/core/providers/database_provider.dart';
 import 'package:message_ai/features/authentication/domain/entities/user.dart';
 import 'package:message_ai/features/authentication/presentation/providers/user_providers.dart';
@@ -25,28 +26,45 @@ class CachedUser {
 /// This provider implements the proper pattern for chat apps:
 /// - Messages store only senderId (not senderName)
 /// - UI looks up display names on-demand
-/// - Results are cached in memory with TTL
+/// - Results are cached in memory with real-time updates
 /// - Single source of truth (users collection)
 ///
 /// Benefits:
-/// - Name changes appear instantly everywhere
+/// - Name changes appear instantly everywhere via Firestore listeners
 /// - Zero writes to messages when name changes
 /// - Scalable (no need to update millions of message documents)
 @riverpod
 class UserLookupCache extends _$UserLookupCache {
+  /// Map of userId -> StreamSubscription for active Firestore listeners
+  final Map<String, StreamSubscription<dynamic>> _listeners = {};
+
   @override
-  Map<String, CachedUser> build() => {};
+  Map<String, CachedUser> build() {
+    // Clean up listeners when provider is disposed
+    ref.onDispose(() {
+      for (final subscription in _listeners.values) {
+        subscription.cancel();
+      }
+      _listeners.clear();
+    });
+    return {};
+  }
 
   /// Get user by ID with caching
   ///
   /// Returns null if user not found or lookup fails
   /// Caches results for 5 minutes to minimize Drift/Firestore reads
+  /// Automatically starts a Firestore listener for real-time updates
   ///
   /// Lookup strategy (offline-first):
   /// 1. Check memory cache (instant, 5 min TTL)
   /// 2. Check Drift local database (fast, offline)
   /// 3. Fall back to Firestore + cache to Drift (slow, online)
+  /// 4. Start Firestore listener for real-time updates
   Future<User?> getUser(String userId) async {
+    // Start watching this user for real-time updates (idempotent)
+    _startWatchingUser(userId);
+
     // 1. Check memory cache first
     final cached = state[userId];
     if (cached != null && !cached.isExpired) {
@@ -139,6 +157,60 @@ class UserLookupCache extends _$UserLookupCache {
     return user?.displayName ?? 'Unknown';
   }
 
+  /// Start watching a user for real-time updates
+  ///
+  /// Sets up a Firestore listener that automatically updates the cache
+  /// when the user's profile changes (e.g., display name update)
+  void _startWatchingUser(String userId) {
+    // Don't create duplicate listeners
+    if (_listeners.containsKey(userId)) {
+      return;
+    }
+
+    debugPrint('👁️ Starting Firestore listener for user: $userId');
+
+    try {
+      final userRepository = ref.read(userRepositoryProvider);
+      final userCacheService = ref.read(userCacheServiceProvider);
+
+      // Create a stream from the repository's watch method
+      final subscription = userRepository.watchUser(userId).listen(
+        (result) async {
+          if (!ref.mounted) return;
+
+          // Handle Either<Failure, User> result
+          result.fold(
+            (failure) {
+              debugPrint(
+                '❌ User watch failure for $userId: ${failure.message}',
+              );
+            },
+            (user) async {
+              debugPrint(
+                '🔄 User updated via listener: ${user.displayName} ($userId)',
+              );
+
+              // Update memory cache
+              state = {...state, userId: CachedUser(user, DateTime.now())};
+
+              // Update Drift for offline access
+              await userCacheService.syncUserToDrift(user);
+
+              debugPrint('✅ Cache & Drift updated for: ${user.displayName}');
+            },
+          );
+        },
+        onError: (Object error) {
+          debugPrint('❌ Firestore listener error for $userId: $error');
+        },
+      );
+
+      _listeners[userId] = subscription;
+    } catch (e) {
+      debugPrint('❌ Failed to start listener for $userId: $e');
+    }
+  }
+
   /// Invalidate cache for a specific user
   ///
   /// Call this when you know a user's data has changed
@@ -149,6 +221,11 @@ class UserLookupCache extends _$UserLookupCache {
   /// Clear entire cache
   void clearAll() {
     state = {};
+    // Cancel all listeners
+    for (final subscription in _listeners.values) {
+      subscription.cancel();
+    }
+    _listeners.clear();
   }
 }
 

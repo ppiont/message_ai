@@ -9,6 +9,7 @@ Currently implements:
 """
 
 from firebase_functions import firestore_fn, https_fn, options
+from firebase_functions.params import SecretParam
 from firebase_admin import initialize_app, firestore, messaging
 from google.cloud import translate_v2 as translate
 from google.cloud import secretmanager
@@ -16,9 +17,13 @@ import google.cloud.firestore
 from typing import Any
 import time
 import os
+from openai import OpenAI
 
 # Initialize Firebase Admin SDK
 app = initialize_app()
+
+# Define secret parameters
+OPENAI_API_KEY = SecretParam('OPENAI_API_KEY')
 
 # Initialize Translation API client
 # Note: Uses Application Default Credentials by default (recommended for Cloud Functions)
@@ -55,6 +60,14 @@ def get_translate_client():
 
     return translate_client
 
+
+def get_openai_client(api_key: str):
+    """
+    Get OpenAI client with the provided API key.
+    """
+    return OpenAI(api_key=api_key)
+
+
 # Cost control: Limit concurrent function instances
 options.set_global_options(max_instances=10)
 
@@ -71,6 +84,387 @@ SUPPORTED_LANGUAGES = {
     "ru": "Russian",
     "hi": "Hindi",
 }
+
+# Formality levels for message adjustment
+FORMALITY_LEVELS = ["casual", "neutral", "formal"]
+
+
+@https_fn.on_call(secrets=[OPENAI_API_KEY])
+def adjust_formality(req: https_fn.CallableRequest) -> dict[str, Any]:
+    """
+    Adjusts the formality level of a message using GPT-4o-mini.
+
+    Args:
+        req.data should contain:
+            - text (str): The text to adjust
+            - target_formality (str): Target formality level ('casual', 'neutral', 'formal')
+            - language (str, optional): Language code (e.g., 'en', 'es'). Defaults to 'en'
+            - current_formality (str, optional): Current formality level for context
+
+    Returns:
+        dict: {
+            'adjustedText': str,
+            'targetFormality': str,
+            'detectedFormality': str,
+            'language': str,
+            'cached': bool,
+            'rateLimit': {
+                'limit': int,
+                'remaining': int,
+                'resetInSeconds': int
+            }
+        }
+
+    Raises:
+        https_fn.HttpsError: If validation fails or adjustment errors occur
+    """
+    # Extract and validate request data
+    data = req.data
+
+    if not isinstance(data, dict):
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="Request data must be a dictionary"
+        )
+
+    text = data.get("text")
+    target_formality = data.get("target_formality")
+    language = data.get("language", "en")
+    current_formality = data.get("current_formality", "neutral")
+
+    # Validate required fields
+    if not text or not isinstance(text, str):
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="'text' field is required and must be a string"
+        )
+
+    if len(text.strip()) == 0:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="'text' cannot be empty"
+        )
+
+    if not target_formality or not isinstance(target_formality, str):
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="'target_formality' field is required and must be a string"
+        )
+
+    # Validate formality levels
+    if target_formality not in FORMALITY_LEVELS:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message=f"Target formality '{target_formality}' is not supported. "
+                   f"Supported levels: {', '.join(FORMALITY_LEVELS)}"
+        )
+
+    if current_formality not in FORMALITY_LEVELS:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message=f"Current formality '{current_formality}' is not supported. "
+                   f"Supported levels: {', '.join(FORMALITY_LEVELS)}"
+        )
+
+    # Log formality adjustment request
+    print(f"Formality adjustment request: '{text[:50]}...' from '{current_formality}' to '{target_formality}' (lang: {language})")
+
+    try:
+        start_time = time.time()
+
+        # Step 0: Check rate limit (100 requests per hour per user)
+        db = firestore.client()
+
+        # Get user ID from request context (authenticated user)
+        user_id = req.auth.uid if req.auth else "anonymous"
+
+        # Calculate current hour window (truncate timestamp to hour)
+        current_hour = int(time.time() // 3600)  # Unix timestamp divided by 3600 seconds
+        rate_limit_key = f"{user_id}_{current_hour}"
+
+        # Check rate limit
+        rate_limit_ref = db.collection("formality_rate_limits").document(rate_limit_key)
+        rate_limit_doc = rate_limit_ref.get()
+
+        request_count = 0
+        if rate_limit_doc.exists:
+            rate_limit_data = rate_limit_doc.to_dict()
+            request_count = rate_limit_data.get("count", 0)
+
+        # Rate limit: 100 requests per hour per user
+        RATE_LIMIT = 100
+        if request_count >= RATE_LIMIT:
+            # Calculate when the limit resets (next hour)
+            next_hour = (current_hour + 1) * 3600
+            reset_seconds = next_hour - time.time()
+
+            print(f"Rate limit exceeded for user {user_id}: {request_count}/{RATE_LIMIT}")
+
+            raise https_fn.HttpsError(
+                code=https_fn.FunctionsErrorCode.RESOURCE_EXHAUSTED,
+                message=f"Formality adjustment rate limit exceeded. Limit: {RATE_LIMIT} requests per hour. "
+                       f"Try again in {int(reset_seconds/60)} minutes."
+            )
+
+        # Increment request count
+        rate_limit_ref.set({
+            "userId": user_id,
+            "hourWindow": current_hour,
+            "count": request_count + 1,
+            "lastRequest": time.time(),
+        })
+
+        remaining_requests = RATE_LIMIT - (request_count + 1)
+        print(f"Rate limit check passed: {request_count + 1}/{RATE_LIMIT} requests (user: {user_id})")
+
+        # Step 1: Check cache first (reduces API costs)
+        cache_collection = db.collection("formality_cache")
+
+        # Create cache key from text + current + target + language
+        cache_key = f"{text}_{current_formality}_{target_formality}_{language}"
+        cache_ref = cache_collection.document(cache_key)
+        cache_doc = cache_ref.get()
+
+        # Check if cache entry exists and is not expired (24-hour TTL)
+        if cache_doc.exists:
+            cache_data = cache_doc.to_dict()
+            timestamp = cache_data.get("timestamp")
+
+            if timestamp:
+                # Check if cache is still valid (24 hours = 86400 seconds)
+                age_seconds = time.time() - timestamp
+                if age_seconds < 86400:  # 24 hours
+                    # Cache hit!
+                    elapsed_time = time.time() - start_time
+                    print(f"Cache HIT in {elapsed_time:.3f}s (age: {age_seconds/3600:.1f}h)")
+
+                    return {
+                        "adjustedText": cache_data["adjustedText"],
+                        "targetFormality": cache_data["targetFormality"],
+                        "detectedFormality": cache_data.get("detectedFormality", current_formality),
+                        "language": cache_data["language"],
+                        "cached": True,
+                        "cacheAge": age_seconds,
+                        "rateLimit": {
+                            "limit": RATE_LIMIT,
+                            "remaining": remaining_requests,
+                            "resetInSeconds": int((current_hour + 1) * 3600 - time.time()),
+                        },
+                    }
+
+        # Step 2: Cache miss - call OpenAI API
+        print("Cache MISS - calling OpenAI API")
+
+        # Get OpenAI client
+        client = get_openai_client(OPENAI_API_KEY.value)
+
+        # Construct the prompt for GPT-4o-mini
+        system_prompt = (
+            "You are a language expert specializing in adjusting message formality. "
+            "Rewrite messages to match the target formality level while preserving meaning "
+            "and cultural appropriateness. Return ONLY the rewritten message without any "
+            "explanations, quotes, or additional text."
+        )
+
+        user_prompt = f"""Rewrite this message to match the target formality level while preserving meaning and cultural appropriateness.
+
+Current formality: {current_formality}
+Target formality: {target_formality}
+Language: {language}
+
+Rules:
+- Casual: Contractions OK, slang OK, friendly tone
+- Neutral: Standard language, no slang, balanced
+- Formal: No contractions, respectful, professional
+
+Message: "{text}"
+
+Return ONLY the rewritten message."""
+
+        # Call OpenAI API (GPT-4o-mini)
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.7,
+            max_tokens=500,
+        )
+
+        elapsed_time = time.time() - start_time
+
+        # Extract adjusted text
+        adjusted_text = response.choices[0].message.content.strip()
+
+        # Remove quotes if the model added them
+        if adjusted_text.startswith('"') and adjusted_text.endswith('"'):
+            adjusted_text = adjusted_text[1:-1]
+        if adjusted_text.startswith("'") and adjusted_text.endswith("'"):
+            adjusted_text = adjusted_text[1:-1]
+
+        # Step 3: Store in cache for future requests
+        cache_ref.set({
+            "originalText": text,
+            "currentFormality": current_formality,
+            "targetFormality": target_formality,
+            "adjustedText": adjusted_text,
+            "detectedFormality": current_formality,
+            "language": language,
+            "timestamp": time.time(),
+        })
+
+        print(f"Formality adjustment successful in {elapsed_time:.2f}s: "
+              f"{current_formality} -> {target_formality}")
+
+        return {
+            "adjustedText": adjusted_text,
+            "targetFormality": target_formality,
+            "detectedFormality": current_formality,
+            "language": language,
+            "cached": False,
+            "rateLimit": {
+                "limit": RATE_LIMIT,
+                "remaining": remaining_requests,
+                "resetInSeconds": int((current_hour + 1) * 3600 - time.time()),
+            },
+        }
+
+    except Exception as e:
+        print(f"Formality adjustment error: {e}")
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INTERNAL,
+            message=f"Formality adjustment failed: {str(e)}"
+        )
+
+
+@https_fn.on_call(secrets=[OPENAI_API_KEY])
+def explain_idioms(req: https_fn.CallableRequest) -> dict[str, Any]:
+    """
+    Explains idioms, slang, and colloquialisms in a message using GPT-4o-mini.
+
+    Args:
+        req.data should contain:
+            - text (str): The text to analyze
+            - source_language (str): Source language code (e.g., 'en', 'es')
+            - target_language (str): Target language code for equivalent expressions
+
+    Returns:
+        dict: {
+            'idioms': [
+                {
+                    'phrase': str,
+                    'meaning': str,
+                    'culturalNote': str,
+                    'equivalentIn': {language_code: equivalent_phrase}
+                }
+            ]
+        }
+
+    Raises:
+        https_fn.HttpsError: If validation fails or explanation errors occur
+    """
+    # Extract and validate request data
+    data = req.data
+
+    if not isinstance(data, dict):
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="Request data must be a dictionary"
+        )
+
+    text = data.get("text")
+    source_language = data.get("source_language", "en")
+    target_language = data.get("target_language", "en")
+
+    # Validate required fields
+    if not text or not isinstance(text, str):
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="'text' field is required and must be a string"
+        )
+
+    if len(text.strip()) == 0:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="'text' cannot be empty"
+        )
+
+    # Log idiom explanation request
+    print(f"Idiom explanation request: '{text[:50]}...' (source: {source_language}, target: {target_language})")
+
+    try:
+        start_time = time.time()
+
+        # Get OpenAI client
+        client = get_openai_client(OPENAI_API_KEY.value)
+
+        # Construct the prompt for GPT-4o-mini
+        system_prompt = (
+            "You are a language expert specializing in idioms, slang, and colloquialisms. "
+            "Analyze messages to identify and explain idiomatic expressions, slang terms, "
+            "and colloquialisms. Provide cultural context and equivalent expressions in other "
+            "languages. Always return valid JSON."
+        )
+
+        user_prompt = f"""Analyze this message for idioms, slang, or colloquialisms and provide explanations.
+
+Source language: {source_language}
+Target language: {target_language}
+Message: "{text}"
+
+Return JSON in this exact format:
+{{
+  "idioms": [
+    {{
+      "phrase": "the exact phrase from the message",
+      "meaning": "clear explanation of what it means",
+      "culturalNote": "cultural context or origin",
+      "equivalentIn": {{"es": "equivalent in Spanish", "fr": "equivalent in French"}}
+    }}
+  ]
+}}
+
+If no idioms/slang found, return {{"idioms": []}}.
+Only return the JSON, no additional text."""
+
+        # Call OpenAI API (GPT-4o-mini)
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.3,  # Lower temperature for more consistent JSON
+            max_tokens=1000,
+            response_format={"type": "json_object"}  # Ensure JSON response
+        )
+
+        elapsed_time = time.time() - start_time
+
+        # Extract and parse response
+        response_text = response.choices[0].message.content.strip()
+
+        # Parse JSON response
+        import json
+        try:
+            result = json.loads(response_text)
+        except json.JSONDecodeError as e:
+            print(f"Failed to parse JSON response: {e}")
+            print(f"Response was: {response_text}")
+            # Return empty result if parsing fails
+            result = {"idioms": []}
+
+        print(f"Idiom explanation successful in {elapsed_time:.2f}s: found {len(result.get('idioms', []))} idiom(s)")
+
+        return result
+
+    except Exception as e:
+        print(f"Idiom explanation error: {e}")
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INTERNAL,
+            message=f"Idiom explanation failed: {str(e)}"
+        )
 
 
 @https_fn.on_call()
@@ -281,11 +675,13 @@ def translate_message(req: https_fn.CallableRequest) -> dict[str, Any]:
 @https_fn.on_request()
 def clean_translation_cache(req: https_fn.Request) -> https_fn.Response:
     """
-    Scheduled function to clean up expired translation cache and rate limit entries.
+    Scheduled function to clean up expired cache and rate limit entries.
 
     Removes:
-    - Cache entries older than 24 hours
-    - Rate limit entries older than 2 hours (past their hour window)
+    - Translation cache entries older than 24 hours
+    - Formality cache entries older than 24 hours
+    - Translation rate limit entries older than 2 hours
+    - Formality rate limit entries older than 2 hours
 
     Should be triggered via Cloud Scheduler (e.g., daily at 2 AM).
 
@@ -293,7 +689,8 @@ def clean_translation_cache(req: https_fn.Request) -> https_fn.Response:
         curl https://YOUR_REGION-YOUR_PROJECT.cloudfunctions.net/clean_translation_cache
 
     Returns:
-        JSON with cleanup stats: { cacheDeleted, rateLimitDeleted, errors }
+        JSON with cleanup stats: { translationCacheDeleted, formalityCacheDeleted,
+                                   translationRateLimitDeleted, formalityRateLimitDeleted, errors }
     """
     try:
         db = firestore.client()
@@ -364,11 +761,77 @@ def clean_translation_cache(req: https_fn.Request) -> https_fn.Response:
         if batch_count > 0:
             batch.commit()
 
-        print(f"Rate limit cleanup: deleted {rate_limit_deleted} entries")
-        print(f"Total cleanup complete: cache={cache_deleted}, rateLimit={rate_limit_deleted}, errors={error_count}")
+        print(f"Translation rate limit cleanup: deleted {rate_limit_deleted} entries")
+
+        # === Clean formality cache (24-hour TTL) ===
+        formality_cache_collection = db.collection("formality_cache")
+        formality_cache_cutoff_time = time.time() - 86400  # 24 hours ago
+
+        expired_formality_cache_query = formality_cache_collection.where("timestamp", "<", formality_cache_cutoff_time)
+        expired_formality_cache_docs = expired_formality_cache_query.stream()
+
+        formality_cache_deleted = 0
+        batch = db.batch()
+        batch_count = 0
+
+        for doc in expired_formality_cache_docs:
+            try:
+                batch.delete(doc.reference)
+                batch_count += 1
+                formality_cache_deleted += 1
+
+                if batch_count >= 500:
+                    batch.commit()
+                    batch = db.batch()
+                    batch_count = 0
+            except Exception as e:
+                error_count += 1
+                print(f"Error deleting formality cache entry {doc.id}: {e}")
+
+        # Commit remaining formality cache deletions
+        if batch_count > 0:
+            batch.commit()
+            batch_count = 0
+
+        print(f"Formality cache cleanup: deleted {formality_cache_deleted} entries")
+
+        # === Clean formality rate limit entries (2-hour retention) ===
+        formality_rate_limit_collection = db.collection("formality_rate_limits")
+        formality_rate_limit_cutoff_time = time.time() - 7200  # 2 hours ago
+
+        expired_formality_rate_limit_query = formality_rate_limit_collection.where("lastRequest", "<", formality_rate_limit_cutoff_time)
+        expired_formality_rate_limit_docs = expired_formality_rate_limit_query.stream()
+
+        formality_rate_limit_deleted = 0
+        batch = db.batch()
+
+        for doc in expired_formality_rate_limit_docs:
+            try:
+                batch.delete(doc.reference)
+                batch_count += 1
+                formality_rate_limit_deleted += 1
+
+                if batch_count >= 500:
+                    batch.commit()
+                    batch = db.batch()
+                    batch_count = 0
+            except Exception as e:
+                error_count += 1
+                print(f"Error deleting formality rate limit entry {doc.id}: {e}")
+
+        # Commit remaining formality rate limit deletions
+        if batch_count > 0:
+            batch.commit()
+
+        print(f"Formality rate limit cleanup: deleted {formality_rate_limit_deleted} entries")
+        print(f"Total cleanup complete: translationCache={cache_deleted}, formalityCache={formality_cache_deleted}, "
+              f"translationRateLimit={rate_limit_deleted}, formalityRateLimit={formality_rate_limit_deleted}, "
+              f"errors={error_count}")
 
         return https_fn.Response(
-            response=f'{{"cacheDeleted": {cache_deleted}, "rateLimitDeleted": {rate_limit_deleted}, "errors": {error_count}}}',
+            response=f'{{"translationCacheDeleted": {cache_deleted}, "formalityCacheDeleted": {formality_cache_deleted}, '
+                    f'"translationRateLimitDeleted": {rate_limit_deleted}, "formalityRateLimitDeleted": {formality_rate_limit_deleted}, '
+                    f'"errors": {error_count}}}',
             status=200,
             headers={"Content-Type": "application/json"}
         )

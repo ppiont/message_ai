@@ -2,3 +2,4 @@ firebase_functions~=0.4.2
 firebase-admin~=7.1.0
 google-cloud-translate==3.22.0
 google-cloud-secret-manager==2.25.0
+openai>=1.50.0

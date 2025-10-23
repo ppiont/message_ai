@@ -253,7 +253,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       // Sync to Firestore in background
       final userRepository = ref.read(userRepositoryProvider);
       final updatedUser = currentUser.copyWith(preferredLanguage: languageCode);
-      userRepository.updateUser(updatedUser).ignore();
+      await userRepository.updateUser(updatedUser);
+
+      // IMPORTANT: Invalidate the currentUserProvider to force refresh
+      // This ensures the new language preference propagates throughout the app
+      ref.invalidate(currentUserProvider);
+      debugPrint('✅ Provider invalidated, language should update everywhere');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -1,0 +1,31 @@
+{
+  "configurations" : [
+    {
+      "id" : "100D4DE9-7961-4A0F-9554-7CE96907D731",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "codeCoverage" : false,
+    "performanceAntipatternCheckerEnabled" : true,
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:Runner.xcodeproj",
+      "identifier" : "97C146ED1CF9000F007C117D",
+      "name" : "Runner"
+    }
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:Runner.xcodeproj",
+        "identifier" : "331C8080294A63A400263BE5",
+        "name" : "RunnerTests"
+      }
+    }
+  ],
+  "version" : 1
+}

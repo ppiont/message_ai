@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/ppiont/**)",
+      "Bash(bunx:*)",
+      "Bash(claude mcp list:*)",
+      "Bash(claude mcp call:*)",
+      "Bash(claude mcp:*)",
+      "mcp__taskmaster-ai__next_task",
+      "Bash(dart analyze:*)",
+      "mcp__taskmaster-ai__get_task",
+      "mcp__dart__analyze_files",
+      "Bash(dart run build_runner:*)",
+      "mcp__dart__add_roots",
+      "Bash(tree:*)",
+      "Bash(flutter devices:*)",
+      "Bash(xcrun simctl:*)",
+      "Bash(flutter clean:*)",
+      "Bash(xcodebuild:*)",
+      "Bash(flutter run:*)",
+      "Bash(flutter emulators:*)",
+      "Bash(pod install)",
+      "mcp__taskmaster-ai__set_task_status",
+      "Bash(mkdir:*)",
+      "Bash(source venv/bin/activate:*)",
+      "Bash(pip install:*)",
+      "WebFetch(domain:firebase.google.com)",
+      "Bash(flutter pub get:*)",
+      "Bash(open:*)",
+      "Bash(git reset:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
