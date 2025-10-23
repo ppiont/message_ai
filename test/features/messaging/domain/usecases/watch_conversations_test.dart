@@ -24,8 +24,8 @@ void main() {
       type: 'direct',
       participantIds: const ['user-1', 'user-2'],
       participants: const [
-        Participant(uid: 'user-1', name: 'User 1', preferredLanguage: 'en'),
-        Participant(uid: 'user-2', name: 'User 2', preferredLanguage: 'en'),
+        Participant(uid: 'user-1', preferredLanguage: 'en'),
+        Participant(uid: 'user-2', preferredLanguage: 'en'),
       ],
       lastUpdatedAt: DateTime(2024),
       initiatedAt: DateTime(2024),
@@ -38,8 +38,8 @@ void main() {
       type: 'direct',
       participantIds: const ['user-1', 'user-3'],
       participants: const [
-        Participant(uid: 'user-1', name: 'User 1', preferredLanguage: 'en'),
-        Participant(uid: 'user-3', name: 'User 3', preferredLanguage: 'en'),
+        Participant(uid: 'user-1', preferredLanguage: 'en'),
+        Participant(uid: 'user-3', preferredLanguage: 'en'),
       ],
       lastUpdatedAt: DateTime(2024, 1, 2),
       initiatedAt: DateTime(2024, 1, 2),

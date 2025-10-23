@@ -25,7 +25,6 @@ void main() {
       Message(
         id: 'test',
         senderId: 'user-1',
-        senderName: 'Test User',
         text: 'test',
         timestamp: DateTime.now(),
         status: 'sent',
@@ -90,7 +89,6 @@ void main() {
         final testMessage = Message(
           id: 'msg-1',
           senderId: 'user-1',
-          senderName: 'Test User',
           text: 'Hello',
           timestamp: DateTime.now(),
           status: 'sent',
@@ -120,7 +118,6 @@ void main() {
             Message(
               id: 'msg-1',
               senderId: 'user-1',
-              senderName: 'Test User',
               text: '',
               timestamp: DateTime.now(),
               status: 'sent',
@@ -147,7 +144,6 @@ void main() {
             Message(
               id: 'msg-1',
               senderId: 'user-1',
-              senderName: 'Test User',
               text: '   ',
               timestamp: DateTime.now(),
               status: 'sent',
@@ -173,7 +169,6 @@ void main() {
         final testMessage = Message(
           id: 'msg-1',
           senderId: 'user-1',
-          senderName: 'Test User',
           text: 'Hello',
           timestamp: DateTime.now(),
           status: 'sent',
@@ -205,7 +200,6 @@ void main() {
         final testMessage = Message(
           id: 'msg-1',
           senderId: 'user-1',
-          senderName: 'Test User',
           text: 'Hello',
           timestamp: DateTime.now(),
           status: 'sent',
@@ -240,7 +234,6 @@ void main() {
         final testMessage = Message(
           id: 'msg-1',
           senderId: 'user-1',
-          senderName: 'Test User',
           text: 'Hello',
           timestamp: DateTime.now(),
           status: 'sent',
@@ -270,7 +263,6 @@ void main() {
         final testMessage = Message(
           id: 'msg-1',
           senderId: 'user-1',
-          senderName: 'Test User',
           text: 'Hello',
           timestamp: DateTime.now(),
           status: 'sent',
@@ -303,7 +295,6 @@ void main() {
         final testMessage = Message(
           id: 'msg-1',
           senderId: 'user-1',
-          senderName: 'Test User',
           text: 'Hello',
           timestamp: DateTime.now(),
           status: 'sent',
@@ -398,7 +389,6 @@ void main() {
         final testMessage = Message(
           id: 'msg-1',
           senderId: 'user-1',
-          senderName: 'Test User',
           text: longMessage,
           timestamp: DateTime.now(),
           status: 'sent',
@@ -427,7 +417,6 @@ void main() {
         final testMessage = Message(
           id: 'msg-1',
           senderId: 'user-1',
-          senderName: 'Test User',
           text: specialMessage,
           timestamp: DateTime.now(),
           status: 'sent',

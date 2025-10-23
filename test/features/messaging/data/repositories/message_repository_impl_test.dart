@@ -38,7 +38,6 @@ void main() {
   final testMessage = MessageModel(
     id: 'msg-123',
     senderId: 'user-1',
-    senderName: 'Test User',
     text: 'Hello, world!',
     timestamp: DateTime(2024, 1, 1, 12),
     type: 'text',

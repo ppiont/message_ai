@@ -30,7 +30,6 @@ void main() {
   final testLastMessage = LastMessage(
     text: 'Test message',
     senderId: 'user-1',
-    senderName: 'User 1',
     timestamp: DateTime(2024, 1, 1, 12),
     type: 'text',
   );
@@ -40,8 +39,8 @@ void main() {
     type: 'direct',
     participantIds: const ['user-1', 'user-2'],
     participants: const [
-      Participant(uid: 'user-1', name: 'User 1', preferredLanguage: 'en'),
-      Participant(uid: 'user-2', name: 'User 2', preferredLanguage: 'es'),
+      Participant(uid: 'user-1', preferredLanguage: 'en'),
+      Participant(uid: 'user-2', preferredLanguage: 'es'),
     ],
     lastMessage: testLastMessage,
     lastUpdatedAt: DateTime(2024, 1, 1, 12),
@@ -55,7 +54,6 @@ void main() {
     id: 'msg-1',
     text: 'Hello world',
     senderId: 'user-1',
-    senderName: 'User 1',
     timestamp: DateTime(2024, 1, 1, 12),
     type: 'text',
     status: 'sent',

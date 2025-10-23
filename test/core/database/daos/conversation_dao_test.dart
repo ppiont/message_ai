@@ -375,7 +375,6 @@ void main() {
         documentId: 'conv-1',
         messageText: 'Hello World',
         senderId: 'user1',
-        senderName: 'Alice',
         timestamp: messageTime,
         messageType: 'text',
       );

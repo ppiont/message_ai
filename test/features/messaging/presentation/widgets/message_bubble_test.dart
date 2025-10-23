@@ -15,7 +15,6 @@ void main() {
                 messageId: 'msg-123',
                 message: 'Hello',
                 isMe: false,
-                senderName: 'John',
                 timestamp: DateTime.now(),
                 detectedLanguage: 'en',
                 translations: const {'es': 'Hola', 'fr': 'Bonjour'},
@@ -41,7 +40,6 @@ void main() {
                 messageId: 'msg-123',
                 message: 'Hello',
                 isMe: true, // Sent by current user
-                senderName: 'Me',
                 timestamp: DateTime.now(),
                 detectedLanguage: 'en',
                 translations: const {'es': 'Hola'},
@@ -66,7 +64,6 @@ void main() {
                 messageId: 'msg-123',
                 message: 'Hello',
                 isMe: false,
-                senderName: 'John',
                 timestamp: DateTime.now(),
                 detectedLanguage: 'en',
                 translations: const {'es': 'Hola', 'fr': 'Bonjour'},
@@ -109,7 +106,6 @@ void main() {
                 messageId: 'msg-123',
                 message: 'Hola',
                 isMe: false,
-                senderName: 'John',
                 timestamp: DateTime.now(),
                 detectedLanguage: 'es', // Already in Spanish
                 translations: const {'en': 'Hello'},
@@ -134,7 +130,6 @@ void main() {
                 messageId: 'msg-123',
                 message: 'Hello',
                 isMe: false,
-                senderName: 'John',
                 timestamp: DateTime.now(),
                 detectedLanguage: 'en',
                 translations: null, // No translations available
@@ -159,7 +154,6 @@ void main() {
                 messageId: 'msg-123',
                 message: 'Hello',
                 isMe: false,
-                senderName: 'John',
                 timestamp: DateTime.now(),
                 detectedLanguage: 'en',
                 translations: const {'es': 'Hola'},
@@ -175,15 +169,15 @@ void main() {
 
       // Tap translate button
       await tester.tap(find.text('Translate'));
-      
+
       // Pump a few frames to check animation
       await tester.pump(const Duration(milliseconds: 50));
       await tester.pump(const Duration(milliseconds: 50));
       await tester.pump(const Duration(milliseconds: 50));
-      
+
       // Should be animating
       expect(find.byType(FadeTransition), findsWidgets);
-      
+
       // Complete animation
       await tester.pumpAndSettle();
 

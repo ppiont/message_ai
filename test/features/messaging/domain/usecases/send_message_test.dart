@@ -47,7 +47,6 @@ void main() {
   final testMessage = Message(
     id: 'msg-123',
     senderId: 'user-1',
-    senderName: 'Test User',
     text: 'Hello, World!',
     timestamp: DateTime(2024),
     status: 'sent',

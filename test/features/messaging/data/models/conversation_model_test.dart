@@ -343,7 +343,6 @@ void main() {
     final testLastMessage = LastMessageModel(
       text: 'Hello!',
       senderId: 'user-123',
-      senderName: 'John Doe',
       timestamp: testTimestamp,
       type: 'text',
       translations: const {'es': '¡Hola!'},
@@ -401,7 +400,6 @@ void main() {
         final lastMessageWithoutTranslations = LastMessageModel(
           text: 'Hello!',
           senderId: 'user-123',
-          senderName: 'John Doe',
           timestamp: testTimestamp,
           type: 'text',
         );
@@ -426,7 +424,6 @@ void main() {
         final entity = LastMessage(
           text: 'Hello!',
           senderId: 'user-123',
-          senderName: 'John Doe',
           timestamp: testTimestamp,
           type: 'text',
         );

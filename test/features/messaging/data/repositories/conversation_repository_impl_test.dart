@@ -40,8 +40,8 @@ void main() {
     type: 'direct',
     participantIds: const ['user-1', 'user-2'],
     participants: const [
-      ParticipantModel(uid: 'user-1', name: 'User 1', preferredLanguage: 'en'),
-      ParticipantModel(uid: 'user-2', name: 'User 2', preferredLanguage: 'es'),
+      ParticipantModel(uid: 'user-1', preferredLanguage: 'en'),
+      ParticipantModel(uid: 'user-2', preferredLanguage: 'es'),
     ],
     lastUpdatedAt: DateTime(2024, 1, 1, 12),
     initiatedAt: DateTime(2024, 1, 1, 10),

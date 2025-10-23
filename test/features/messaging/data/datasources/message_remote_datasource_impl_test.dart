@@ -17,7 +17,6 @@ void main() {
   final testMessage = MessageModel(
     id: 'msg-123',
     senderId: 'user-1',
-    senderName: 'Test User',
     text: 'Hello, world!',
     timestamp: DateTime(2024, 1, 1, 12),
     type: 'text',
@@ -33,7 +32,6 @@ void main() {
   final testMessage2 = MessageModel(
     id: 'msg-456',
     senderId: 'user-2',
-    senderName: 'Test User 2',
     text: 'Hi there!',
     timestamp: DateTime(2024, 1, 1, 12, 5),
     type: 'text',
@@ -162,7 +160,6 @@ void main() {
               .set(MessageModel(
                 id: 'msg-$i',
                 senderId: 'user-1',
-                senderName: 'User',
                 text: 'Message $i',
                 timestamp: DateTime(2024, 1, 1, 12, i),
                 type: 'text',
@@ -355,7 +352,6 @@ void main() {
               .set(MessageModel(
                 id: 'msg-$i',
                 senderId: 'user-1',
-                senderName: 'User',
                 text: 'Message $i',
                 timestamp: DateTime(2024, 1, 1, 12, i),
                 type: 'text',

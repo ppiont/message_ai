@@ -51,7 +51,6 @@ void main() {
       final lastMessage = LastMessage(
         text: 'Hello everyone!',
         senderId: 'user-123',
-        senderName: 'John Doe',
         timestamp: testTimestamp,
         type: 'text',
         translations: const {'es': '¡Hola a todos!'},
@@ -295,7 +294,6 @@ void main() {
       final lastMessage = LastMessage(
         text: 'Hello, World!',
         senderId: 'user-123',
-        senderName: 'John Doe',
         timestamp: testTimestamp,
         type: 'text',
         translations: const {'es': 'Hola, Mundo!'},
@@ -313,7 +311,6 @@ void main() {
       final lastMessage = LastMessage(
         text: 'Hello',
         senderId: 'user-123',
-        senderName: 'John Doe',
         timestamp: testTimestamp,
         type: 'text',
       );
@@ -325,7 +322,6 @@ void main() {
       final lastMessage1 = LastMessage(
         text: 'Hello',
         senderId: 'user-123',
-        senderName: 'John Doe',
         timestamp: testTimestamp,
         type: 'text',
       );
@@ -333,7 +329,6 @@ void main() {
       final lastMessage2 = LastMessage(
         text: 'Hello',
         senderId: 'user-123',
-        senderName: 'John Doe',
         timestamp: testTimestamp,
         type: 'text',
       );
@@ -345,7 +340,6 @@ void main() {
       final original = LastMessage(
         text: 'Hello',
         senderId: 'user-123',
-        senderName: 'John Doe',
         timestamp: testTimestamp,
         type: 'text',
       );

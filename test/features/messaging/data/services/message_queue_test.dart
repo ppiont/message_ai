@@ -21,7 +21,6 @@ void main() {
     id: 'msg-1',
     text: 'Test message',
     senderId: 'user-1',
-    senderName: 'User One',
     timestamp: DateTime(2024, 1, 1, 12),
     type: 'text',
     status: 'sending',

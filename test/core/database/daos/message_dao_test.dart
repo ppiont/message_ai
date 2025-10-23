@@ -22,7 +22,6 @@ void main() {
         conversationId: 'conv-1',
         messageText: 'Hello World',
         senderId: 'user-1',
-        senderName: 'Alice',
         timestamp: now,
       );
 
@@ -40,7 +39,6 @@ void main() {
         conversationId: 'conv-1',
         messageText: 'Original',
         senderId: 'user-1',
-        senderName: 'Alice',
         timestamp: now,
       );
 
@@ -52,7 +50,6 @@ void main() {
         conversationId: 'conv-1',
         messageText: 'Updated',
         senderId: 'user-1',
-        senderName: 'Alice',
         timestamp: now,
       ));
 
@@ -67,7 +64,6 @@ void main() {
         conversationId: 'conv-1',
         messageText: 'Original',
         senderId: 'user-1',
-        senderName: 'Alice',
         timestamp: now,
       ));
 
@@ -88,7 +84,6 @@ void main() {
         conversationId: 'conv-1',
         messageText: 'To delete',
         senderId: 'user-1',
-        senderName: 'Alice',
         timestamp: now,
       ));
 
@@ -111,7 +106,6 @@ void main() {
         conversationId: 'conv-1',
         messageText: 'Second',
         senderId: 'user-1',
-        senderName: 'Alice',
         timestamp: now.add(const Duration(minutes: 1)),
       ));
 
@@ -120,7 +114,6 @@ void main() {
         conversationId: 'conv-1',
         messageText: 'First',
         senderId: 'user-1',
-        senderName: 'Alice',
         timestamp: now,
       ));
 
@@ -129,7 +122,6 @@ void main() {
         conversationId: 'conv-1',
         messageText: 'Third',
         senderId: 'user-2',
-        senderName: 'Bob',
         timestamp: now.add(const Duration(minutes: 2)),
       ));
 
@@ -152,7 +144,6 @@ void main() {
           conversationId: 'conv-1',
           messageText: 'Message $i',
           senderId: 'user-1',
-          senderName: 'Alice',
           timestamp: now.add(Duration(minutes: i)),
         ));
       }
@@ -184,7 +175,6 @@ void main() {
         conversationId: 'conv-1',
         messageText: 'First',
         senderId: 'user-1',
-        senderName: 'Alice',
         timestamp: now,
       ));
 
@@ -208,7 +198,6 @@ void main() {
         conversationId: 'conv-1',
         messageText: 'First',
         senderId: 'user-1',
-        senderName: 'Alice',
         timestamp: now,
       ));
 
@@ -217,7 +206,6 @@ void main() {
         conversationId: 'conv-1',
         messageText: 'Latest',
         senderId: 'user-2',
-        senderName: 'Bob',
         timestamp: now.add(const Duration(minutes: 5)),
       ));
 
@@ -236,7 +224,6 @@ void main() {
           conversationId: 'conv-1',
           messageText: 'Message $i',
           senderId: 'user-1',
-          senderName: 'Alice',
           timestamp: now.add(Duration(minutes: i)),
         ));
       }
@@ -253,7 +240,6 @@ void main() {
         conversationId: 'conv-1',
         messageText: 'Message 1',
         senderId: 'user-1',
-        senderName: 'Alice',
         timestamp: now,
       ));
 
@@ -262,7 +248,6 @@ void main() {
         conversationId: 'conv-1',
         messageText: 'Message 2',
         senderId: 'user-1',
-        senderName: 'Alice',
         timestamp: now,
       ));
 
@@ -283,7 +268,6 @@ void main() {
         conversationId: 'conv-1',
         messageText: 'Pending',
         senderId: 'user-1',
-        senderName: 'Alice',
         timestamp: now,
         syncStatus: const Value('pending'),
       ));
@@ -293,7 +277,6 @@ void main() {
         conversationId: 'conv-1',
         messageText: 'Failed',
         senderId: 'user-1',
-        senderName: 'Alice',
         timestamp: now,
         syncStatus: const Value('failed'),
       ));
@@ -303,7 +286,6 @@ void main() {
         conversationId: 'conv-1',
         messageText: 'Synced',
         senderId: 'user-1',
-        senderName: 'Alice',
         timestamp: now,
         syncStatus: const Value('synced'),
       ));
@@ -322,7 +304,6 @@ void main() {
         conversationId: 'conv-1',
         messageText: 'Test',
         senderId: 'user-1',
-        senderName: 'Alice',
         timestamp: now,
         syncStatus: const Value('pending'),
       ));
@@ -353,7 +334,6 @@ void main() {
         conversationId: 'conv-1',
         messageText: 'Optimistic message',
         senderId: 'user-1',
-        senderName: 'Alice',
         timestamp: now,
         tempId: const Value('temp-123'),
         syncStatus: const Value('pending'),
@@ -384,7 +364,6 @@ void main() {
         conversationId: 'conv-1',
         messageText: 'Retry 1',
         senderId: 'user-1',
-        senderName: 'Alice',
         timestamp: now,
         syncStatus: const Value('failed'),
         retryCount: const Value(1),
@@ -396,7 +375,6 @@ void main() {
         conversationId: 'conv-1',
         messageText: 'Retry 5',
         senderId: 'user-1',
-        senderName: 'Alice',
         timestamp: now,
         syncStatus: const Value('failed'),
         retryCount: const Value(5),
@@ -421,7 +399,6 @@ void main() {
           conversationId: 'conv-1',
           messageText: 'Message $i',
           senderId: 'user-1',
-          senderName: 'Alice',
           timestamp: now.add(Duration(minutes: i)),
         ),
       );
@@ -441,7 +418,6 @@ void main() {
           conversationId: 'conv-1',
           messageText: 'Message $i',
           senderId: 'user-1',
-          senderName: 'Alice',
           timestamp: now,
           status: const Value('delivered'),
         ));
@@ -467,7 +443,6 @@ void main() {
           conversationId: 'conv-1',
           messageText: 'Message $i',
           senderId: 'user-1',
-          senderName: 'Alice',
           timestamp: now,
         ));
       }
@@ -490,7 +465,6 @@ void main() {
         conversationId: 'conv-1',
         messageText: 'Hello world',
         senderId: 'user-1',
-        senderName: 'Alice',
         timestamp: now,
       ));
 
@@ -499,7 +473,6 @@ void main() {
         conversationId: 'conv-1',
         messageText: 'Goodbye moon',
         senderId: 'user-1',
-        senderName: 'Alice',
         timestamp: now,
       ));
 
@@ -518,7 +491,6 @@ void main() {
         conversationId: 'conv-1',
         messageText: 'Before',
         senderId: 'user-1',
-        senderName: 'Alice',
         timestamp: now.subtract(const Duration(hours: 1)),
       ));
 
@@ -527,7 +499,6 @@ void main() {
         conversationId: 'conv-1',
         messageText: 'During',
         senderId: 'user-1',
-        senderName: 'Alice',
         timestamp: now.add(const Duration(hours: 1)),
       ));
 
@@ -536,7 +507,6 @@ void main() {
         conversationId: 'conv-1',
         messageText: 'After',
         senderId: 'user-1',
-        senderName: 'Alice',
         timestamp: now.add(const Duration(hours: 3)),
       ));
 
@@ -558,7 +528,6 @@ void main() {
         conversationId: 'conv-1',
         messageText: 'From Alice',
         senderId: 'user-1',
-        senderName: 'Alice',
         timestamp: now,
       ));
 
@@ -567,7 +536,6 @@ void main() {
         conversationId: 'conv-1',
         messageText: 'From Bob',
         senderId: 'user-2',
-        senderName: 'Bob',
         timestamp: now,
       ));
 
@@ -588,7 +556,6 @@ void main() {
         conversationId: 'conv-1',
         messageText: 'Original message',
         senderId: 'user-1',
-        senderName: 'Alice',
         timestamp: now,
       ));
 
@@ -597,7 +564,6 @@ void main() {
         conversationId: 'conv-1',
         messageText: 'Reply 1',
         senderId: 'user-2',
-        senderName: 'Bob',
         timestamp: now.add(const Duration(minutes: 1)),
         replyTo: const Value('msg-parent'),
       ));
@@ -607,7 +573,6 @@ void main() {
         conversationId: 'conv-1',
         messageText: 'Reply 2',
         senderId: 'user-1',
-        senderName: 'Alice',
         timestamp: now.add(const Duration(minutes: 2)),
         replyTo: const Value('msg-parent'),
       ));
@@ -626,7 +591,6 @@ void main() {
         conversationId: 'conv-1',
         messageText: 'Unread 1',
         senderId: 'user-2',
-        senderName: 'Bob',
         timestamp: now,
         status: const Value('delivered'),
       ));
@@ -636,7 +600,6 @@ void main() {
         conversationId: 'conv-1',
         messageText: 'Unread 2',
         senderId: 'user-2',
-        senderName: 'Bob',
         timestamp: now,
         status: const Value('delivered'),
       ));
@@ -647,7 +610,6 @@ void main() {
         conversationId: 'conv-1',
         messageText: 'Own message',
         senderId: 'user-1',
-        senderName: 'Alice',
         timestamp: now,
         status: const Value('delivered'),
       ));
@@ -670,7 +632,6 @@ void main() {
         conversationId: 'conv-1',
         messageText: 'Test',
         senderId: 'user-1',
-        senderName: 'Alice',
         timestamp: now,
         status: const Value('sending'),
       ));
@@ -690,7 +651,6 @@ void main() {
         conversationId: 'conv-1',
         messageText: 'Pending',
         senderId: 'user-1',
-        senderName: 'Alice',
         timestamp: now,
         syncStatus: const Value('pending'),
       ));
@@ -700,7 +660,6 @@ void main() {
         conversationId: 'conv-1',
         messageText: 'Synced',
         senderId: 'user-1',
-        senderName: 'Alice',
         timestamp: now,
         syncStatus: const Value('synced'),
       ));

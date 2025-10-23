@@ -29,7 +29,6 @@ void main() {
     lastMessage: LastMessage(
       text: 'Hello',
       senderId: 'user-1',
-      senderName: 'User One',
       timestamp: DateTime(2024, 1, 1, 12),
       type: 'text',
     ),
@@ -109,7 +108,6 @@ void main() {
             lastMessage: LastMessage(
               text: 'Group message',
               senderId: 'user-1',
-              senderName: 'User One',
               timestamp: DateTime(2024, 1, 1, 12),
               type: 'text',
               translations: const {
@@ -177,7 +175,6 @@ void main() {
             lastMessage: LastMessage(
               text: 'Updated message',
               senderId: 'user-2',
-              senderName: 'User Two',
               timestamp: DateTime(2024, 1, 1, 13),
               type: 'text',
             ),
@@ -518,7 +515,6 @@ void main() {
           final newLastMessage = LastMessage(
             text: 'New message',
             senderId: 'user-2',
-            senderName: 'User Two',
             timestamp: DateTime(2024, 1, 1, 13),
             type: 'text',
           );
@@ -759,7 +755,6 @@ void main() {
             lastMessage: LastMessage(
               text: 'Different message',
               senderId: 'user-2',
-              senderName: 'User Two',
               timestamp: DateTime(2024, 1, 1, 12),
               type: 'text',
             ),
@@ -886,7 +881,6 @@ void main() {
             lastMessage: LastMessage(
               text: 'Local message',
               senderId: 'user-1',
-              senderName: 'User One',
               timestamp: DateTime(2024, 1, 1, 14),
               type: 'text',
             ),
@@ -896,7 +890,6 @@ void main() {
             lastMessage: LastMessage(
               text: 'Remote message',
               senderId: 'user-2',
-              senderName: 'User Two',
               timestamp: DateTime(2024, 1, 1, 13),
               type: 'text',
             ),
@@ -942,7 +935,6 @@ void main() {
             lastMessage: LastMessage(
               text: 'Older message',
               senderId: 'user-1',
-              senderName: 'User One',
               timestamp: DateTime(2024, 1, 1, 11),
               type: 'text',
             ),
@@ -951,7 +943,6 @@ void main() {
             lastMessage: LastMessage(
               text: 'Newer message',
               senderId: 'user-2',
-              senderName: 'User Two',
               timestamp: DateTime(2024, 1, 1, 13),
               type: 'text',
             ),

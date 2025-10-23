@@ -21,7 +21,6 @@ void main() {
     Message(
       id: 'msg-1',
       senderId: 'user-1',
-      senderName: 'User 1',
       text: 'Hello',
       timestamp: DateTime(2024),
       status: 'sent',
@@ -31,7 +30,6 @@ void main() {
     Message(
       id: 'msg-2',
       senderId: 'user-2',
-      senderName: 'User 2',
       text: 'Hi',
       timestamp: DateTime(2024, 1, 1, 1),
       status: 'delivered',
