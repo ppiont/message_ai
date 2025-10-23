@@ -347,4 +347,14 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
           ..where((c) => c.translationEnabled.equals(true))
           ..orderBy([(c) => OrderingTerm.desc(c.lastUpdatedAt)]))
         .get();
+
+  /// Update last message sender name for all conversations where this user was the last sender
+  ///
+  /// Used when a user changes their display name to propagate
+  /// the change to conversation preview text for real-time UI updates
+  Future<void> updateLastMessageSenderNameForUser({
+    required String userId,
+    required String newSenderName,
+  }) => (update(conversations)..where((c) => c.lastMessageSenderId.equals(userId)))
+      .write(ConversationsCompanion(lastMessageSenderName: Value(newSenderName)));
 }

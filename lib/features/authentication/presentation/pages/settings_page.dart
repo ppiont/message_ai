@@ -165,6 +165,20 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         );
         print('✅ Drift updated: displayName=$displayName');
 
+        // Update all messages from this user with the new name (propagate to other users' views)
+        await db.messageDao.updateSenderNameForUser(
+          userId: currentUser.uid,
+          newSenderName: displayName,
+        );
+        print('✅ Updated sender name in all messages');
+
+        // Update conversation last message sender name
+        await db.conversationDao.updateLastMessageSenderNameForUser(
+          userId: currentUser.uid,
+          newSenderName: displayName,
+        );
+        print('✅ Updated sender name in conversation previews');
+
         // Sync to Firebase Auth and Firestore in background
         final updateUseCase = ref.read(updateUserProfileUseCaseProvider);
         updateUseCase(displayName: displayName).ignore();
@@ -194,24 +208,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         });
       }
     }
-  }
-
-  Future<void> _updateDisplayNameInDrift(
-    String displayName,
-    User currentUser,
-  ) async {
-    final db = ref.read(databaseProvider);
-
-    // Update Drift first (offline-first)
-    await db.userDao.updateUser(
-      currentUser.uid,
-      UsersCompanion(name: Value(displayName)),
-    );
-    print('✅ Drift updated: displayName=$displayName');
-
-    // Sync to Firebase Auth and Firestore in background
-    final updateUseCase = ref.read(updateUserProfileUseCaseProvider);
-    updateUseCase(displayName: displayName).ignore();
   }
 
   Future<void> _changePreferredLanguage(String languageCode) async {

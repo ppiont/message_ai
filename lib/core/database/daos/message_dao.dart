@@ -296,4 +296,14 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
           ..where((m) => m.replyTo.equals(messageId))
           ..orderBy([(m) => OrderingTerm.asc(m.timestamp)]))
         .watch();
+
+  /// Update sender name for all messages from a specific user
+  ///
+  /// Used when a user changes their display name to propagate
+  /// the change to all their cached messages for real-time UI updates
+  Future<void> updateSenderNameForUser({
+    required String userId,
+    required String newSenderName,
+  }) => (update(messages)..where((m) => m.senderId.equals(userId)))
+      .write(MessagesCompanion(senderName: Value(newSenderName)));
 }
