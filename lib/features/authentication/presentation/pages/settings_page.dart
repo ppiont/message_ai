@@ -154,42 +154,39 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         return;
       }
 
-      final updateUseCase = ref.read(updateUserProfileUseCaseProvider);
-      final result = await updateUseCase(
-        displayName: displayName != currentUser.displayName
-            ? displayName
-            : null,
-        photoURL: _selectedImage != null ? null : currentUser.photoURL,
-      );
+      // Only update if changed
+      if (displayName != currentUser.displayName) {
+        final db = ref.read(databaseProvider);
+
+        // Update Drift first (offline-first)
+        await db.userDao.updateUser(
+          currentUser.uid,
+          UsersCompanion(name: Value(displayName)),
+        );
+        print('✅ Drift updated: displayName=$displayName');
+
+        // Sync to Firebase Auth and Firestore in background
+        final updateUseCase = ref.read(updateUserProfileUseCaseProvider);
+        updateUseCase(displayName: displayName).ignore();
+      }
 
       if (mounted) {
-        result.fold(
-          (failure) {
-            setState(() {
-              _errorMessage = failure.message;
-              _isSaving = false;
-            });
-          },
-          (updatedUser) {
-            ref.invalidate(currentUserProvider);
+        setState(() {
+          _successMessage = 'Profile updated successfully!';
+          _selectedImage = null;
+          _isSaving = false;
+        });
 
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) {
             setState(() {
-              _successMessage = 'Profile updated successfully!';
-              _selectedImage = null;
-              _isSaving = false;
+              _successMessage = null;
             });
-
-            Future.delayed(const Duration(seconds: 2), () {
-              if (mounted) {
-                setState(() {
-                  _successMessage = null;
-                });
-              }
-            });
-          },
-        );
+          }
+        });
       }
     } catch (e) {
+      print('❌ Error saving changes: $e');
       if (mounted) {
         setState(() {
           _errorMessage = 'Failed to save changes: $e';
