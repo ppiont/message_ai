@@ -136,25 +136,36 @@ class _ChatPageState extends ConsumerState<ChatPage> {
 
   Widget _buildPresenceStatus() {
     if (widget.isGroup) {
-      // Show group presence status
-      final groupPresenceAsync = ref.watch(
-        groupPresenceStatusProvider(widget.conversationId),
+      // Get conversation to extract participant IDs
+      final conversationAsync = ref.watch(
+        getConversationByIdProvider(widget.conversationId),
       );
 
-      return groupPresenceAsync.when(
-        data: (presence) {
-          final displayText = presence['displayText'] as String? ?? '';
-          final onlineCount = presence['onlineCount'] as int? ?? 0;
+      return conversationAsync.when(
+        data: (conversation) {
+          final participantIds = conversation.participants.map((p) => p.uid).toList();
+          final groupPresenceAsync = ref.watch(
+            groupPresenceStatusProvider(participantIds),
+          );
 
-          if (displayText.isEmpty) return const SizedBox.shrink();
+          return groupPresenceAsync.when(
+            data: (presence) {
+              final displayText = presence['displayText'] as String? ?? '';
+              final onlineCount = presence['onlineCount'] as int? ?? 0;
 
-          return Text(
-            displayText,
-            style: TextStyle(
-              fontSize: 12,
-              color: onlineCount > 0 ? Colors.green : Colors.grey,
-              fontWeight: onlineCount > 0 ? FontWeight.w500 : FontWeight.normal,
-            ),
+              if (displayText.isEmpty) return const SizedBox.shrink();
+
+              return Text(
+                displayText,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: onlineCount > 0 ? Colors.green : Colors.grey,
+                  fontWeight: onlineCount > 0 ? FontWeight.w500 : FontWeight.normal,
+                ),
+              );
+            },
+            loading: () => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
           );
         },
         loading: () => const SizedBox.shrink(),
