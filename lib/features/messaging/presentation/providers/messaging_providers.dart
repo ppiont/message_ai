@@ -266,14 +266,15 @@ AutoDeliveryMarker? autoDeliveryMarker(Ref ref) {
     return null;
   }
 
-  final marker = AutoDeliveryMarker(
-    conversationRepository: ref.watch(conversationRepositoryProvider),
-    messageRepository: ref.watch(messageRepositoryProvider),
-    currentUserId: currentUser.uid,
-  )
-  // Start watching
-  // ignore: cascade_invocations
-  ..start();
+  final marker =
+      AutoDeliveryMarker(
+          conversationRepository: ref.watch(conversationRepositoryProvider),
+          messageRepository: ref.watch(messageRepositoryProvider),
+          currentUserId: currentUser.uid,
+        )
+        // Start watching
+        // ignore: cascade_invocations
+        ..start();
 
   // Dispose when provider is disposed
   ref.onDispose(marker.stop);
@@ -335,16 +336,19 @@ Stream<Map<String, dynamic>?> userPresence(Ref ref, String userId) {
 /// Handles background synchronization between local and remote storage.
 @Riverpod(keepAlive: true)
 MessageSyncService messageSyncService(Ref ref) {
-  final service = MessageSyncService(
-    messageLocalDataSource: ref.watch(messageLocalDataSourceProvider),
-    messageRepository: ref.watch(messageRepositoryProvider),
-    conversationLocalDataSource: ref.watch(conversationLocalDataSourceProvider),
-    conversationRepository: ref.watch(conversationRepositoryProvider),
-    connectivity: Connectivity(),
-  )
-  // Start monitoring connectivity and syncing
-  // ignore: cascade_invocations
-  ..start();
+  final service =
+      MessageSyncService(
+          messageLocalDataSource: ref.watch(messageLocalDataSourceProvider),
+          messageRepository: ref.watch(messageRepositoryProvider),
+          conversationLocalDataSource: ref.watch(
+            conversationLocalDataSourceProvider,
+          ),
+          conversationRepository: ref.watch(conversationRepositoryProvider),
+          connectivity: Connectivity(),
+        )
+        // Start monitoring connectivity and syncing
+        // ignore: cascade_invocations
+        ..start();
 
   // Dispose when provider is disposed
   ref.onDispose(service.stop);
@@ -357,13 +361,14 @@ MessageSyncService messageSyncService(Ref ref) {
 /// Handles optimistic UI updates and background message processing.
 @Riverpod(keepAlive: true)
 MessageQueue messageQueue(Ref ref) {
-  final queue = MessageQueue(
-    localDataSource: ref.watch(messageLocalDataSourceProvider),
-    syncService: ref.watch(messageSyncServiceProvider),
-  )
-  // Start processing queue
-  // ignore: cascade_invocations
-  ..start();
+  final queue =
+      MessageQueue(
+          localDataSource: ref.watch(messageLocalDataSourceProvider),
+          syncService: ref.watch(messageSyncServiceProvider),
+        )
+        // Start processing queue
+        // ignore: cascade_invocations
+        ..start();
 
   // Dispose when provider is disposed
   ref.onDispose(queue.stop);

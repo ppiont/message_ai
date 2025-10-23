@@ -226,12 +226,12 @@ class ErrorLogger {
         await _crashlytics!.setUserIdentifier(userId);
 
         if (email != null) {
-          _crashlytics!.setCustomKey('user_email', email);
+          unawaited(_crashlytics!.setCustomKey('user_email', email));
         }
 
         if (additionalInfo != null) {
           additionalInfo.forEach((key, value) {
-            _crashlytics!.setCustomKey('user_$key', value.toString());
+            unawaited(_crashlytics!.setCustomKey('user_$key', value.toString()));
           });
         }
       } catch (e) {
@@ -249,7 +249,7 @@ class ErrorLogger {
     if (_crashlytics != null) {
       try {
         await _crashlytics!.setUserIdentifier('');
-        _crashlytics!.setCustomKey('user_email', '');
+        unawaited(_crashlytics!.setCustomKey('user_email', ''));
       } catch (e) {
         debugPrint('Failed to clear user in Crashlytics: $e');
       }
