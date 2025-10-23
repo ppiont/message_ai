@@ -112,7 +112,9 @@ class DriftWriteQueue {
         StateError('Queue was cleared before operation could execute'),
       );
     }
-    debugPrint('🧹 DriftWriteQueue: Cleared ${_queue.length} pending operations');
+    debugPrint(
+      '🧹 DriftWriteQueue: Cleared ${_queue.length} pending operations',
+    );
   }
 
   /// Disposes of the queue.
