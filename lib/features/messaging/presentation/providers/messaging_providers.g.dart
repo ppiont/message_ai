@@ -380,59 +380,6 @@ final class ConversationRepositoryProvider
 String _$conversationRepositoryHash() =>
     r'd2156b8fbd2bc2788083f7a39cbaeb4404020224';
 
-/// Provides the [CulturalContextAnalyzer] service for background analysis
-
-@ProviderFor(culturalContextAnalyzer)
-const culturalContextAnalyzerProvider = CulturalContextAnalyzerProvider._();
-
-/// Provides the [CulturalContextAnalyzer] service for background analysis
-
-final class CulturalContextAnalyzerProvider
-    extends
-        $FunctionalProvider<
-          CulturalContextAnalyzer,
-          CulturalContextAnalyzer,
-          CulturalContextAnalyzer
-        >
-    with $Provider<CulturalContextAnalyzer> {
-  /// Provides the [CulturalContextAnalyzer] service for background analysis
-  const CulturalContextAnalyzerProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'culturalContextAnalyzerProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$culturalContextAnalyzerHash();
-
-  @$internal
-  @override
-  $ProviderElement<CulturalContextAnalyzer> $createElement(
-    $ProviderPointer pointer,
-  ) => $ProviderElement(pointer);
-
-  @override
-  CulturalContextAnalyzer create(Ref ref) {
-    return culturalContextAnalyzer(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(CulturalContextAnalyzer value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<CulturalContextAnalyzer>(value),
-    );
-  }
-}
-
-String _$culturalContextAnalyzerHash() =>
-    r'fb6e7d55d84fabda0ea27d03eed9399e0a9a1829';
-
 /// Provides the [SendMessage] use case with language detection.
 
 @ProviderFor(sendMessageUseCase)

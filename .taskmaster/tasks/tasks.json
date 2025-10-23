@@ -2052,7 +2052,7 @@
         "dependencies": [
           126
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -2105,7 +2105,7 @@
               4
             ],
             "details": "Develop a SmartReplyBar widget that appears at the bottom of the chat interface. Implement horizontally scrollable ActionChip widgets for the three reply suggestions. Add intent icons (👍 for positive, 👎 for negative, 💬 for neutral). Create loading shimmer animation while generating replies. Implement auto-hide after 30 seconds or when user starts typing. Add tap functionality to pre-fill the message input with the selected reply. Ensure the widget is responsive and works across different screen sizes.",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": "Write widget tests for the SmartReplyBar. Test loading state, reply display, and tap interactions. Verify auto-hide functionality works after timeout and when typing starts. Test accessibility features and screen reader compatibility. Verify responsive design on different screen sizes."
           }
         ]
@@ -2362,7 +2362,7 @@
         "dependencies": [
           129
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": []
       },
       {
@@ -2425,7 +2425,7 @@
     ],
     "metadata": {
       "created": "2025-10-20T21:03:23.979Z",
-      "updated": "2025-10-23T22:22:00.290Z",
+      "updated": "2025-10-23T22:30:35.041Z",
       "description": "Tasks for master context"
     }
   }

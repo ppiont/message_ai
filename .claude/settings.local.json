@@ -33,7 +33,8 @@
       "Bash(dart fix:*)",
       "mcp__dart__dart_fix",
       "Bash(dart format:*)",
-      "mcp__dart__dart_format"
+      "mcp__dart__dart_format",
+      "mcp__GitKraken__git_status"
     ],
     "deny": [],
     "ask": []

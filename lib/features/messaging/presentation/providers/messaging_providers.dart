@@ -6,7 +6,6 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:message_ai/core/providers/database_provider.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
 import 'package:message_ai/features/authentication/presentation/providers/user_providers.dart';
-import 'package:message_ai/features/cultural_context/data/services/cultural_context_analyzer.dart';
 import 'package:message_ai/features/cultural_context/presentation/providers/cultural_context_providers.dart';
 import 'package:message_ai/features/messaging/data/datasources/conversation_local_datasource.dart';
 import 'package:message_ai/features/messaging/data/datasources/conversation_remote_datasource.dart';
@@ -98,20 +97,9 @@ ConversationRepository conversationRepository(Ref ref) =>
     );
 
 // ========== Cultural Context Providers ==========
-
-/// Provides the [CulturalContextAnalyzer] service for background analysis
-@riverpod
-CulturalContextAnalyzer culturalContextAnalyzer(Ref ref) {
-  final analyzer = CulturalContextAnalyzer(
-    analyzeCulturalContext: ref.watch(analyzeMessageCulturalContextProvider),
-    messageRepository: ref.watch(messageRepositoryProvider),
-  );
-
-  // Clear cache when provider is disposed
-  ref.onDispose(analyzer.clearCache);
-
-  return analyzer;
-}
+// Note: CulturalContextAnalyzer provider is now defined in
+// features/cultural_context/presentation/providers/cultural_context_providers.dart
+// to avoid circular dependencies and maintain proper layer separation.
 
 // ========== Use Case Providers ==========
 

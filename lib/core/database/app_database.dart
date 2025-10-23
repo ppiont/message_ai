@@ -4,9 +4,11 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/foundation.dart';
 import 'package:message_ai/core/database/daos/conversation_dao.dart';
+import 'package:message_ai/core/database/daos/cultural_context_queue_dao.dart';
 import 'package:message_ai/core/database/daos/message_dao.dart';
 import 'package:message_ai/core/database/daos/user_dao.dart';
 import 'package:message_ai/core/database/tables/conversations_table.dart';
+import 'package:message_ai/core/database/tables/cultural_context_queue_table.dart';
 import 'package:message_ai/core/database/tables/messages_table.dart';
 import 'package:message_ai/core/database/tables/users_table.dart';
 import 'package:path/path.dart' as p;
@@ -24,9 +26,10 @@ part 'app_database.g.dart';
 /// - Conversation metadata
 /// - User profiles cache
 /// - Message queue for syncing
+/// - Cultural context analysis queue
 @DriftDatabase(
-  tables: [Users, Conversations, Messages],
-  daos: [MessageDao, ConversationDao, UserDao],
+  tables: [Users, Conversations, Messages, CulturalContextQueue],
+  daos: [MessageDao, ConversationDao, UserDao, CulturalContextQueueDao],
 )
 class AppDatabase extends _$AppDatabase {
   /// Create database instance
@@ -36,7 +39,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -101,6 +104,17 @@ class AppDatabase extends _$AppDatabase {
         await customStatement('ALTER TABLE messages_new RENAME TO messages;');
 
         debugPrint('✅ Migration v1→v2: Removed senderName column from messages');
+      }
+
+      // Migration from v2 to v3: Add cultural context queue table and cultural_hint column
+      if (from <= 2 && to >= 3) {
+        // Add cultural_hint column to messages table
+        await m.addColumn(messages, messages.culturalHint);
+        debugPrint('✅ Migration v2→v3: Added culturalHint column to messages');
+
+        // Create cultural context queue table
+        await m.createTable(culturalContextQueue);
+        debugPrint('✅ Migration v2→v3: Created cultural_context_queue table');
       }
     },
     beforeOpen: (details) async {
