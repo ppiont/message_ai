@@ -8,7 +8,7 @@ import 'package:message_ai/core/error/failures.dart';
 /// Service for translating messages using Cloud Functions
 class TranslationService {
   TranslationService({FirebaseFunctions? functions})
-      : _functions = functions ?? FirebaseFunctions.instance;
+    : _functions = functions ?? FirebaseFunctions.instance;
 
   final FirebaseFunctions _functions;
 
@@ -25,14 +25,14 @@ class TranslationService {
       final result = await _functions
           .httpsCallable('translate_message')
           .call<Map<String, dynamic>>({
-        'messageId': messageId,
-        'text': text,
-        'sourceLanguage': sourceLanguage,
-        'targetLanguage': targetLanguage,
-      });
+            'messageId': messageId,
+            'text': text,
+            'sourceLanguage': sourceLanguage,
+            'targetLanguage': targetLanguage,
+          });
 
       final data = result.data;
-      
+
       // Check for rate limit
       if (data['rateLimitExceeded'] == true) {
         return Left(
@@ -59,4 +59,3 @@ class TranslationService {
     }
   }
 }
-

@@ -267,31 +267,31 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
   }
 
   Widget _buildEmptyState() => Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.chat_bubble_outline, size: 80, color: Colors.grey[400]),
-          const SizedBox(height: 24),
-          Text(
-            _searchQuery.isEmpty
-                ? 'No conversations yet'
-                : 'No conversations found',
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(color: Colors.grey[600]),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _searchQuery.isEmpty
-                ? 'Start a new conversation to get started'
-                : 'Try a different search term',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[500]),
-          ),
-        ],
-      ),
-    );
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.chat_bubble_outline, size: 80, color: Colors.grey[400]),
+        const SizedBox(height: 24),
+        Text(
+          _searchQuery.isEmpty
+              ? 'No conversations yet'
+              : 'No conversations found',
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(color: Colors.grey[600]),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          _searchQuery.isEmpty
+              ? 'Start a new conversation to get started'
+              : 'Try a different search term',
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: Colors.grey[500]),
+        ),
+      ],
+    ),
+  );
 
   void _showSearchDialog() {
     showDialog<void>(
@@ -332,11 +332,9 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
   }
 
   void _navigateToSettings() {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (context) => const SettingsPage(),
-      ),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (context) => const SettingsPage()));
   }
 
   Future<void> _handleLogout() async {

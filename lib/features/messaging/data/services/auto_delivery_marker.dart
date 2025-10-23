@@ -24,8 +24,8 @@ class AutoDeliveryMarker {
   final String _currentUserId;
 
   final Set<String> _markedMessages = {};
-  StreamSubscription? _conversationsSub;
-  final Map<String, StreamSubscription> _messageSubs = {};
+  StreamSubscription<dynamic>? _conversationsSub;
+  final Map<String, StreamSubscription<dynamic>> _messageSubs = {};
 
   /// Start watching conversations and marking messages
   void start() {

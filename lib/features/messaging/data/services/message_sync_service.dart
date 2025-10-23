@@ -20,7 +20,6 @@ import 'package:message_ai/features/messaging/domain/repositories/message_reposi
 /// - Uses repositories for remote operations (handles Model/Entity conversion)
 /// - Stays at domain layer for clean architecture
 class MessageSyncService {
-
   MessageSyncService({
     required MessageLocalDataSource messageLocalDataSource,
     required MessageRepository messageRepository,
@@ -382,7 +381,8 @@ class MessageSyncService {
   // ============================================================================
 
   /// Checks if there's an active network connection.
-  bool _hasConnection(List<ConnectivityResult> results) => results.any((result) => result != ConnectivityResult.none);
+  bool _hasConnection(List<ConnectivityResult> results) =>
+      results.any((result) => result != ConnectivityResult.none);
 
   /// Calculates exponential backoff delay.
   Duration _calculateBackoffDelay(int retryCount) {
@@ -400,7 +400,6 @@ class MessageSyncService {
 
 /// Result of a sync operation.
 class SyncResult {
-
   SyncResult({
     required this.messagesSynced,
     required this.conversationsSynced,
@@ -414,5 +413,6 @@ class SyncResult {
   bool get isSuccess => !hasErrors;
 
   @override
-  String toString() => 'SyncResult(messages: $messagesSynced, conversations: $conversationsSynced, errors: ${errors.length})';
+  String toString() =>
+      'SyncResult(messages: $messagesSynced, conversations: $conversationsSynced, errors: ${errors.length})';
 }

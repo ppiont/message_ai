@@ -16,17 +16,19 @@ class MessageTranslationState {
     bool? isTranslated,
     bool? isLoading,
     String? error,
-  }) =>
-      MessageTranslationState(
-        isTranslated: isTranslated ?? this.isTranslated,
-        isLoading: isLoading ?? this.isLoading,
-        error: error ?? this.error,
-      );
+  }) => MessageTranslationState(
+    isTranslated: isTranslated ?? this.isTranslated,
+    isLoading: isLoading ?? this.isLoading,
+    error: error ?? this.error,
+  );
 }
 
 /// Controller for managing translation state across all messages
-class TranslationController extends StateNotifier<Map<String, MessageTranslationState>> {
-  TranslationController() : super({});
+class TranslationController
+    extends Notifier<Map<String, MessageTranslationState>> {
+  @override
+  Map<String, MessageTranslationState> build() =>
+      <String, MessageTranslationState>{};
 
   /// Toggle translation display for a message
   /// Just toggles the UI state - translation should already exist
@@ -42,26 +44,21 @@ class TranslationController extends StateNotifier<Map<String, MessageTranslation
   void setLoading(String messageId, {required bool isLoading}) {
     final currentState = state[messageId] ?? const MessageTranslationState();
     state = Map<String, MessageTranslationState>.from(state)
-      ..[messageId] = currentState.copyWith(
-        isLoading: isLoading,
-      );
+      ..[messageId] = currentState.copyWith(isLoading: isLoading);
   }
 
   /// Set error state for a message
   void setError(String messageId, String error) {
     final currentState = state[messageId] ?? const MessageTranslationState();
     state = Map<String, MessageTranslationState>.from(state)
-      ..[messageId] = currentState.copyWith(
-        isLoading: false,
-        error: error,
-      );
+      ..[messageId] = currentState.copyWith(isLoading: false, error: error);
   }
 
   /// Clear error for a message
   void clearError(String messageId) {
     final currentState = state[messageId] ?? const MessageTranslationState();
     state = Map<String, MessageTranslationState>.from(state)
-      ..[messageId] = currentState.copyWith(error: null);
+      ..[messageId] = currentState.copyWith();
   }
 
   /// Get translation state for a specific message
@@ -71,6 +68,7 @@ class TranslationController extends StateNotifier<Map<String, MessageTranslation
 
 /// Provider for TranslationController
 final translationControllerProvider =
-    StateNotifierProvider<TranslationController, Map<String, MessageTranslationState>>(
-  (ref) => TranslationController(),
-);
+    NotifierProvider<
+      TranslationController,
+      Map<String, MessageTranslationState>
+    >(TranslationController.new);

@@ -27,7 +27,8 @@ import 'dart:collection';
 /// A write queue that ensures sequential execution of database operations.
 class DriftWriteQueue {
   /// Queue of pending write operations.
-  final Queue<_QueuedOperation> _queue = Queue();
+  final Queue<_QueuedOperation<dynamic>> _queue =
+      Queue<_QueuedOperation<dynamic>>();
 
   /// Whether the queue is currently processing operations.
   bool _isProcessing = false;
@@ -141,7 +142,6 @@ class DriftWriteQueue {
 
 /// Internal representation of a queued operation.
 class _QueuedOperation<T> {
-
   _QueuedOperation({
     required this.operation,
     required this.completer,

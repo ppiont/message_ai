@@ -270,223 +270,218 @@ class _GroupManagementPageState extends ConsumerState<GroupManagementPage> {
     String currentUserId,
     bool isAdmin,
   ) => Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Group Info',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Group Info',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        // Group avatar
+        Center(
+          child: CircleAvatar(
+            radius: 50,
+            backgroundColor: Colors.blue[700],
+            child: const Icon(Icons.group, color: Colors.white, size: 50),
           ),
-          const SizedBox(height: 16),
-          // Group avatar
-          Center(
-            child: CircleAvatar(
-              radius: 50,
-              backgroundColor: Colors.blue[700],
-              child: const Icon(Icons.group, color: Colors.white, size: 50),
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Group name
-          if (_isEditingName && isAdmin)
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _groupNameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Group Name',
-                      border: OutlineInputBorder(),
-                    ),
-                    enabled: !_isLoading,
+        ),
+        const SizedBox(height: 16),
+        // Group name
+        if (_isEditingName && isAdmin)
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _groupNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Group Name',
+                    border: OutlineInputBorder(),
+                  ),
+                  enabled: !_isLoading,
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: const Icon(Icons.check, color: Colors.green),
+                onPressed: _isLoading
+                    ? null
+                    : () => _updateGroupName(group, currentUserId),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close, color: Colors.red),
+                onPressed: _isLoading
+                    ? null
+                    : () => setState(() => _isEditingName = false),
+              ),
+            ],
+          )
+        else
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  group.groupName ?? 'Unknown Group',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(width: 8),
+              ),
+              if (isAdmin)
                 IconButton(
-                  icon: const Icon(Icons.check, color: Colors.green),
-                  onPressed: _isLoading
-                      ? null
-                      : () => _updateGroupName(group, currentUserId),
+                  icon: const Icon(Icons.edit),
+                  onPressed: () {
+                    _groupNameController.text = group.groupName ?? '';
+                    setState(() => _isEditingName = true);
+                  },
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close, color: Colors.red),
-                  onPressed: _isLoading
-                      ? null
-                      : () => setState(() => _isEditingName = false),
-                ),
-              ],
-            )
-          else
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    group.groupName ?? 'Unknown Group',
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                if (isAdmin)
-                  IconButton(
-                    icon: const Icon(Icons.edit),
-                    onPressed: () {
-                      _groupNameController.text = group.groupName ?? '';
-                      setState(() => _isEditingName = true);
-                    },
-                  ),
-              ],
-            ),
-          const SizedBox(height: 8),
-          Text(
-            '${group.participantIds.length} members',
-            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            ],
           ),
-        ],
-      ),
-    );
+        const SizedBox(height: 8),
+        Text(
+          '${group.participantIds.length} members',
+          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+        ),
+      ],
+    ),
+  );
 
   Widget _buildMembersSection(
     Conversation group,
     String currentUserId,
     bool isAdmin,
   ) => Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Text(
-                'Members',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Text(
+              'Members',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const Spacer(),
+            if (isAdmin)
+              TextButton.icon(
+                onPressed: _isLoading ? null : () => _addMember(currentUserId),
+                icon: const Icon(Icons.person_add),
+                label: const Text('Add'),
               ),
-              const Spacer(),
-              if (isAdmin)
-                TextButton.icon(
-                  onPressed: _isLoading
-                      ? null
-                      : () => _addMember(currentUserId),
-                  icon: const Icon(Icons.person_add),
-                  label: const Text('Add'),
-                ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          ...group.participants.map((participant) {
-            final isCurrentUser = participant.uid == currentUserId;
-            final isMemberAdmin =
-                group.adminIds?.contains(participant.uid) ?? false;
+          ],
+        ),
+        const SizedBox(height: 8),
+        ...group.participants.map((participant) {
+          final isCurrentUser = participant.uid == currentUserId;
+          final isMemberAdmin =
+              group.adminIds?.contains(participant.uid) ?? false;
 
-            return Consumer(
-              builder: (context, ref, _) {
-                final displayNameAsync = ref.watch(
-                  userDisplayNameProvider(participant.uid),
-                );
+          return Consumer(
+            builder: (context, ref, _) {
+              final displayNameAsync = ref.watch(
+                userDisplayNameProvider(participant.uid),
+              );
 
-                return displayNameAsync.when(
-                  data: (displayName) => ListTile(
-                    leading: CircleAvatar(
-                      child: Text(
-                        displayName.isNotEmpty
-                            ? displayName[0].toUpperCase()
-                            : '?',
-                      ),
+              return displayNameAsync.when(
+                data: (displayName) => ListTile(
+                  leading: CircleAvatar(
+                    child: Text(
+                      displayName.isNotEmpty
+                          ? displayName[0].toUpperCase()
+                          : '?',
                     ),
-                    title: Row(
-                      children: [
-                        Expanded(
+                  ),
+                  title: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          isCurrentUser ? 'You' : displayName,
+                          style: const TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                      if (isMemberAdmin)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.blue[100],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           child: Text(
-                            isCurrentUser ? 'You' : displayName,
-                            style: const TextStyle(fontWeight: FontWeight.w500),
+                            'Admin',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.blue[900],
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
-                        if (isMemberAdmin)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.blue[100],
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              'Admin',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.blue[900],
-                                fontWeight: FontWeight.w600,
+                    ],
+                  ),
+                  trailing: isAdmin && !isCurrentUser
+                      ? PopupMenuButton<String>(
+                          onSelected: (value) {
+                            if (value == 'remove') {
+                              _removeMember(
+                                participant.uid,
+                                displayName,
+                                currentUserId,
+                              );
+                            }
+                          },
+                          itemBuilder: (context) => [
+                            const PopupMenuItem(
+                              value: 'remove',
+                              child: Text(
+                                'Remove from group',
+                                style: TextStyle(color: Colors.red),
                               ),
                             ),
-                          ),
-                      ],
-                    ),
-                    trailing: isAdmin && !isCurrentUser
-                        ? PopupMenuButton<String>(
-                            onSelected: (value) {
-                              if (value == 'remove') {
-                                _removeMember(
-                                  participant.uid,
-                                  displayName,
-                                  currentUserId,
-                                );
-                              }
-                            },
-                            itemBuilder: (context) => [
-                              const PopupMenuItem(
-                                value: 'remove',
-                                child: Text(
-                                  'Remove from group',
-                                  style: TextStyle(color: Colors.red),
-                                ),
-                              ),
-                            ],
-                          )
-                        : null,
-                  ),
-                  loading: () => const ListTile(
-                    leading: CircleAvatar(child: Text('?')),
-                    title: Text('Loading...'),
-                  ),
-                  error: (_, __) => const ListTile(
-                    leading: CircleAvatar(child: Text('?')),
-                    title: Text('Unknown'),
-                  ),
-                );
-              },
-            );
-          }),
-        ],
-      ),
-    );
+                          ],
+                        )
+                      : null,
+                ),
+                loading: () => const ListTile(
+                  leading: CircleAvatar(child: Text('?')),
+                  title: Text('Loading...'),
+                ),
+                error: (_, __) => const ListTile(
+                  leading: CircleAvatar(child: Text('?')),
+                  title: Text('Unknown'),
+                ),
+              );
+            },
+          );
+        }),
+      ],
+    ),
+  );
 
   Widget _buildActionsSection(String currentUserId, bool isAdmin) => Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Text(
-            'Actions',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Text(
+          'Actions',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+          onPressed: _isLoading ? null : () => _leaveGroup(currentUserId),
+          icon: const Icon(Icons.exit_to_app, color: Colors.red),
+          label: const Text('Leave Group', style: TextStyle(color: Colors.red)),
+          style: OutlinedButton.styleFrom(
+            side: const BorderSide(color: Colors.red),
           ),
-          const SizedBox(height: 8),
-          OutlinedButton.icon(
-            onPressed: _isLoading ? null : () => _leaveGroup(currentUserId),
-            icon: const Icon(Icons.exit_to_app, color: Colors.red),
-            label: const Text(
-              'Leave Group',
-              style: TextStyle(color: Colors.red),
-            ),
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Colors.red),
-            ),
-          ),
-        ],
-      ),
-    );
+        ),
+      ],
+    ),
+  );
 }
 
 /// Dialog for adding a member to the group.

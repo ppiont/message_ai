@@ -109,76 +109,76 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      appBar: AppBar(
-        title: const Text('Create Group'),
-        actions: [
-          if (_isLoading)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              ),
-            )
-          else
-            TextButton(
-              onPressed: _createGroup,
-              child: const Text(
-                'Create',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+    appBar: AppBar(
+      title: const Text('Create Group'),
+      actions: [
+        if (_isLoading)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
               ),
             ),
+          )
+        else
+          TextButton(
+            onPressed: _createGroup,
+            child: const Text(
+              'Create',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
+      ],
+    ),
+    body: Form(
+      key: _formKey,
+      child: Column(
+        children: [
+          // Group name input
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: TextFormField(
+              controller: _groupNameController,
+              decoration: const InputDecoration(
+                labelText: 'Group Name',
+                hintText: 'Enter group name',
+                prefixIcon: Icon(Icons.group),
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Group name is required';
+                }
+                return null;
+              },
+              enabled: !_isLoading,
+            ),
+          ),
+          const Divider(),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                const Text(
+                  'Members',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '(${_selectedUserIds.length} selected)',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+          // User list
+          Expanded(child: _buildUserList()),
         ],
       ),
-      body: Form(
-        key: _formKey,
-        child: Column(
-          children: [
-            // Group name input
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: TextFormField(
-                controller: _groupNameController,
-                decoration: const InputDecoration(
-                  labelText: 'Group Name',
-                  hintText: 'Enter group name',
-                  prefixIcon: Icon(Icons.group),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Group name is required';
-                  }
-                  return null;
-                },
-                enabled: !_isLoading,
-              ),
-            ),
-            const Divider(),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  const Text(
-                    'Members',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '(${_selectedUserIds.length} selected)',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                  ),
-                ],
-              ),
-            ),
-            // User list
-            Expanded(child: _buildUserList()),
-          ],
-        ),
-      ),
-    );
+    ),
+  );
 
   Widget _buildUserList() {
     // In a real app, you'd fetch users from a backend API

@@ -95,8 +95,10 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                   );
                   return displayNameAsync.when(
                     data: Text.new,
-                    loading: () => Text(widget.otherParticipantName), // Fallback
-                    error: (_, __) => Text(widget.otherParticipantName), // Fallback
+                    loading: () =>
+                        Text(widget.otherParticipantName), // Fallback
+                    error: (_, __) =>
+                        Text(widget.otherParticipantName), // Fallback
                   );
                 },
               ),
@@ -143,7 +145,9 @@ class _ChatPageState extends ConsumerState<ChatPage> {
 
       return conversationAsync.when(
         data: (conversation) {
-          final participantIds = conversation.participants.map((p) => p.uid).toList();
+          final participantIds = conversation.participants
+              .map((p) => p.uid)
+              .toList();
           final groupPresenceAsync = ref.watch(
             groupPresenceStatusProvider(participantIds),
           );
@@ -160,7 +164,9 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                 style: TextStyle(
                   fontSize: 12,
                   color: onlineCount > 0 ? Colors.green : Colors.grey,
-                  fontWeight: onlineCount > 0 ? FontWeight.w500 : FontWeight.normal,
+                  fontWeight: onlineCount > 0
+                      ? FontWeight.w500
+                      : FontWeight.normal,
                 ),
               );
             },

@@ -24,9 +24,9 @@ class UserCacheService {
     required AppDatabase database,
     required UserRepository userRepository,
     required DriftWriteQueue writeQueue,
-  })  : _database = database,
-        _userRepository = userRepository,
-        _writeQueue = writeQueue;
+  }) : _database = database,
+       _userRepository = userRepository,
+       _writeQueue = writeQueue;
 
   final AppDatabase _database;
   final UserRepository _userRepository;
@@ -48,10 +48,12 @@ class UserCacheService {
       // Fetch from Firestore
       final result = await _userRepository.getUserById(userId);
 
-      result.fold(
-        (failure) {
+      await result.fold(
+        (failure) async {
           // User not found or network error - silently fail
-          print('⚠️ UserCache: Failed to cache user $userId: ${failure.message}');
+          print(
+            '⚠️ UserCache: Failed to cache user $userId: ${failure.message}',
+          );
         },
         (user) async {
           // Save to Drift

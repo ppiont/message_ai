@@ -27,15 +27,15 @@ class UserSyncService {
     required AppDatabase database,
     required UserRepository userRepository,
     required UserCacheService userCacheService,
-  })  : _database = database,
-        _userRepository = userRepository,
-        _userCacheService = userCacheService;
+  }) : _database = database,
+       _userRepository = userRepository,
+       _userCacheService = userCacheService;
 
   final AppDatabase _database;
   final UserRepository _userRepository;
   final UserCacheService _userCacheService;
 
-  final Map<String, StreamSubscription> _userWatchers = {};
+  final Map<String, StreamSubscription<dynamic>> _userWatchers = {};
   Timer? _refreshTimer;
 
   /// Start background syncing

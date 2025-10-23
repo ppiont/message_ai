@@ -22,10 +22,6 @@ analyzer:
     strict-inference: true
     strict-raw-types: true
 
-  # Enable additional diagnostics for better quick fixes
-  enable-experiment:
-    - enhanced-enums
-
 # Quick fix support - many rules automatically provide fixes
 linter:
   rules:

@@ -8,8 +8,11 @@ import 'package:message_ai/features/translation/domain/usecases/translate_messag
 export 'package:message_ai/features/translation/presentation/controllers/translation_controller.dart';
 
 /// Provider for TranslationService
-final translationServiceProvider = Provider<TranslationService>((ref) => TranslationService());
+final translationServiceProvider = Provider<TranslationService>(
+  (ref) => TranslationService(),
+);
 
 /// Provider for TranslateMessage use case
-final translateMessageProvider = Provider<TranslateMessage>((ref) => TranslateMessage(ref.watch(translationServiceProvider)));
-
+final translateMessageProvider = Provider<TranslateMessage>(
+  (ref) => TranslateMessage(ref.watch(translationServiceProvider)),
+);
