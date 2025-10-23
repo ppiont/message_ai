@@ -10,6 +10,6 @@ class WatchAuthState {
   /// Stream of authentication state changes
   ///
   /// Emits [User?] whenever the authentication state changes
-  /// Returns [User] when signed in, [null] when signed out
+  /// Returns [User] when signed in, null when signed out
   Stream<User?> call() => _repository.authStateChanges();
 }

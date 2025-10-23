@@ -191,10 +191,9 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
     currentUserId: currentUserId,
   )) {
     yield result.fold(
-      (failure) {
-        // Log error but return empty list to keep UI functional
-        return [];
-      },
+      (failure) => [],
+
+      // Log error but return empty list to keep UI functional
       (messages) {
         // Sync all message senders to Drift for offline access
         final allSenderIds = messages
@@ -202,9 +201,7 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
             .toSet()
             .toList();
         if (allSenderIds.isNotEmpty) {
-          for (final senderId in allSenderIds) {
-            userSyncService.syncMessageSender(senderId);
-          }
+          allSenderIds.forEach(userSyncService.syncMessageSender);
         }
 
         return messages

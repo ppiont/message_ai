@@ -189,7 +189,6 @@ abstract class ConversationLocalDataSource {
 
 /// Implementation of [ConversationLocalDataSource] using Drift.
 class ConversationLocalDataSourceImpl implements ConversationLocalDataSource {
-
   ConversationLocalDataSourceImpl({required ConversationDao conversationDao})
     : _conversationDao = conversationDao;
   final ConversationDao _conversationDao;
@@ -200,51 +199,52 @@ class ConversationLocalDataSourceImpl implements ConversationLocalDataSource {
 
   /// Converts Drift ConversationEntity to domain Conversation
   Conversation _entityToConversation(ConversationEntity entity) => Conversation(
-      documentId: entity.documentId,
-      type: entity.conversationType,
-      participantIds: _deserializeList(entity.participantIds),
-      participants: _deserializeParticipants(entity.participants),
-      lastMessage: _deserializeLastMessage(entity),
-      lastUpdatedAt: entity.lastUpdatedAt,
-      initiatedAt: entity.initiatedAt,
-      unreadCount: _deserializeUnreadCount(entity.unreadCount),
-      translationEnabled: entity.translationEnabled,
-      autoDetectLanguage: entity.autoDetectLanguage,
-      groupName: entity.groupName,
-      groupImage: entity.groupImage,
-      adminIds: entity.adminIds != null
-          ? _deserializeList(entity.adminIds!)
-          : null,
-    );
+    documentId: entity.documentId,
+    type: entity.conversationType,
+    participantIds: _deserializeList(entity.participantIds),
+    participants: _deserializeParticipants(entity.participants),
+    lastMessage: _deserializeLastMessage(entity),
+    lastUpdatedAt: entity.lastUpdatedAt,
+    initiatedAt: entity.initiatedAt,
+    unreadCount: _deserializeUnreadCount(entity.unreadCount),
+    translationEnabled: entity.translationEnabled,
+    autoDetectLanguage: entity.autoDetectLanguage,
+    groupName: entity.groupName,
+    groupImage: entity.groupImage,
+    adminIds: entity.adminIds != null
+        ? _deserializeList(entity.adminIds!)
+        : null,
+  );
 
   /// Converts domain Conversation to Drift ConversationsCompanion
-  ConversationsCompanion _conversationToCompanion(Conversation conversation) => ConversationsCompanion.insert(
-      documentId: conversation.documentId,
-      conversationType: conversation.type,
-      participantIds: _serializeList(conversation.participantIds),
-      participants: _serializeParticipants(conversation.participants),
-      lastMessageText: Value(conversation.lastMessage?.text),
-      lastMessageSenderId: Value(conversation.lastMessage?.senderId),
-      lastMessageTimestamp: Value(conversation.lastMessage?.timestamp),
-      lastMessageType: Value(conversation.lastMessage?.type),
-      lastMessageTranslations: Value(
-        conversation.lastMessage?.translations != null
-            ? _serializeTranslations(conversation.lastMessage!.translations!)
-            : null,
-      ),
-      lastUpdatedAt: conversation.lastUpdatedAt,
-      initiatedAt: conversation.initiatedAt,
-      unreadCount: _serializeUnreadCount(conversation.unreadCount),
-      translationEnabled: Value(conversation.translationEnabled),
-      autoDetectLanguage: Value(conversation.autoDetectLanguage),
-      groupName: Value(conversation.groupName),
-      groupImage: Value(conversation.groupImage),
-      adminIds: Value(
-        conversation.adminIds != null
-            ? _serializeList(conversation.adminIds!)
-            : null,
-      ),
-    );
+  ConversationsCompanion _conversationToCompanion(Conversation conversation) =>
+      ConversationsCompanion.insert(
+        documentId: conversation.documentId,
+        conversationType: conversation.type,
+        participantIds: _serializeList(conversation.participantIds),
+        participants: _serializeParticipants(conversation.participants),
+        lastMessageText: Value(conversation.lastMessage?.text),
+        lastMessageSenderId: Value(conversation.lastMessage?.senderId),
+        lastMessageTimestamp: Value(conversation.lastMessage?.timestamp),
+        lastMessageType: Value(conversation.lastMessage?.type),
+        lastMessageTranslations: Value(
+          conversation.lastMessage?.translations != null
+              ? _serializeTranslations(conversation.lastMessage!.translations!)
+              : null,
+        ),
+        lastUpdatedAt: conversation.lastUpdatedAt,
+        initiatedAt: conversation.initiatedAt,
+        unreadCount: _serializeUnreadCount(conversation.unreadCount),
+        translationEnabled: Value(conversation.translationEnabled),
+        autoDetectLanguage: Value(conversation.autoDetectLanguage),
+        groupName: Value(conversation.groupName),
+        groupImage: Value(conversation.groupImage),
+        adminIds: Value(
+          conversation.adminIds != null
+              ? _serializeList(conversation.adminIds!)
+              : null,
+        ),
+      );
 
   // ============================================================================
   // Serialization Helpers
@@ -265,16 +265,16 @@ class ConversationLocalDataSourceImpl implements ConversationLocalDataSource {
   }
 
   String _serializeParticipants(List<Participant> participants) => json.encode(
-        participants
-            .map(
-            (p) => {
-              'uid': p.uid,
-              'imageUrl': p.imageUrl,
-              'preferredLanguage': p.preferredLanguage,
-            },
-          )
-          .toList(),
-    );
+    participants
+        .map(
+          (p) => {
+            'uid': p.uid,
+            'imageUrl': p.imageUrl,
+            'preferredLanguage': p.preferredLanguage,
+          },
+        )
+        .toList(),
+  );
 
   List<Participant> _deserializeParticipants(String jsonString) {
     try {
@@ -293,7 +293,8 @@ class ConversationLocalDataSourceImpl implements ConversationLocalDataSource {
     }
   }
 
-  String _serializeUnreadCount(Map<String, int> unreadCount) => json.encode(unreadCount);
+  String _serializeUnreadCount(Map<String, int> unreadCount) =>
+      json.encode(unreadCount);
 
   Map<String, int> _deserializeUnreadCount(String jsonString) {
     try {
@@ -304,10 +305,13 @@ class ConversationLocalDataSourceImpl implements ConversationLocalDataSource {
     }
   }
 
-  String? _serializeTranslations(Map<String, String> translations) => json.encode(translations);
+  String? _serializeTranslations(Map<String, String> translations) =>
+      json.encode(translations);
 
   Map<String, String>? _deserializeTranslations(String? jsonString) {
-    if (jsonString == null || jsonString.isEmpty) return null;
+    if (jsonString == null || jsonString.isEmpty) {
+      return null;
+    }
     try {
       final decoded = json.decode(jsonString) as Map<String, dynamic>;
       return decoded.map((k, v) => MapEntry(k, v.toString()));
@@ -317,7 +321,9 @@ class ConversationLocalDataSourceImpl implements ConversationLocalDataSource {
   }
 
   LastMessage? _deserializeLastMessage(ConversationEntity entity) {
-    if (entity.lastMessageText == null) return null;
+    if (entity.lastMessageText == null) {
+      return null;
+    }
 
     return LastMessage(
       text: entity.lastMessageText!,
@@ -353,7 +359,9 @@ class ConversationLocalDataSourceImpl implements ConversationLocalDataSource {
 
       return conversation;
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw DatabaseException(
         message: 'Failed to create conversation',
         originalError: e,
@@ -396,7 +404,9 @@ class ConversationLocalDataSourceImpl implements ConversationLocalDataSource {
 
       return conversation;
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw DatabaseException(
         message: 'Failed to update conversation',
         originalError: e,
@@ -669,7 +679,8 @@ class ConversationLocalDataSourceImpl implements ConversationLocalDataSource {
   // ============================================================================
 
   @override
-  Future<List<Conversation>> getUnsyncedConversations() async => getConversationsByStatus('pending');
+  Future<List<Conversation>> getUnsyncedConversations() async =>
+      getConversationsByStatus('pending');
 
   @override
   Future<List<Conversation>> getConversationsByStatus(String syncStatus) async {
@@ -689,17 +700,16 @@ class ConversationLocalDataSourceImpl implements ConversationLocalDataSource {
   }
 
   @override
+  /// Placeholder for future sync status implementation
+  ///
+  /// Note: Conversations table doesn't have sync fields yet.
+  /// Would need to add syncStatus, lastSyncAttempt, retryCount to table.
   Future<bool> updateSyncStatus({
     required String documentId,
     required String syncStatus,
     DateTime? lastSyncAttempt,
     int? retryCount,
-  }) async {
-    // Note: Conversations table doesn't have sync fields yet
-    // This is a placeholder for future implementation
-    // Would need to add syncStatus, lastSyncAttempt, retryCount to table
-    return true;
-  }
+  }) async => true;
 
   @override
   Future<bool> replaceTempId({
@@ -709,7 +719,9 @@ class ConversationLocalDataSourceImpl implements ConversationLocalDataSource {
     try {
       // Get the temporary conversation
       final tempConversation = await getConversation(tempId);
-      if (tempConversation == null) return false;
+      if (tempConversation == null) {
+        return false;
+      }
 
       // Create new conversation with real ID
       final updatedConversation = tempConversation.copyWith(documentId: realId);

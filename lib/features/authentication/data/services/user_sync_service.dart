@@ -72,9 +72,7 @@ class UserSyncService {
     await _userCacheService.cacheUsers(participantIds);
 
     // Start watching these users for real-time updates
-    for (final userId in participantIds) {
-      _watchUser(userId);
-    }
+    participantIds.forEach(_watchUser);
   }
 
   /// Sync user when message arrives
