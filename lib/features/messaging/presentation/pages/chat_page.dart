@@ -4,6 +4,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
+import 'package:message_ai/features/authentication/presentation/providers/user_lookup_provider.dart';
 import 'package:message_ai/features/messaging/presentation/pages/group_management_page.dart';
 import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:message_ai/features/messaging/presentation/widgets/message_bubble.dart';
@@ -81,7 +82,26 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [Text(widget.otherParticipantName), _buildPresenceStatus()],
+          children: [
+            // For direct conversations, dynamically look up the name
+            // For groups, use the static group name
+            if (widget.isGroup)
+              Text(widget.otherParticipantName)
+            else
+              Consumer(
+                builder: (context, ref, _) {
+                  final displayNameAsync = ref.watch(
+                    userDisplayNameProvider(widget.otherParticipantId),
+                  );
+                  return displayNameAsync.when(
+                    data: (name) => Text(name),
+                    loading: () => Text(widget.otherParticipantName), // Fallback
+                    error: (_, __) => Text(widget.otherParticipantName), // Fallback
+                  );
+                },
+              ),
+            _buildPresenceStatus(),
+          ],
         ),
         actions: [
           if (widget.isGroup)
