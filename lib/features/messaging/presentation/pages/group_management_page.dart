@@ -218,9 +218,6 @@ class _GroupManagementPageState extends ConsumerState<GroupManagementPage> {
     final conversationAsync = ref.watch(
       getConversationByIdProvider(widget.conversationId),
     );
-    
-    // Keep the provider alive to prevent refetching on every rebuild
-    ref.keepAlive();
 
     return conversationAsync.when(
       data: (group) {
@@ -627,7 +624,7 @@ class _AddMemberDialogState extends ConsumerState<_AddMemberDialog> {
 }
 
 /// Provider for getting a conversation by ID.
-@riverpod
+@Riverpod(keepAlive: true)
 Future<Conversation> getConversationById(Ref ref, String conversationId) async {
   final useCase = ref.watch(getConversationByIdUseCaseProvider);
   final result = await useCase(conversationId);

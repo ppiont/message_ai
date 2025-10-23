@@ -30,7 +30,7 @@ final class GetConversationByIdProvider
   }) : super(
          retry: null,
          name: r'getConversationByIdProvider',
-         isAutoDispose: true,
+         isAutoDispose: false,
          dependencies: null,
          $allTransitiveDependencies: null,
        );
@@ -69,7 +69,7 @@ final class GetConversationByIdProvider
 }
 
 String _$getConversationByIdHash() =>
-    r'68c5958370dd9de3a0126f84c95da7eeec423c8e';
+    r'bd8d7cd7993f71205cb054bac4ec82f64f07b3ec';
 
 /// Provider for getting a conversation by ID.
 
@@ -81,7 +81,7 @@ final class GetConversationByIdFamily extends $Family
         name: r'getConversationByIdProvider',
         dependencies: null,
         $allTransitiveDependencies: null,
-        isAutoDispose: true,
+        isAutoDispose: false,
       );
 
   /// Provider for getting a conversation by ID.
