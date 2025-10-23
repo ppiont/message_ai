@@ -9,7 +9,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 /// - Last seen timestamps
 /// - Heartbeat mechanism for active sessions
 class PresenceService {
-
   PresenceService({FirebaseFirestore? firestore})
     : _firestore = firestore ?? FirebaseFirestore.instance;
   final FirebaseFirestore _firestore;
@@ -55,12 +54,13 @@ class PresenceService {
   /// Watches presence status for a specific user.
   ///
   /// Returns a stream of presence updates.
-  Stream<UserPresence?> watchUserPresence({required String userId}) => _firestore.collection('presence').doc(userId).snapshots().map((
-      snapshot,
-    ) {
-      if (!snapshot.exists) return null;
-      return UserPresence.fromFirestore(snapshot);
-    });
+  Stream<UserPresence?> watchUserPresence({required String userId}) =>
+      _firestore.collection('presence').doc(userId).snapshots().map((snapshot) {
+        if (!snapshot.exists) {
+          return null;
+        }
+        return UserPresence.fromFirestore(snapshot);
+      });
 
   /// Watches presence status for multiple users.
   ///
@@ -151,7 +151,6 @@ class PresenceService {
 
 /// Represents a user's presence status.
 class UserPresence {
-
   UserPresence({
     required this.userId,
     required this.userName,
@@ -205,7 +204,9 @@ class UserPresence {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other)) return true;
+    if (identical(this, other)) {
+      return true;
+    }
 
     return other is UserPresence &&
         other.userId == userId &&

@@ -75,7 +75,7 @@ class DriftWriteQueue {
     }
 
     // Start processing if not already running
-    _processQueue();
+    await _processQueue();
 
     return completer.future;
   }

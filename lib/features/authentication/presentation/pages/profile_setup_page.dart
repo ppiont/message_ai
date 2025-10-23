@@ -112,13 +112,15 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
       displayName: _nameController.text.trim(),
     );
 
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
 
     setState(() {
       _isLoading = false;
     });
 
-    result.fold(
+    await result.fold(
       (failure) {
         setState(() {
           _errorMessage = failure.message;
@@ -135,7 +137,9 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
         // Profile updated successfully - invalidate auth state to trigger re-route
         ref.invalidate(authStateProvider);
 
-        if (!mounted) return;
+        if (!mounted) {
+          return;
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Welcome, ${user.displayName}!'),

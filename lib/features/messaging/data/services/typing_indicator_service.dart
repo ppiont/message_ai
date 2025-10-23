@@ -9,9 +9,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 /// - Auto-timeout to clear stale status
 /// - Watch other users' typing status
 class TypingIndicatorService {
-
   TypingIndicatorService({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _firestore = firestore ?? FirebaseFirestore.instance;
   final FirebaseFirestore _firestore;
 
   // Configuration
@@ -82,32 +81,36 @@ class TypingIndicatorService {
     required String conversationId,
     required String currentUserId,
   }) => _firestore
-        .collection('conversations')
-        .doc(conversationId)
-        .collection('typingStatus')
-        .where('isTyping', isEqualTo: true)
-        .snapshots()
-        .map((snapshot) {
-      final now = DateTime.now();
+      .collection('conversations')
+      .doc(conversationId)
+      .collection('typingStatus')
+      .where('isTyping', isEqualTo: true)
+      .snapshots()
+      .map((snapshot) {
+        final now = DateTime.now();
 
-      return snapshot.docs
-          .where((doc) {
-            // Exclude current user
-            if (doc.id == currentUserId) return false;
+        return snapshot.docs
+            .where((doc) {
+              // Exclude current user
+              if (doc.id == currentUserId) {
+                return false;
+              }
 
-            // Check if status is still valid (not stale)
-            final data = doc.data();
-            final lastUpdated = (data['lastUpdated'] as Timestamp?)?.toDate();
+              // Check if status is still valid (not stale)
+              final data = doc.data();
+              final lastUpdated = (data['lastUpdated'] as Timestamp?)?.toDate();
 
-            if (lastUpdated == null) return false;
+              if (lastUpdated == null) {
+                return false;
+              }
 
-            // Consider stale if older than timeout + 1 second buffer
-            final staleDuration = typingTimeout + const Duration(seconds: 1);
-            return now.difference(lastUpdated) < staleDuration;
-          })
-          .map(TypingUser.fromFirestore)
-          .toList();
-    });
+              // Consider stale if older than timeout + 1 second buffer
+              final staleDuration = typingTimeout + const Duration(seconds: 1);
+              return now.difference(lastUpdated) < staleDuration;
+            })
+            .map(TypingUser.fromFirestore)
+            .toList();
+      });
 
   /// Clears typing status for a user in a conversation.
   ///
@@ -183,7 +186,6 @@ class TypingIndicatorService {
 
 /// Represents a user who is currently typing.
 class TypingUser {
-
   TypingUser({
     required this.userId,
     required this.userName,
@@ -204,7 +206,9 @@ class TypingUser {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other)) return true;
+    if (identical(this, other)) {
+      return true;
+    }
 
     return other is TypingUser &&
         other.userId == userId &&

@@ -139,7 +139,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     } on FirebaseAuthException catch (e) {
       throw _mapAuthException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw ServerException(message: 'Failed to sign up: $e');
     }
   }
@@ -165,7 +167,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     } on FirebaseAuthException catch (e) {
       throw _mapAuthException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw ServerException(message: 'Failed to sign in: $e');
     }
   }
@@ -193,7 +197,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     } on FirebaseAuthException catch (e) {
       throw _mapAuthException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw ServerException(message: 'Failed to send email verification: $e');
     }
   }
@@ -201,7 +207,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<bool> isEmailVerified() async {
     final user = _firebaseAuth.currentUser;
-    if (user == null) return false;
+    if (user == null) {
+      return false;
+    }
 
     // Reload user to get fresh email verification status
     await user.reload();
@@ -263,7 +271,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     } on FirebaseAuthException catch (e) {
       throw _mapAuthException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw ServerException(message: 'Failed to verify code: $e');
     }
   }
@@ -300,7 +310,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     } on FirebaseAuthException catch (e) {
       throw _mapAuthException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw ServerException(message: 'Failed to get ID token: $e');
     }
   }
@@ -325,7 +337,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     } on FirebaseAuthException catch (e) {
       throw _mapAuthException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw ServerException(message: 'Failed to reauthenticate: $e');
     }
   }
@@ -359,7 +373,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     } on FirebaseAuthException catch (e) {
       throw _mapAuthException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw ServerException(message: 'Failed to update profile: $e');
     }
   }

@@ -198,7 +198,9 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
     required List<String> participantIds,
   }) async {
     final conversation = await getConversationById(documentId);
-    if (conversation == null) return false;
+    if (conversation == null) {
+      return false;
+    }
 
     // Parse existing unread counts
     final unreadMap = <String, int>{};
@@ -232,7 +234,9 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
     required String userId,
   }) async {
     final conversation = await getConversationById(documentId);
-    if (conversation == null) return false;
+    if (conversation == null) {
+      return false;
+    }
 
     // Parse and update unread counts
     final unreadMap = <String, int>{};

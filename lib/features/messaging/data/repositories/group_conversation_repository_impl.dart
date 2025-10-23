@@ -17,7 +17,8 @@ import 'package:message_ai/features/messaging/domain/repositories/group_conversa
 /// Strategy:
 /// - Reads: Local first (instant), sync from remote in background
 /// - Writes: Local immediate, queue for remote sync
-class GroupConversationRepositoryImpl implements GroupConversationRepository { // Reuse existing local data source
+class GroupConversationRepositoryImpl implements GroupConversationRepository {
+  // Reuse existing local data source
 
   GroupConversationRepositoryImpl({
     required GroupConversationRemoteDataSource remoteDataSource,
@@ -25,8 +26,7 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository { /
   }) : _remoteDataSource = remoteDataSource,
        _localDataSource = localDataSource;
   final GroupConversationRemoteDataSource _remoteDataSource;
-  final ConversationLocalDataSource
-  _localDataSource;
+  final ConversationLocalDataSource _localDataSource;
 
   @override
   Future<Either<Failure, Conversation>> createGroup(Conversation group) async {
@@ -58,7 +58,7 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository { /
       final localGroup = await _localDataSource.createConversation(group);
 
       // Background sync to remote (don't wait for it)
-      _syncToRemote(localGroup);
+      await _syncToRemote(localGroup);
 
       return Right(localGroup);
     } on AppException catch (e) {
@@ -123,7 +123,7 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository { /
 
       if (filteredGroups.isNotEmpty) {
         // Background sync from remote
-        _syncGroupsFromRemote(userId, limit, before);
+        await _syncGroupsFromRemote(userId, limit, before);
         return Right(filteredGroups);
       }
 
@@ -174,7 +174,7 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository { /
       final localGroup = await _localDataSource.updateConversation(group);
 
       // Background sync to remote
-      _updateRemote(localGroup);
+      await _updateRemote(localGroup);
 
       return Right(localGroup);
     } on AppException catch (e) {
@@ -201,7 +201,7 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository { /
       await _localDataSource.deleteConversation(groupId);
 
       // Background sync to remote
-      _deleteRemote(groupId);
+      await _deleteRemote(groupId);
 
       return const Right(null);
     } on AppException catch (e) {
@@ -274,10 +274,7 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository { /
         // Add member to participants list
         final updatedParticipants = [
           ...group.participants,
-          Participant(
-            uid: userId,
-            preferredLanguage: preferredLanguage,
-          ),
+          Participant(uid: userId, preferredLanguage: preferredLanguage),
         ];
 
         final updatedGroup = group.copyWith(
@@ -290,7 +287,7 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository { /
         await _localDataSource.updateConversation(updatedGroup);
 
         // Sync to remote in background
-        _remoteDataSource.addMember(
+        await _remoteDataSource.addMember(
           groupId,
           userId,
           userName,
@@ -338,7 +335,7 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository { /
         await _localDataSource.updateConversation(updatedGroup);
 
         // Sync to remote in background
-        _remoteDataSource.removeMember(groupId, userId);
+        await _remoteDataSource.removeMember(groupId, userId);
 
         return const Right(null);
       });
@@ -371,7 +368,7 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository { /
         await _localDataSource.updateConversation(updatedGroup);
 
         // Sync to remote in background
-        _remoteDataSource.updateGroupInfo(
+        await _remoteDataSource.updateGroupInfo(
           groupId: groupId,
           groupName: groupName,
           groupImage: groupImage,
@@ -411,7 +408,7 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository { /
         await _localDataSource.updateConversation(updatedGroup);
 
         // Sync to remote in background
-        _remoteDataSource.promoteToAdmin(groupId, userId);
+        await _remoteDataSource.promoteToAdmin(groupId, userId);
 
         return const Right(null);
       });
@@ -446,7 +443,7 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository { /
         await _localDataSource.updateConversation(updatedGroup);
 
         // Sync to remote in background
-        _remoteDataSource.demoteFromAdmin(groupId, userId);
+        await _remoteDataSource.demoteFromAdmin(groupId, userId);
 
         return const Right(null);
       });
@@ -479,7 +476,7 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository { /
       );
 
       // Background sync to remote
-      _remoteDataSource.updateLastMessage(
+      await _remoteDataSource.updateLastMessage(
         groupId,
         messageText,
         senderId,
@@ -514,7 +511,7 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository { /
         await _localDataSource.updateConversation(updatedGroup);
 
         // Sync to remote in background
-        _remoteDataSource.updateUnreadCount(groupId, userId, count);
+        await _remoteDataSource.updateUnreadCount(groupId, userId, count);
 
         return const Right(null);
       });

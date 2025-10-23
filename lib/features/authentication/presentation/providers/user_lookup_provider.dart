@@ -15,8 +15,7 @@ class CachedUser {
   /// Cache entries expire after 5 minutes
   static const cacheDuration = Duration(minutes: 5);
 
-  bool get isExpired =>
-      DateTime.now().difference(fetchedAt) > cacheDuration;
+  bool get isExpired => DateTime.now().difference(fetchedAt) > cacheDuration;
 }
 
 /// In-memory cache for user lookups to avoid repeated Firestore queries
@@ -75,10 +74,7 @@ class UserLookupCache extends _$UserLookupCache {
 
         // Update memory cache (safe to skip if disposed)
         if (ref.mounted) {
-          state = {
-            ...state,
-            userId: CachedUser(user, DateTime.now()),
-          };
+          state = {...state, userId: CachedUser(user, DateTime.now())};
         }
         print('✅ UserLookup: Found in Drift: ${user.displayName}');
         return user;
@@ -90,7 +86,9 @@ class UserLookupCache extends _$UserLookupCache {
 
     // 3. Fall back to Firestore and cache to Drift
     try {
-      if (!ref.mounted) return null; // Check before Firestore fetch
+      if (!ref.mounted) {
+        return null; // Check before Firestore fetch
+      }
       final userCacheService = ref.read(userCacheServiceProvider);
       final userRepository = ref.read(userRepositoryProvider);
       final result = await userRepository.getUserById(userId);
@@ -98,23 +96,28 @@ class UserLookupCache extends _$UserLookupCache {
       return result.fold(
         (failure) {
           // Failed to fetch - keep old cache if available
-          print('❌ UserLookup: Firestore fetch failed for $userId: ${failure.message}');
+          print(
+            '❌ UserLookup: Firestore fetch failed for $userId: ${failure.message}',
+          );
           return cached?.user;
         },
         (user) async {
-          if (!ref.mounted) return null; // Check after Firestore fetch
+          if (!ref.mounted) {
+            return null; // Check after Firestore fetch
+          }
 
           // Cache to Drift for future offline access
           await userCacheService.syncUserToDrift(user);
 
-          if (!ref.mounted) return null; // Check after Drift write
+          if (!ref.mounted) {
+            return null; // Check after Drift write
+          }
 
           // Update memory cache
-          state = {
-            ...state,
-            userId: CachedUser(user, DateTime.now()),
-          };
-          print('✅ UserLookup: Fetched from Firestore & cached: ${user.displayName}');
+          state = {...state, userId: CachedUser(user, DateTime.now())};
+          print(
+            '✅ UserLookup: Fetched from Firestore & cached: ${user.displayName}',
+          );
           return user;
         },
       );
@@ -138,9 +141,7 @@ class UserLookupCache extends _$UserLookupCache {
   ///
   /// Call this when you know a user's data has changed
   void invalidate(String userId) {
-    final newState = Map<String, CachedUser>.from(state);
-    newState.remove(userId);
-    state = newState;
+    state = Map<String, CachedUser>.from(state)..remove(userId);
   }
 
   /// Clear entire cache

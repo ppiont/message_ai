@@ -270,10 +270,10 @@ AutoDeliveryMarker? autoDeliveryMarker(Ref ref) {
     conversationRepository: ref.watch(conversationRepositoryProvider),
     messageRepository: ref.watch(messageRepositoryProvider),
     currentUserId: currentUser.uid,
-  );
-
+  )
   // Start watching
-  marker.start();
+  // ignore: cascade_invocations
+  ..start();
 
   // Dispose when provider is disposed
   ref.onDispose(marker.stop);
@@ -317,7 +317,9 @@ FCMService fcmService(Ref ref) {
 Stream<Map<String, dynamic>?> userPresence(Ref ref, String userId) {
   final service = ref.watch(presenceServiceProvider);
   return service.watchUserPresence(userId: userId).map((presence) {
-    if (presence == null) return null;
+    if (presence == null) {
+      return null;
+    }
     return {
       'isOnline': presence.isOnline,
       'lastSeen': presence.lastSeen,
@@ -339,10 +341,10 @@ MessageSyncService messageSyncService(Ref ref) {
     conversationLocalDataSource: ref.watch(conversationLocalDataSourceProvider),
     conversationRepository: ref.watch(conversationRepositoryProvider),
     connectivity: Connectivity(),
-  );
-
+  )
   // Start monitoring connectivity and syncing
-  service.start();
+  // ignore: cascade_invocations
+  ..start();
 
   // Dispose when provider is disposed
   ref.onDispose(service.stop);
@@ -358,10 +360,10 @@ MessageQueue messageQueue(Ref ref) {
   final queue = MessageQueue(
     localDataSource: ref.watch(messageLocalDataSourceProvider),
     syncService: ref.watch(messageSyncServiceProvider),
-  );
-
+  )
   // Start processing queue
-  queue.start();
+  // ignore: cascade_invocations
+  ..start();
 
   // Dispose when provider is disposed
   ref.onDispose(queue.stop);

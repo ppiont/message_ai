@@ -42,7 +42,7 @@ Future<void> _handleNotificationNavigation({
     if (isGroup) {
       // For groups, navigate with group name
       final groupName = conversationData['name'] as String? ?? 'Group Chat';
-      navigator.push(
+      await navigator.push(
         MaterialPageRoute<void>(
           builder: (context) => ChatPage(
             conversationId: conversationId,
@@ -61,7 +61,7 @@ Future<void> _handleNotificationNavigation({
           senderDoc.data()?['email'] as String? ??
           'Unknown User';
 
-      navigator.push(
+      await navigator.push(
         MaterialPageRoute<void>(
           builder: (context) => ChatPage(
             conversationId: conversationId,
@@ -100,17 +100,16 @@ class App extends ConsumerWidget {
     if (user != null) {
       // Initialize offline-first services
       // These are keepAlive providers, so watching them ensures they start
-      ref.watch(messageSyncServiceProvider);
-      ref.watch(messageQueueProvider);
-
-      // Initialize presence controller
-      // Automatically manages online/offline status based on auth
-      ref.watch(presenceControllerProvider);
+      ref
+        ..watch(messageSyncServiceProvider)
+        ..watch(messageQueueProvider)
+        // Initialize presence controller
+        // Automatically manages online/offline status based on auth
+        ..watch(presenceControllerProvider);
 
       // Initialize user sync service
       // Automatically syncs user profiles from Firestore to Drift
-      final userSyncService = ref.watch(userSyncServiceProvider);
-      userSyncService.startBackgroundSync();
+      ref.watch(userSyncServiceProvider).startBackgroundSync();
 
       // Initialize auto delivery marker
       // Automatically marks incoming messages as delivered across all conversations
@@ -123,23 +122,24 @@ class App extends ConsumerWidget {
       // Initialize FCM for push notifications
       // This is done here (not in sign-in/sign-up pages) to avoid unmounted widget issues
       try {
-        final fcmService = ref.read(fcmServiceProvider);
-        fcmService.initialize(
-          userId: user.uid,
-          onNotificationTap:
-              ({required String conversationId, required String senderId}) {
-                // Navigate to chat page when notification is tapped
-                // Using global navigator key to handle navigation from any app state
-                final navigator = navigatorKey.currentState;
-                if (navigator != null) {
-                  _handleNotificationNavigation(
-                    conversationId: conversationId,
-                    senderId: senderId,
-                    navigator: navigator,
-                  );
-                }
-              },
-        );
+        ref
+            .read(fcmServiceProvider)
+            .initialize(
+              userId: user.uid,
+              onNotificationTap:
+                  ({required String conversationId, required String senderId}) {
+                    // Navigate to chat page when notification is tapped
+                    // Using global navigator key to handle navigation from any app state
+                    final navigator = navigatorKey.currentState;
+                    if (navigator != null) {
+                      _handleNotificationNavigation(
+                        conversationId: conversationId,
+                        senderId: senderId,
+                        navigator: navigator,
+                      );
+                    }
+                  },
+            );
       } catch (e) {
         // Silently fail if FCM can't be initialized
         print('FCM initialization failed: $e');

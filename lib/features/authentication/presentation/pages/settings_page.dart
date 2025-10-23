@@ -173,7 +173,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         // Display name changes propagate via UserLookupProvider cache invalidation
         final updateUseCase = ref.read(updateUserProfileUseCaseProvider);
         final userRepository = ref.read(userRepositoryProvider);
-        
+
         // Update both Firebase Auth and Firestore
         Future.wait([
           updateUseCase(displayName: displayName).then((result) {
@@ -182,14 +182,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               (_) => print('✅ Firebase Auth updated'),
             );
           }),
-          userRepository.updateUser(
-            currentUser.copyWith(displayName: displayName),
-          ).then((result) {
-            result.fold(
-              (failure) => print('❌ Firestore update failed: ${failure.message}'),
-              (_) => print('✅ Firestore updated'),
-            );
-          }),
+          userRepository
+              .updateUser(currentUser.copyWith(displayName: displayName))
+              .then((result) {
+                result.fold(
+                  (failure) =>
+                      print('❌ Firestore update failed: ${failure.message}'),
+                  (_) => print('✅ Firestore updated'),
+                );
+              }),
         ]).then((_) {
           // Invalidate UserLookupProvider cache so UI fetches new name
           ref
@@ -227,7 +228,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   Future<void> _changePreferredLanguage(String languageCode) async {
     final currentUser = ref.read(currentUserProvider);
-    if (currentUser == null) return;
+    if (currentUser == null) {
+      return;
+    }
 
     try {
       print('🌐 Changing language to: $languageCode');
@@ -270,7 +273,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   String _getUserName(dynamic user) {
-    if (user == null) return '';
+    if (user == null) {
+      return '';
+    }
     try {
       return (user.name ?? user.displayName ?? '') as String;
     } catch (_) {
@@ -279,7 +284,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   String? _getUserPhoto(dynamic user) {
-    if (user == null) return null;
+    if (user == null) {
+      return null;
+    }
     try {
       return (user.imageUrl ?? user.photoURL) as String?;
     } catch (_) {
@@ -288,7 +295,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   String _getPreferredLanguage(dynamic user) {
-    if (user == null) return 'en';
+    if (user == null) {
+      return 'en';
+    }
     try {
       return (user.preferredLanguage ?? 'en') as String;
     } catch (_) {
@@ -297,7 +306,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   String _getUserEmail(dynamic user) {
-    if (user == null) return 'N/A';
+    if (user == null) {
+      return 'N/A';
+    }
     try {
       return (user.email ?? 'N/A') as String;
     } catch (_) {
@@ -306,7 +317,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   String _getUserUID(dynamic user) {
-    if (user == null) return '';
+    if (user == null) {
+      return '';
+    }
     try {
       return (user.uid ?? '') as String;
     } catch (_) {
@@ -315,7 +328,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   DateTime _getUserCreatedAt(dynamic user) {
-    if (user == null) return DateTime.now();
+    if (user == null) {
+      return DateTime.now();
+    }
     try {
       return (user.createdAt ?? DateTime.now()) as DateTime;
     } catch (_) {
@@ -462,8 +477,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                                     child: Image.network(
                                       _getUserPhoto(user)!,
                                       fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) =>
-                                          const Icon(Icons.person, size: 60),
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              const Icon(
+                                                Icons.person,
+                                                size: 60,
+                                              ),
                                     ),
                                   )
                                 : const Icon(Icons.person, size: 60),

@@ -1,3 +1,5 @@
+// ignore_for_file: unreachable_from_main
+
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -77,7 +79,6 @@ typedef NotificationTapCallback =
 /// - Background notification handling
 /// - Notification tap handling with navigation
 class FCMService {
-
   FCMService({
     FirebaseMessaging? messaging,
     FirebaseFirestore? firestore,
@@ -176,9 +177,7 @@ class FCMService {
   /// On Android 12+: Shows permission dialog
   /// On older Android: Automatically granted
   Future<AuthorizationStatus> requestPermission() async {
-    final settings = await _messaging.requestPermission(
-
-    );
+    final settings = await _messaging.requestPermission();
 
     return settings.authorizationStatus;
   }
@@ -275,7 +274,9 @@ class FCMService {
     _notificationTapSubscription?.cancel();
 
     // Handle messages when app is in foreground
-    _foregroundMessageSubscription = FirebaseMessaging.onMessage.listen(_showForegroundNotification);
+    _foregroundMessageSubscription = FirebaseMessaging.onMessage.listen(
+      _showForegroundNotification,
+    );
 
     // Handle notification tap when app is in background or foreground
     if (onNotificationTap != null) {

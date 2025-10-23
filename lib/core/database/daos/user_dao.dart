@@ -21,68 +21,76 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
   // ============================================================================
 
   /// Get a single user by UID
-  Future<UserEntity?> getUserByUid(String uid) => (select(users)..where((u) => u.uid.equals(uid))).getSingleOrNull();
+  Future<UserEntity?> getUserByUid(String uid) =>
+      (select(users)..where((u) => u.uid.equals(uid))).getSingleOrNull();
 
   /// Get multiple users by UIDs
-  Future<List<UserEntity>> getUsersByUids(List<String> uids) => (select(users)..where((u) => u.uid.isIn(uids))).get();
+  Future<List<UserEntity>> getUsersByUids(List<String> uids) =>
+      (select(users)..where((u) => u.uid.isIn(uids))).get();
 
   /// Get all users
-  Future<List<UserEntity>> getAllUsers({
-    int limit = 100,
-    int offset = 0,
-  }) => (select(users)
-          ..orderBy([(u) => OrderingTerm.asc(u.name)])
-          ..limit(limit, offset: offset))
-        .get();
+  Future<List<UserEntity>> getAllUsers({int limit = 100, int offset = 0}) =>
+      (select(users)
+            ..orderBy([(u) => OrderingTerm.asc(u.name)])
+            ..limit(limit, offset: offset))
+          .get();
 
   /// Watch a specific user (reactive stream)
   ///
   /// Returns a stream that emits new values whenever the user changes
-  Stream<UserEntity?> watchUser(String uid) => (select(users)..where((u) => u.uid.equals(uid))).watchSingleOrNull();
+  Stream<UserEntity?> watchUser(String uid) =>
+      (select(users)..where((u) => u.uid.equals(uid))).watchSingleOrNull();
 
   /// Watch all users (reactive stream)
-  Stream<List<UserEntity>> watchAllUsers({int limit = 100}) => (select(users)
-          ..orderBy([(u) => OrderingTerm.asc(u.name)])
-          ..limit(limit))
-        .watch();
+  Stream<List<UserEntity>> watchAllUsers({int limit = 100}) =>
+      (select(users)
+            ..orderBy([(u) => OrderingTerm.asc(u.name)])
+            ..limit(limit))
+          .watch();
 
   /// Search users by name
   ///
   /// Performs a case-insensitive LIKE search on the name field
-  Future<List<UserEntity>> searchUsersByName(String query) => (select(users)
-          ..where((u) => u.name.like('%$query%'))
-          ..orderBy([(u) => OrderingTerm.asc(u.name)]))
-        .get();
+  Future<List<UserEntity>> searchUsersByName(String query) =>
+      (select(users)
+            ..where((u) => u.name.like('%$query%'))
+            ..orderBy([(u) => OrderingTerm.asc(u.name)]))
+          .get();
 
   /// Search users by email
-  Future<List<UserEntity>> searchUsersByEmail(String query) => (select(users)
-          ..where((u) => u.email.like('%$query%'))
-          ..orderBy([(u) => OrderingTerm.asc(u.name)]))
-        .get();
+  Future<List<UserEntity>> searchUsersByEmail(String query) =>
+      (select(users)
+            ..where((u) => u.email.like('%$query%'))
+            ..orderBy([(u) => OrderingTerm.asc(u.name)]))
+          .get();
 
   /// Search users by phone number
-  Future<List<UserEntity>> searchUsersByPhone(String query) => (select(users)
-          ..where((u) => u.phoneNumber.like('%$query%'))
-          ..orderBy([(u) => OrderingTerm.asc(u.name)]))
-        .get();
+  Future<List<UserEntity>> searchUsersByPhone(String query) =>
+      (select(users)
+            ..where((u) => u.phoneNumber.like('%$query%'))
+            ..orderBy([(u) => OrderingTerm.asc(u.name)]))
+          .get();
 
   /// Get online users
-  Future<List<UserEntity>> getOnlineUsers() => (select(users)
-          ..where((u) => u.isOnline.equals(true))
-          ..orderBy([(u) => OrderingTerm.asc(u.name)]))
-        .get();
+  Future<List<UserEntity>> getOnlineUsers() =>
+      (select(users)
+            ..where((u) => u.isOnline.equals(true))
+            ..orderBy([(u) => OrderingTerm.asc(u.name)]))
+          .get();
 
   /// Watch online users (reactive)
-  Stream<List<UserEntity>> watchOnlineUsers() => (select(users)
-          ..where((u) => u.isOnline.equals(true))
-          ..orderBy([(u) => OrderingTerm.asc(u.name)]))
-        .watch();
+  Stream<List<UserEntity>> watchOnlineUsers() =>
+      (select(users)
+            ..where((u) => u.isOnline.equals(true))
+            ..orderBy([(u) => OrderingTerm.asc(u.name)]))
+          .watch();
 
   /// Get users by preferred language
-  Future<List<UserEntity>> getUsersByLanguage(String languageCode) => (select(users)
-          ..where((u) => u.preferredLanguage.equals(languageCode))
-          ..orderBy([(u) => OrderingTerm.asc(u.name)]))
-        .get();
+  Future<List<UserEntity>> getUsersByLanguage(String languageCode) =>
+      (select(users)
+            ..where((u) => u.preferredLanguage.equals(languageCode))
+            ..orderBy([(u) => OrderingTerm.asc(u.name)]))
+          .get();
 
   /// Get recently active users
   ///
@@ -125,7 +133,8 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
   Future<int> insertUser(UsersCompanion user) => into(users).insert(user);
 
   /// Insert or update a user (upsert)
-  Future<int> upsertUser(UsersCompanion user) => into(users).insertOnConflictUpdate(user);
+  Future<int> upsertUser(UsersCompanion user) =>
+      into(users).insertOnConflictUpdate(user);
 
   /// Batch insert users (efficient for initial sync)
   Future<void> insertUsers(List<UsersCompanion> userList) async {
@@ -135,9 +144,9 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
   }
 
   /// Update user by UID
-  Future<bool> updateUser(String uid, UsersCompanion user) => (update(users)..where((u) => u.uid.equals(uid)))
-        .write(user)
-        .then((count) => count > 0);
+  Future<bool> updateUser(String uid, UsersCompanion user) => (update(
+    users,
+  )..where((u) => u.uid.equals(uid))).write(user).then((count) => count > 0);
 
   /// Update user's online status
   Future<bool> updateUserOnlineStatus({
@@ -147,56 +156,33 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
     final now = DateTime.now();
     return updateUser(
       uid,
-      UsersCompanion(
-        isOnline: Value(isOnline),
-        lastSeen: Value(now),
-      ),
+      UsersCompanion(isOnline: Value(isOnline), lastSeen: Value(now)),
     );
   }
 
   /// Update user's FCM token
-  Future<bool> updateFcmToken({
-    required String uid,
-    required String token,
-  }) => updateUser(
-      uid,
-      UsersCompanion(
-        fcmToken: Value(token),
-      ),
-    );
+  Future<bool> updateFcmToken({required String uid, required String token}) =>
+      updateUser(uid, UsersCompanion(fcmToken: Value(token)));
 
   /// Update user's preferred language
   Future<bool> updatePreferredLanguage({
     required String uid,
     required String languageCode,
-  }) => updateUser(
-      uid,
-      UsersCompanion(
-        preferredLanguage: Value(languageCode),
-      ),
-    );
+  }) => updateUser(uid, UsersCompanion(preferredLanguage: Value(languageCode)));
 
   /// Update user's profile image
   Future<bool> updateProfileImage({
     required String uid,
     required String imageUrl,
-  }) => updateUser(
-      uid,
-      UsersCompanion(
-        imageUrl: Value(imageUrl),
-      ),
-    );
+  }) => updateUser(uid, UsersCompanion(imageUrl: Value(imageUrl)));
 
   /// Update last seen timestamp
-  Future<bool> updateLastSeen(String uid) => updateUser(
-      uid,
-      UsersCompanion(
-        lastSeen: Value(DateTime.now()),
-      ),
-    );
+  Future<bool> updateLastSeen(String uid) =>
+      updateUser(uid, UsersCompanion(lastSeen: Value(DateTime.now())));
 
   /// Delete a user
-  Future<int> deleteUser(String uid) => (delete(users)..where((u) => u.uid.equals(uid))).go();
+  Future<int> deleteUser(String uid) =>
+      (delete(users)..where((u) => u.uid.equals(uid))).go();
 
   /// Delete all users (use with caution!)
   Future<int> deleteAllUsers() => delete(users).go();
@@ -206,18 +192,13 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
   // ============================================================================
 
   /// Batch update user statuses
-  Future<void> batchUpdateOnlineStatus(
-    Map<String, bool> userStatuses,
-  ) async {
+  Future<void> batchUpdateOnlineStatus(Map<String, bool> userStatuses) async {
     final now = DateTime.now();
     await batch((batch) {
       for (final entry in userStatuses.entries) {
         batch.update(
           users,
-          UsersCompanion(
-            isOnline: Value(entry.value),
-            lastSeen: Value(now),
-          ),
+          UsersCompanion(isOnline: Value(entry.value), lastSeen: Value(now)),
           where: (u) => u.uid.equals(entry.key),
         );
       }
@@ -230,9 +211,7 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
       for (final entry in tokenMap.entries) {
         batch.update(
           users,
-          UsersCompanion(
-            fcmToken: Value(entry.value),
-          ),
+          UsersCompanion(fcmToken: Value(entry.value)),
           where: (u) => u.uid.equals(entry.key),
         );
       }
@@ -243,10 +222,7 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
   Future<void> batchDeleteUsers(List<String> uids) async {
     await batch((batch) {
       for (final uid in uids) {
-        batch.deleteWhere(
-          users,
-          (u) => u.uid.equals(uid),
-        );
+        batch.deleteWhere(users, (u) => u.uid.equals(uid));
       }
     });
   }
@@ -274,18 +250,18 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
     results.addAll(phoneResults);
 
     // Convert set back to list and sort by name
-    final list = results.toList();
-    list.sort((a, b) => a.name.compareTo(b.name));
+    final list = results.toList()..sort((a, b) => a.name.compareTo(b.name));
     return list;
   }
 
   /// Get user by email (exact match)
-  Future<UserEntity?> getUserByEmail(String email) => (select(users)..where((u) => u.email.equals(email)))
-        .getSingleOrNull();
+  Future<UserEntity?> getUserByEmail(String email) =>
+      (select(users)..where((u) => u.email.equals(email))).getSingleOrNull();
 
   /// Get user by phone number (exact match)
-  Future<UserEntity?> getUserByPhone(String phoneNumber) => (select(users)..where((u) => u.phoneNumber.equals(phoneNumber)))
-        .getSingleOrNull();
+  Future<UserEntity?> getUserByPhone(String phoneNumber) => (select(
+    users,
+  )..where((u) => u.phoneNumber.equals(phoneNumber))).getSingleOrNull();
 
   /// Check if user exists by UID
   Future<bool> userExists(String uid) async {
@@ -296,10 +272,11 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
   /// Get users created after a specific date
   ///
   /// Useful for sync operations
-  Future<List<UserEntity>> getUsersCreatedAfter(DateTime timestamp) => (select(users)
-          ..where((u) => u.createdAt.isBiggerThanValue(timestamp))
-          ..orderBy([(u) => OrderingTerm.desc(u.createdAt)]))
-        .get();
+  Future<List<UserEntity>> getUsersCreatedAfter(DateTime timestamp) =>
+      (select(users)
+            ..where((u) => u.createdAt.isBiggerThanValue(timestamp))
+            ..orderBy([(u) => OrderingTerm.desc(u.createdAt)]))
+          .get();
 
   /// Get users who haven't been seen in a while (inactive users)
   Future<List<UserEntity>> getInactiveUsers({
@@ -316,9 +293,8 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
 
   /// Set all users offline (useful for app lifecycle events)
   Future<void> setAllUsersOffline() async {
-    await (update(users)..where((u) => u.isOnline.equals(true)))
-        .write(const UsersCompanion(
-      isOnline: Value(false),
-    ));
+    await (update(users)..where((u) => u.isOnline.equals(true))).write(
+      const UsersCompanion(isOnline: Value(false)),
+    );
   }
 }
