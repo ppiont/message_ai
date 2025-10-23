@@ -195,6 +195,8 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
                 'timestamp': msg.timestamp,
                 'status': msg.status,
                 'type': msg.type,
+                'detectedLanguage': msg.detectedLanguage,
+                'translations': msg.translations,
               },
             )
             .toList(),

@@ -2,35 +2,52 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:message_ai/features/translation/presentation/controllers/translation_controller.dart';
 
 /// Widget displaying a single message bubble in the chat.
 ///
 /// Shows different styling for sent vs received messages,
-/// includes sender name, timestamp, and delivery status.
-class MessageBubble extends StatelessWidget {
+/// includes sender name, timestamp, delivery status, and translation functionality.
+class MessageBubble extends ConsumerWidget {
   const MessageBubble({
+    required this.messageId,
     required this.message,
     required this.isMe,
     required this.senderName,
     required this.timestamp,
     this.showTimestamp = false,
     this.status = 'sent',
+    this.detectedLanguage,
+    this.translations,
+    this.userPreferredLanguage,
     super.key,
   });
 
+  final String messageId;
   final String message;
   final bool isMe;
   final String senderName;
   final DateTime timestamp;
   final bool showTimestamp;
   final String status;
+  final String? detectedLanguage;
+  final Map<String, String>? translations;
+  final String? userPreferredLanguage;
 
   @override
-  Widget build(BuildContext context) => Column(
-      crossAxisAlignment: isMe
-          ? CrossAxisAlignment.end
-          : CrossAxisAlignment.start,
+  Widget build(BuildContext context, WidgetRef ref) {
+    final translationState = ref.watch(translationControllerProvider)[messageId] ??
+        const MessageTranslationState();
+    final translationController = ref.read(translationControllerProvider.notifier);
+
+    // Determine what text to show
+    final displayText = _getDisplayText(translationState);
+    final canTranslate = _canTranslate();
+
+    return Column(
+      crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
       children: [
         if (showTimestamp) _buildTimestampDivider(context),
         Padding(
@@ -41,9 +58,7 @@ class MessageBubble extends StatelessWidget {
             bottom: 4,
           ),
           child: Column(
-            crossAxisAlignment: isMe
-                ? CrossAxisAlignment.end
-                : CrossAxisAlignment.start,
+            crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
             children: [
               if (!isMe)
                 Padding(
@@ -59,9 +74,7 @@ class MessageBubble extends StatelessWidget {
                 ),
               Container(
                 decoration: BoxDecoration(
-                  color: isMe
-                      ? Theme.of(context).colorScheme.primary
-                      : Colors.grey[200],
+                  color: isMe ? Theme.of(context).colorScheme.primary : Colors.grey[200],
                   borderRadius: BorderRadius.only(
                     topLeft: const Radius.circular(16),
                     topRight: const Radius.circular(16),
@@ -76,12 +89,21 @@ class MessageBubble extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      message,
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: isMe ? Colors.white : Colors.black87,
-                        height: 1.4,
+                    // Message text with animation
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      transitionBuilder: (Widget child, Animation<double> animation) => FadeTransition(
+                        opacity: animation,
+                        child: child,
+                      ),
+                      child: Text(
+                        displayText,
+                        key: ValueKey(translationState.isTranslated),
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: isMe ? Colors.white : Colors.black87,
+                          height: 1.4,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -104,11 +126,125 @@ class MessageBubble extends StatelessWidget {
                   ],
                 ),
               ),
+              // Translation button (only for received messages with translation available)
+              if (canTranslate)
+                Padding(
+                  padding: const EdgeInsets.only(left: 12, top: 4),
+                  child: _buildTranslationButton(
+                    context,
+                    translationState,
+                    translationController,
+                  ),
+                ),
             ],
           ),
         ),
       ],
     );
+  }
+
+  /// Get the text to display based on translation state
+  String _getDisplayText(MessageTranslationState translationState) {
+    if (!translationState.isTranslated) {
+      return message;
+    }
+
+    // Get translated text from translations map
+    final targetLanguage = userPreferredLanguage ?? 'en';
+    return translations?[targetLanguage] ?? message;
+  }
+
+  /// Check if translation is available for this message
+  bool _canTranslate() {
+    // Only show translate button for received messages
+    if (isMe) return false;
+
+    // Need user preferred language and translations map
+    if (userPreferredLanguage == null || translations == null) return false;
+
+    // Check if translation exists for user's language
+    final hasTranslation = translations!.containsKey(userPreferredLanguage);
+
+    // Don't show translate button if message is already in user's language
+    final isAlreadyInUserLanguage = detectedLanguage == userPreferredLanguage;
+
+    return hasTranslation && !isAlreadyInUserLanguage;
+  }
+
+  /// Build the translation button widget
+  Widget _buildTranslationButton(
+    BuildContext context,
+    MessageTranslationState translationState,
+    TranslationController translationController,
+  ) {
+    if (translationState.isLoading) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 12,
+            height: 12,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.grey[600]!),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            'Translating...',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[600],
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (translationState.error != null) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.error_outline, size: 14, color: Colors.red[400]),
+          const SizedBox(width: 4),
+          Text(
+            'Translation unavailable',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.red[400],
+            ),
+          ),
+        ],
+      );
+    }
+
+    return TextButton(
+      onPressed: () => translationController.toggleTranslation(messageId),
+      style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        minimumSize: const Size(0, 0),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            translationState.isTranslated ? Icons.language : Icons.translate,
+            size: 14,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            translationState.isTranslated ? 'Show original' : 'Translate',
+            style: TextStyle(
+              fontSize: 12,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildTimestampDivider(BuildContext context) => Padding(
       padding: const EdgeInsets.symmetric(vertical: 16),

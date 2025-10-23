@@ -253,13 +253,22 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             // Check if we should show timestamp
             final showTimestamp = _shouldShowTimestamp(messages, index);
 
+            // Get current user for translation preferences
+            final currentUser = ref.read(currentUserProvider);
+
             return MessageBubble(
+              messageId: messageId,
               message: message['text'] as String,
               isMe: isMe,
               senderName: message['senderName'] as String? ?? 'Unknown',
               timestamp: message['timestamp'] as DateTime,
               showTimestamp: showTimestamp,
               status: status,
+              detectedLanguage: message['detectedLanguage'] as String?,
+              translations: message['translations'] != null
+                  ? Map<String, String>.from(message['translations'] as Map)
+                  : null,
+              userPreferredLanguage: currentUser?.preferredLanguage,
             );
           },
         );

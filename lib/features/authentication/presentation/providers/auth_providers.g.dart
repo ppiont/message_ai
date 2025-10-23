@@ -58,7 +58,7 @@ final class FirebaseAuthProvider
   }
 }
 
-String _$firebaseAuthHash() => r'e323ea70909ff25727135fa5deddbce7cd1e9c07';
+String _$firebaseAuthHash() => r'073d2de7c8941748647f37dbb00de1c08ef8758b';
 
 /// Provider for authentication remote data source
 

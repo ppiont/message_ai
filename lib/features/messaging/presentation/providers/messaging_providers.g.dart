@@ -59,7 +59,7 @@ final class MessagingFirestoreProvider
 }
 
 String _$messagingFirestoreHash() =>
-    r'075f59e78a7b16cab126cf43dfd452c86998e781';
+    r'4ff31a34ec4cb93c8424dba92ae379f9738a20a2';
 
 /// Provides the [MessageRemoteDataSource] implementation.
 
@@ -112,7 +112,7 @@ final class MessageRemoteDataSourceProvider
 }
 
 String _$messageRemoteDataSourceHash() =>
-    r'3bf4eecac4b81321a843d236e9c2fa7abc9e0655';
+    r'378a4681c47ad445b50e9bb2fbc58dd36fcc76c5';
 
 /// Provides the [MessageLocalDataSource] implementation.
 
@@ -219,7 +219,7 @@ final class ConversationRemoteDataSourceProvider
 }
 
 String _$conversationRemoteDataSourceHash() =>
-    r'56b43642c6ec61a3d0fc58f25afa73afe00fb395';
+    r'06d5ff0827d5087461a4c7119653be7caa07571b';
 
 /// Provides the [ConversationLocalDataSource] implementation.
 
@@ -325,7 +325,7 @@ final class MessageRepositoryProvider
   }
 }
 
-String _$messageRepositoryHash() => r'91f5830f711fdf5b0ed17302f62f4f88ba83b792';
+String _$messageRepositoryHash() => r'291bcb3f4687aa1af4400e2ec9c4e0ffb4778295';
 
 /// Provides the [ConversationRepository] implementation (offline-first).
 
@@ -378,7 +378,7 @@ final class ConversationRepositoryProvider
 }
 
 String _$conversationRepositoryHash() =>
-    r'8980f472f4ad7a535e5d9eeed7a15f96ef8e703c';
+    r'd2156b8fbd2bc2788083f7a39cbaeb4404020224';
 
 /// Provides the [SendMessage] use case with language detection.
 
@@ -425,7 +425,7 @@ final class SendMessageUseCaseProvider
 }
 
 String _$sendMessageUseCaseHash() =>
-    r'f14046ab6b2ba0ae9da017a7f8f5ae72ec351c8e';
+    r'd2eff0e069317ba222183fd88cc05f4b3d816f82';
 
 /// Provides the [WatchMessages] use case.
 
@@ -472,7 +472,7 @@ final class WatchMessagesUseCaseProvider
 }
 
 String _$watchMessagesUseCaseHash() =>
-    r'4a3ab70629345d8b337ae861ecd52bdc3f27abb9';
+    r'08f7a2c8b077e97a1cd91d95f256880fc0499977';
 
 /// Provides the [MarkMessageAsRead] use case.
 
@@ -525,7 +525,7 @@ final class MarkMessageAsReadUseCaseProvider
 }
 
 String _$markMessageAsReadUseCaseHash() =>
-    r'd240148f0e42fc9777e039ef4f83e9ed6f06d9cc';
+    r'40a03533ebecc618d57ae6bdff8606ca24659090';
 
 /// Provides the [MarkMessageAsDelivered] use case.
 
@@ -579,7 +579,7 @@ final class MarkMessageAsDeliveredUseCaseProvider
 }
 
 String _$markMessageAsDeliveredUseCaseHash() =>
-    r'82dcb904b6791f58649e8ce689a66c66c1dd18f4';
+    r'd26b20788d054c599348614af10ef12cb06ea2b4';
 
 /// Provides the [FindOrCreateDirectConversation] use case.
 
@@ -636,7 +636,7 @@ final class FindOrCreateDirectConversationUseCaseProvider
 }
 
 String _$findOrCreateDirectConversationUseCaseHash() =>
-    r'a30ca6add9625f26f6b792fff080718470667749';
+    r'8f744e9e5ec488d0f79a5df6794bd0186911ca72';
 
 /// Provides the [WatchConversations] use case.
 
@@ -689,7 +689,7 @@ final class WatchConversationsUseCaseProvider
 }
 
 String _$watchConversationsUseCaseHash() =>
-    r'9e9b08916aac20170c0d723d96105e1b3e8d432a';
+    r'08ca32dd807ecf413e4c65a86def58979009ca71';
 
 /// Provides the [GetConversationById] use case.
 
@@ -743,7 +743,7 @@ final class GetConversationByIdUseCaseProvider
 }
 
 String _$getConversationByIdUseCaseHash() =>
-    r'85ddece595f8263280c1342b052f762599c2334f';
+    r'8a0f31798d243e977b2b928bee5cf0ad2a79dbce';
 
 /// Stream provider for watching user's conversations in real-time.
 ///
@@ -815,7 +815,7 @@ final class UserConversationsStreamProvider
 }
 
 String _$userConversationsStreamHash() =>
-    r'f08df48edec293a86a3b8c7f38a68ee527f2f634';
+    r'c7ae235da76d97bd760d7b053dc5721788708901';
 
 /// Stream provider for watching user's conversations in real-time.
 ///
@@ -916,7 +916,7 @@ final class ConversationMessagesStreamProvider
 }
 
 String _$conversationMessagesStreamHash() =>
-    r'0cf19c78d2447e2dea9254085df6d4981b03e96e';
+    r'93d21ae9b3558737d013cc3a5f3feb00bfc133ae';
 
 /// Stream provider for watching messages in a conversation in real-time.
 ///
@@ -1006,7 +1006,7 @@ final class TypingIndicatorServiceProvider
 }
 
 String _$typingIndicatorServiceHash() =>
-    r'45cdd079e3cb4d9c74a2b184b234a6d7aa384aec';
+    r'56460f0728d1454e91436c0da25ac4890892c9d3';
 
 /// Watches typing users for a specific conversation.
 
@@ -1156,7 +1156,7 @@ final class AutoDeliveryMarkerProvider
 }
 
 String _$autoDeliveryMarkerHash() =>
-    r'8573126e962b960ce9d565b3fff4611badaf747b';
+    r'320fcfc1e29cdf279b41949ddaa7f6c0f9dc512b';
 
 /// Provides the [PresenceService] instance.
 
@@ -1203,7 +1203,7 @@ final class PresenceServiceProvider
   }
 }
 
-String _$presenceServiceHash() => r'dc32f854480383c033d4c735e4ba8284bd1cef22';
+String _$presenceServiceHash() => r'63a0b7d276c7c1c17d885601a307c2b4335c2669';
 
 /// Provides the [FCMService] instance for push notifications.
 
@@ -1249,7 +1249,7 @@ final class FcmServiceProvider
   }
 }
 
-String _$fcmServiceHash() => r'd896e197769a8ff50cfbbe8d88377394fbdbcf76';
+String _$fcmServiceHash() => r'f44dd3cee344080597815373251c1d1017a61507';
 
 /// Watches presence status for a specific user.
 ///
@@ -1419,7 +1419,7 @@ final class MessageSyncServiceProvider
 }
 
 String _$messageSyncServiceHash() =>
-    r'b106c9e58b489f174052c88b24060e1743e49637';
+    r'c44b14d93509b2cd70b134a4ac6e7c9601bd315b';
 
 /// Provides the [MessageQueue] instance.
 ///
@@ -1471,7 +1471,7 @@ final class MessageQueueProvider
   }
 }
 
-String _$messageQueueHash() => r'9b2185063af10745cd105b6528f0ead3e2b8d842';
+String _$messageQueueHash() => r'ae9b0c6e4d7a84e3207b32f1df7ca2bd13871ab1';
 
 /// Provides the [GroupConversationRemoteDataSource] implementation.
 
@@ -1528,7 +1528,7 @@ final class GroupConversationRemoteDataSourceProvider
 }
 
 String _$groupConversationRemoteDataSourceHash() =>
-    r'd40cc05fa53616cfa6447031049606dc4020757a';
+    r'17aeea5d630aac4a061b77e85b841638e3449736';
 
 /// Provides the [GroupConversationRepository] implementation (offline-first).
 
@@ -1582,7 +1582,7 @@ final class GroupConversationRepositoryProvider
 }
 
 String _$groupConversationRepositoryHash() =>
-    r'9cb65164ce628d86b06dd89c3dee4bfdb37e205f';
+    r'e9589ce9e0a50eb85e14cf0f557c822b7b5fb59a';
 
 /// Provides the [CreateGroup] use case.
 
@@ -1629,7 +1629,7 @@ final class CreateGroupUseCaseProvider
 }
 
 String _$createGroupUseCaseHash() =>
-    r'f3a1abc4df90c9382a0092d46fa6663ebffa13f8';
+    r'b2b5b97340c34aacea0f41d89b3a7c0d5800ba10';
 
 /// Provides the [AddGroupMember] use case.
 
@@ -1676,7 +1676,7 @@ final class AddGroupMemberUseCaseProvider
 }
 
 String _$addGroupMemberUseCaseHash() =>
-    r'f62e417e5489e1c126fa01dc96b01b16c3761ddf';
+    r'58f8c6f035467d040dac1e88b2e992dfdda83209';
 
 /// Provides the [RemoveGroupMember] use case.
 
@@ -1729,7 +1729,7 @@ final class RemoveGroupMemberUseCaseProvider
 }
 
 String _$removeGroupMemberUseCaseHash() =>
-    r'59e3417a4cc28f35336be694aaf99e6f0c9b1dc9';
+    r'07d6016e8d978e238a69046461f279e8bcb74eda';
 
 /// Provides the [LeaveGroup] use case.
 
@@ -1775,7 +1775,7 @@ final class LeaveGroupUseCaseProvider
   }
 }
 
-String _$leaveGroupUseCaseHash() => r'8be254f5f8a794806b2ed938f315b0326226f8d9';
+String _$leaveGroupUseCaseHash() => r'883a6f832bed4999799ce990ad7a72a496796ce3';
 
 /// Provides the [UpdateGroupInfo] use case.
 
@@ -1823,7 +1823,7 @@ final class UpdateGroupInfoUseCaseProvider
 }
 
 String _$updateGroupInfoUseCaseHash() =>
-    r'3d0ac2d1b201c7ffb5a2263752053af33d767b86';
+    r'b7867d6930abbc42f6b4d7cba76d85e13c0e825f';
 
 /// Stream provider for watching all conversations (both direct and groups) in real-time.
 ///
@@ -1898,7 +1898,7 @@ final class AllConversationsStreamProvider
 }
 
 String _$allConversationsStreamHash() =>
-    r'626a7b788b65ab4651a0504c207c310376af0c0b';
+    r'ca12a2939da65df0cb043813f55065371a30b26b';
 
 /// Stream provider for watching all conversations (both direct and groups) in real-time.
 ///
@@ -1979,7 +1979,7 @@ final class ConversationUsersStreamProvider
 }
 
 String _$conversationUsersStreamHash() =>
-    r'dfa9741c3d075c9b40ff64c68971ebe1ebcc1d7a';
+    r'cece46cf74080b4624c763a668e62d0c6a63badb';
 
 /// Provides aggregated online status for a group conversation.
 ///

@@ -76,7 +76,7 @@ final class DatabaseProvider
   }
 }
 
-String _$databaseHash() => r'c246ee79f92b36699e5f12fedc074f40524f2015';
+String _$databaseHash() => r'0fe56aaf5bde72ce9021e425b918c495557124c1';
 
 /// Provides access to the MessageDao
 ///
