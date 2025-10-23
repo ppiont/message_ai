@@ -42,7 +42,9 @@ class ConversationListItem extends ConsumerWidget {
     if (isGroup) {
       // Group conversation
       final name = groupName ?? 'Unknown Group';
-      final participantIds = participants.map((p) => p['uid'] as String).toList();
+      final participantIds = participants
+          .map((p) => p['uid'] as String)
+          .toList();
       final groupPresenceAsync = ref.watch(
         groupPresenceStatusProvider(participantIds),
       );
@@ -167,8 +169,15 @@ class ConversationListItem extends ConsumerWidget {
 
       return displayNameAsync.when(
         data: (displayName) => ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          leading: _buildAvatarWithPresence(displayName, imageUrl, presenceAsync),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
+          leading: _buildAvatarWithPresence(
+            displayName,
+            imageUrl,
+            presenceAsync,
+          ),
           title: Row(
             children: [
               Expanded(
@@ -183,21 +192,21 @@ class ConversationListItem extends ConsumerWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-            const SizedBox(width: 8),
-            Text(
-              _formatTimestamp(lastUpdatedAt),
-              style: TextStyle(
-                fontSize: 12,
-                color: unreadCount > 0
-                    ? Theme.of(context).colorScheme.primary
-                    : Colors.grey[600],
-                fontWeight: unreadCount > 0
-                    ? FontWeight.w600
-                    : FontWeight.normal,
+              const SizedBox(width: 8),
+              Text(
+                _formatTimestamp(lastUpdatedAt),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: unreadCount > 0
+                      ? Theme.of(context).colorScheme.primary
+                      : Colors.grey[600],
+                  fontWeight: unreadCount > 0
+                      ? FontWeight.w600
+                      : FontWeight.normal,
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
           subtitle: Row(
             children: [
               Expanded(
@@ -222,13 +231,23 @@ class ConversationListItem extends ConsumerWidget {
           onTap: onTap,
         ),
         loading: () => ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          leading: _buildAvatarWithPresence('Loading...', imageUrl, presenceAsync),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
+          leading: _buildAvatarWithPresence(
+            'Loading...',
+            imageUrl,
+            presenceAsync,
+          ),
           title: const Text('Loading...'),
           onTap: onTap,
         ),
-        error: (_, __) => ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        error: (_, _) => ListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
           leading: _buildAvatarWithPresence('Unknown', imageUrl, presenceAsync),
           title: const Text('Unknown'),
           onTap: onTap,
@@ -241,66 +260,66 @@ class ConversationListItem extends ConsumerWidget {
     String name,
     AsyncValue<Map<String, dynamic>> groupPresenceAsync,
   ) => Stack(
-      children: [
-        _buildGroupAvatar(name),
-        // Online indicator (bottom-right of avatar)
-        groupPresenceAsync.when(
-          data: (presence) {
-            final onlineCount = presence['onlineCount'] as int? ?? 0;
-            if (onlineCount == 0) return const SizedBox.shrink();
+    children: [
+      _buildGroupAvatar(name),
+      // Online indicator (bottom-right of avatar)
+      groupPresenceAsync.when(
+        data: (presence) {
+          final onlineCount = presence['onlineCount'] as int? ?? 0;
+          if (onlineCount == 0) return const SizedBox.shrink();
 
-            return Positioned(
-              right: 0,
-              bottom: 0,
-              child: Container(
-                width: 14,
-                height: 14,
-                decoration: BoxDecoration(
-                  color: Colors.green,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
-                ),
+          return Positioned(
+            right: 0,
+            bottom: 0,
+            child: Container(
+              width: 14,
+              height: 14,
+              decoration: BoxDecoration(
+                color: Colors.green,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
               ),
-            );
-          },
-          loading: () => const SizedBox.shrink(),
-          error: (_, _) => const SizedBox.shrink(),
-        ),
-      ],
-    );
+            ),
+          );
+        },
+        loading: () => const SizedBox.shrink(),
+        error: (_, _) => const SizedBox.shrink(),
+      ),
+    ],
+  );
 
   Widget _buildAvatarWithPresence(
     String name,
     String? imageUrl,
     AsyncValue<Map<String, dynamic>?> presenceAsync,
   ) => Stack(
-      children: [
-        _buildAvatar(name, imageUrl),
-        // Presence indicator (bottom-right of avatar)
-        presenceAsync.when(
-          data: (presence) {
-            if (presence == null) return const SizedBox.shrink();
+    children: [
+      _buildAvatar(name, imageUrl),
+      // Presence indicator (bottom-right of avatar)
+      presenceAsync.when(
+        data: (presence) {
+          if (presence == null) return const SizedBox.shrink();
 
-            final isOnline = presence['isOnline'] as bool? ?? false;
-            return Positioned(
-              right: 0,
-              bottom: 0,
-              child: Container(
-                width: 14,
-                height: 14,
-                decoration: BoxDecoration(
-                  color: isOnline ? Colors.green : Colors.grey,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
-                ),
+          final isOnline = presence['isOnline'] as bool? ?? false;
+          return Positioned(
+            right: 0,
+            bottom: 0,
+            child: Container(
+              width: 14,
+              height: 14,
+              decoration: BoxDecoration(
+                color: isOnline ? Colors.green : Colors.grey,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
               ),
-            );
-          },
-          loading: () => const SizedBox.shrink(),
-          error: (_, _) => const SizedBox.shrink(),
-        ),
-      ],
-    );
+            ),
+          );
+        },
+        loading: () => const SizedBox.shrink(),
+        error: (_, _) => const SizedBox.shrink(),
+      ),
+    ],
+  );
 
   Widget _buildGroupAvatar(String name) {
     // Generate color from name for consistent avatar colors

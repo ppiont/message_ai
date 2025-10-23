@@ -84,7 +84,7 @@ class _GroupManagementPageState extends ConsumerState<GroupManagementPage> {
 
   Future<void> _addMember(String currentUserId) async {
     // Show user selection dialog
-    await showDialog(
+    await showDialog<void>(
       context: context,
       builder: (context) => _AddMemberDialog(
         conversationId: widget.conversationId,

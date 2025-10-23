@@ -57,9 +57,7 @@ UserSyncService userSyncService(Ref ref) {
   );
 
   // Auto-cleanup on dispose
-  ref.onDispose(() {
-    service.stopBackgroundSync();
-  });
+  ref.onDispose(service.stopBackgroundSync);
 
   return service;
 }

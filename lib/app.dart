@@ -43,7 +43,7 @@ Future<void> _handleNotificationNavigation({
       // For groups, navigate with group name
       final groupName = conversationData['name'] as String? ?? 'Group Chat';
       navigator.push(
-        MaterialPageRoute(
+        MaterialPageRoute<void>(
           builder: (context) => ChatPage(
             conversationId: conversationId,
             otherParticipantId: conversationId,
@@ -62,7 +62,7 @@ Future<void> _handleNotificationNavigation({
           'Unknown User';
 
       navigator.push(
-        MaterialPageRoute(
+        MaterialPageRoute<void>(
           builder: (context) => ChatPage(
             conversationId: conversationId,
             otherParticipantId: senderId,

@@ -356,7 +356,7 @@ class MessageSyncService {
       final delay = _calculateBackoffDelay(retryCount);
 
       // Wait before retrying
-      await Future.delayed(delay);
+      await Future<void>.delayed(delay);
 
       // Find conversation ID and retry
       // (Same issue as above - would need better tracking)

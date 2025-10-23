@@ -22,14 +22,16 @@ class TranslationService {
     required String targetLanguage,
   }) async {
     try {
-      final result = await _functions.httpsCallable('translate_message').call({
+      final result = await _functions
+          .httpsCallable('translate_message')
+          .call<Map<String, dynamic>>({
         'messageId': messageId,
         'text': text,
         'sourceLanguage': sourceLanguage,
         'targetLanguage': targetLanguage,
       });
 
-      final data = result.data as Map<String, dynamic>;
+      final data = result.data;
       
       // Check for rate limit
       if (data['rateLimitExceeded'] == true) {

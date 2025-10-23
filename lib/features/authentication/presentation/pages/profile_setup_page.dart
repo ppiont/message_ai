@@ -55,7 +55,7 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
   }
 
   void _showImageSourceDialog() {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       builder: (context) => SafeArea(
         child: Column(

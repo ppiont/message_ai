@@ -1,4 +1,4 @@
-import 'package:riverpod/riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Translation state for a single message
 class MessageTranslationState {
@@ -32,44 +32,36 @@ class TranslationController extends StateNotifier<Map<String, MessageTranslation
   /// Just toggles the UI state - translation should already exist
   void toggleTranslation(String messageId) {
     final currentState = state[messageId] ?? const MessageTranslationState();
-    state = {
-      ...state,
-      messageId: currentState.copyWith(
+    state = Map<String, MessageTranslationState>.from(state)
+      ..[messageId] = currentState.copyWith(
         isTranslated: !currentState.isTranslated,
-      ),
-    };
+      );
   }
 
   /// Set loading state for a message
-  void setLoading(String messageId, bool isLoading) {
+  void setLoading(String messageId, {required bool isLoading}) {
     final currentState = state[messageId] ?? const MessageTranslationState();
-    state = {
-      ...state,
-      messageId: currentState.copyWith(
+    state = Map<String, MessageTranslationState>.from(state)
+      ..[messageId] = currentState.copyWith(
         isLoading: isLoading,
-      ),
-    };
+      );
   }
 
   /// Set error state for a message
   void setError(String messageId, String error) {
     final currentState = state[messageId] ?? const MessageTranslationState();
-    state = {
-      ...state,
-      messageId: currentState.copyWith(
+    state = Map<String, MessageTranslationState>.from(state)
+      ..[messageId] = currentState.copyWith(
         isLoading: false,
         error: error,
-      ),
-    };
+      );
   }
 
   /// Clear error for a message
   void clearError(String messageId) {
     final currentState = state[messageId] ?? const MessageTranslationState();
-    state = {
-      ...state,
-      messageId: currentState.copyWith(),
-    };
+    state = Map<String, MessageTranslationState>.from(state)
+      ..[messageId] = currentState.copyWith(error: null);
   }
 
   /// Get translation state for a specific message

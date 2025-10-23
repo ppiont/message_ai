@@ -93,7 +93,7 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
         if (mounted) {
           // Navigate to the new group chat
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
+            MaterialPageRoute<void>(
               builder: (context) => ChatPage(
                 conversationId: group.documentId,
                 otherParticipantName: group.groupName ?? 'Group',

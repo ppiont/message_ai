@@ -70,7 +70,7 @@ class UserLookupCache extends _$UserLookupCache {
           createdAt: localUser.createdAt,
           lastSeen: localUser.lastSeen,
           isOnline: localUser.isOnline,
-          fcmTokens: [], // FCM tokens not stored in local DB
+          fcmTokens: const [], // FCM tokens not stored in local DB
         );
 
         // Update memory cache (safe to skip if disposed)

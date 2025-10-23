@@ -43,10 +43,11 @@ class MessageBubble extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final translationState =
-        ref.watch(translationControllerProvider)[messageId] ??
+    final translationState = ref
+            .watch<Map<String, MessageTranslationState>>(
+                translationControllerProvider)[messageId] ??
         const MessageTranslationState();
-    final translationController = ref.read(
+    final translationController = ref.read<TranslationController>(
       translationControllerProvider.notifier,
     );
 
@@ -166,6 +167,7 @@ class MessageBubble extends ConsumerWidget {
                   padding: const EdgeInsets.only(left: 12, top: 4),
                   child: _buildTranslationButton(
                     context,
+                    ref,
                     translationState,
                     translationController,
                   ),
@@ -206,6 +208,7 @@ class MessageBubble extends ConsumerWidget {
   /// Build the translation button widget
   Widget _buildTranslationButton(
     BuildContext context,
+    WidgetRef ref,
     MessageTranslationState translationState,
     TranslationController translationController,
   ) {
@@ -338,8 +341,9 @@ class MessageBubble extends ConsumerWidget {
     WidgetRef ref,
     TranslationController translationController,
   ) async {
-    final translationState =
-        ref.read(translationControllerProvider)[messageId] ??
+    final translationState = ref
+            .read<Map<String, MessageTranslationState>>(
+                translationControllerProvider)[messageId] ??
         const MessageTranslationState();
 
     // If already translated, just toggle back to original
@@ -357,7 +361,7 @@ class MessageBubble extends ConsumerWidget {
     }
 
     // Need to fetch translation
-    translationController.setLoading(messageId, true);
+    translationController.setLoading(messageId, isLoading: true);
 
     final translateUseCase = ref.read(translateMessageProvider);
     final messageRepository = ref.read(messageRepositoryProvider);
@@ -413,7 +417,7 @@ class MessageBubble extends ConsumerWidget {
               },
               (_) {
                 // Success! Toggle to show translation
-                translationController.setLoading(messageId, false);
+                translationController.setLoading(messageId, isLoading: false);
                 translationController.toggleTranslation(messageId);
               },
             );

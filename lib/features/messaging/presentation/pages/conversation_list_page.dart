@@ -81,7 +81,7 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
   }
 
   void _showNewConversationMenu(BuildContext context) {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       builder: (context) => SafeArea(
         child: Column(
@@ -94,7 +94,7 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
               onTap: () {
                 Navigator.pop(context);
                 Navigator.of(context).push(
-                  MaterialPageRoute(
+                  MaterialPageRoute<void>(
                     builder: (context) => const UserSelectionPage(),
                   ),
                 );
@@ -107,7 +107,7 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
               onTap: () {
                 Navigator.pop(context);
                 Navigator.of(context).push(
-                  MaterialPageRoute(
+                  MaterialPageRoute<void>(
                     builder: (context) => const CreateGroupPage(),
                   ),
                 );
@@ -161,7 +161,7 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
             // Invalidate the stream to trigger a refresh
             ref.invalidate(allConversationsStreamProvider(userId));
             // Wait a bit for the refresh
-            await Future.delayed(const Duration(milliseconds: 500));
+            await Future<void>.delayed(const Duration(milliseconds: 500));
           },
           child: ListView.separated(
             itemCount: filteredConversations.length,
@@ -193,7 +193,7 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
                   participantCount: participantCount,
                   onTap: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(
+                      MaterialPageRoute<void>(
                         builder: (context) => ChatPage(
                           conversationId: conversationId,
                           otherParticipantName: groupName,
@@ -231,7 +231,7 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
                   currentUserId: userId,
                   onTap: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(
+                      MaterialPageRoute<void>(
                         builder: (context) => ChatPage(
                           conversationId: conversationId,
                           otherParticipantName: otherParticipantName,
@@ -294,7 +294,7 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
     );
 
   void _showSearchDialog() {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Search Conversations'),
@@ -333,7 +333,7 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
 
   void _navigateToSettings() {
     Navigator.of(context).push(
-      MaterialPageRoute(
+      MaterialPageRoute<void>(
         builder: (context) => const SettingsPage(),
       ),
     );

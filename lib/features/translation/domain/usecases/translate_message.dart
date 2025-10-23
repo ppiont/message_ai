@@ -17,13 +17,11 @@ class TranslateMessage {
     required String text,
     required String sourceLanguage,
     required String targetLanguage,
-  }) async {
-    return _translationService.translateMessage(
+  }) async => _translationService.translateMessage(
       messageId: messageId,
       text: text,
       sourceLanguage: sourceLanguage,
       targetLanguage: targetLanguage,
     );
-  }
 }
 

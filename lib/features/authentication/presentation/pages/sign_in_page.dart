@@ -90,7 +90,8 @@ class _SignInPageState extends ConsumerState<SignInPage> {
   void _navigateToPasswordReset() {
     Navigator.of(
       context,
-    ).push(MaterialPageRoute(builder: (context) => const PasswordResetPage()));
+    ).push(MaterialPageRoute<void>(
+        builder: (context) => const PasswordResetPage()));
   }
 
   @override

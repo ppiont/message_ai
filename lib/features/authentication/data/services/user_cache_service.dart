@@ -7,7 +7,6 @@ library;
 import 'package:drift/drift.dart';
 import 'package:message_ai/core/database/app_database.dart';
 import 'package:message_ai/core/database/services/drift_write_queue.dart';
-import 'package:message_ai/features/authentication/data/models/user_model.dart';
 import 'package:message_ai/features/authentication/domain/entities/user.dart';
 import 'package:message_ai/features/authentication/domain/repositories/user_repository.dart';
 

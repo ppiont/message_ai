@@ -141,13 +141,13 @@ class DriftWriteQueue {
 
 /// Internal representation of a queued operation.
 class _QueuedOperation<T> {
-  final Future<T> Function() operation;
-  final Completer<T> completer;
-  final String? debugLabel;
 
   _QueuedOperation({
     required this.operation,
     required this.completer,
     this.debugLabel,
   });
+  final Future<T> Function() operation;
+  final Completer<T> completer;
+  final String? debugLabel;
 }

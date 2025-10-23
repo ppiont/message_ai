@@ -94,122 +94,123 @@ class _UserSelectionPageState extends ConsumerState<UserSelectionPage> {
   }
 
   Widget _buildUserList(User currentUser) => StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('users').snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                const SizedBox(height: 16),
-                Text('Error: ${snapshot.error}'),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () {
-                    setState(() {}); // Trigger rebuild to retry
-                  },
-                  child: const Text('Retry'),
-                ),
-              ],
+    stream: FirebaseFirestore.instance.collection('users').snapshots(),
+    builder: (context, snapshot) {
+      if (snapshot.hasError) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 48, color: Colors.red),
+              const SizedBox(height: 16),
+              Text('Error: ${snapshot.error}'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {}); // Trigger rebuild to retry
+                },
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        );
+      }
+
+      if (!snapshot.hasData) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      // Filter users
+      final users = snapshot.data!.docs
+          .map((doc) {
+            final data = doc.data()! as Map<String, dynamic>;
+            // Extract fields with proper null handling
+            final uid = data['uid'] as String?;
+            final displayName = data['displayName'] as String? ?? '';
+            final email = data['email'] as String? ?? '';
+            final photoURL = data['photoURL'] as String?;
+            final preferredLanguage =
+                data['preferredLanguage'] as String? ?? 'en';
+
+            // Skip users with missing required fields
+            if (uid == null || uid.isEmpty) {
+              return null;
+            }
+
+            return {
+              'uid': uid,
+              'displayName': displayName,
+              'email': email,
+              'photoURL': photoURL,
+              'preferredLanguage': preferredLanguage,
+            };
+          })
+          .where((user) => user != null)
+          .cast<Map<String, dynamic>>()
+          .where((user) => user['uid'] != currentUser.uid)
+          .where((user) {
+            if (_searchQuery.isEmpty) {
+              return true;
+            }
+            final name = (user['displayName'] as String).toLowerCase();
+            final email = (user['email'] as String).toLowerCase();
+            return name.contains(_searchQuery) || email.contains(_searchQuery);
+          })
+          .toList();
+
+      if (users.isEmpty) {
+        return _buildEmptyState();
+      }
+
+      return ListView.separated(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        itemCount: users.length,
+        separatorBuilder: (context, index) => const Divider(height: 1),
+        itemBuilder: (context, index) {
+          final user = users[index];
+          return UserListItem(
+            uid: user['uid'] as String,
+            displayName: user['displayName'] as String,
+            email: user['email'] as String,
+            imageUrl: user['photoURL'] as String?,
+            onTap: () => _handleUserSelected(
+              currentUser,
+              user['uid'] as String,
+              user['displayName'] as String,
+              user['email'] as String,
+              user['photoURL'] as String?,
+              user['preferredLanguage'] as String,
             ),
           );
-        }
-
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        // Filter users
-        final users = snapshot.data!.docs
-            .map((doc) {
-              final data = doc.data()! as Map<String, dynamic>;
-              // Extract fields with proper null handling
-              final uid = data['uid'] as String?;
-              final displayName = data['displayName'] as String? ?? '';
-              final email = data['email'] as String? ?? '';
-              final photoURL = data['photoURL'] as String?;
-              final preferredLanguage =
-                  data['preferredLanguage'] as String? ?? 'en';
-
-              // Skip users with missing required fields
-              if (uid == null || uid.isEmpty) {
-                return null;
-              }
-
-              return {
-                'uid': uid,
-                'displayName': displayName,
-                'email': email,
-                'photoURL': photoURL,
-                'preferredLanguage': preferredLanguage,
-              };
-            })
-            .where((user) => user != null)
-            .cast<Map<String, dynamic>>()
-            .where((user) => user['uid'] != currentUser.uid)
-            .where((user) {
-              if (_searchQuery.isEmpty) return true;
-              final name = (user['displayName'] as String).toLowerCase();
-              final email = (user['email'] as String).toLowerCase();
-              return name.contains(_searchQuery) ||
-                  email.contains(_searchQuery);
-            })
-            .toList();
-
-        if (users.isEmpty) {
-          return _buildEmptyState();
-        }
-
-        return ListView.separated(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          itemCount: users.length,
-          separatorBuilder: (context, index) => const Divider(height: 1),
-          itemBuilder: (context, index) {
-            final user = users[index];
-            return UserListItem(
-              uid: user['uid'] as String,
-              displayName: user['displayName'] as String,
-              email: user['email'] as String,
-              imageUrl: user['photoURL'] as String?,
-              onTap: () => _handleUserSelected(
-                currentUser,
-                user['uid'] as String,
-                user['displayName'] as String,
-                user['email'] as String,
-                user['photoURL'] as String?,
-                user['preferredLanguage'] as String,
-              ),
-            );
-          },
-        );
-      },
-    );
+        },
+      );
+    },
+  );
 
   Widget _buildEmptyState() => Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.people_outline, size: 80, color: Colors.grey[400]),
-          const SizedBox(height: 24),
-          Text(
-            _searchQuery.isEmpty ? 'No users found' : 'No matching users',
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(color: Colors.grey[600]),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _searchQuery.isEmpty
-                ? 'Users will appear here once they sign up'
-                : 'Try a different search term',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[500]),
-          ),
-        ],
-      ),
-    );
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.people_outline, size: 80, color: Colors.grey[400]),
+        const SizedBox(height: 24),
+        Text(
+          _searchQuery.isEmpty ? 'No users found' : 'No matching users',
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(color: Colors.grey[600]),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          _searchQuery.isEmpty
+              ? 'Users will appear here once they sign up'
+              : 'Try a different search term',
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: Colors.grey[500]),
+        ),
+      ],
+    ),
+  );
 
   Future<void> _handleUserSelected(
     User currentUser,
@@ -264,7 +265,7 @@ class _UserSelectionPageState extends ConsumerState<UserSelectionPage> {
         (conversation) {
           // Navigate to chat page
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
+            MaterialPageRoute<void>(
               builder: (context) => ChatPage(
                 conversationId: conversation.documentId,
                 otherParticipantName: otherUserName.isEmpty

@@ -94,7 +94,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                     userDisplayNameProvider(widget.otherParticipantId),
                   );
                   return displayNameAsync.when(
-                    data: (name) => Text(name),
+                    data: Text.new,
                     loading: () => Text(widget.otherParticipantName), // Fallback
                     error: (_, __) => Text(widget.otherParticipantName), // Fallback
                   );
@@ -109,7 +109,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
               icon: const Icon(Icons.info_outline),
               onPressed: () {
                 Navigator.of(context).push(
-                  MaterialPageRoute(
+                  MaterialPageRoute<void>(
                     builder: (context) => GroupManagementPage(
                       conversationId: widget.conversationId,
                     ),
