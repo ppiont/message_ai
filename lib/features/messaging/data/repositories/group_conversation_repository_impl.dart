@@ -463,7 +463,6 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository { /
     String groupId,
     String messageText,
     String senderId,
-    String senderName,
     DateTime timestamp,
   ) async {
     try {
@@ -471,7 +470,6 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository { /
       final lastMessage = LastMessage(
         text: messageText,
         senderId: senderId,
-        senderName: senderName,
         timestamp: timestamp,
         type: 'text',
       );
@@ -486,7 +484,6 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository { /
         groupId,
         messageText,
         senderId,
-        senderName,
         timestamp,
       );
 

@@ -191,7 +191,6 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
                 'id': msg.id,
                 'text': msg.text,
                 'senderId': msg.senderId,
-                'senderName': msg.senderName,
                 'timestamp': msg.timestamp,
                 'status': msg.status,
                 'type': msg.type,

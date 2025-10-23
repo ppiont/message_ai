@@ -155,7 +155,6 @@ class _MessageInputState extends ConsumerState<MessageInput> {
       final message = Message(
         id: _uuid.v4(),
         senderId: widget.currentUserId,
-        senderName: widget.currentUserName,
         text: text,
         timestamp: DateTime.now(),
         status: 'sent',

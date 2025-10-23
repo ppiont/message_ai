@@ -87,7 +87,6 @@ class SendMessage {
           conversationId,
           createdMessage.text,
           createdMessage.senderId,
-          createdMessage.senderName,
           createdMessage.timestamp,
         );
 

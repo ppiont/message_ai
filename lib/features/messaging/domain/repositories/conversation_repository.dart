@@ -52,7 +52,6 @@ abstract class ConversationRepository {
     String conversationId,
     String messageText,
     String senderId,
-    String senderName,
     DateTime timestamp,
   );
 

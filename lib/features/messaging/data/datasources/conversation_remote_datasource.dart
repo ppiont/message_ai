@@ -43,7 +43,6 @@ abstract class ConversationRemoteDataSource {
     String conversationId,
     String messageText,
     String senderId,
-    String senderName,
     DateTime timestamp,
   );
 
@@ -304,7 +303,6 @@ class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
     String conversationId,
     String messageText,
     String senderId,
-    String senderName,
     DateTime timestamp,
   ) async {
     try {
@@ -313,7 +311,6 @@ class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
         'lastMessage': {
           'text': messageText,
           'senderId': senderId,
-          'senderName': senderName,
           'timestamp': Timestamp.fromDate(timestamp),
           'type': 'text', // Required field for LastMessageModel.fromJson()
         },

@@ -218,7 +218,6 @@ class ConversationRepositoryImpl implements ConversationRepository {
     String conversationId,
     String messageText,
     String senderId,
-    String senderName,
     DateTime timestamp,
   ) async {
     try {
@@ -226,7 +225,6 @@ class ConversationRepositoryImpl implements ConversationRepository {
       final lastMessage = LastMessage(
         text: messageText,
         senderId: senderId,
-        senderName: senderName,
         timestamp: timestamp,
         type: 'text',
       );
@@ -241,7 +239,6 @@ class ConversationRepositoryImpl implements ConversationRepository {
         conversationId,
         messageText,
         senderId,
-        senderName,
         timestamp,
       );
 

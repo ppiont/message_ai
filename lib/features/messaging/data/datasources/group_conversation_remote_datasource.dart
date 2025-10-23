@@ -61,7 +61,6 @@ abstract class GroupConversationRemoteDataSource {
     String groupId,
     String messageText,
     String senderId,
-    String senderName,
     DateTime timestamp,
   );
 
@@ -481,7 +480,6 @@ class GroupConversationRemoteDataSourceImpl
     String groupId,
     String messageText,
     String senderId,
-    String senderName,
     DateTime timestamp,
   ) async {
     try {
@@ -501,7 +499,6 @@ class GroupConversationRemoteDataSourceImpl
         'lastMessage': {
           'text': messageText,
           'senderId': senderId,
-          'senderName': senderName,
           'timestamp': Timestamp.fromDate(timestamp),
           'type': 'text',
         },
