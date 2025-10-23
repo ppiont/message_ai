@@ -1,9 +1,11 @@
 // ignore_for_file: unreachable_from_main
 
 import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 /// Background message handler.
@@ -55,9 +57,9 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
             'deliveredAt': FieldValue.serverTimestamp(),
           });
 
-      print('Marked message $messageId as delivered');
+      debugPrint('Marked message $messageId as delivered');
     } catch (e) {
-      print('Failed to mark message as delivered: $e');
+      debugPrint('Failed to mark message as delivered: $e');
     }
   }
 }

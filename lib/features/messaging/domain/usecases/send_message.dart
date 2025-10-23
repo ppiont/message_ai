@@ -1,7 +1,5 @@
-/// Use case for sending a message
-library;
-
 import 'package:dartz/dartz.dart';
+import 'package:flutter/foundation.dart';
 import 'package:message_ai/core/error/failures.dart';
 import 'package:message_ai/features/messaging/domain/entities/message.dart';
 import 'package:message_ai/features/messaging/domain/repositories/conversation_repository.dart';
@@ -62,7 +60,7 @@ class SendMessage {
       );
     } catch (e) {
       // Non-critical error - continue without detected language
-      print('Language detection failed: $e');
+      debugPrint('Language detection failed: $e');
     }
 
     // Create message with detected language

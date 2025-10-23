@@ -178,7 +178,9 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
       messages,
     )..where((m) => m.tempId.equals(tempId))).getSingleOrNull();
 
-    if (tempMessage == null) return false;
+    if (tempMessage == null) {
+      return false;
+    }
 
     // Delete temp message and insert with real ID
     await transaction(() async {
@@ -312,5 +314,4 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
             ..where((m) => m.replyTo.equals(messageId))
             ..orderBy([(m) => OrderingTerm.asc(m.timestamp)]))
           .watch();
-
 }

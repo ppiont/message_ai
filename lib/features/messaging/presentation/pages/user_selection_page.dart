@@ -249,7 +249,9 @@ class _UserSelectionPageState extends ConsumerState<UserSelectionPage> {
         user2Participant: otherUserParticipant,
       );
 
-      if (!mounted) return;
+      if (!mounted) {
+      return;
+    }
 
       result.fold(
         (failure) {

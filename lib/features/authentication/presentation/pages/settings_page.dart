@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:drift/drift.dart' hide Column;
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -167,7 +168,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           ),
           debugLabel: 'Update display name: $displayName',
         );
-        print('✅ Drift updated: displayName=$displayName');
+        debugPrint('✅ Drift updated: displayName=$displayName');
 
         // Sync to Firebase Auth AND Firestore in background
         // Display name changes propagate via UserLookupProvider cache invalidation
@@ -178,8 +179,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         Future.wait([
           updateUseCase(displayName: displayName).then((result) {
             result.fold(
-              (failure) => print('❌ Auth update failed: ${failure.message}'),
-              (_) => print('✅ Firebase Auth updated'),
+              (failure) => debugPrint('❌ Auth update failed: ${failure.message}'),
+              (_) => debugPrint('✅ Firebase Auth updated'),
             );
           }),
           userRepository
@@ -187,8 +188,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               .then((result) {
                 result.fold(
                   (failure) =>
-                      print('❌ Firestore update failed: ${failure.message}'),
-                  (_) => print('✅ Firestore updated'),
+                      debugPrint('❌ Firestore update failed: ${failure.message}'),
+                  (_) => debugPrint('✅ Firestore updated'),
                 );
               }),
         ]).then((_) {
@@ -196,7 +197,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           ref
               .read(userLookupCacheProvider.notifier)
               .invalidate(currentUser.uid);
-          print('✅ UserLookup cache invalidated - new name will load');
+          debugPrint('✅ UserLookup cache invalidated - new name will load');
         }).ignore();
       }
 
@@ -216,7 +217,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         });
       }
     } catch (e) {
-      print('❌ Error saving changes: $e');
+      debugPrint('❌ Error saving changes: $e');
       if (mounted) {
         setState(() {
           _errorMessage = 'Failed to save changes: $e';
@@ -233,7 +234,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     }
 
     try {
-      print('🌐 Changing language to: $languageCode');
+      debugPrint('🌐 Changing language to: $languageCode');
 
       final db = ref.read(databaseProvider);
       final writeQueue = ref.read(driftWriteQueueProvider);
@@ -247,7 +248,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         ),
         debugLabel: 'Update preferred language: $languageCode',
       );
-      print('✅ Drift updated: language=$languageCode');
+      debugPrint('✅ Drift updated: language=$languageCode');
 
       // Sync to Firestore in background
       final userRepository = ref.read(userRepositoryProvider);
@@ -263,7 +264,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         );
       }
     } catch (e) {
-      print('❌ Error changing language: $e');
+      debugPrint('❌ Error changing language: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
@@ -276,81 +277,74 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     if (user == null) {
       return '';
     }
-    try {
-      // Handle both UserEntity (name) and Firebase User (displayName)
-      final dynamic u = user;
-      // ignore: avoid_dynamic_calls
-      return (u.name ?? u.displayName ?? '') as String;
-    } catch (_) {
-      return '';
+    // Handle both UserEntity (name) and Firebase User (displayName)
+    if (user is UserEntity) {
+      return user.name;
+    } else if (user is firebase_auth.User) {
+      return user.displayName ?? '';
     }
+    return '';
   }
 
   String? _getUserPhoto(Object? user) {
     if (user == null) {
       return null;
     }
-    try {
-      // Handle both UserEntity (imageUrl) and Firebase User (photoURL)
-      final dynamic u = user;
-      // ignore: avoid_dynamic_calls
-      return (u.imageUrl ?? u.photoURL) as String?;
-    } catch (_) {
-      return null;
+    // Handle both UserEntity (imageUrl) and Firebase User (photoURL)
+    if (user is UserEntity) {
+      return user.imageUrl;
+    } else if (user is firebase_auth.User) {
+      return user.photoURL;
     }
+    return null;
   }
 
   String _getPreferredLanguage(Object? user) {
     if (user == null) {
       return 'en';
     }
-    try {
-      // Only UserEntity has preferredLanguage
-      final dynamic u = user;
-      // ignore: avoid_dynamic_calls
-      return (u.preferredLanguage ?? 'en') as String;
-    } catch (_) {
-      return 'en';
+    // Only UserEntity has preferredLanguage
+    if (user is UserEntity) {
+      return user.preferredLanguage;
     }
+    return 'en';
   }
 
   String _getUserEmail(Object? user) {
     if (user == null) {
       return 'N/A';
     }
-    try {
-      final dynamic u = user;
-      // ignore: avoid_dynamic_calls
-      return (u.email ?? 'N/A') as String;
-    } catch (_) {
-      return 'N/A';
+    if (user is UserEntity) {
+      return user.email ?? 'N/A';
+    } else if (user is firebase_auth.User) {
+      return user.email ?? 'N/A';
     }
+    return 'N/A';
   }
 
   String _getUserUID(Object? user) {
     if (user == null) {
       return '';
     }
-    try {
-      final dynamic u = user;
-      // ignore: avoid_dynamic_calls
-      return (u.uid ?? '') as String;
-    } catch (_) {
-      return '';
+    if (user is UserEntity) {
+      return user.uid;
+    } else if (user is firebase_auth.User) {
+      return user.uid;
     }
+    return '';
   }
 
   DateTime _getUserCreatedAt(Object? user) {
     if (user == null) {
       return DateTime.now();
     }
-    try {
-      final dynamic u = user;
-      // ignore: avoid_dynamic_calls
-      return (u.createdAt ?? DateTime.now()) as DateTime;
-    } catch (_) {
-      return DateTime.now();
+    if (user is UserEntity) {
+      return user.createdAt;
+    } else if (user is firebase_auth.User) {
+      // Firebase User doesn't have createdAt, use metadata
+      return user.metadata.creationTime ?? DateTime.now();
     }
+    return DateTime.now();
   }
 
   @override
@@ -384,7 +378,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           }
 
           if (snapshot.hasError) {
-            print('❌ Stream error: ${snapshot.error}');
+            debugPrint('❌ Stream error: ${snapshot.error}');
             return Center(child: Text('Error: ${snapshot.error}'));
           }
 
@@ -401,7 +395,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
           // DEBUG: Log stream updates
           if (localUser != null) {
-            print(
+            debugPrint(
               '📱 SettingsPage StreamBuilder updated: preferredLanguage=${_getPreferredLanguage(user)}',
             );
           }

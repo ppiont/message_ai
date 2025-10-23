@@ -33,7 +33,7 @@ Future<void> _handleNotificationNavigation({
         .get();
 
     if (!conversationDoc.exists) {
-      print('Conversation $conversationId not found');
+      debugPrint('Conversation $conversationId not found');
       return;
     }
 
@@ -72,7 +72,7 @@ Future<void> _handleNotificationNavigation({
       );
     }
   } catch (e) {
-    print('Failed to navigate from notification: $e');
+    debugPrint('Failed to navigate from notification: $e');
   }
 }
 
@@ -142,7 +142,7 @@ class App extends ConsumerWidget {
             );
       } catch (e) {
         // Silently fail if FCM can't be initialized
-        print('FCM initialization failed: $e');
+        debugPrint('FCM initialization failed: $e');
       }
     }
 

@@ -117,7 +117,9 @@ class _GroupManagementPageState extends ConsumerState<GroupManagementPage> {
       ),
     );
 
-    if (confirmed != true) return;
+    if (confirmed != true) {
+      return;
+    }
 
     setState(() => _isLoading = true);
 
@@ -173,7 +175,9 @@ class _GroupManagementPageState extends ConsumerState<GroupManagementPage> {
       ),
     );
 
-    if (confirmed != true) return;
+    if (confirmed != true) {
+      return;
+    }
 
     setState(() => _isLoading = true);
 
@@ -505,7 +509,9 @@ class _AddMemberDialogState extends ConsumerState<_AddMemberDialog> {
   bool _isLoading = false;
 
   Future<void> _addMember() async {
-    if (_selectedUserId == null) return;
+    if (_selectedUserId == null) {
+      return;
+    }
 
     setState(() => _isLoading = true);
 

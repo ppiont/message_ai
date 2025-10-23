@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'package:message_ai/core/providers/database_provider.dart';
 import 'package:message_ai/features/authentication/domain/entities/user.dart';
 import 'package:message_ai/features/authentication/presentation/providers/user_providers.dart';
@@ -76,11 +78,11 @@ class UserLookupCache extends _$UserLookupCache {
         if (ref.mounted) {
           state = {...state, userId: CachedUser(user, DateTime.now())};
         }
-        print('✅ UserLookup: Found in Drift: ${user.displayName}');
+        debugPrint('✅ UserLookup: Found in Drift: ${user.displayName}');
         return user;
       }
     } catch (e) {
-      print('⚠️ UserLookup: Drift lookup failed for $userId: $e');
+      debugPrint('⚠️ UserLookup: Drift lookup failed for $userId: $e');
       // Continue to Firestore fallback
     }
 
@@ -96,7 +98,7 @@ class UserLookupCache extends _$UserLookupCache {
       return result.fold(
         (failure) {
           // Failed to fetch - keep old cache if available
-          print(
+          debugPrint(
             '❌ UserLookup: Firestore fetch failed for $userId: ${failure.message}',
           );
           return cached?.user;
@@ -115,7 +117,7 @@ class UserLookupCache extends _$UserLookupCache {
 
           // Update memory cache
           state = {...state, userId: CachedUser(user, DateTime.now())};
-          print(
+          debugPrint(
             '✅ UserLookup: Fetched from Firestore & cached: ${user.displayName}',
           );
           return user;
@@ -123,7 +125,7 @@ class UserLookupCache extends _$UserLookupCache {
       );
     } catch (e) {
       // On error, return cached value if available
-      print('💥 UserLookup: Exception fetching user $userId: $e');
+      debugPrint('💥 UserLookup: Exception fetching user $userId: $e');
       return cached?.user;
     }
   }

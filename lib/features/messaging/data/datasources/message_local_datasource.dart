@@ -378,7 +378,9 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
 
       return message;
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw DatabaseException(
         message: 'Failed to update message',
         originalError: e,

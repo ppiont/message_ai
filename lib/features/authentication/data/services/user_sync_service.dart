@@ -1,11 +1,6 @@
-/// Background service for syncing user profiles from Firestore to Drift
-///
-/// Ensures user data stays fresh and up-to-date offline.
-/// Implements WhatsApp-style user profile syncing.
-library;
-
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:message_ai/core/database/app_database.dart';
 import 'package:message_ai/features/authentication/data/services/user_cache_service.dart';
 import 'package:message_ai/features/authentication/domain/repositories/user_repository.dart';
@@ -49,7 +44,7 @@ class UserSyncService {
       (_) => _refreshAllCachedUsers(),
     );
 
-    print('✅ UserSync: Background sync started');
+    debugPrint('✅ UserSync: Background sync started');
   }
 
   /// Stop background syncing
@@ -61,14 +56,14 @@ class UserSyncService {
       watcher.cancel();
     }
     _userWatchers.clear();
-    print('🛑 UserSync: Background sync stopped');
+    debugPrint('🛑 UserSync: Background sync stopped');
   }
 
   /// Sync users when conversations load
   ///
   /// Call this when conversation list is displayed
   Future<void> syncConversationUsers(List<String> participantIds) async {
-    print('🔄 UserSync: Syncing ${participantIds.length} conversation users');
+    debugPrint('🔄 UserSync: Syncing ${participantIds.length} conversation users');
     await _userCacheService.cacheUsers(participantIds);
 
     // Start watching these users for real-time updates
@@ -82,7 +77,7 @@ class UserSyncService {
     // Check if already cached
     final cached = await _database.userDao.getUserByUid(senderId);
     if (cached == null) {
-      print('🔄 UserSync: Syncing new message sender: $senderId');
+      debugPrint('🔄 UserSync: Syncing new message sender: $senderId');
       await _userCacheService.cacheUser(senderId);
       _watchUser(senderId);
     }
@@ -102,12 +97,12 @@ class UserSyncService {
       result.fold(
         (failure) {
           // User deleted or network error
-          print('⚠️ UserSync: Watch failed for $userId: ${failure.message}');
+          debugPrint('⚠️ UserSync: Watch failed for $userId: ${failure.message}');
         },
         (user) async {
           // User profile updated → sync to Drift
           await _userCacheService.syncUserToDrift(user);
-          print('🔄 UserSync: Real-time update for ${user.displayName}');
+          debugPrint('🔄 UserSync: Real-time update for ${user.displayName}');
         },
       );
     });
@@ -124,16 +119,16 @@ class UserSyncService {
       final cachedUsers = await _database.userDao.getAllUsers();
       final userIds = cachedUsers.map((u) => u.uid).toList();
 
-      print('🔄 UserSync: Refreshing ${userIds.length} cached users');
+      debugPrint('🔄 UserSync: Refreshing ${userIds.length} cached users');
 
       // Re-cache all users (fetches fresh from Firestore)
       for (final userId in userIds) {
         await _userCacheService.cacheUser(userId);
       }
 
-      print('✅ UserSync: Refresh complete');
+      debugPrint('✅ UserSync: Refresh complete');
     } catch (e) {
-      print('❌ UserSync: Refresh failed: $e');
+      debugPrint('❌ UserSync: Refresh failed: $e');
     }
   }
 
@@ -141,7 +136,7 @@ class UserSyncService {
   ///
   /// Useful when you know a user's profile has changed
   Future<void> refreshUser(String userId) async {
-    print('🔄 UserSync: Force refreshing user: $userId');
+    debugPrint('🔄 UserSync: Force refreshing user: $userId');
     await _userCacheService.cacheUser(userId);
   }
 }

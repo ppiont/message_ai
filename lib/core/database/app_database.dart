@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
+import 'package:flutter/foundation.dart';
 import 'package:message_ai/core/database/daos/conversation_dao.dart';
 import 'package:message_ai/core/database/daos/message_dao.dart';
 import 'package:message_ai/core/database/daos/user_dao.dart';
@@ -99,7 +100,7 @@ class AppDatabase extends _$AppDatabase {
         await customStatement('DROP TABLE messages;');
         await customStatement('ALTER TABLE messages_new RENAME TO messages;');
 
-        print('✅ Migration v1→v2: Removed senderName column from messages');
+        debugPrint('✅ Migration v1→v2: Removed senderName column from messages');
       }
     },
     beforeOpen: (details) async {

@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'package:google_mlkit_language_id/google_mlkit_language_id.dart';
 
 /// Service for detecting the language of text using Google ML Kit.
@@ -77,7 +79,7 @@ class LanguageDetectionService {
       return topLanguage.languageTag;
     } catch (e) {
       // Log error but don't throw - graceful degradation
-      print('Language detection error: $e');
+      debugPrint('Language detection error: $e');
       return null;
     }
   }
@@ -131,7 +133,7 @@ class LanguageDetectionService {
         confidence: topLanguage.confidence,
       );
     } catch (e) {
-      print('Language detection error: $e');
+      debugPrint('Language detection error: $e');
       return null;
     }
   }

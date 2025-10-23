@@ -1,10 +1,5 @@
-/// Service for caching user profiles in local Drift database
-///
-/// Ensures user data is available offline for display names, avatars, etc.
-/// Automatically syncs users encountered in conversations and messages.
-library;
-
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
 import 'package:message_ai/core/database/app_database.dart';
 import 'package:message_ai/core/database/services/drift_write_queue.dart';
 import 'package:message_ai/features/authentication/domain/entities/user.dart';
@@ -51,19 +46,19 @@ class UserCacheService {
       await result.fold(
         (failure) async {
           // User not found or network error - silently fail
-          print(
+          debugPrint(
             '⚠️ UserCache: Failed to cache user $userId: ${failure.message}',
           );
         },
         (user) async {
           // Save to Drift
           await _saveUserToDrift(user);
-          print('✅ UserCache: Cached user $userId: ${user.displayName}');
+          debugPrint('✅ UserCache: Cached user $userId: ${user.displayName}');
         },
       );
     } catch (e) {
       // Silently fail - offline mode or other error
-      print('💥 UserCache: Exception caching user $userId: $e');
+      debugPrint('💥 UserCache: Exception caching user $userId: $e');
     }
   }
 
@@ -106,9 +101,9 @@ class UserCacheService {
   Future<void> syncUserToDrift(User user) async {
     try {
       await _saveUserToDrift(user);
-      print('✅ UserCache: Synced user ${user.uid}: ${user.displayName}');
+      debugPrint('✅ UserCache: Synced user ${user.uid}: ${user.displayName}');
     } catch (e) {
-      print('💥 UserCache: Failed to sync user ${user.uid}: $e');
+      debugPrint('💥 UserCache: Failed to sync user ${user.uid}: $e');
     }
   }
 }

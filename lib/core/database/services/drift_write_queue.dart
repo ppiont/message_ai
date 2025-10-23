@@ -1,28 +1,7 @@
-/// Centralized write queue for all Drift database operations.
-///
-/// This service ensures that all database writes are serialized, preventing
-/// SQLite's "database is locked" errors that occur with concurrent writes.
-///
-/// **Why This Exists:**
-/// SQLite only supports a single writer at a time. When multiple services
-/// (UserSyncService, MessageRepository, ConversationRepository, etc.) try to
-/// write simultaneously, they compete for the lock and fail.
-///
-/// **How It Works:**
-/// - All write operations are enqueued
-/// - Operations are processed sequentially (FIFO)
-/// - No concurrent writes = no database locks
-/// - Deterministic behavior under load
-///
-/// **Usage:**
-/// ```dart
-/// final queue = ref.read(driftWriteQueueProvider);
-/// await queue.enqueue(() => db.userDao.updateUser(uid, companion));
-/// ```
-library;
-
 import 'dart:async';
 import 'dart:collection';
+
+import 'package:flutter/foundation.dart';
 
 /// A write queue that ensures sequential execution of database operations.
 class DriftWriteQueue {
@@ -69,7 +48,7 @@ class DriftWriteQueue {
 
     // Log queue depth if it's getting long (potential performance issue)
     if (_queue.length > 10) {
-      print(
+      debugPrint(
         '⚠️ DriftWriteQueue: Queue depth is ${_queue.length} (may indicate performance issue)',
       );
     }
@@ -83,7 +62,9 @@ class DriftWriteQueue {
   /// Processes all operations in the queue sequentially.
   Future<void> _processQueue() async {
     // If already processing or queue is empty, return
-    if (_isProcessing || _queue.isEmpty) return;
+    if (_isProcessing || _queue.isEmpty) {
+      return;
+    }
 
     _isProcessing = true;
 
@@ -101,7 +82,7 @@ class DriftWriteQueue {
         // Log slow operations (>500ms)
         final duration = DateTime.now().difference(startTime);
         if (duration.inMilliseconds > 500) {
-          print(
+          debugPrint(
             '⚠️ DriftWriteQueue: Slow operation (${duration.inMilliseconds}ms)'
             '${queuedOp.debugLabel != null ? ': ${queuedOp.debugLabel}' : ''}',
           );
@@ -110,7 +91,7 @@ class DriftWriteQueue {
         // Complete with error
         queuedOp.completer.completeError(e, stackTrace);
 
-        print(
+        debugPrint(
           '❌ DriftWriteQueue: Operation failed'
           '${queuedOp.debugLabel != null ? ' (${queuedOp.debugLabel})' : ''}: $e',
         );
@@ -131,7 +112,7 @@ class DriftWriteQueue {
         StateError('Queue was cleared before operation could execute'),
       );
     }
-    print('🧹 DriftWriteQueue: Cleared ${_queue.length} pending operations');
+    debugPrint('🧹 DriftWriteQueue: Cleared ${_queue.length} pending operations');
   }
 
   /// Disposes of the queue.
