@@ -9,6 +9,7 @@ import 'package:message_ai/core/database/tables/users_table.dart';
 import 'package:message_ai/core/providers/database_provider.dart';
 import 'package:message_ai/features/authentication/domain/entities/user.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
+import 'package:message_ai/features/authentication/presentation/providers/user_lookup_provider.dart';
 import 'package:message_ai/features/authentication/presentation/providers/user_providers.dart';
 
 /// Settings page where users can manage their profile and preferences
@@ -170,7 +171,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         final updateUseCase = ref.read(updateUserProfileUseCaseProvider);
         updateUseCase(displayName: displayName).then((_) {
           // Invalidate UserLookupProvider cache so UI fetches new name
-          ref.invalidate(userLookupControllerProvider);
+          ref.read(userLookupCacheProvider.notifier).invalidate(currentUser.uid);
           print('✅ UserLookup cache invalidated - new name will load');
         }).ignore();
       }

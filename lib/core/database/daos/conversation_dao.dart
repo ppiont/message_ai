@@ -172,7 +172,6 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
     required String documentId,
     required String messageText,
     required String senderId,
-    required String senderName,
     required DateTime timestamp,
     required String messageType,
     Map<String, String>? translations,
@@ -181,7 +180,6 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
     ConversationsCompanion(
       lastMessageText: Value(messageText),
       lastMessageSenderId: Value(senderId),
-      lastMessageSenderName: Value(senderName),
       lastMessageTimestamp: Value(timestamp),
       lastMessageType: Value(messageType),
       lastMessageTranslations: Value(

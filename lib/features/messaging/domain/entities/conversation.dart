@@ -156,7 +156,6 @@ class LastMessage extends Equatable {
   const LastMessage({
     required this.text,
     required this.senderId,
-    required this.senderName,
     required this.timestamp,
     required this.type,
     this.translations,
@@ -165,10 +164,8 @@ class LastMessage extends Equatable {
   final String text;
 
   /// Sender's user ID
+  /// Display name is looked up dynamically via UserLookupProvider
   final String senderId;
-
-  /// Sender's display name
-  final String senderName;
 
   /// Message timestamp
   final DateTime timestamp;
@@ -183,14 +180,12 @@ class LastMessage extends Equatable {
   LastMessage copyWith({
     String? text,
     String? senderId,
-    String? senderName,
     DateTime? timestamp,
     String? type,
     Map<String, String>? translations,
   }) => LastMessage(
       text: text ?? this.text,
       senderId: senderId ?? this.senderId,
-      senderName: senderName ?? this.senderName,
       timestamp: timestamp ?? this.timestamp,
       type: type ?? this.type,
       translations: translations ?? this.translations,
@@ -200,7 +195,6 @@ class LastMessage extends Equatable {
   List<Object?> get props => [
         text,
         senderId,
-        senderName,
         timestamp,
         type,
         translations,

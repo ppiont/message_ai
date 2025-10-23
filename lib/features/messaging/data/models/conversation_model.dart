@@ -186,7 +186,6 @@ class LastMessageModel extends LastMessage {
   const LastMessageModel({
     required super.text,
     required super.senderId,
-    required super.senderName,
     required super.timestamp,
     required super.type,
     super.translations,
@@ -196,7 +195,6 @@ class LastMessageModel extends LastMessage {
   factory LastMessageModel.fromEntity(LastMessage lastMessage) => LastMessageModel(
       text: lastMessage.text,
       senderId: lastMessage.senderId,
-      senderName: lastMessage.senderName,
       timestamp: lastMessage.timestamp,
       type: lastMessage.type,
       translations: lastMessage.translations,
@@ -206,7 +204,6 @@ class LastMessageModel extends LastMessage {
   factory LastMessageModel.fromJson(Map<String, dynamic> json) => LastMessageModel(
       text: json['text'] as String,
       senderId: json['senderId'] as String,
-      senderName: json['senderName'] as String,
       timestamp: ConversationModel._parseDateTime(json['timestamp']),
       type: json['type'] as String,
       translations: json['translations'] != null
@@ -218,7 +215,6 @@ class LastMessageModel extends LastMessage {
   Map<String, dynamic> toJson() => {
       'text': text,
       'senderId': senderId,
-      'senderName': senderName,
       'timestamp': timestamp.toIso8601String(),
       'type': type,
       if (translations != null) 'translations': translations,
@@ -228,7 +224,6 @@ class LastMessageModel extends LastMessage {
   LastMessage toEntity() => LastMessage(
       text: text,
       senderId: senderId,
-      senderName: senderName,
       timestamp: timestamp,
       type: type,
       translations: translations,

@@ -225,7 +225,6 @@ class ConversationLocalDataSourceImpl implements ConversationLocalDataSource {
       participants: _serializeParticipants(conversation.participants),
       lastMessageText: Value(conversation.lastMessage?.text),
       lastMessageSenderId: Value(conversation.lastMessage?.senderId),
-      lastMessageSenderName: Value(conversation.lastMessage?.senderName),
       lastMessageTimestamp: Value(conversation.lastMessage?.timestamp),
       lastMessageType: Value(conversation.lastMessage?.type),
       lastMessageTranslations: Value(
@@ -325,7 +324,6 @@ class ConversationLocalDataSourceImpl implements ConversationLocalDataSource {
     return LastMessage(
       text: entity.lastMessageText!,
       senderId: entity.lastMessageSenderId!,
-      senderName: entity.lastMessageSenderName!,
       timestamp: entity.lastMessageTimestamp!,
       type: entity.lastMessageType!,
       translations: _deserializeTranslations(entity.lastMessageTranslations),
@@ -594,7 +592,6 @@ class ConversationLocalDataSourceImpl implements ConversationLocalDataSource {
         documentId: documentId,
         messageText: lastMessage.text,
         senderId: lastMessage.senderId,
-        senderName: lastMessage.senderName,
         timestamp: lastMessage.timestamp,
         messageType: lastMessage.type,
         translations: lastMessage.translations,
