@@ -3,7 +3,7 @@ library;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:message_ai/core/providers/database_providers.dart';
+import 'package:message_ai/core/providers/database_provider.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
 import 'package:message_ai/features/authentication/presentation/providers/user_providers.dart';
 import 'package:message_ai/features/messaging/data/datasources/conversation_local_datasource.dart';
@@ -437,26 +437,73 @@ Stream<List<Map<String, dynamic>>> allConversationsStream(
 
   // Watch direct conversations
   final directStream = watchConversationsUseCase(userId: userId).map(
-    (result) =>
-        result.fold((failure) => <Map<String, dynamic>>[], (conversations) {
+    (result) => result.fold((failure) => <Map<String, dynamic>>[], (
+      conversations,
+    ) {
+      // Sync all participant users to Drift for offline access (fire-and-forget)
+      // Do this asynchronously to avoid blocking the stream
+      final allParticipantIds = conversations
+          .expand((conv) => conv.participants.map((p) => p.uid))
+          .toSet()
+          .toList();
+      if (allParticipantIds.isNotEmpty) {
+        // Fire-and-forget: don't await, don't block the stream
+        Future.microtask(
+          () => userSyncService.syncConversationUsers(allParticipantIds),
+        );
+      }
+
+      return conversations
+          .map(
+            (conv) => <String, dynamic>{
+              'id': conv.documentId,
+              'type': 'direct',
+              'participants': conv.participants
+                  .map(
+                    (p) => <String, dynamic>{
+                      'uid': p.uid,
+                      'imageUrl': p.imageUrl,
+                      'preferredLanguage': p.preferredLanguage,
+                    },
+                  )
+                  .toList(),
+              'lastMessage': conv.lastMessage?.text,
+              'lastUpdatedAt': conv.lastUpdatedAt,
+              'unreadCount': conv.getUnreadCountForUser(userId),
+            },
+          )
+          .toList();
+    }),
+  );
+
+  // Watch groups
+  final groupStream = groupRepository
+      .watchGroupsForUser(userId)
+      .map(
+        (result) => result.fold((failure) => <Map<String, dynamic>>[], (
+          groups,
+        ) {
           // Sync all participant users to Drift for offline access (fire-and-forget)
           // Do this asynchronously to avoid blocking the stream
-          final allParticipantIds = conversations
-              .expand((conv) => conv.participants.map((p) => p.uid))
+          final allParticipantIds = groups
+              .expand((group) => group.participants.map((p) => p.uid))
               .toSet()
               .toList();
           if (allParticipantIds.isNotEmpty) {
             // Fire-and-forget: don't await, don't block the stream
             Future.microtask(
-                () => userSyncService.syncConversationUsers(allParticipantIds));
+              () => userSyncService.syncConversationUsers(allParticipantIds),
+            );
           }
 
-          return conversations
+          return groups
               .map(
-                (conv) => <String, dynamic>{
-                  'id': conv.documentId,
-                  'type': 'direct',
-                  'participants': conv.participants
+                (group) => <String, dynamic>{
+                  'id': group.documentId,
+                  'type': 'group',
+                  'groupName': group.groupName,
+                  'groupImage': group.groupImage,
+                  'participants': group.participants
                       .map(
                         (p) => <String, dynamic>{
                           'uid': p.uid,
@@ -465,57 +512,14 @@ Stream<List<Map<String, dynamic>>> allConversationsStream(
                         },
                       )
                       .toList(),
-                  'lastMessage': conv.lastMessage?.text,
-                  'lastUpdatedAt': conv.lastUpdatedAt,
-                  'unreadCount': conv.getUnreadCountForUser(userId),
+                  'participantCount': group.participantIds.length,
+                  'lastMessage': group.lastMessage?.text,
+                  'lastUpdatedAt': group.lastUpdatedAt,
+                  'unreadCount': group.getUnreadCountForUser(userId),
                 },
               )
               .toList();
         }),
-  );
-
-  // Watch groups
-  final groupStream = groupRepository
-      .watchGroupsForUser(userId)
-      .map(
-        (result) =>
-            result.fold((failure) => <Map<String, dynamic>>[], (groups) {
-              // Sync all participant users to Drift for offline access (fire-and-forget)
-              // Do this asynchronously to avoid blocking the stream
-              final allParticipantIds = groups
-                  .expand((group) => group.participants.map((p) => p.uid))
-                  .toSet()
-                  .toList();
-              if (allParticipantIds.isNotEmpty) {
-                // Fire-and-forget: don't await, don't block the stream
-                Future.microtask(
-                    () => userSyncService.syncConversationUsers(allParticipantIds));
-              }
-
-              return groups
-                  .map(
-                    (group) => <String, dynamic>{
-                      'id': group.documentId,
-                      'type': 'group',
-                      'groupName': group.groupName,
-                      'groupImage': group.groupImage,
-                      'participants': group.participants
-                          .map(
-                            (p) => <String, dynamic>{
-                              'uid': p.uid,
-                              'imageUrl': p.imageUrl,
-                              'preferredLanguage': p.preferredLanguage,
-                            },
-                          )
-                          .toList(),
-                      'participantCount': group.participantIds.length,
-                      'lastMessage': group.lastMessage?.text,
-                      'lastUpdatedAt': group.lastUpdatedAt,
-                      'unreadCount': group.getUnreadCountForUser(userId),
-                    },
-                  )
-                  .toList();
-            }),
       );
 
   // Merge the two streams using combineLatest2
