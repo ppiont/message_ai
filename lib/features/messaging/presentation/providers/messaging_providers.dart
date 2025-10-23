@@ -589,34 +589,27 @@ Stream<Map<String, dynamic>> groupPresenceStatus(
   final groupRepository = ref.watch(groupConversationRepositoryProvider);
   final presenceService = ref.watch(presenceServiceProvider);
 
-  // Poll both group members and their presence every 30 seconds
-  // TODO: Replace with Firestore real-time listener
-  await for (final _ in Stream.periodic(const Duration(seconds: 30))) {
-    // Refresh group to get current member list (handles add/remove)
-    final groupResult = await groupRepository.getGroupById(groupId);
+  // Get group once to get participant list
+  final groupResult = await groupRepository.getGroupById(groupId);
 
-    final presenceData = await groupResult.fold(
-      (failure) async => <String, dynamic>{
-        'onlineCount': 0,
-        'totalCount': 0,
-        'onlineMembers': <String>[],
-        'displayText': 'Unknown',
-      },
-      (group) async {
-        final participantIds = group.participantIds;
-        final onlineMembers = <String>[];
+  await for (final _ in groupResult.fold(
+    (failure) => Stream.value(<String, dynamic>{
+      'onlineCount': 0,
+      'totalCount': 0,
+      'onlineMembers': <String>[],
+      'displayText': 'Unknown',
+    }),
+    (group) {
+      final participantIds = group.participantIds;
 
-        for (final userId in participantIds) {
-          final presenceStream = presenceService.watchUserPresence(
-            userId: userId,
-          );
-          await for (final presence in presenceStream.take(1)) {
-            if (presence != null && presence.isOnline) {
-              onlineMembers.add(userId);
-            }
-            break;
-          }
-        }
+      // Watch presence for all participants using Firestore real-time listener
+      return presenceService
+          .watchUsersPresence(userIds: participantIds)
+          .map((presenceMap) {
+        final onlineMembers = presenceMap.entries
+            .where((entry) => entry.value.isOnline)
+            .map((entry) => entry.key)
+            .toList();
 
         return <String, dynamic>{
           'onlineCount': onlineMembers.length,
@@ -626,9 +619,9 @@ Stream<Map<String, dynamic>> groupPresenceStatus(
               ? 'All offline'
               : '${onlineMembers.length}/${participantIds.length} online',
         };
-      },
-    );
-
-    yield presenceData;
+      });
+    },
+  )) {
+    yield _;
   }
 }
