@@ -43,16 +43,7 @@ dependencies:
   intl: ^0.20.2
 
 dev_dependencies:
-  flutter_test:
-    sdk: flutter
   flutter_lints: ^6.0.0
-
-  # Testing
-  mocktail: ^1.0.4
-
-  # Firebase testing (updated to latest versions)
-  fake_cloud_firestore: ^4.0.0
-  firebase_auth_mocks: ^0.15.1
 
   # Code generation
   drift_dev: ^2.29.0
