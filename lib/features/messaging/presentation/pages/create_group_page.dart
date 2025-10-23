@@ -35,7 +35,9 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
   }
 
   Future<void> _createGroup() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
     if (_selectedUserIds.length < 2) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -47,7 +49,9 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
     }
 
     final currentUser = ref.read(currentUserProvider);
-    if (currentUser == null) return;
+    if (currentUser == null) {
+      return;
+    }
 
     setState(() => _isLoading = true);
 

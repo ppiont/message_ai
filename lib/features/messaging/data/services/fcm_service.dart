@@ -228,7 +228,9 @@ class FCMService {
   /// Creates the "messages" notification channel for Android with
   /// WhatsApp-like configuration (sound, vibration, banner).
   Future<void> _initializeLocalNotifications() async {
-    if (_notificationsInitialized) return;
+    if (_notificationsInitialized) {
+      return;
+    }
 
     // Android notification channel (required for Android 8.0+)
     const androidChannel = AndroidNotificationChannel(
@@ -292,7 +294,9 @@ class FCMService {
   /// Displays sender name as title and message preview as body.
   Future<void> _showForegroundNotification(RemoteMessage message) async {
     final notification = message.notification;
-    if (notification == null) return;
+    if (notification == null) {
+      return;
+    }
 
     const androidDetails = AndroidNotificationDetails(
       'messages', // Must match channel created in _initializeLocalNotifications

@@ -157,7 +157,9 @@ class _ChatPageState extends ConsumerState<ChatPage> {
               final displayText = presence['displayText'] as String? ?? '';
               final onlineCount = presence['onlineCount'] as int? ?? 0;
 
-              if (displayText.isEmpty) return const SizedBox.shrink();
+              if (displayText.isEmpty) {
+                return const SizedBox.shrink();
+              }
 
               return Text(
                 displayText,
@@ -359,7 +361,9 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   );
 
   bool _shouldShowTimestamp(List<Map<String, dynamic>> messages, int index) {
-    if (index == 0) return true; // Always show for first message
+    if (index == 0) {
+      return true; // Always show for first message
+    }
 
     final currentMessage = messages[index];
     final previousMessage = messages[index - 1];

@@ -278,8 +278,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     }
     try {
       // Handle both UserEntity (name) and Firebase User (displayName)
-      // ignore: avoid_dynamic_calls
       final dynamic u = user;
+      // ignore: avoid_dynamic_calls
       return (u.name ?? u.displayName ?? '') as String;
     } catch (_) {
       return '';
@@ -292,8 +292,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     }
     try {
       // Handle both UserEntity (imageUrl) and Firebase User (photoURL)
-      // ignore: avoid_dynamic_calls
       final dynamic u = user;
+      // ignore: avoid_dynamic_calls
       return (u.imageUrl ?? u.photoURL) as String?;
     } catch (_) {
       return null;
@@ -306,8 +306,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     }
     try {
       // Only UserEntity has preferredLanguage
-      // ignore: avoid_dynamic_calls
       final dynamic u = user;
+      // ignore: avoid_dynamic_calls
       return (u.preferredLanguage ?? 'en') as String;
     } catch (_) {
       return 'en';
@@ -319,8 +319,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       return 'N/A';
     }
     try {
-      // ignore: avoid_dynamic_calls
       final dynamic u = user;
+      // ignore: avoid_dynamic_calls
       return (u.email ?? 'N/A') as String;
     } catch (_) {
       return 'N/A';
@@ -332,8 +332,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       return '';
     }
     try {
-      // ignore: avoid_dynamic_calls
       final dynamic u = user;
+      // ignore: avoid_dynamic_calls
       return (u.uid ?? '') as String;
     } catch (_) {
       return '';
@@ -345,8 +345,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       return DateTime.now();
     }
     try {
-      // ignore: avoid_dynamic_calls
       final dynamic u = user;
+      // ignore: avoid_dynamic_calls
       return (u.createdAt ?? DateTime.now()) as DateTime;
     } catch (_) {
       return DateTime.now();
