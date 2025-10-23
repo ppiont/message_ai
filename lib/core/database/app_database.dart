@@ -105,11 +105,6 @@ class AppDatabase extends _$AppDatabase {
     beforeOpen: (details) async {
       // Enable foreign keys
       await customStatement('PRAGMA foreign_keys = ON');
-      
-      // Enable WAL mode for better concurrency
-      // WAL allows multiple readers + one writer simultaneously
-      // Without WAL, writes block everything (exclusive lock)
-      await customStatement('PRAGMA journal_mode = WAL');
     },
   );
 }
@@ -125,5 +120,11 @@ LazyDatabase _openConnection() => LazyDatabase(() async {
   return NativeDatabase(
     file,
     logStatements: true, // Enable logging in debug mode
+    setup: (db) {
+      // Enable WAL mode for better concurrency
+      // Must be set here (not in beforeOpen) to avoid lock conflicts
+      // WAL allows multiple readers + one writer simultaneously
+      db.execute('PRAGMA journal_mode = WAL');
+    },
   );
 });
