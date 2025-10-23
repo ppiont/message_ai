@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:message_ai/features/authentication/presentation/pages/settings_page.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
 import 'package:message_ai/features/messaging/presentation/pages/chat_page.dart';
 import 'package:message_ai/features/messaging/presentation/pages/create_group_page.dart';
@@ -54,11 +55,14 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
             onSelected: (value) {
-              if (value == 'logout') {
+              if (value == 'settings') {
+                _navigateToSettings();
+              } else if (value == 'logout') {
                 _handleLogout();
               }
             },
             itemBuilder: (context) => [
+              const PopupMenuItem(value: 'settings', child: Text('Settings')),
               const PopupMenuItem(value: 'logout', child: Text('Sign Out')),
             ],
           ),
@@ -323,6 +327,14 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
             child: const Text('Close'),
           ),
         ],
+      ),
+    );
+  }
+
+  void _navigateToSettings() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const SettingsPage(),
       ),
     );
   }
