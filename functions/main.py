@@ -5,6 +5,7 @@ This module contains serverless functions that run in response to Firebase event
 Currently implements:
 - Push notification delivery when new messages are created
 - Translation API for real-time message translation
+- Display name propagation when users update their profile
 """
 
 from firebase_functions import firestore_fn, https_fn, options
@@ -544,3 +545,119 @@ def send_group_message_notification(
     "John in Team Discussion" instead of just "John"
     """
     _send_notification_for_message(event, "group-conversations")
+
+
+@firestore_fn.on_document_updated(document="users/{userId}")
+def propagate_display_name_changes(
+    event: firestore_fn.Event[firestore_fn.Change[firestore_fn.DocumentSnapshot | None]],
+) -> None:
+    """
+    Propagates user display name changes to all their messages.
+
+    Triggered by: User document update in users/{userId}
+    Action: If displayName changed, update senderName in all messages from this user
+
+    This ensures other users see the updated display name immediately for all
+    past and future messages. Implements proper multi-user cache invalidation.
+    """
+    if event.data is None:
+        return
+
+    # Get before and after snapshots
+    before_data = event.data.before.to_dict() if event.data.before else None
+    after_data = event.data.after.to_dict() if event.data.after else None
+
+    if not before_data or not after_data:
+        return
+
+    # Check if displayName changed
+    old_name = before_data.get("displayName", "")
+    new_name = after_data.get("displayName", "")
+
+    if old_name == new_name:
+        return  # No change, skip processing
+
+    user_id = event.params["userId"]
+    print(f"📝 Display name changed for user {user_id}: '{old_name}' -> '{new_name}'")
+
+    # Get Firestore client
+    db = firestore.client()
+
+    # Batch write for efficiency (max 500 operations per batch)
+    batch = db.batch()
+    batch_count = 0
+    total_updated = 0
+
+    try:
+        # Update messages in direct conversations
+        conversations_ref = db.collection("conversations")
+        for conversation_doc in conversations_ref.stream():
+            messages_ref = conversation_doc.reference.collection("messages")
+            query = messages_ref.where("senderId", "==", user_id)
+
+            for message_doc in query.stream():
+                batch.update(message_doc.reference, {"senderName": new_name})
+                batch_count += 1
+                total_updated += 1
+
+                # Commit batch if it reaches 500 operations
+                if batch_count >= 500:
+                    batch.commit()
+                    print(f"✅ Committed batch of 500 updates (total: {total_updated})")
+                    batch = db.batch()  # Start new batch
+                    batch_count = 0
+
+        # Update messages in group conversations
+        group_conversations_ref = db.collection("group-conversations")
+        for conversation_doc in group_conversations_ref.stream():
+            messages_ref = conversation_doc.reference.collection("messages")
+            query = messages_ref.where("senderId", "==", user_id)
+
+            for message_doc in query.stream():
+                batch.update(message_doc.reference, {"senderName": new_name})
+                batch_count += 1
+                total_updated += 1
+
+                # Commit batch if it reaches 500 operations
+                if batch_count >= 500:
+                    batch.commit()
+                    print(f"✅ Committed batch of 500 updates (total: {total_updated})")
+                    batch = db.batch()  # Start new batch
+                    batch_count = 0
+
+        # Update lastMessageSenderName in conversations where this user sent the last message
+        query = conversations_ref.where("lastMessageSenderId", "==", user_id)
+        for conv_doc in query.stream():
+            batch.update(conv_doc.reference, {"lastMessageSenderName": new_name})
+            batch_count += 1
+            total_updated += 1
+
+            if batch_count >= 500:
+                batch.commit()
+                print(f"✅ Committed batch of 500 updates (total: {total_updated})")
+                batch = db.batch()
+                batch_count = 0
+
+        # Update lastMessageSenderName in group conversations
+        query = group_conversations_ref.where("lastMessageSenderId", "==", user_id)
+        for conv_doc in query.stream():
+            batch.update(conv_doc.reference, {"lastMessageSenderName": new_name})
+            batch_count += 1
+            total_updated += 1
+
+            if batch_count >= 500:
+                batch.commit()
+                print(f"✅ Committed batch of 500 updates (total: {total_updated})")
+                batch = db.batch()
+                batch_count = 0
+
+        # Commit remaining updates
+        if batch_count > 0:
+            batch.commit()
+            print(f"✅ Committed final batch of {batch_count} updates")
+
+        print(f"✨ Successfully updated {total_updated} documents with new display name")
+
+    except Exception as e:
+        print(f"❌ Error propagating display name: {e}")
+        # Don't raise - this shouldn't block the user profile update

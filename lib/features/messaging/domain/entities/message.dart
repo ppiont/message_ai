@@ -11,7 +11,6 @@ class Message extends Equatable {
     required this.id,
     required this.text,
     required this.senderId,
-    required this.senderName,
     required this.timestamp,
     required this.type,
     required this.status,
@@ -28,10 +27,9 @@ class Message extends Equatable {
   final String text;
 
   /// ID of the user who sent the message
+  /// Note: Display name is looked up dynamically via UserLookupProvider
+  /// This ensures name changes propagate instantly without updating all messages
   final String senderId;
-
-  /// Display name of the sender
-  final String senderName;
 
   /// When the message was sent
   final DateTime timestamp;
@@ -65,7 +63,6 @@ class Message extends Equatable {
     String? id,
     String? text,
     String? senderId,
-    String? senderName,
     DateTime? timestamp,
     String? type,
     String? status,
@@ -79,7 +76,6 @@ class Message extends Equatable {
       id: id ?? this.id,
       text: text ?? this.text,
       senderId: senderId ?? this.senderId,
-      senderName: senderName ?? this.senderName,
       timestamp: timestamp ?? this.timestamp,
       type: type ?? this.type,
       status: status ?? this.status,
@@ -96,7 +92,6 @@ class Message extends Equatable {
         id,
         text,
         senderId,
-        senderName,
         timestamp,
         type,
         status,
