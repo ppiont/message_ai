@@ -4,6 +4,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
+import 'package:message_ai/features/authentication/presentation/providers/user_lookup_provider.dart';
 import 'package:message_ai/features/messaging/domain/entities/conversation.dart';
 import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -379,65 +380,83 @@ class _GroupManagementPageState extends ConsumerState<GroupManagementPage> {
             final isMemberAdmin =
                 group.adminIds?.contains(participant.uid) ?? false;
 
-            return ListTile(
-              leading: CircleAvatar(
-                child: Text(
-                  participant.name.isNotEmpty
-                      ? participant.name[0].toUpperCase()
-                      : '?',
-                ),
-              ),
-              title: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      isCurrentUser ? 'You' : participant.name,
-                      style: const TextStyle(fontWeight: FontWeight.w500),
-                    ),
-                  ),
-                  if (isMemberAdmin)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.blue[100],
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+            return Consumer(
+              builder: (context, ref, _) {
+                final displayNameAsync = ref.watch(
+                  userDisplayNameProvider(participant.uid),
+                );
+
+                return displayNameAsync.when(
+                  data: (displayName) => ListTile(
+                    leading: CircleAvatar(
                       child: Text(
-                        'Admin',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.blue[900],
-                          fontWeight: FontWeight.w600,
-                        ),
+                        displayName.isNotEmpty
+                            ? displayName[0].toUpperCase()
+                            : '?',
                       ),
                     ),
-                ],
-              ),
-              trailing: isAdmin && !isCurrentUser
-                  ? PopupMenuButton<String>(
-                      onSelected: (value) {
-                        if (value == 'remove') {
-                          _removeMember(
-                            participant.uid,
-                            participant.name,
-                            currentUserId,
-                          );
-                        }
-                      },
-                      itemBuilder: (context) => [
-                        const PopupMenuItem(
-                          value: 'remove',
+                    title: Row(
+                      children: [
+                        Expanded(
                           child: Text(
-                            'Remove from group',
-                            style: TextStyle(color: Colors.red),
+                            isCurrentUser ? 'You' : displayName,
+                            style: const TextStyle(fontWeight: FontWeight.w500),
                           ),
                         ),
+                        if (isMemberAdmin)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.blue[100],
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              'Admin',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.blue[900],
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
                       ],
-                    )
-                  : null,
+                    ),
+                    trailing: isAdmin && !isCurrentUser
+                        ? PopupMenuButton<String>(
+                            onSelected: (value) {
+                              if (value == 'remove') {
+                                _removeMember(
+                                  participant.uid,
+                                  displayName,
+                                  currentUserId,
+                                );
+                              }
+                            },
+                            itemBuilder: (context) => [
+                              const PopupMenuItem(
+                                value: 'remove',
+                                child: Text(
+                                  'Remove from group',
+                                  style: TextStyle(color: Colors.red),
+                                ),
+                              ),
+                            ],
+                          )
+                        : null,
+                  ),
+                  loading: () => const ListTile(
+                    leading: CircleAvatar(child: Text('?')),
+                    title: Text('Loading...'),
+                  ),
+                  error: (_, __) => const ListTile(
+                    leading: CircleAvatar(child: Text('?')),
+                    title: Text('Unknown'),
+                  ),
+                );
+              },
             );
           }),
         ],

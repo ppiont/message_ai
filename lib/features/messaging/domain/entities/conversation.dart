@@ -118,36 +118,32 @@ class Participant extends Equatable {
 
   const Participant({
     required this.uid,
-    required this.name,
-    required this.preferredLanguage, this.imageUrl,
+    required this.preferredLanguage,
+    this.imageUrl,
   });
   /// User ID
+  /// Display name is looked up dynamically via UserLookupProvider
   final String uid;
-
-  /// Display name
-  final String name;
 
   /// Profile image URL
   final String? imageUrl;
 
-  /// Preferred language code
+  /// Preferred language code (needed for translation logic)
   final String preferredLanguage;
 
   /// Creates a copy of this participant with the given fields replaced
   Participant copyWith({
     String? uid,
-    String? name,
     String? imageUrl,
     String? preferredLanguage,
   }) => Participant(
       uid: uid ?? this.uid,
-      name: name ?? this.name,
       imageUrl: imageUrl ?? this.imageUrl,
       preferredLanguage: preferredLanguage ?? this.preferredLanguage,
     );
 
   @override
-  List<Object?> get props => [uid, name, imageUrl, preferredLanguage];
+  List<Object?> get props => [uid, imageUrl, preferredLanguage];
 }
 
 /// Details of the last message in a conversation

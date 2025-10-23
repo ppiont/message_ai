@@ -227,16 +227,12 @@ class _UserSelectionPageState extends ConsumerState<UserSelectionPage> {
       // Create Participant objects for use case
       final currentUserParticipant = Participant(
         uid: currentUser.uid,
-        name: currentUser.displayName,
         imageUrl: currentUser.photoURL,
         preferredLanguage: currentUser.preferredLanguage,
       );
 
       final otherUserParticipant = Participant(
         uid: otherUserId,
-        name: otherUserName.isNotEmpty
-            ? otherUserName
-            : (otherUserEmail.isNotEmpty ? otherUserEmail : 'Unknown User'),
         imageUrl: otherUserPhotoURL,
         preferredLanguage: otherUserPreferredLanguage,
       );

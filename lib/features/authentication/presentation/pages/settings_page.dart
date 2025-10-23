@@ -171,7 +171,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         final updateUseCase = ref.read(updateUserProfileUseCaseProvider);
         updateUseCase(displayName: displayName).then((_) {
           // Invalidate UserLookupProvider cache so UI fetches new name
-          ref.read(userLookupCacheProvider.notifier).invalidate(currentUser.uid);
+          ref
+              .read(userLookupCacheProvider.notifier)
+              .invalidate(currentUser.uid);
           print('✅ UserLookup cache invalidated - new name will load');
         }).ignore();
       }

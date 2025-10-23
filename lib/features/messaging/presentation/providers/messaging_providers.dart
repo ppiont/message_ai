@@ -150,7 +150,6 @@ Stream<List<Map<String, dynamic>>> userConversationsStream(
                 .map(
                   (p) => {
                     'uid': p.uid,
-                    'name': p.name,
                     'imageUrl': p.imageUrl,
                     'preferredLanguage': p.preferredLanguage,
                   },
@@ -412,7 +411,6 @@ Stream<List<Map<String, dynamic>>> allConversationsStream(
               .map(
                 (p) => <String, dynamic>{
                   'uid': p.uid,
-                  'name': p.name,
                   'imageUrl': p.imageUrl,
                   'preferredLanguage': p.preferredLanguage,
                 },
@@ -436,7 +434,6 @@ Stream<List<Map<String, dynamic>>> allConversationsStream(
               .map(
                 (p) => <String, dynamic>{
                   'uid': p.uid,
-                  'name': p.name,
                   'imageUrl': p.imageUrl,
                   'preferredLanguage': p.preferredLanguage,
                 },

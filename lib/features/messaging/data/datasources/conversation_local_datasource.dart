@@ -265,11 +265,10 @@ class ConversationLocalDataSourceImpl implements ConversationLocalDataSource {
   }
 
   String _serializeParticipants(List<Participant> participants) => json.encode(
-      participants
-          .map(
+        participants
+            .map(
             (p) => {
               'uid': p.uid,
-              'name': p.name,
               'imageUrl': p.imageUrl,
               'preferredLanguage': p.preferredLanguage,
             },
@@ -284,7 +283,6 @@ class ConversationLocalDataSourceImpl implements ConversationLocalDataSource {
           .map(
             (p) => Participant(
               uid: p['uid'] as String,
-              name: p['name'] as String,
               imageUrl: p['imageUrl'] as String?,
               preferredLanguage: p['preferredLanguage'] as String,
             ),

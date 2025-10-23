@@ -56,14 +56,12 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
     final participants = [
       Participant(
         uid: currentUser.uid,
-        name: currentUser.displayName,
         preferredLanguage: currentUser.preferredLanguage,
       ),
       ..._selectedUserIds.map((userId) {
         final userInfo = _userCache[userId]!;
         return Participant(
           uid: userId,
-          name: userInfo['name']!,
           preferredLanguage: userInfo['preferredLanguage'] ?? 'en',
         );
       }),

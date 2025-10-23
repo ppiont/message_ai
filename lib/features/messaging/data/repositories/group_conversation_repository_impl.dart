@@ -276,7 +276,6 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository { /
           ...group.participants,
           Participant(
             uid: userId,
-            name: userName,
             preferredLanguage: preferredLanguage,
           ),
         ];

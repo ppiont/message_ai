@@ -144,14 +144,13 @@ class ConversationModel extends Conversation {
 class ParticipantModel extends Participant {
   const ParticipantModel({
     required super.uid,
-    required super.name,
-    required super.preferredLanguage, super.imageUrl,
+    required super.preferredLanguage,
+    super.imageUrl,
   });
 
   /// Creates a ParticipantModel from a domain Participant entity
   factory ParticipantModel.fromEntity(Participant participant) => ParticipantModel(
       uid: participant.uid,
-      name: participant.name,
       imageUrl: participant.imageUrl,
       preferredLanguage: participant.preferredLanguage,
     );
@@ -159,7 +158,6 @@ class ParticipantModel extends Participant {
   /// Creates a ParticipantModel from JSON
   factory ParticipantModel.fromJson(Map<String, dynamic> json) => ParticipantModel(
       uid: json['uid'] as String,
-      name: json['name'] as String,
       imageUrl: json['imageUrl'] as String?,
       preferredLanguage: json['preferredLanguage'] as String,
     );
@@ -167,7 +165,6 @@ class ParticipantModel extends Participant {
   /// Converts this model to JSON
   Map<String, dynamic> toJson() => {
       'uid': uid,
-      'name': name,
       if (imageUrl != null) 'imageUrl': imageUrl,
       'preferredLanguage': preferredLanguage,
     };
@@ -175,7 +172,6 @@ class ParticipantModel extends Participant {
   /// Converts this model to a domain entity
   Participant toEntity() => Participant(
       uid: uid,
-      name: name,
       imageUrl: imageUrl,
       preferredLanguage: preferredLanguage,
     );
