@@ -24,9 +24,9 @@ class EmbeddingGenerator {
     required EmbeddingService embeddingService,
     required MessageLocalDataSource messageLocalDataSource,
     required MessageRepository messageRepository,
-  })  : _embeddingService = embeddingService,
-        _messageLocalDataSource = messageLocalDataSource,
-        _messageRepository = messageRepository;
+  }) : _embeddingService = embeddingService,
+       _messageLocalDataSource = messageLocalDataSource,
+       _messageRepository = messageRepository;
 
   final EmbeddingService _embeddingService;
   final MessageLocalDataSource _messageLocalDataSource;

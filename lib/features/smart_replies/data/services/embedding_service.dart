@@ -16,9 +16,8 @@ import 'package:message_ai/core/error/failures.dart';
 ///
 /// Cost: ~$0.02 per 1M tokens (very cheap)
 class EmbeddingService {
-  EmbeddingService({
-    FirebaseFunctions? functions,
-  }) : _functions = functions ?? FirebaseFunctions.instance;
+  EmbeddingService({FirebaseFunctions? functions})
+    : _functions = functions ?? FirebaseFunctions.instance;
 
   final FirebaseFunctions _functions;
 
@@ -32,15 +31,14 @@ class EmbeddingService {
   /// Returns:
   /// - `Right(List<double>)`: The embedding vector on success
   /// - `Left(Failure)`: Error details on failure
-  Future<Either<Failure, List<double>>> generateEmbedding(
-    String text,
-  ) async {
+  Future<Either<Failure, List<double>>> generateEmbedding(String text) async {
     try {
       // Validate input
       if (text.trim().length < 5) {
         return const Left(
           ValidationFailure(
-            message: 'Text must be at least 5 characters long for meaningful embeddings',
+            message:
+                'Text must be at least 5 characters long for meaningful embeddings',
           ),
         );
       }
@@ -50,14 +48,16 @@ class EmbeddingService {
       );
 
       // Call Cloud Function
-      final result = await _functions.httpsCallable('generate_embedding').call<Map<String, dynamic>>({
-        'text': text,
-      });
+      final result = await _functions
+          .httpsCallable('generate_embedding')
+          .call<Map<String, dynamic>>({'text': text});
 
       // Extract embedding from response
       final data = result.data;
       final embeddingList = data['embedding'] as List<dynamic>;
-      final embedding = embeddingList.map((dynamic e) => (e as num).toDouble()).toList();
+      final embedding = embeddingList
+          .map((dynamic e) => (e as num).toDouble())
+          .toList();
 
       final cached = data['cached'] as bool? ?? false;
       final tokenCount = data['tokenCount'] as int? ?? 0;
@@ -69,7 +69,9 @@ class EmbeddingService {
 
       return Right(embedding);
     } on FirebaseFunctionsException catch (e) {
-      debugPrint('EmbeddingService: Cloud Function error: ${e.code} - ${e.message}');
+      debugPrint(
+        'EmbeddingService: Cloud Function error: ${e.code} - ${e.message}',
+      );
 
       // Map Firebase Functions errors to appropriate Failures
       switch (e.code) {
@@ -119,10 +121,7 @@ class EmbeddingService {
       final result = await generateEmbedding(text);
 
       // If any embedding fails, return the failure
-      final failure = result.fold<Failure?>(
-        (failure) => failure,
-        (_) => null,
-      );
+      final failure = result.fold<Failure?>((failure) => failure, (_) => null);
 
       if (failure != null) {
         return Left(failure);

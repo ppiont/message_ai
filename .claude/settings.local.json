@@ -31,7 +31,9 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(dart fix:*)",
-      "mcp__dart__dart_fix"
+      "mcp__dart__dart_fix",
+      "Bash(dart format:*)",
+      "mcp__dart__dart_format"
     ],
     "deny": [],
     "ask": []
