@@ -5,6 +5,7 @@ import 'package:message_ai/config/env_config.dart';
 import 'package:message_ai/features/authentication/presentation/pages/auth_page.dart';
 import 'package:message_ai/features/authentication/presentation/pages/profile_setup_page.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
+import 'package:message_ai/features/authentication/presentation/providers/user_providers.dart';
 import 'package:message_ai/features/messaging/presentation/pages/chat_page.dart';
 import 'package:message_ai/features/messaging/presentation/pages/conversation_list_page.dart';
 import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
@@ -105,6 +106,11 @@ class App extends ConsumerWidget {
       // Initialize presence controller
       // Automatically manages online/offline status based on auth
       ref.watch(presenceControllerProvider);
+
+      // Initialize user sync service
+      // Automatically syncs user profiles from Firestore to Drift
+      final userSyncService = ref.watch(userSyncServiceProvider);
+      userSyncService.startBackgroundSync();
 
       // Initialize auto delivery marker
       // Automatically marks incoming messages as delivered across all conversations

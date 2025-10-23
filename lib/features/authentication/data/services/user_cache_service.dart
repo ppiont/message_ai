@@ -76,14 +76,14 @@ class UserCacheService {
   Future<void> _saveUserToDrift(User user) async {
     final companion = UsersCompanion.insert(
       uid: user.uid,
-      email: user.email ?? '',
-      phoneNumber: user.phoneNumber,
+      email: Value(user.email),
+      phoneNumber: Value(user.phoneNumber),
       name: user.displayName,
-      imageUrl: user.photoURL,
-      preferredLanguage: user.preferredLanguage,
+      imageUrl: Value(user.photoURL),
+      preferredLanguage: Value(user.preferredLanguage),
       createdAt: user.createdAt,
       lastSeen: user.lastSeen,
-      isOnline: user.isOnline,
+      isOnline: Value(user.isOnline),
     );
 
     await _database.userDao.upsertUser(companion);

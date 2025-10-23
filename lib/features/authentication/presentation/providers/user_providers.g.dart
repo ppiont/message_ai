@@ -209,3 +209,50 @@ final class UserCacheServiceProvider
 }
 
 String _$userCacheServiceHash() => r'5bce65efd92207c72af9f4165436ac66d1f31828';
+
+/// Provider for UserSyncService
+
+@ProviderFor(userSyncService)
+const userSyncServiceProvider = UserSyncServiceProvider._();
+
+/// Provider for UserSyncService
+
+final class UserSyncServiceProvider
+    extends
+        $FunctionalProvider<UserSyncService, UserSyncService, UserSyncService>
+    with $Provider<UserSyncService> {
+  /// Provider for UserSyncService
+  const UserSyncServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'userSyncServiceProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$userSyncServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<UserSyncService> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  UserSyncService create(Ref ref) {
+    return userSyncService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(UserSyncService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<UserSyncService>(value),
+    );
+  }
+}
+
+String _$userSyncServiceHash() => r'e130f71fd921022203ad1276004489d65f30bcb7';
