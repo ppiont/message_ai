@@ -1,0 +1,107 @@
+---
+description: ALWAYS use GitKraken MCP for ALL git operations - NEVER use git CLI
+globs: **/*
+alwaysApply: true
+---
+
+# GitKraken MCP Usage - MANDATORY
+
+## **🚨 CRITICAL: NEVER USE GIT CLI DIRECTLY 🚨**
+
+For **ANY** git operation, you MUST use the GitKraken MCP tools. Using `git` terminal commands directly is **STRICTLY FORBIDDEN**.
+
+## Available GitKraken MCP Tools
+
+### Essential Git Operations
+- `mcp_GitKraken_git_status`: Show working tree status
+- `mcp_GitKraken_git_add_or_commit`: Stage files or commit changes
+- `mcp_GitKraken_git_branch`: List or create branches
+- `mcp_GitKraken_git_checkout`: Switch branches
+- `mcp_GitKraken_git_log_or_diff`: View commit history or changes
+- `mcp_GitKraken_git_push`: Push to remote
+- `mcp_GitKraken_git_stash`: Stash changes
+
+## Mandatory Usage Examples
+
+### ❌ NEVER DO THIS:
+```bash
+git add -A
+git commit -m "fix: something"
+git push
+git status
+git checkout -b feature/new
+git branch
+```
+
+### ✅ ALWAYS DO THIS:
+```
+# Stage and commit changes
+mcp_GitKraken_git_add_or_commit(
+  directory: "/absolute/path/to/project",
+  action: "add",
+  files: []  # empty = add all
+)
+
+mcp_GitKraken_git_add_or_commit(
+  directory: "/absolute/path/to/project",
+  action: "commit",
+  message: "fix: something"
+)
+
+# Push changes
+mcp_GitKraken_git_push(
+  directory: "/absolute/path/to/project"
+)
+
+# Check status
+mcp_GitKraken_git_status(
+  directory: "/absolute/path/to/project"
+)
+
+# Create and checkout branch
+mcp_GitKraken_git_branch(
+  directory: "/absolute/path/to/project",
+  action: "create",
+  branch_name: "feature/new"
+)
+
+mcp_GitKraken_git_checkout(
+  directory: "/absolute/path/to/project",
+  branch: "feature/new"
+)
+```
+
+## Why This Rule Exists
+
+1. **Consistency**: All git operations go through the same interface
+2. **Auditability**: MCP calls are logged and trackable
+3. **Error Handling**: Better structured error responses
+4. **Integration**: Works seamlessly with IDE/AI tooling
+
+## Common Operations
+
+### Commit Workflow
+```
+1. Check status → mcp_GitKraken_git_status
+2. Stage files → mcp_GitKraken_git_add_or_commit (action: "add")
+3. Commit → mcp_GitKraken_git_add_or_commit (action: "commit")
+4. Push → mcp_GitKraken_git_push
+```
+
+### Branch Workflow
+```
+1. List branches → mcp_GitKraken_git_branch (action: "list")
+2. Create branch → mcp_GitKraken_git_branch (action: "create")
+3. Switch branch → mcp_GitKraken_git_checkout
+```
+
+### View Changes
+```
+1. View log → mcp_GitKraken_git_log_or_diff (action: "log")
+2. View diff → mcp_GitKraken_git_log_or_diff (action: "diff")
+```
+
+## References
+
+- [GitKraken MCP Tools Documentation](https://docs.gitkraken.com/mcp)
+- [User Rules](mdc:../.cursor/rules) - User explicitly requested this

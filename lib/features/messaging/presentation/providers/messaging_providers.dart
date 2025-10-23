@@ -49,9 +49,10 @@ FirebaseFirestore messagingFirestore(Ref ref) => FirebaseFirestore.instance;
 
 /// Provides the [MessageRemoteDataSource] implementation.
 @riverpod
-MessageRemoteDataSource messageRemoteDataSource(Ref ref) => MessageRemoteDataSourceImpl(
-    firestore: ref.watch(messagingFirestoreProvider),
-  );
+MessageRemoteDataSource messageRemoteDataSource(Ref ref) =>
+    MessageRemoteDataSourceImpl(
+      firestore: ref.watch(messagingFirestoreProvider),
+    );
 
 /// Provides the [MessageLocalDataSource] implementation.
 @riverpod
@@ -62,9 +63,10 @@ MessageLocalDataSource messageLocalDataSource(Ref ref) {
 
 /// Provides the [ConversationRemoteDataSource] implementation.
 @riverpod
-ConversationRemoteDataSource conversationRemoteDataSource(Ref ref) => ConversationRemoteDataSourceImpl(
-    firestore: ref.watch(messagingFirestoreProvider),
-  );
+ConversationRemoteDataSource conversationRemoteDataSource(Ref ref) =>
+    ConversationRemoteDataSourceImpl(
+      firestore: ref.watch(messagingFirestoreProvider),
+    );
 
 /// Provides the [ConversationLocalDataSource] implementation.
 @riverpod
@@ -80,52 +82,57 @@ ConversationLocalDataSource conversationLocalDataSource(Ref ref) {
 /// Provides the [MessageRepository] implementation (offline-first).
 @riverpod
 MessageRepository messageRepository(Ref ref) => MessageRepositoryImpl(
-    remoteDataSource: ref.watch(messageRemoteDataSourceProvider),
-    localDataSource: ref.watch(messageLocalDataSourceProvider),
-  );
+  remoteDataSource: ref.watch(messageRemoteDataSourceProvider),
+  localDataSource: ref.watch(messageLocalDataSourceProvider),
+);
 
 /// Provides the [ConversationRepository] implementation (offline-first).
 @riverpod
-ConversationRepository conversationRepository(Ref ref) => ConversationRepositoryImpl(
-    remoteDataSource: ref.watch(conversationRemoteDataSourceProvider),
-    localDataSource: ref.watch(conversationLocalDataSourceProvider),
-  );
+ConversationRepository conversationRepository(Ref ref) =>
+    ConversationRepositoryImpl(
+      remoteDataSource: ref.watch(conversationRemoteDataSourceProvider),
+      localDataSource: ref.watch(conversationLocalDataSourceProvider),
+    );
 
 // ========== Use Case Providers ==========
 
 /// Provides the [SendMessage] use case with language detection.
 @riverpod
 SendMessage sendMessageUseCase(Ref ref) => SendMessage(
-    messageRepository: ref.watch(messageRepositoryProvider),
-    conversationRepository: ref.watch(conversationRepositoryProvider),
-    languageDetectionService: ref.watch(languageDetectionServiceProvider),
-  );
+  messageRepository: ref.watch(messageRepositoryProvider),
+  conversationRepository: ref.watch(conversationRepositoryProvider),
+  languageDetectionService: ref.watch(languageDetectionServiceProvider),
+);
 
 /// Provides the [WatchMessages] use case.
 @riverpod
-WatchMessages watchMessagesUseCase(Ref ref) => WatchMessages(ref.watch(messageRepositoryProvider));
+WatchMessages watchMessagesUseCase(Ref ref) =>
+    WatchMessages(ref.watch(messageRepositoryProvider));
 
 /// Provides the [MarkMessageAsRead] use case.
 @riverpod
-MarkMessageAsRead markMessageAsReadUseCase(Ref ref) => MarkMessageAsRead(ref.watch(messageRepositoryProvider));
+MarkMessageAsRead markMessageAsReadUseCase(Ref ref) =>
+    MarkMessageAsRead(ref.watch(messageRepositoryProvider));
 
 /// Provides the [MarkMessageAsDelivered] use case.
 @riverpod
-MarkMessageAsDelivered markMessageAsDeliveredUseCase(Ref ref) => MarkMessageAsDelivered(ref.watch(messageRepositoryProvider));
+MarkMessageAsDelivered markMessageAsDeliveredUseCase(Ref ref) =>
+    MarkMessageAsDelivered(ref.watch(messageRepositoryProvider));
 
 /// Provides the [FindOrCreateDirectConversation] use case.
 @riverpod
-FindOrCreateDirectConversation findOrCreateDirectConversationUseCase(Ref ref) => FindOrCreateDirectConversation(
-    ref.watch(conversationRepositoryProvider),
-  );
+FindOrCreateDirectConversation findOrCreateDirectConversationUseCase(Ref ref) =>
+    FindOrCreateDirectConversation(ref.watch(conversationRepositoryProvider));
 
 /// Provides the [WatchConversations] use case.
 @riverpod
-WatchConversations watchConversationsUseCase(Ref ref) => WatchConversations(ref.watch(conversationRepositoryProvider));
+WatchConversations watchConversationsUseCase(Ref ref) =>
+    WatchConversations(ref.watch(conversationRepositoryProvider));
 
 /// Provides the [GetConversationById] use case.
 @riverpod
-GetConversationById getConversationByIdUseCase(Ref ref) => GetConversationById(ref.watch(conversationRepositoryProvider));
+GetConversationById getConversationByIdUseCase(Ref ref) =>
+    GetConversationById(ref.watch(conversationRepositoryProvider));
 
 // ========== State Providers ==========
 
@@ -145,21 +152,25 @@ Stream<List<Map<String, dynamic>>> userConversationsStream(
         // Log error but return empty list to keep UI functional
         return [];
       },
-      (conversations) => conversations.map((conv) => {
-            'id': conv.documentId,
-            'participants': conv.participants
-                .map(
-                  (p) => {
-                    'uid': p.uid,
-                    'imageUrl': p.imageUrl,
-                    'preferredLanguage': p.preferredLanguage,
-                  },
-                )
-                .toList(),
-            'lastMessage': conv.lastMessage?.text,
-            'lastUpdatedAt': conv.lastUpdatedAt,
-            'unreadCount': conv.getUnreadCountForUser(userId),
-          }).toList(),
+      (conversations) => conversations
+          .map(
+            (conv) => {
+              'id': conv.documentId,
+              'participants': conv.participants
+                  .map(
+                    (p) => {
+                      'uid': p.uid,
+                      'imageUrl': p.imageUrl,
+                      'preferredLanguage': p.preferredLanguage,
+                    },
+                  )
+                  .toList(),
+              'lastMessage': conv.lastMessage?.text,
+              'lastUpdatedAt': conv.lastUpdatedAt,
+              'unreadCount': conv.getUnreadCountForUser(userId),
+            },
+          )
+          .toList(),
     );
   }
 }
@@ -188,7 +199,10 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
       },
       (messages) {
         // Sync all message senders to Drift for offline access
-        final allSenderIds = messages.map((msg) => msg.senderId).toSet().toList();
+        final allSenderIds = messages
+            .map((msg) => msg.senderId)
+            .toSet()
+            .toList();
         if (allSenderIds.isNotEmpty) {
           for (final senderId in allSenderIds) {
             userSyncService.syncMessageSender(senderId);
@@ -364,38 +378,45 @@ MessageQueue messageQueue(Ref ref) {
 
 /// Provides the [GroupConversationRemoteDataSource] implementation.
 @riverpod
-GroupConversationRemoteDataSource groupConversationRemoteDataSource(Ref ref) => GroupConversationRemoteDataSourceImpl(
-    firestore: ref.watch(messagingFirestoreProvider),
-  );
+GroupConversationRemoteDataSource groupConversationRemoteDataSource(Ref ref) =>
+    GroupConversationRemoteDataSourceImpl(
+      firestore: ref.watch(messagingFirestoreProvider),
+    );
 
 /// Provides the [GroupConversationRepository] implementation (offline-first).
 @riverpod
-GroupConversationRepository groupConversationRepository(Ref ref) => GroupConversationRepositoryImpl(
-    remoteDataSource: ref.watch(groupConversationRemoteDataSourceProvider),
-    localDataSource: ref.watch(conversationLocalDataSourceProvider),
-  );
+GroupConversationRepository groupConversationRepository(Ref ref) =>
+    GroupConversationRepositoryImpl(
+      remoteDataSource: ref.watch(groupConversationRemoteDataSourceProvider),
+      localDataSource: ref.watch(conversationLocalDataSourceProvider),
+    );
 
 // ========== Group Use Case Providers ==========
 
 /// Provides the [CreateGroup] use case.
 @riverpod
-CreateGroup createGroupUseCase(Ref ref) => CreateGroup(ref.watch(groupConversationRepositoryProvider));
+CreateGroup createGroupUseCase(Ref ref) =>
+    CreateGroup(ref.watch(groupConversationRepositoryProvider));
 
 /// Provides the [AddGroupMember] use case.
 @riverpod
-AddGroupMember addGroupMemberUseCase(Ref ref) => AddGroupMember(ref.watch(groupConversationRepositoryProvider));
+AddGroupMember addGroupMemberUseCase(Ref ref) =>
+    AddGroupMember(ref.watch(groupConversationRepositoryProvider));
 
 /// Provides the [RemoveGroupMember] use case.
 @riverpod
-RemoveGroupMember removeGroupMemberUseCase(Ref ref) => RemoveGroupMember(ref.watch(groupConversationRepositoryProvider));
+RemoveGroupMember removeGroupMemberUseCase(Ref ref) =>
+    RemoveGroupMember(ref.watch(groupConversationRepositoryProvider));
 
 /// Provides the [LeaveGroup] use case.
 @riverpod
-LeaveGroup leaveGroupUseCase(Ref ref) => LeaveGroup(ref.watch(groupConversationRepositoryProvider));
+LeaveGroup leaveGroupUseCase(Ref ref) =>
+    LeaveGroup(ref.watch(groupConversationRepositoryProvider));
 
 /// Provides the [UpdateGroupInfo] use case.
 @riverpod
-UpdateGroupInfo updateGroupInfoUseCase(Ref ref) => UpdateGroupInfo(ref.watch(groupConversationRepositoryProvider));
+UpdateGroupInfo updateGroupInfoUseCase(Ref ref) =>
+    UpdateGroupInfo(ref.watch(groupConversationRepositoryProvider));
 
 // ========== Unified Conversation List Provider ==========
 
@@ -415,71 +436,81 @@ Stream<List<Map<String, dynamic>>> allConversationsStream(
   final userSyncService = ref.watch(userSyncServiceProvider);
 
   // Watch direct conversations
-  final directStream = watchConversationsUseCase(userId: userId).map((result) => result.fold(
-      (failure) => <Map<String, dynamic>>[],
-      (conversations) {
-        // Sync all participant users to Drift for offline access
-        final allParticipantIds = conversations
-            .expand((conv) => conv.participants.map((p) => p.uid))
-            .toSet()
-            .toList();
-        if (allParticipantIds.isNotEmpty) {
-          userSyncService.syncConversationUsers(allParticipantIds);
-        }
+  final directStream = watchConversationsUseCase(userId: userId).map(
+    (result) =>
+        result.fold((failure) => <Map<String, dynamic>>[], (conversations) {
+          // Sync all participant users to Drift for offline access
+          final allParticipantIds = conversations
+              .expand((conv) => conv.participants.map((p) => p.uid))
+              .toSet()
+              .toList();
+          if (allParticipantIds.isNotEmpty) {
+            userSyncService.syncConversationUsers(allParticipantIds);
+          }
 
-        return conversations.map((conv) => <String, dynamic>{
-          'id': conv.documentId,
-          'type': 'direct',
-          'participants': conv.participants
+          return conversations
               .map(
-                (p) => <String, dynamic>{
-                  'uid': p.uid,
-                  'imageUrl': p.imageUrl,
-                  'preferredLanguage': p.preferredLanguage,
+                (conv) => <String, dynamic>{
+                  'id': conv.documentId,
+                  'type': 'direct',
+                  'participants': conv.participants
+                      .map(
+                        (p) => <String, dynamic>{
+                          'uid': p.uid,
+                          'imageUrl': p.imageUrl,
+                          'preferredLanguage': p.preferredLanguage,
+                        },
+                      )
+                      .toList(),
+                  'lastMessage': conv.lastMessage?.text,
+                  'lastUpdatedAt': conv.lastUpdatedAt,
+                  'unreadCount': conv.getUnreadCountForUser(userId),
                 },
               )
-              .toList(),
-          'lastMessage': conv.lastMessage?.text,
-          'lastUpdatedAt': conv.lastUpdatedAt,
-          'unreadCount': conv.getUnreadCountForUser(userId),
-        }).toList();
-      },
-    ));
+              .toList();
+        }),
+  );
 
   // Watch groups
-  final groupStream = groupRepository.watchGroupsForUser(userId).map((result) => result.fold(
-      (failure) => <Map<String, dynamic>>[],
-      (groups) {
-        // Sync all participant users to Drift for offline access
-        final allParticipantIds = groups
-            .expand((group) => group.participants.map((p) => p.uid))
-            .toSet()
-            .toList();
-        if (allParticipantIds.isNotEmpty) {
-          userSyncService.syncConversationUsers(allParticipantIds);
-        }
+  final groupStream = groupRepository
+      .watchGroupsForUser(userId)
+      .map(
+        (result) =>
+            result.fold((failure) => <Map<String, dynamic>>[], (groups) {
+              // Sync all participant users to Drift for offline access
+              final allParticipantIds = groups
+                  .expand((group) => group.participants.map((p) => p.uid))
+                  .toSet()
+                  .toList();
+              if (allParticipantIds.isNotEmpty) {
+                userSyncService.syncConversationUsers(allParticipantIds);
+              }
 
-        return groups.map((group) => <String, dynamic>{
-          'id': group.documentId,
-          'type': 'group',
-          'groupName': group.groupName,
-          'groupImage': group.groupImage,
-          'participants': group.participants
-              .map(
-                (p) => <String, dynamic>{
-                  'uid': p.uid,
-                  'imageUrl': p.imageUrl,
-                  'preferredLanguage': p.preferredLanguage,
-                },
-              )
-              .toList(),
-          'participantCount': group.participantIds.length,
-          'lastMessage': group.lastMessage?.text,
-          'lastUpdatedAt': group.lastUpdatedAt,
-          'unreadCount': group.getUnreadCountForUser(userId),
-        }).toList();
-      },
-    ));
+              return groups
+                  .map(
+                    (group) => <String, dynamic>{
+                      'id': group.documentId,
+                      'type': 'group',
+                      'groupName': group.groupName,
+                      'groupImage': group.groupImage,
+                      'participants': group.participants
+                          .map(
+                            (p) => <String, dynamic>{
+                              'uid': p.uid,
+                              'imageUrl': p.imageUrl,
+                              'preferredLanguage': p.preferredLanguage,
+                            },
+                          )
+                          .toList(),
+                      'participantCount': group.participantIds.length,
+                      'lastMessage': group.lastMessage?.text,
+                      'lastUpdatedAt': group.lastUpdatedAt,
+                      'unreadCount': group.getUnreadCountForUser(userId),
+                    },
+                  )
+                  .toList();
+            }),
+      );
 
   // Merge the two streams using combineLatest2
   // This ensures the combined stream emits whenever EITHER stream emits
@@ -511,18 +542,24 @@ Stream<List<Map<String, dynamic>>> conversationUsersStream(Ref ref) {
     return Stream.value([]);
   }
 
-  return firestore.collection('users').snapshots().map((snapshot) => snapshot.docs
-        .where((doc) => doc.id != currentUser.uid) // Exclude current user
-        .map((doc) {
-          final data = doc.data();
-          return {
-            'uid': doc.id,
-            'name': data['displayName'] as String? ?? '',
-            'email': data['email'] as String? ?? '',
-            'preferredLanguage': data['preferredLanguage'] as String? ?? 'en',
-          };
-        })
-        .toList());
+  return firestore
+      .collection('users')
+      .snapshots()
+      .map(
+        (snapshot) => snapshot.docs
+            .where((doc) => doc.id != currentUser.uid) // Exclude current user
+            .map((doc) {
+              final data = doc.data();
+              return {
+                'uid': doc.id,
+                'name': data['displayName'] as String? ?? '',
+                'email': data['email'] as String? ?? '',
+                'preferredLanguage':
+                    data['preferredLanguage'] as String? ?? 'en',
+              };
+            })
+            .toList(),
+      );
 }
 
 // ========== Group Presence Provider ==========
