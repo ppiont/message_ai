@@ -592,7 +592,7 @@ Stream<Map<String, dynamic>> groupPresenceStatus(
   // Get group once to get participant list
   final groupResult = await groupRepository.getGroupById(groupId);
 
-  await for (final _ in groupResult.fold(
+  await for (final presenceData in groupResult.fold(
     (failure) => Stream.value(<String, dynamic>{
       'onlineCount': 0,
       'totalCount': 0,
@@ -603,9 +603,9 @@ Stream<Map<String, dynamic>> groupPresenceStatus(
       final participantIds = group.participantIds;
 
       // Watch presence for all participants using Firestore real-time listener
-      return presenceService
-          .watchUsersPresence(userIds: participantIds)
-          .map((presenceMap) {
+      return presenceService.watchUsersPresence(userIds: participantIds).map((
+        presenceMap,
+      ) {
         final onlineMembers = presenceMap.entries
             .where((entry) => entry.value.isOnline)
             .map((entry) => entry.key)
@@ -622,6 +622,6 @@ Stream<Map<String, dynamic>> groupPresenceStatus(
       });
     },
   )) {
-    yield _;
+    yield presenceData;
   }
 }

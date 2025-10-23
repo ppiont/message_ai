@@ -2062,7 +2062,7 @@ final class GroupPresenceStatusProvider
 }
 
 String _$groupPresenceStatusHash() =>
-    r'ad13934708b1c46db0dc8637af614747a498afdb';
+    r'afdfd52525bcdf012f9f38f32e02e808843101b7';
 
 /// Provides aggregated online status for a group conversation.
 ///
