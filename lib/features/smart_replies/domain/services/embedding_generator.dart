@@ -72,7 +72,7 @@ class EmbeddingGenerator {
       // Generate embedding
       final result = await _embeddingService.generateEmbedding(message.text);
 
-      await result.fold(
+      await result.fold<Future<void>>(
         (failure) async {
           // Log error but don't throw (fire-and-forget)
           debugPrint(
@@ -93,8 +93,8 @@ class EmbeddingGenerator {
           unawaited(
             _messageRepository
                 .updateMessage(conversationId, updatedMessage)
-                .then(
-                  (result) => result.fold(
+                .then<void>(
+                  (result) => result.fold<void>(
                     (failure) => debugPrint(
                       'EmbeddingGenerator: Failed to update Firestore for message ${message.id}: $failure',
                     ),

@@ -71,7 +71,7 @@ class UserStyleAnalyzer {
       limit: 100, // Get more to filter by userId
     );
 
-    return messagesResult.fold(
+    return messagesResult.fold<UserCommunicationStyle>(
       // On failure, return default style
       (failure) => UserCommunicationStyle.defaultStyle(),
       (allMessages) {

@@ -1,9 +1,9 @@
 {
   "models": {
     "main": {
-      "provider": "xai",
-      "modelId": "grok-code-fast-1",
-      "maxTokens": 131072,
+      "provider": "claude-code",
+      "modelId": "claude-haiku-4-5",
+      "maxTokens": 128000,
       "temperature": 0.2
     },
     "research": {

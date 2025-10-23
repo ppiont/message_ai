@@ -1320,3 +1320,308 @@ def send_group_message_notification(
     "John in Team Discussion" instead of just "John"
     """
     _send_notification_for_message(event, "group-conversations")
+
+
+@https_fn.on_call(secrets=[OPENAI_API_KEY])
+def generate_smart_replies(req: https_fn.CallableRequest) -> dict[str, Any]:
+    """
+    Generates smart reply suggestions using GPT-4o-mini with RAG context.
+
+    This function implements the final step of the Smart Replies RAG pipeline:
+    - Takes incoming message embedding
+    - Uses relevant context from semantic search
+    - Applies user communication style
+    - Generates 3 reply suggestions with different intents
+
+    Args:
+        req.data should contain:
+            - conversationId (str): The conversation context
+            - incomingMessageText (str): The message to generate replies for
+            - incomingMessageEmbedding (list): 1536-dimensional embedding vector
+            - userStyle (dict): User communication style from UserCommunicationStyle.toJson()
+            - relevantContext (list): Semantic search results (messages)
+
+    Returns:
+        dict: {
+            'suggestions': [
+                {'text': str, 'intent': str},  # positive
+                {'text': str, 'intent': str},  # neutral
+                {'text': str, 'intent': str},  # question
+            ],
+            'cached': bool
+        }
+
+    Raises:
+        https_fn.HttpsError: If validation fails or generation errors occur
+
+    Performance: Target <2 seconds response time
+    """
+    # Extract and validate request data
+    data = req.data
+
+    if not isinstance(data, dict):
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="Request data must be a dictionary"
+        )
+
+    conversation_id = data.get("conversationId")
+    incoming_message_text = data.get("incomingMessageText")
+    incoming_message_embedding = data.get("incomingMessageEmbedding")
+    user_style = data.get("userStyle")
+    relevant_context = data.get("relevantContext")
+
+    # Validate required fields
+    if not conversation_id or not isinstance(conversation_id, str):
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="'conversationId' field is required and must be a string"
+        )
+
+    if not incoming_message_text or not isinstance(incoming_message_text, str):
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="'incomingMessageText' field is required and must be a string"
+        )
+
+    if not incoming_message_embedding or not isinstance(incoming_message_embedding, list):
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="'incomingMessageEmbedding' field is required and must be a list"
+        )
+
+    if len(incoming_message_embedding) != 1536:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="'incomingMessageEmbedding' must be 1536 dimensions"
+        )
+
+    if not user_style or not isinstance(user_style, dict):
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="'userStyle' field is required and must be a dictionary"
+        )
+
+    if not isinstance(relevant_context, list):
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="'relevantContext' field must be a list"
+        )
+
+    # Log smart reply request
+    print(f"Smart reply request: '{incoming_message_text[:50]}...' in conversation {conversation_id}")
+
+    try:
+        start_time = time.time()
+
+        # Step 0: Check rate limit (50 requests per hour per user)
+        db = firestore.client()
+
+        # Get user ID from request context (authenticated user)
+        user_id = req.auth.uid if req.auth else "anonymous"
+
+        # Calculate current hour window (truncate timestamp to hour)
+        current_hour = int(time.time() // 3600)  # Unix timestamp divided by 3600 seconds
+        rate_limit_key = f"{user_id}_{current_hour}"
+
+        # Check rate limit
+        rate_limit_ref = db.collection("smart_reply_rate_limits").document(rate_limit_key)
+        rate_limit_doc = rate_limit_ref.get()
+
+        request_count = 0
+        if rate_limit_doc.exists:
+            rate_limit_data = rate_limit_doc.to_dict()
+            request_count = rate_limit_data.get("count", 0)
+
+        # Rate limit: 50 requests per hour per user
+        RATE_LIMIT = 50
+        if request_count >= RATE_LIMIT:
+            # Calculate when the limit resets (next hour)
+            next_hour = (current_hour + 1) * 3600
+            reset_seconds = next_hour - time.time()
+
+            print(f"Rate limit exceeded for user {user_id}: {request_count}/{RATE_LIMIT}")
+
+            raise https_fn.HttpsError(
+                code=https_fn.FunctionsErrorCode.RESOURCE_EXHAUSTED,
+                message=f"Smart reply rate limit exceeded. Limit: {RATE_LIMIT} requests per hour. "
+                       f"Try again in {int(reset_seconds/60)} minutes."
+            )
+
+        # Increment request count
+        rate_limit_ref.set({
+            "userId": user_id,
+            "hourWindow": current_hour,
+            "count": request_count + 1,
+            "lastRequest": time.time(),
+        })
+
+        print(f"Rate limit check passed: {request_count + 1}/{RATE_LIMIT} requests (user: {user_id})")
+
+        # Step 1: Check cache first (7-day TTL)
+        import hashlib
+        import json
+
+        # Create cache key from hash of inputs
+        cache_input = {
+            "incomingMessageText": incoming_message_text,
+            "userStyle": user_style,
+            "contextTexts": [msg.get("text", "") for msg in relevant_context],
+        }
+        cache_key_hash = hashlib.sha256(
+            json.dumps(cache_input, sort_keys=True).encode('utf-8')
+        ).hexdigest()
+
+        cache_collection = db.collection("smart_reply_cache")
+        cache_ref = cache_collection.document(cache_key_hash)
+        cache_doc = cache_ref.get()
+
+        # Check if cache entry exists and is not expired (7 days = 604800 seconds)
+        if cache_doc.exists:
+            cache_data = cache_doc.to_dict()
+            timestamp = cache_data.get("timestamp")
+
+            if timestamp:
+                # Check if cache is still valid (7 days)
+                age_seconds = time.time() - timestamp
+                if age_seconds < 604800:  # 7 days
+                    # Cache hit!
+                    elapsed_time = time.time() - start_time
+                    print(f"Smart reply cache HIT in {elapsed_time:.3f}s (age: {age_seconds/86400:.1f} days)")
+
+                    return {
+                        "suggestions": cache_data["suggestions"],
+                        "cached": True,
+                        "cacheAge": age_seconds,
+                    }
+
+        # Step 2: Cache miss - call OpenAI API
+        print("Smart reply cache MISS - calling OpenAI API")
+
+        # Get OpenAI client
+        client = get_openai_client(OPENAI_API_KEY.value)
+
+        # Build context messages string
+        context_str = ""
+        if relevant_context:
+            context_messages = []
+            for msg in relevant_context[:5]:  # Limit to top 5 for prompt size
+                sender_id = msg.get("senderId", "Unknown")
+                text = msg.get("text", "")
+                # Use just sender ID (display name lookup is done client-side)
+                context_messages.append(f"User {sender_id[-4:]}: {text}")
+            context_str = "\n".join(context_messages)
+        else:
+            context_str = "(No recent context available)"
+
+        # Build user style string
+        style_description = user_style.get("styleDescription", "neutral, conversational")
+        avg_length = user_style.get("averageMessageLength", "50")
+        emoji_rate = user_style.get("emojiUsageRate", "0%")
+        casualty = user_style.get("casualityScore", "0.5")
+
+        # Construct the prompt for GPT-4o-mini
+        system_prompt = (
+            "You are an AI assistant that generates smart reply suggestions. "
+            "Create 3 brief reply suggestions (<50 chars each) that match the user's communication style. "
+            "Each reply should have a different intent: positive (affirmative/friendly), "
+            "neutral (balanced/informational), and question (follow-up/clarification). "
+            "Always return valid JSON in the exact format specified."
+        )
+
+        user_prompt = f"""Generate 3 smart reply suggestions for this incoming message.
+
+Incoming message: "{incoming_message_text}"
+
+Recent conversation context:
+{context_str}
+
+User's communication style:
+- Description: {style_description}
+- Average message length: {avg_length} chars
+- Emoji usage rate: {emoji_rate}
+- Casualty score: {casualty} (0=formal, 1=casual)
+
+Requirements:
+- Each reply must be <50 characters
+- Match the user's style (emoji usage, casualty, message length)
+- Provide 3 different intents: positive, neutral, question
+- Be contextually relevant to the incoming message
+- Sound natural and conversational
+
+Return JSON in this exact format:
+{{
+  "suggestions": [
+    {{"text": "positive reply here", "intent": "positive"}},
+    {{"text": "neutral reply here", "intent": "neutral"}},
+    {{"text": "question reply here", "intent": "question"}}
+  ]
+}}
+
+Only return the JSON, no additional text."""
+
+        # Call OpenAI API (GPT-4o-mini)
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.7,
+            max_tokens=300,
+            response_format={"type": "json_object"}  # Ensure JSON response
+        )
+
+        elapsed_time = time.time() - start_time
+
+        # Extract and parse response
+        response_text = response.choices[0].message.content.strip()
+
+        # Parse JSON response
+        try:
+            result = json.loads(response_text)
+            suggestions = result.get("suggestions", [])
+
+            # Validate suggestions
+            if not suggestions or len(suggestions) != 3:
+                raise ValueError(f"Expected 3 suggestions, got {len(suggestions)}")
+
+            # Validate each suggestion
+            for suggestion in suggestions:
+                if "text" not in suggestion or "intent" not in suggestion:
+                    raise ValueError("Each suggestion must have 'text' and 'intent' fields")
+                if suggestion["intent"] not in ["positive", "neutral", "question"]:
+                    raise ValueError(f"Invalid intent: {suggestion['intent']}")
+
+        except (json.JSONDecodeError, ValueError) as e:
+            print(f"Failed to parse or validate JSON response: {e}")
+            print(f"Response was: {response_text}")
+
+            # Return fallback suggestions
+            suggestions = [
+                {"text": "Thanks!", "intent": "positive"},
+                {"text": "Got it", "intent": "neutral"},
+                {"text": "Can you clarify?", "intent": "question"}
+            ]
+
+        # Step 3: Store in cache for future requests (7-day TTL)
+        cache_ref.set({
+            "incomingMessageText": incoming_message_text,
+            "userStyle": user_style,
+            "suggestions": suggestions,
+            "timestamp": time.time(),
+        })
+
+        print(f"Smart reply generation successful in {elapsed_time:.2f}s: {len(suggestions)} suggestions")
+
+        return {
+            "suggestions": suggestions,
+            "cached": False,
+        }
+
+    except Exception as e:
+        print(f"Smart reply generation error: {e}")
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INTERNAL,
+            message=f"Smart reply generation failed: {str(e)}"
+        )

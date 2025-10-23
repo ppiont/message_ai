@@ -65,7 +65,7 @@ class SemanticSearchService {
       );
 
       // Handle repository errors
-      final messages = messagesResult.fold((failure) {
+      final messages = messagesResult.fold<List<Message>>((failure) {
         debugPrint('SemanticSearchService: Failed to fetch messages: $failure');
         return <Message>[];
       }, (msgs) => msgs);

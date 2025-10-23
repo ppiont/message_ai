@@ -128,7 +128,7 @@ class EmbeddingService {
       }
 
       // Add successful embedding
-      result.fold(
+      result.fold<void>(
         (_) {}, // Already handled above
         embeddings.add,
       );
