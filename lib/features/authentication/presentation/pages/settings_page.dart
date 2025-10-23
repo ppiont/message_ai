@@ -1,8 +1,10 @@
 import 'dart:io';
 
+import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:message_ai/core/database/app_database.dart';
 import 'package:message_ai/core/database/tables/users_table.dart';
 import 'package:message_ai/core/providers/database_provider.dart';
 import 'package:message_ai/features/authentication/domain/entities/user.dart';
@@ -154,8 +156,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
       final updateUseCase = ref.read(updateUserProfileUseCaseProvider);
       final result = await updateUseCase(
-        displayName:
-            displayName != currentUser.displayName ? displayName : null,
+        displayName: displayName != currentUser.displayName
+            ? displayName
+            : null,
         photoURL: _selectedImage != null ? null : currentUser.photoURL,
       );
 
@@ -201,19 +204,53 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     if (currentUser == null) return;
 
     try {
+      print('🌐 Changing language to: $languageCode');
+
       // Update local Drift database first (offline-first)
       final updatedUser = currentUser.copyWith(preferredLanguage: languageCode);
       final db = ref.read(databaseProvider);
 
-      // Convert to UsersCompanion for Drift
-      await db.userDao.updatePreferredLanguage(
-        uid: updatedUser.uid,
-        languageCode: languageCode,
-      );
+      // CRITICAL: Ensure user exists in Drift first (sync if needed)
+      final existingUser = await db.userDao.getUserByUid(updatedUser.uid);
+      if (existingUser == null) {
+        print(
+          '📥 User not in Drift, syncing from Auth first: ${updatedUser.uid}',
+        );
+        // Create user in Drift from current auth user
+        await db.userDao.upsertUser(
+          UsersCompanion(
+            uid: Value(updatedUser.uid),
+            email: Value(updatedUser.email),
+            phoneNumber: Value(updatedUser.phoneNumber),
+            name: Value(updatedUser.displayName),
+            imageUrl: Value(updatedUser.photoURL),
+            fcmToken: const Value.absent(),
+            preferredLanguage: Value(languageCode),
+            createdAt: Value(updatedUser.createdAt),
+            lastSeen: Value(updatedUser.lastSeen),
+            isOnline: Value(updatedUser.isOnline),
+          ),
+        );
+        print('✅ User synced to Drift and language set');
+      } else {
+        // User exists, just update language
+        await db.userDao.updatePreferredLanguage(
+          uid: updatedUser.uid,
+          languageCode: languageCode,
+        );
+        print(
+          '✅ Drift updated successfully for uid=${updatedUser.uid}, lang=$languageCode',
+        );
+      }
+
+      // CRITICAL: After update, immediately fetch to verify and force stream emission
+      final refreshedUser = await db.userDao.getUserByUid(updatedUser.uid);
+      print('🔃 Refreshed user from Drift: ${refreshedUser?.preferredLanguage}');
 
       // Sync to Firestore in background
       final userRepository = ref.read(userRepositoryProvider);
       userRepository.updateUser(updatedUser).ignore();
+      print('🔄 Firestore sync queued in background');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -224,6 +261,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         );
       }
     } catch (e) {
+      print('❌ Error changing language: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
@@ -315,10 +353,28 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       body: StreamBuilder<dynamic>(
         stream: db.userDao.watchUser(currentUser.uid),
         builder: (context, snapshot) {
+          // Handle connection states
+          if (snapshot.connectionState == ConnectionState.waiting &&
+              snapshot.data == null) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (snapshot.hasError) {
+            print('❌ Stream error: ${snapshot.error}');
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+
           // Use local user from Drift if available, fallback to auth user
           // Drift UserEntity has properties like name, imageUrl, preferredLanguage, etc.
           final localUser = snapshot.data;
           final user = localUser ?? currentUser;
+
+          // DEBUG: Log stream updates
+          if (localUser != null) {
+            print(
+              '📱 SettingsPage StreamBuilder updated: preferredLanguage=${_getPreferredLanguage(user)}',
+            );
+          }
 
           return SingleChildScrollView(
             child: Padding(
@@ -337,8 +393,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.error_outline,
-                              color: Colors.red.shade700),
+                          Icon(Icons.error_outline, color: Colors.red.shade700),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -361,8 +416,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.check_circle_outline,
-                              color: Colors.green.shade700),
+                          Icon(
+                            Icons.check_circle_outline,
+                            color: Colors.green.shade700,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -377,8 +434,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   ],
 
                   // Profile section
-                  Text('Profile',
-                      style: Theme.of(context).textTheme.titleLarge),
+                  Text(
+                    'Profile',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
                   const SizedBox(height: 16),
 
                   // Profile picture
@@ -394,8 +453,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                               shape: BoxShape.circle,
                               color: Colors.grey[200],
                               border: Border.all(
-                                color:
-                                    Theme.of(context).colorScheme.primary,
+                                color: Theme.of(context).colorScheme.primary,
                                 width: 2,
                               ),
                             ),
@@ -404,10 +462,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                                     child: Image.network(
                                       _getUserPhoto(user)!,
                                       fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (_, __, ___) =>
-                                              const Icon(Icons.person,
-                                                  size: 60),
+                                      errorBuilder: (_, __, ___) =>
+                                          const Icon(Icons.person, size: 60),
                                     ),
                                   )
                                 : const Icon(Icons.person, size: 60),
@@ -421,8 +477,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                                 color: Theme.of(context).colorScheme.primary,
                               ),
                               padding: const EdgeInsets.all(8),
-                              child: const Icon(Icons.camera_alt,
-                                  color: Colors.white, size: 20),
+                              child: const Icon(
+                                Icons.camera_alt,
+                                color: Colors.white,
+                                size: 20,
+                              ),
                             ),
                           ),
                         ],
@@ -438,15 +497,18 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       labelText: 'Display Name',
                       hintText: 'Enter your name',
                       border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8)),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                       prefixIcon: const Icon(Icons.person),
                     ),
                   ),
                   const SizedBox(height: 24),
 
                   // Preferences section
-                  Text('Preferences',
-                      style: Theme.of(context).textTheme.titleLarge),
+                  Text(
+                    'Preferences',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
                   const SizedBox(height: 16),
 
                   // Language dropdown
@@ -459,18 +521,16 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Preferred Language for Translations',
-                            style: Theme.of(context).textTheme.bodyMedium),
+                        Text(
+                          'Preferred Language for Translations',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
                         const SizedBox(height: 12),
                         Text(
                           'Current: ${supportedLanguages[_getPreferredLanguage(user)] ?? _getPreferredLanguage(user)}',
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall
+                          style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .primary,
+                                color: Theme.of(context).colorScheme.primary,
                               ),
                         ),
                         const SizedBox(height: 12),
@@ -478,13 +538,16 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                           value: _getPreferredLanguage(user),
                           decoration: InputDecoration(
                             border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8)),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
                           items: supportedLanguages.entries
-                              .map((entry) => DropdownMenuItem(
-                                    value: entry.key,
-                                    child: Text(entry.value),
-                                  ))
+                              .map(
+                                (entry) => DropdownMenuItem(
+                                  value: entry.key,
+                                  child: Text(entry.value),
+                                ),
+                              )
                               .toList(),
                           onChanged: (String? newValue) {
                             if (newValue != null) {
@@ -506,8 +569,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                           ? const SizedBox(
                               height: 20,
                               width: 20,
-                              child: CircularProgressIndicator(
-                                  strokeWidth: 2),
+                              child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Text('Save Changes'),
                     ),
@@ -515,15 +577,20 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   const SizedBox(height: 16),
 
                   // Account info
-                  Text('Account Information',
-                      style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                    'Account Information',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 12),
                   _buildInfoTile('Email', _getUserEmail(user)),
                   _buildInfoTile(
                     'User ID',
-                    '${_getUserUID(user).substring(0, 8)}...'),
-                  _buildInfoTile('Member Since',
-                      _getUserCreatedAt(user).toLocal().toString().split(' ')[0]),
+                    '${_getUserUID(user).substring(0, 8)}...',
+                  ),
+                  _buildInfoTile(
+                    'Member Since',
+                    _getUserCreatedAt(user).toLocal().toString().split(' ')[0],
+                  ),
                 ],
               ),
             ),
