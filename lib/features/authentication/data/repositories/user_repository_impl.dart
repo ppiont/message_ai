@@ -73,11 +73,11 @@ class UserRepositoryImpl implements UserRepository {
 
   @override
   Future<Either<Failure, void>> updateUserOnlineStatus(
-    String userId,
-    bool isOnline,
-  ) async {
+    String userId, {
+    required bool isOnline,
+  }) async {
     try {
-      await _remoteDataSource.updateUserOnlineStatus(userId, isOnline);
+      await _remoteDataSource.updateUserOnlineStatus(userId, isOnline: isOnline);
       return const Right(null);
     } on AppException catch (e) {
       return Left(ErrorMapper.mapExceptionToFailure(e));

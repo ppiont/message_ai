@@ -52,7 +52,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
       _isLoading = false;
     });
 
-    result.fold(
+    await result.fold(
       (failure) {
         setState(() {
           _errorMessage = failure.message;

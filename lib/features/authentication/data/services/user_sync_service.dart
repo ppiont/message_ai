@@ -95,8 +95,11 @@ class UserSyncService {
   /// When the user changes their profile, auto-sync to Drift
   void _watchUser(String userId) {
     // Don't create duplicate watchers
-    if (_userWatchers.containsKey(userId)) return;
+    if (_userWatchers.containsKey(userId)) {
+      return;
+    }
 
+    // ignore: cancel_subscriptions - Cancelled in stopBackgroundSync()
     final watcher = _userRepository.watchUser(userId).listen((result) {
       result.fold(
         (failure) {

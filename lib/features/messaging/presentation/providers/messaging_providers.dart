@@ -148,10 +148,8 @@ Stream<List<Map<String, dynamic>>> userConversationsStream(
 
   await for (final result in watchUseCase(userId: userId)) {
     yield result.fold(
-      (failure) {
-        // Log error but return empty list to keep UI functional
-        return [];
-      },
+      (failure) => [],
+      // Log error but return empty list to keep UI functional
       (conversations) => conversations
           .map(
             (conv) => {
@@ -525,14 +523,13 @@ Stream<List<Map<String, dynamic>>> allConversationsStream(
   // Merge the two streams using combineLatest2
   // This ensures the combined stream emits whenever EITHER stream emits
   return Rx.combineLatest2(directStream, groupStream, (directConvs, groups) {
-    final allConversations = <Map<String, dynamic>>[...directConvs, ...groups];
-
-    // Sort by lastUpdatedAt (newest first)
-    allConversations.sort((a, b) {
-      final aTime = a['lastUpdatedAt'] as DateTime;
-      final bTime = b['lastUpdatedAt'] as DateTime;
-      return bTime.compareTo(aTime);
-    });
+    final allConversations = <Map<String, dynamic>>[...directConvs, ...groups]
+      // Sort by lastUpdatedAt (newest first)
+      ..sort((a, b) {
+        final aTime = a['lastUpdatedAt'] as DateTime;
+        final bTime = b['lastUpdatedAt'] as DateTime;
+        return bTime.compareTo(aTime);
+      });
 
     return allConversations;
   });

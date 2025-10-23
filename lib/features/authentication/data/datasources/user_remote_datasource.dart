@@ -23,7 +23,10 @@ abstract class UserRemoteDataSource {
   Future<UserModel> updateUser(UserModel user);
 
   /// Update user's online status
-  Future<void> updateUserOnlineStatus(String userId, bool isOnline);
+  Future<void> updateUserOnlineStatus(
+    String userId, {
+    required bool isOnline,
+  });
 
   /// Update user's last seen timestamp
   Future<void> updateUserLastSeen(String userId, DateTime lastSeen);
@@ -176,7 +179,10 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
   }
 
   @override
-  Future<void> updateUserOnlineStatus(String userId, bool isOnline) async {
+  Future<void> updateUserOnlineStatus(
+    String userId, {
+    required bool isOnline,
+  }) async {
     try {
       await _usersRef.doc(userId).update({
         'isOnline': isOnline,
