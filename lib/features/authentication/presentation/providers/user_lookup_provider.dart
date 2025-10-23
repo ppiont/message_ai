@@ -1,3 +1,4 @@
+import 'package:message_ai/core/providers/database_provider.dart';
 import 'package:message_ai/features/authentication/domain/entities/user.dart';
 import 'package:message_ai/features/authentication/presentation/providers/user_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -38,35 +39,80 @@ class UserLookupCache extends _$UserLookupCache {
   /// Get user by ID with caching
   ///
   /// Returns null if user not found or lookup fails
-  /// Caches results for 5 minutes to minimize Firestore reads
+  /// Caches results for 5 minutes to minimize Drift/Firestore reads
+  ///
+  /// Lookup strategy (offline-first):
+  /// 1. Check memory cache (instant, 5 min TTL)
+  /// 2. Check Drift local database (fast, offline)
+  /// 3. Fall back to Firestore + cache to Drift (slow, online)
   Future<User?> getUser(String userId) async {
-    // Check cache first
+    // 1. Check memory cache first
     final cached = state[userId];
     if (cached != null && !cached.isExpired) {
       return cached.user;
     }
 
-    // Fetch from Firestore
+    // 2. Try Drift local database (offline-first)
     try {
+      final db = ref.read(databaseProvider);
+      final localUser = await db.userDao.getUserByUid(userId);
+
+      if (localUser != null) {
+        // Convert UserEntity to User domain entity
+        final user = User(
+          uid: localUser.uid,
+          email: localUser.email,
+          phoneNumber: localUser.phoneNumber,
+          displayName: localUser.name,
+          photoURL: localUser.imageUrl,
+          preferredLanguage: localUser.preferredLanguage,
+          createdAt: localUser.createdAt,
+          lastSeen: localUser.lastSeen,
+          isOnline: localUser.isOnline,
+          fcmTokens: [], // FCM tokens not stored in local DB
+        );
+
+        // Update memory cache
+        state = {
+          ...state,
+          userId: CachedUser(user, DateTime.now()),
+        };
+        print('✅ UserLookup: Found in Drift: ${user.displayName}');
+        return user;
+      }
+    } catch (e) {
+      print('⚠️ UserLookup: Drift lookup failed for $userId: $e');
+      // Continue to Firestore fallback
+    }
+
+    // 3. Fall back to Firestore and cache to Drift
+    try {
+      final userCacheService = ref.read(userCacheServiceProvider);
       final userRepository = ref.read(userRepositoryProvider);
       final result = await userRepository.getUserById(userId);
 
       return result.fold(
         (failure) {
           // Failed to fetch - keep old cache if available
+          print('❌ UserLookup: Firestore fetch failed for $userId: ${failure.message}');
           return cached?.user;
         },
-        (user) {
-          // Update cache
+        (user) async {
+          // Cache to Drift for future offline access
+          await userCacheService.syncUserToDrift(user);
+
+          // Update memory cache
           state = {
             ...state,
             userId: CachedUser(user, DateTime.now()),
           };
+          print('✅ UserLookup: Fetched from Firestore & cached: ${user.displayName}');
           return user;
         },
       );
     } catch (e) {
       // On error, return cached value if available
+      print('💥 UserLookup: Exception fetching user $userId: $e');
       return cached?.user;
     }
   }

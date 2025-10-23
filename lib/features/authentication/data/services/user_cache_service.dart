@@ -1,0 +1,104 @@
+/// Service for caching user profiles in local Drift database
+///
+/// Ensures user data is available offline for display names, avatars, etc.
+/// Automatically syncs users encountered in conversations and messages.
+library;
+
+import 'package:message_ai/core/database/app_database.dart';
+import 'package:message_ai/features/authentication/data/models/user_model.dart';
+import 'package:message_ai/features/authentication/domain/entities/user.dart';
+import 'package:message_ai/features/authentication/domain/repositories/user_repository.dart';
+
+/// Caches user profiles in Drift for offline access
+///
+/// This service bridges the gap between Firestore (source of truth)
+/// and Drift (offline cache) for user profiles.
+///
+/// Usage:
+/// - Call `cacheUser()` when encountering a new user ID
+/// - Call `cacheUsers()` when loading conversations/groups
+/// - Cache is updated automatically from Firestore
+class UserCacheService {
+  UserCacheService({
+    required AppDatabase database,
+    required UserRepository userRepository,
+  })  : _database = database,
+        _userRepository = userRepository;
+
+  final AppDatabase _database;
+  final UserRepository _userRepository;
+
+  /// Cache a single user by ID
+  ///
+  /// Fetches from Firestore and saves to Drift
+  /// Silently fails if user doesn't exist or network is unavailable
+  Future<void> cacheUser(String userId) async {
+    try {
+      // Check if already cached recently (avoid redundant fetches)
+      final cached = await _database.userDao.getUserByUid(userId);
+      if (cached != null) {
+        // Already cached, no need to fetch again
+        return;
+      }
+
+      // Fetch from Firestore
+      final result = await _userRepository.getUserById(userId);
+
+      result.fold(
+        (failure) {
+          // User not found or network error - silently fail
+          print('⚠️ UserCache: Failed to cache user $userId: ${failure.message}');
+        },
+        (user) async {
+          // Save to Drift
+          await _saveUserToDrift(user);
+          print('✅ UserCache: Cached user $userId: ${user.displayName}');
+        },
+      );
+    } catch (e) {
+      // Silently fail - offline mode or other error
+      print('💥 UserCache: Exception caching user $userId: $e');
+    }
+  }
+
+  /// Cache multiple users by IDs
+  ///
+  /// Useful for caching all conversation participants at once
+  Future<void> cacheUsers(List<String> userIds) async {
+    // Cache in parallel for speed
+    await Future.wait(
+      userIds.map((userId) => cacheUser(userId)),
+      eagerError: false, // Don't stop if one fails
+    );
+  }
+
+  /// Save a user entity to Drift
+  Future<void> _saveUserToDrift(User user) async {
+    final companion = UsersCompanion.insert(
+      uid: user.uid,
+      email: user.email ?? '',
+      phoneNumber: user.phoneNumber,
+      name: user.displayName,
+      imageUrl: user.photoURL,
+      preferredLanguage: user.preferredLanguage,
+      createdAt: user.createdAt,
+      lastSeen: user.lastSeen,
+      isOnline: user.isOnline,
+    );
+
+    await _database.userDao.upsertUser(companion);
+  }
+
+  /// Sync a user from Firestore to Drift
+  ///
+  /// Use this when you already have a User entity from Firestore
+  /// and just need to save it to Drift
+  Future<void> syncUserToDrift(User user) async {
+    try {
+      await _saveUserToDrift(user);
+      print('✅ UserCache: Synced user ${user.uid}: ${user.displayName}');
+    } catch (e) {
+      print('💥 UserCache: Failed to sync user ${user.uid}: $e');
+    }
+  }
+}

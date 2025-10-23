@@ -77,7 +77,7 @@ final class UserLookupCacheProvider
   }
 }
 
-String _$userLookupCacheHash() => r'08ac8f1e7f082c8e401fd464acc9ab97ee2ec5bc';
+String _$userLookupCacheHash() => r'cb2eacd61edf3114ff335837e31cb242f2456651';
 
 /// In-memory cache for user lookups to avoid repeated Firestore queries
 ///
