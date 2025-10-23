@@ -66,11 +66,11 @@ class UserCacheService {
   ///
   /// Useful for caching all conversation participants at once
   Future<void> cacheUsers(List<String> userIds) async {
-    // Cache in parallel for speed
-    await Future.wait(
-      userIds.map((userId) => cacheUser(userId)),
-      eagerError: false, // Don't stop if one fails
-    );
+    // Cache sequentially to avoid database locks
+    // (SQLite doesn't handle parallel writes well)
+    for (final userId in userIds) {
+      await cacheUser(userId);
+    }
   }
 
   /// Save a user entity to Drift

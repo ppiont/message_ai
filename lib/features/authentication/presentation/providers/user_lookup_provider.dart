@@ -53,6 +53,7 @@ class UserLookupCache extends _$UserLookupCache {
     }
 
     // 2. Try Drift local database (offline-first)
+    // No ref.mounted checks here - Drift is fast and synchronous enough
     try {
       final db = ref.read(databaseProvider);
       final localUser = await db.userDao.getUserByUid(userId);
@@ -72,11 +73,13 @@ class UserLookupCache extends _$UserLookupCache {
           fcmTokens: [], // FCM tokens not stored in local DB
         );
 
-        // Update memory cache
-        state = {
-          ...state,
-          userId: CachedUser(user, DateTime.now()),
-        };
+        // Update memory cache (safe to skip if disposed)
+        if (ref.mounted) {
+          state = {
+            ...state,
+            userId: CachedUser(user, DateTime.now()),
+          };
+        }
         print('✅ UserLookup: Found in Drift: ${user.displayName}');
         return user;
       }
@@ -87,6 +90,7 @@ class UserLookupCache extends _$UserLookupCache {
 
     // 3. Fall back to Firestore and cache to Drift
     try {
+      if (!ref.mounted) return null; // Check before Firestore fetch
       final userCacheService = ref.read(userCacheServiceProvider);
       final userRepository = ref.read(userRepositoryProvider);
       final result = await userRepository.getUserById(userId);
@@ -98,8 +102,12 @@ class UserLookupCache extends _$UserLookupCache {
           return cached?.user;
         },
         (user) async {
+          if (!ref.mounted) return null; // Check after Firestore fetch
+
           // Cache to Drift for future offline access
           await userCacheService.syncUserToDrift(user);
+
+          if (!ref.mounted) return null; // Check after Drift write
 
           // Update memory cache
           state = {
