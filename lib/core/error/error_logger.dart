@@ -30,7 +30,9 @@ class ErrorLogger {
   /// Should be called at app startup.
   /// In debug mode, Crashlytics collection is disabled.
   static Future<void> initialize() async {
-    if (_isInitialized) return;
+    if (_isInitialized) {
+      return;
+    }
 
     try {
       _crashlytics = FirebaseCrashlytics.instance;
@@ -231,7 +233,9 @@ class ErrorLogger {
 
         if (additionalInfo != null) {
           additionalInfo.forEach((key, value) {
-            unawaited(_crashlytics!.setCustomKey('user_$key', value.toString()));
+            unawaited(
+              _crashlytics!.setCustomKey('user_$key', value.toString()),
+            );
           });
         }
       } catch (e) {

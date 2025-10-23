@@ -272,67 +272,76 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     }
   }
 
-  String _getUserName(dynamic user) {
+  String _getUserName(Object? user) {
     if (user == null) {
       return '';
     }
     try {
-      return (user.name ?? user.displayName ?? '') as String;
+      // Handle both UserEntity (name) and Firebase User (displayName)
+      final dynamic u = user;
+      return (u.name ?? u.displayName ?? '') as String;
     } catch (_) {
       return '';
     }
   }
 
-  String? _getUserPhoto(dynamic user) {
+  String? _getUserPhoto(Object? user) {
     if (user == null) {
       return null;
     }
     try {
-      return (user.imageUrl ?? user.photoURL) as String?;
+      // Handle both UserEntity (imageUrl) and Firebase User (photoURL)
+      final dynamic u = user;
+      return (u.imageUrl ?? u.photoURL) as String?;
     } catch (_) {
       return null;
     }
   }
 
-  String _getPreferredLanguage(dynamic user) {
+  String _getPreferredLanguage(Object? user) {
     if (user == null) {
       return 'en';
     }
     try {
-      return (user.preferredLanguage ?? 'en') as String;
+      // Only UserEntity has preferredLanguage
+      final dynamic u = user;
+      return (u.preferredLanguage ?? 'en') as String;
     } catch (_) {
       return 'en';
     }
   }
 
-  String _getUserEmail(dynamic user) {
+  String _getUserEmail(Object? user) {
     if (user == null) {
       return 'N/A';
     }
     try {
-      return (user.email ?? 'N/A') as String;
+      final dynamic u = user;
+      return (u.email ?? 'N/A') as String;
     } catch (_) {
       return 'N/A';
     }
   }
 
-  String _getUserUID(dynamic user) {
+  String _getUserUID(Object? user) {
     if (user == null) {
       return '';
     }
     try {
-      return (user.uid ?? '') as String;
+      final dynamic u = user;
+      return (u.uid ?? '') as String;
     } catch (_) {
       return '';
     }
   }
 
-  DateTime _getUserCreatedAt(dynamic user) {
+  DateTime _getUserCreatedAt(Object? user) {
     if (user == null) {
       return DateTime.now();
     }
     try {
-      return (user.createdAt ?? DateTime.now()) as DateTime;
+      final dynamic u = user;
+      return (u.createdAt ?? DateTime.now()) as DateTime;
     } catch (_) {
       return DateTime.now();
     }
@@ -359,7 +368,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings'), elevation: 0),
-      body: StreamBuilder<dynamic>(
+      body: StreamBuilder<UserEntity?>(
         stream: db.userDao.watchUser(currentUser.uid),
         builder: (context, snapshot) {
           // Handle connection states

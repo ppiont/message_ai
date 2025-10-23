@@ -278,16 +278,16 @@ class ConversationLocalDataSourceImpl implements ConversationLocalDataSource {
 
   List<Participant> _deserializeParticipants(String jsonString) {
     try {
-      final decoded = json.decode(jsonString) as List;
-      return decoded
-          .map(
-            (p) => Participant(
-              uid: p['uid'] as String,
-              imageUrl: p['imageUrl'] as String?,
-              preferredLanguage: p['preferredLanguage'] as String,
-            ),
-          )
-          .toList();
+      final decoded = json.decode(jsonString) as List<dynamic>;
+      return decoded.map((p) {
+        final map = p as Map<String, dynamic>;
+        // ignore: avoid_dynamic_calls
+        return Participant(
+          uid: map['uid'] as String,
+          imageUrl: map['imageUrl'] as String?,
+          preferredLanguage: map['preferredLanguage'] as String,
+        );
+      }).toList();
     } catch (e) {
       return [];
     }
