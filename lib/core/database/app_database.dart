@@ -105,6 +105,11 @@ class AppDatabase extends _$AppDatabase {
     beforeOpen: (details) async {
       // Enable foreign keys
       await customStatement('PRAGMA foreign_keys = ON');
+      
+      // Enable WAL mode for better concurrency
+      // WAL allows multiple readers + one writer simultaneously
+      // Without WAL, writes block everything (exclusive lock)
+      await customStatement('PRAGMA journal_mode = WAL');
     },
   );
 }
