@@ -462,7 +462,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                                     child: Image.network(
                                       _getUserPhoto(user)!,
                                       fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) =>
+                                      errorBuilder: (context, error, stackTrace) =>
                                           const Icon(Icons.person, size: 60),
                                     ),
                                   )

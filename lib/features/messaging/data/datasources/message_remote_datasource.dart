@@ -47,7 +47,6 @@ abstract class MessageRemoteDataSource {
 
 /// Implementation of [MessageRemoteDataSource] using Firebase Firestore.
 class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
-
   MessageRemoteDataSourceImpl({required FirebaseFirestore firestore})
     : _firestore = firestore;
   final FirebaseFirestore _firestore;
@@ -121,7 +120,9 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw UnknownException(
         message: 'Failed to create message',
         originalError: e,
@@ -149,7 +150,9 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw UnknownException(
         message: 'Failed to get message',
         originalError: e,
@@ -182,7 +185,9 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw UnknownException(
         message: 'Failed to get messages',
         originalError: e,
@@ -216,7 +221,9 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw UnknownException(
         message: 'Failed to update message',
         originalError: e,
@@ -234,7 +241,9 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw UnknownException(
         message: 'Failed to delete message',
         originalError: e,
@@ -249,22 +258,26 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
   }) {
     try {
       // Convert Future to Stream, then flatten
-      return Stream.fromFuture(_messagesRef(conversationId)).asyncExpand((
-        messagesRef,
-      ) => messagesRef
+      return Stream.fromFuture(_messagesRef(conversationId)).asyncExpand(
+        (messagesRef) => messagesRef
             .orderBy(
               'timestamp',
               descending: false,
             ) // Oldest first (standard chat order)
             .limit(limit)
             .snapshots()
-            .map((snapshot) => snapshot.docs
+            .map(
+              (snapshot) => snapshot.docs
                   .map((doc) => MessageModel.fromJson(doc.data()))
-                  .toList()));
+                  .toList(),
+            ),
+      );
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw UnknownException(
         message: 'Failed to watch messages',
         originalError: e,
@@ -280,7 +293,9 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw UnknownException(
         message: 'Failed to mark message as delivered',
         originalError: e,
@@ -296,7 +311,9 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw UnknownException(
         message: 'Failed to mark message as read',
         originalError: e,

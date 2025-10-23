@@ -97,7 +97,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                     data: Text.new,
                     loading: () =>
                         Text(widget.otherParticipantName), // Fallback
-                    error: (_, __) =>
+                    error: (error, stackTrace) =>
                         Text(widget.otherParticipantName), // Fallback
                   );
                 },

@@ -18,7 +18,6 @@ import 'package:message_ai/features/messaging/domain/repositories/message_reposi
 /// - Reads: Local first (instant), sync from remote in background
 /// - Writes: Local immediate, queue for remote sync
 class MessageRepositoryImpl implements MessageRepository {
-
   MessageRepositoryImpl({
     required MessageRemoteDataSource remoteDataSource,
     required MessageLocalDataSource localDataSource,
@@ -40,7 +39,7 @@ class MessageRepositoryImpl implements MessageRepository {
       );
 
       // Background sync to remote (don't wait for it)
-      _syncToRemote(conversationId, localMessage);
+      await _syncToRemote(conversationId, localMessage);
 
       return Right(localMessage);
     } on AppException catch (e) {
@@ -139,7 +138,7 @@ class MessageRepositoryImpl implements MessageRepository {
       );
 
       // Background sync to remote
-      _syncUpdateToRemote(conversationId, updatedMessage);
+      await _syncUpdateToRemote(conversationId, updatedMessage);
 
       return Right(updatedMessage);
     } on AppException catch (e) {
@@ -171,7 +170,7 @@ class MessageRepositoryImpl implements MessageRepository {
       await _localDataSource.deleteMessage(messageId);
 
       // Background delete from remote
-      _syncDeleteToRemote(conversationId, messageId);
+      await _syncDeleteToRemote(conversationId, messageId);
 
       return const Right(null);
     } on AppException catch (e) {
@@ -223,9 +222,7 @@ class MessageRepositoryImpl implements MessageRepository {
         limit: limit,
       );
 
-      return localStream.map(
-        Right<Failure, List<Message>>.new,
-      );
+      return localStream.map(Right<Failure, List<Message>>.new);
     } on AppException catch (e) {
       return Stream.value(Left(ErrorMapper.mapExceptionToFailure(e)));
     } catch (e) {
@@ -251,7 +248,7 @@ class MessageRepositoryImpl implements MessageRepository {
       await _localDataSource.updateMessage(conversationId, updatedMessage);
 
       // Background sync to remote
-      _remoteDataSource.markAsDelivered(conversationId, messageId);
+      await _remoteDataSource.markAsDelivered(conversationId, messageId);
 
       return const Right(null);
     } on AppException catch (e) {
@@ -279,7 +276,7 @@ class MessageRepositoryImpl implements MessageRepository {
       await _localDataSource.updateMessage(conversationId, updatedMessage);
 
       // Background sync to remote
-      _remoteDataSource.markAsRead(conversationId, messageId);
+      await _remoteDataSource.markAsRead(conversationId, messageId);
 
       return const Right(null);
     } on AppException catch (e) {

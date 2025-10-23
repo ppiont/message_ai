@@ -449,7 +449,7 @@ class _GroupManagementPageState extends ConsumerState<GroupManagementPage> {
                   leading: CircleAvatar(child: Text('?')),
                   title: Text('Loading...'),
                 ),
-                error: (_, __) => const ListTile(
+                error: (error, stackTrace) => const ListTile(
                   leading: CircleAvatar(child: Text('?')),
                   title: Text('Unknown'),
                 ),
