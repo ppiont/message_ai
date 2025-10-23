@@ -169,10 +169,28 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         );
         print('✅ Drift updated: displayName=$displayName');
 
-        // Sync to Firebase Auth and Firestore in background
+        // Sync to Firebase Auth AND Firestore in background
         // Display name changes propagate via UserLookupProvider cache invalidation
         final updateUseCase = ref.read(updateUserProfileUseCaseProvider);
-        updateUseCase(displayName: displayName).then((_) {
+        final userRepository = ref.read(userRepositoryProvider);
+        
+        // Update both Firebase Auth and Firestore
+        Future.wait([
+          updateUseCase(displayName: displayName).then((result) {
+            result.fold(
+              (failure) => print('❌ Auth update failed: ${failure.message}'),
+              (_) => print('✅ Firebase Auth updated'),
+            );
+          }),
+          userRepository.updateUser(
+            currentUser.copyWith(displayName: displayName),
+          ).then((result) {
+            result.fold(
+              (failure) => print('❌ Firestore update failed: ${failure.message}'),
+              (_) => print('✅ Firestore updated'),
+            );
+          }),
+        ]).then((_) {
           // Invalidate UserLookupProvider cache so UI fetches new name
           ref
               .read(userLookupCacheProvider.notifier)
