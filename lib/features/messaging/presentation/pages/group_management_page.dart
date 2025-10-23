@@ -218,6 +218,9 @@ class _GroupManagementPageState extends ConsumerState<GroupManagementPage> {
     final conversationAsync = ref.watch(
       getConversationByIdProvider(widget.conversationId),
     );
+    
+    // Keep the provider alive to prevent refetching on every rebuild
+    ref.keepAlive();
 
     return conversationAsync.when(
       data: (group) {
