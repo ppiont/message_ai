@@ -157,12 +157,30 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       if (displayName != currentUser.displayName) {
         final db = ref.read(databaseProvider);
 
-        // Update Drift first (offline-first)
-        await db.userDao.updateUser(
-          currentUser.uid,
-          UsersCompanion(name: Value(displayName)),
-        );
-        print('✅ Drift updated: displayName=$displayName');
+        // Update Drift first (offline-first) with retry logic
+        // Retry up to 3 times with exponential backoff to handle DB locks
+        var retries = 0;
+        const maxRetries = 3;
+        while (retries < maxRetries) {
+          try {
+            await db.userDao.updateUser(
+              currentUser.uid,
+              UsersCompanion(name: Value(displayName)),
+            );
+            print('✅ Drift updated: displayName=$displayName');
+            break; // Success!
+          } catch (e) {
+            retries++;
+            if (retries >= maxRetries) {
+              // Final retry failed, rethrow
+              rethrow;
+            }
+            // Exponential backoff: 100ms, 200ms, 400ms
+            final delayMs = 100 * (1 << (retries - 1));
+            print('⚠️ Drift write failed (attempt $retries/$maxRetries), retrying in ${delayMs}ms...');
+            await Future.delayed(Duration(milliseconds: delayMs));
+          }
+        }
 
         // Sync to Firebase Auth and Firestore in background
         // Display name changes propagate via UserLookupProvider cache invalidation
@@ -211,12 +229,30 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
       final db = ref.read(databaseProvider);
 
-      // Update Drift database (offline-first)
-      await db.userDao.updatePreferredLanguage(
-        uid: currentUser.uid,
-        languageCode: languageCode,
-      );
-      print('✅ Drift updated: language=$languageCode');
+      // Update Drift database (offline-first) with retry logic
+      // Retry up to 3 times with exponential backoff to handle DB locks
+      var retries = 0;
+      const maxRetries = 3;
+      while (retries < maxRetries) {
+        try {
+          await db.userDao.updatePreferredLanguage(
+            uid: currentUser.uid,
+            languageCode: languageCode,
+          );
+          print('✅ Drift updated: language=$languageCode');
+          break; // Success!
+        } catch (e) {
+          retries++;
+          if (retries >= maxRetries) {
+            // Final retry failed, rethrow
+            rethrow;
+          }
+          // Exponential backoff: 100ms, 200ms, 400ms
+          final delayMs = 100 * (1 << (retries - 1));
+          print('⚠️ Drift write failed (attempt $retries/$maxRetries), retrying in ${delayMs}ms...');
+          await Future.delayed(Duration(milliseconds: delayMs));
+        }
+      }
 
       // Sync to Firestore in background
       final userRepository = ref.read(userRepositoryProvider);
