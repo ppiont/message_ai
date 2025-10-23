@@ -206,51 +206,19 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     try {
       print('🌐 Changing language to: $languageCode');
 
-      // Update local Drift database first (offline-first)
-      final updatedUser = currentUser.copyWith(preferredLanguage: languageCode);
       final db = ref.read(databaseProvider);
 
-      // CRITICAL: Ensure user exists in Drift first (sync if needed)
-      final existingUser = await db.userDao.getUserByUid(updatedUser.uid);
-      if (existingUser == null) {
-        print(
-          '📥 User not in Drift, syncing from Auth first: ${updatedUser.uid}',
-        );
-        // Create user in Drift from current auth user
-        await db.userDao.upsertUser(
-          UsersCompanion(
-            uid: Value(updatedUser.uid),
-            email: Value(updatedUser.email),
-            phoneNumber: Value(updatedUser.phoneNumber),
-            name: Value(updatedUser.displayName),
-            imageUrl: Value(updatedUser.photoURL),
-            fcmToken: const Value.absent(),
-            preferredLanguage: Value(languageCode),
-            createdAt: Value(updatedUser.createdAt),
-            lastSeen: Value(updatedUser.lastSeen),
-            isOnline: Value(updatedUser.isOnline),
-          ),
-        );
-        print('✅ User synced to Drift and language set');
-      } else {
-        // User exists, just update language
-        await db.userDao.updatePreferredLanguage(
-          uid: updatedUser.uid,
-          languageCode: languageCode,
-        );
-        print(
-          '✅ Drift updated successfully for uid=${updatedUser.uid}, lang=$languageCode',
-        );
-      }
-
-      // CRITICAL: After update, immediately fetch to verify and force stream emission
-      final refreshedUser = await db.userDao.getUserByUid(updatedUser.uid);
-      print('🔃 Refreshed user from Drift: ${refreshedUser?.preferredLanguage}');
+      // Update Drift database (offline-first)
+      await db.userDao.updatePreferredLanguage(
+        uid: currentUser.uid,
+        languageCode: languageCode,
+      );
+      print('✅ Drift updated: language=$languageCode');
 
       // Sync to Firestore in background
       final userRepository = ref.read(userRepositoryProvider);
+      final updatedUser = currentUser.copyWith(preferredLanguage: languageCode);
       userRepository.updateUser(updatedUser).ignore();
-      print('🔄 Firestore sync queued in background');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -272,61 +240,56 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   String _getUserName(dynamic user) {
     if (user == null) return '';
-    // Try Drift UserEntity's 'name' property first
-    if (user is! User && user.name != null) {
-      return user.name as String? ?? '';
+    try {
+      return (user.name ?? user.displayName ?? '') as String;
+    } catch (_) {
+      return '';
     }
-    // Fall back to auth User's 'displayName'
-    return (user as User).displayName ?? '';
   }
 
   String? _getUserPhoto(dynamic user) {
     if (user == null) return null;
-    // Try Drift UserEntity's 'imageUrl' property first
-    if (user is! User && user.imageUrl != null) {
-      return user.imageUrl as String?;
+    try {
+      return (user.imageUrl ?? user.photoURL) as String?;
+    } catch (_) {
+      return null;
     }
-    // Fall back to auth User's 'photoURL'
-    return (user as User).photoURL;
   }
 
   String _getPreferredLanguage(dynamic user) {
     if (user == null) return 'en';
-    // Try Drift UserEntity first
-    if (user is! User && user.preferredLanguage != null) {
-      return user.preferredLanguage as String? ?? 'en';
+    try {
+      return (user.preferredLanguage ?? 'en') as String;
+    } catch (_) {
+      return 'en';
     }
-    // Fall back to auth User
-    return (user as User).preferredLanguage ?? 'en';
   }
 
   String _getUserEmail(dynamic user) {
     if (user == null) return 'N/A';
-    // Try Drift UserEntity first
-    if (user is! User && user.email != null) {
-      return user.email as String? ?? 'N/A';
+    try {
+      return (user.email ?? 'N/A') as String;
+    } catch (_) {
+      return 'N/A';
     }
-    // Fall back to auth User
-    return (user as User).email ?? 'N/A';
   }
 
   String _getUserUID(dynamic user) {
     if (user == null) return '';
-    // Both have uid property
-    if (user is! User && user.uid != null) {
-      return user.uid as String? ?? '';
+    try {
+      return (user.uid ?? '') as String;
+    } catch (_) {
+      return '';
     }
-    return (user as User).uid;
   }
 
   DateTime _getUserCreatedAt(dynamic user) {
     if (user == null) return DateTime.now();
-    // Try Drift UserEntity first
-    if (user is! User && user.createdAt != null) {
-      return user.createdAt as DateTime? ?? DateTime.now();
+    try {
+      return (user.createdAt ?? DateTime.now()) as DateTime;
+    } catch (_) {
+      return DateTime.now();
     }
-    // Fall back to auth User
-    return (user as User).createdAt;
   }
 
   @override
