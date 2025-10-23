@@ -126,3 +126,215 @@ final class EmbeddingGeneratorProvider
 
 String _$embeddingGeneratorHash() =>
     r'ec30b6b2dddbe7f3a4fe700854ac33800d35945a';
+
+/// Provider for SemanticSearchService (domain layer).
+///
+/// This service performs semantic search using cosine similarity on message embeddings
+/// to find the most relevant context for RAG-based smart replies.
+
+@ProviderFor(semanticSearchService)
+const semanticSearchServiceProvider = SemanticSearchServiceProvider._();
+
+/// Provider for SemanticSearchService (domain layer).
+///
+/// This service performs semantic search using cosine similarity on message embeddings
+/// to find the most relevant context for RAG-based smart replies.
+
+final class SemanticSearchServiceProvider
+    extends
+        $FunctionalProvider<
+          SemanticSearchService,
+          SemanticSearchService,
+          SemanticSearchService
+        >
+    with $Provider<SemanticSearchService> {
+  /// Provider for SemanticSearchService (domain layer).
+  ///
+  /// This service performs semantic search using cosine similarity on message embeddings
+  /// to find the most relevant context for RAG-based smart replies.
+  const SemanticSearchServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'semanticSearchServiceProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$semanticSearchServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<SemanticSearchService> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  SemanticSearchService create(Ref ref) {
+    return semanticSearchService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(SemanticSearchService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<SemanticSearchService>(value),
+    );
+  }
+}
+
+String _$semanticSearchServiceHash() =>
+    r'dc41839ebe940d63be728088f60805906a34dc81';
+
+/// FutureProvider for searching relevant context messages.
+///
+/// Performs semantic search to find the most relevant messages in a conversation
+/// for providing context to smart reply generation.
+///
+/// Parameters:
+/// - conversationId: The conversation to search within
+/// - message: The incoming message to find context for
+/// - limit: Maximum number of results (default: 10)
+///
+/// Returns: List of most relevant messages, sorted by relevance
+
+@ProviderFor(searchRelevantContext)
+const searchRelevantContextProvider = SearchRelevantContextFamily._();
+
+/// FutureProvider for searching relevant context messages.
+///
+/// Performs semantic search to find the most relevant messages in a conversation
+/// for providing context to smart reply generation.
+///
+/// Parameters:
+/// - conversationId: The conversation to search within
+/// - message: The incoming message to find context for
+/// - limit: Maximum number of results (default: 10)
+///
+/// Returns: List of most relevant messages, sorted by relevance
+
+final class SearchRelevantContextProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<Message>>,
+          List<Message>,
+          FutureOr<List<Message>>
+        >
+    with $FutureModifier<List<Message>>, $FutureProvider<List<Message>> {
+  /// FutureProvider for searching relevant context messages.
+  ///
+  /// Performs semantic search to find the most relevant messages in a conversation
+  /// for providing context to smart reply generation.
+  ///
+  /// Parameters:
+  /// - conversationId: The conversation to search within
+  /// - message: The incoming message to find context for
+  /// - limit: Maximum number of results (default: 10)
+  ///
+  /// Returns: List of most relevant messages, sorted by relevance
+  const SearchRelevantContextProvider._({
+    required SearchRelevantContextFamily super.from,
+    required (String, Message, {int limit}) super.argument,
+  }) : super(
+         retry: null,
+         name: r'searchRelevantContextProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$searchRelevantContextHash();
+
+  @override
+  String toString() {
+    return r'searchRelevantContextProvider'
+        ''
+        '$argument';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<List<Message>> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<List<Message>> create(Ref ref) {
+    final argument = this.argument as (String, Message, {int limit});
+    return searchRelevantContext(
+      ref,
+      argument.$1,
+      argument.$2,
+      limit: argument.limit,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is SearchRelevantContextProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$searchRelevantContextHash() =>
+    r'4d1aa5810ae7a4418202d9bdab5555be221679e3';
+
+/// FutureProvider for searching relevant context messages.
+///
+/// Performs semantic search to find the most relevant messages in a conversation
+/// for providing context to smart reply generation.
+///
+/// Parameters:
+/// - conversationId: The conversation to search within
+/// - message: The incoming message to find context for
+/// - limit: Maximum number of results (default: 10)
+///
+/// Returns: List of most relevant messages, sorted by relevance
+
+final class SearchRelevantContextFamily extends $Family
+    with
+        $FunctionalFamilyOverride<
+          FutureOr<List<Message>>,
+          (String, Message, {int limit})
+        > {
+  const SearchRelevantContextFamily._()
+    : super(
+        retry: null,
+        name: r'searchRelevantContextProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// FutureProvider for searching relevant context messages.
+  ///
+  /// Performs semantic search to find the most relevant messages in a conversation
+  /// for providing context to smart reply generation.
+  ///
+  /// Parameters:
+  /// - conversationId: The conversation to search within
+  /// - message: The incoming message to find context for
+  /// - limit: Maximum number of results (default: 10)
+  ///
+  /// Returns: List of most relevant messages, sorted by relevance
+
+  SearchRelevantContextProvider call(
+    String conversationId,
+    Message message, {
+    int limit = 10,
+  }) => SearchRelevantContextProvider._(
+    argument: (conversationId, message, limit: limit),
+    from: this,
+  );
+
+  @override
+  String toString() => r'searchRelevantContextProvider';
+}

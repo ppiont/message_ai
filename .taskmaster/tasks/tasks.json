@@ -2071,7 +2071,7 @@
               1
             ],
             "details": "Implement a style analysis service that processes a user's last 20 messages to extract communication patterns. Analyze metrics including average message length, emoji usage frequency and types, punctuation patterns (especially exclamation marks), and use of contractions/slang. Create a structured style profile object that can be passed to the GPT model. Include language detection to support multilingual style analysis. Implement caching to avoid recomputing style for every message.",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": "Test style detection accuracy across different user profiles. Verify correct identification of style elements like emoji usage and message length patterns. Test with multilingual messages. Benchmark performance to ensure analysis completes in <500ms."
           },
           {
@@ -2082,7 +2082,7 @@
               1
             ],
             "details": "Develop a semantic search service that uses cosine similarity to find relevant messages from conversation history. Implement vector comparison logic to calculate similarity scores between the incoming message embedding and stored message embeddings. Create an algorithm to select the most relevant context messages (up to 10 messages) to include in the prompt. Optimize for both relevance and recency, with a bias toward recent messages. Add performance optimizations to ensure search completes in <100ms.",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": "Test search relevance with various conversation scenarios. Verify that semantically similar messages are retrieved correctly. Benchmark search performance with large message histories. Test edge cases like empty history or very short messages."
           },
           {
@@ -2425,7 +2425,7 @@
     ],
     "metadata": {
       "created": "2025-10-20T21:03:23.979Z",
-      "updated": "2025-10-23T21:28:16.164Z",
+      "updated": "2025-10-23T21:57:17.967Z",
       "description": "Tasks for master context"
     }
   }
