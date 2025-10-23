@@ -2019,7 +2019,7 @@ final class GroupPresenceStatusProvider
   /// - 'displayText': Human-readable status (e.g., "3/5 online")
   const GroupPresenceStatusProvider._({
     required GroupPresenceStatusFamily super.from,
-    required String super.argument,
+    required List<String> super.argument,
   }) : super(
          retry: null,
          name: r'groupPresenceStatusProvider',
@@ -2046,7 +2046,7 @@ final class GroupPresenceStatusProvider
 
   @override
   Stream<Map<String, dynamic>> create(Ref ref) {
-    final argument = this.argument as String;
+    final argument = this.argument as List<String>;
     return groupPresenceStatus(ref, argument);
   }
 
@@ -2062,7 +2062,7 @@ final class GroupPresenceStatusProvider
 }
 
 String _$groupPresenceStatusHash() =>
-    r'afdfd52525bcdf012f9f38f32e02e808843101b7';
+    r'12063051c2c71b3ff9500d77c447002552647d7a';
 
 /// Provides aggregated online status for a group conversation.
 ///
@@ -2073,7 +2073,7 @@ String _$groupPresenceStatusHash() =>
 /// - 'displayText': Human-readable status (e.g., "3/5 online")
 
 final class GroupPresenceStatusFamily extends $Family
-    with $FunctionalFamilyOverride<Stream<Map<String, dynamic>>, String> {
+    with $FunctionalFamilyOverride<Stream<Map<String, dynamic>>, List<String>> {
   const GroupPresenceStatusFamily._()
     : super(
         retry: null,
@@ -2091,8 +2091,8 @@ final class GroupPresenceStatusFamily extends $Family
   /// - 'onlineMembers': List of online member IDs
   /// - 'displayText': Human-readable status (e.g., "3/5 online")
 
-  GroupPresenceStatusProvider call(String groupId) =>
-      GroupPresenceStatusProvider._(argument: groupId, from: this);
+  GroupPresenceStatusProvider call(List<String> participantIds) =>
+      GroupPresenceStatusProvider._(argument: participantIds, from: this);
 
   @override
   String toString() => r'groupPresenceStatusProvider';

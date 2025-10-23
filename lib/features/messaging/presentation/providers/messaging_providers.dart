@@ -584,44 +584,35 @@ Stream<List<Map<String, dynamic>>> conversationUsersStream(Ref ref) {
 @riverpod
 Stream<Map<String, dynamic>> groupPresenceStatus(
   Ref ref,
-  String groupId,
-) async* {
-  final groupRepository = ref.watch(groupConversationRepositoryProvider);
+  List<String> participantIds,
+) {
   final presenceService = ref.watch(presenceServiceProvider);
 
-  // Get group once to get participant list
-  final groupResult = await groupRepository.getGroupById(groupId);
-
-  await for (final presenceData in groupResult.fold(
-    (failure) => Stream.value(<String, dynamic>{
+  if (participantIds.isEmpty) {
+    return Stream.value(<String, dynamic>{
       'onlineCount': 0,
       'totalCount': 0,
       'onlineMembers': <String>[],
-      'displayText': 'Unknown',
-    }),
-    (group) {
-      final participantIds = group.participantIds;
-
-      // Watch presence for all participants using Firestore real-time listener
-      return presenceService.watchUsersPresence(userIds: participantIds).map((
-        presenceMap,
-      ) {
-        final onlineMembers = presenceMap.entries
-            .where((entry) => entry.value.isOnline)
-            .map((entry) => entry.key)
-            .toList();
-
-        return <String, dynamic>{
-          'onlineCount': onlineMembers.length,
-          'totalCount': participantIds.length,
-          'onlineMembers': onlineMembers,
-          'displayText': onlineMembers.isEmpty
-              ? 'All offline'
-              : '${onlineMembers.length}/${participantIds.length} online',
-        };
-      });
-    },
-  )) {
-    yield presenceData;
+      'displayText': 'No members',
+    });
   }
+
+  // Watch presence for all participants using Firestore real-time listener
+  return presenceService.watchUsersPresence(userIds: participantIds).map((
+    presenceMap,
+  ) {
+    final onlineMembers = presenceMap.entries
+        .where((entry) => entry.value.isOnline)
+        .map((entry) => entry.key)
+        .toList();
+
+    return <String, dynamic>{
+      'onlineCount': onlineMembers.length,
+      'totalCount': participantIds.length,
+      'onlineMembers': onlineMembers,
+      'displayText': onlineMembers.isEmpty
+          ? 'All offline'
+          : '${onlineMembers.length}/${participantIds.length} online',
+    };
+  });
 }

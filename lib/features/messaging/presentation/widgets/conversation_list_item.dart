@@ -42,8 +42,9 @@ class ConversationListItem extends ConsumerWidget {
     if (isGroup) {
       // Group conversation
       final name = groupName ?? 'Unknown Group';
+      final participantIds = participants.map((p) => p['uid'] as String).toList();
       final groupPresenceAsync = ref.watch(
-        groupPresenceStatusProvider(conversationId),
+        groupPresenceStatusProvider(participantIds),
       );
 
       return ListTile(
