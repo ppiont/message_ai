@@ -29,8 +29,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   String? _errorMessage;
   String? _successMessage;
 
-  late FocusNode _displayNameFocus;
-
   static const Map<String, String> supportedLanguages = {
     'en': '🇺🇸 English',
     'es': '🇪🇸 Español',
@@ -51,21 +49,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     _displayNameController = TextEditingController(
       text: currentUser?.displayName ?? '',
     );
-    _displayNameFocus = FocusNode();
-
-    // Auto-save display name when focus is lost
-    _displayNameFocus.addListener(() {
-      if (!_displayNameFocus.hasFocus &&
-          _displayNameController.text != currentUser?.displayName) {
-        _saveDisplayName();
-      }
-    });
   }
 
   @override
   void dispose() {
     _displayNameController.dispose();
-    _displayNameFocus.dispose();
     super.dispose();
   }
 
@@ -168,7 +156,18 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
       // Only update if changed
       if (displayName != currentUser.displayName) {
-        await _updateDisplayNameInDrift(displayName, currentUser);
+        final db = ref.read(databaseProvider);
+
+        // Update Drift first (offline-first)
+        await db.userDao.updateUser(
+          currentUser.uid,
+          UsersCompanion(name: Value(displayName)),
+        );
+        print('✅ Drift updated: displayName=$displayName');
+
+        // Sync to Firebase Auth and Firestore in background
+        final updateUseCase = ref.read(updateUserProfileUseCaseProvider);
+        updateUseCase(displayName: displayName).ignore();
       }
 
       if (mounted) {
@@ -197,24 +196,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     }
   }
 
-  Future<void> _saveDisplayName() async {
-    final currentUser = ref.read(currentUserProvider);
-    if (currentUser == null) return;
-
-    final displayName = _displayNameController.text.trim();
-    if (displayName.isEmpty || displayName.length < 2 || displayName == currentUser.displayName) {
-      return;
-    }
-
-    try {
-      await _updateDisplayNameInDrift(displayName, currentUser);
-      print('✅ Display name auto-saved');
-    } catch (e) {
-      print('❌ Auto-save failed: $e');
-    }
-  }
-
-  Future<void> _updateDisplayNameInDrift(String displayName, User currentUser) async {
+  Future<void> _updateDisplayNameInDrift(
+    String displayName,
+    User currentUser,
+  ) async {
     final db = ref.read(databaseProvider);
 
     // Update Drift first (offline-first)
@@ -486,7 +471,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   // Display name
                   TextField(
                     controller: _displayNameController,
-                    focusNode: _displayNameFocus,
                     decoration: InputDecoration(
                       labelText: 'Display Name',
                       hintText: 'Enter your name',
