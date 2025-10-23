@@ -1,6 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:message_ai/features/authentication/domain/entities/user.dart';
-import 'package:message_ai/features/authentication/domain/repositories/user_repository.dart';
 import 'package:message_ai/features/authentication/presentation/providers/user_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 

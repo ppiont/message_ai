@@ -132,7 +132,6 @@ void main() {
                 isMe: false,
                 timestamp: DateTime.now(),
                 detectedLanguage: 'en',
-                translations: null, // No translations available
                 userPreferredLanguage: 'es',
               ),
             ),

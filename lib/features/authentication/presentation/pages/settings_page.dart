@@ -5,9 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:message_ai/core/database/app_database.dart';
-import 'package:message_ai/core/database/tables/users_table.dart';
 import 'package:message_ai/core/providers/database_provider.dart';
-import 'package:message_ai/features/authentication/domain/entities/user.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
 import 'package:message_ai/features/authentication/presentation/providers/user_lookup_provider.dart';
 import 'package:message_ai/features/authentication/presentation/providers/user_providers.dart';
@@ -503,7 +501,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                         ),
                         const SizedBox(height: 12),
                         DropdownButtonFormField<String>(
-                          value: _getPreferredLanguage(user),
+                          initialValue: _getPreferredLanguage(user),
                           decoration: InputDecoration(
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),

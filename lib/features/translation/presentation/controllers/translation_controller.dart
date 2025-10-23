@@ -39,7 +39,6 @@ class TranslationController extends _$TranslationController {
       ...state,
       messageId: currentState.copyWith(
         isTranslated: !currentState.isTranslated,
-        error: null,
       ),
     };
   }
@@ -51,7 +50,6 @@ class TranslationController extends _$TranslationController {
       ...state,
       messageId: currentState.copyWith(
         isLoading: isLoading,
-        error: null,
       ),
     };
   }
@@ -73,7 +71,7 @@ class TranslationController extends _$TranslationController {
     final currentState = state[messageId] ?? const MessageTranslationState();
     state = {
       ...state,
-      messageId: currentState.copyWith(error: null),
+      messageId: currentState.copyWith(),
     };
   }
 
@@ -81,4 +79,3 @@ class TranslationController extends _$TranslationController {
   MessageTranslationState getState(String messageId) =>
       state[messageId] ?? const MessageTranslationState();
 }
-
