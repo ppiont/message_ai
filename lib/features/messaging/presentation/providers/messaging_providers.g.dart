@@ -815,7 +815,7 @@ final class UserConversationsStreamProvider
 }
 
 String _$userConversationsStreamHash() =>
-    r'c7ae235da76d97bd760d7b053dc5721788708901';
+    r'8972032af6182c1ceed3baf92686667dde0e7891';
 
 /// Stream provider for watching user's conversations in real-time.
 ///
@@ -916,7 +916,7 @@ final class ConversationMessagesStreamProvider
 }
 
 String _$conversationMessagesStreamHash() =>
-    r'93d21ae9b3558737d013cc3a5f3feb00bfc133ae';
+    r'179b3fdeb251f1480ec02ad3e5603a8754f55e80';
 
 /// Stream provider for watching messages in a conversation in real-time.
 ///
@@ -1898,7 +1898,7 @@ final class AllConversationsStreamProvider
 }
 
 String _$allConversationsStreamHash() =>
-    r'ca12a2939da65df0cb043813f55065371a30b26b';
+    r'8cb8b27df49526ff3a0fef0f67f1cec61d31d663';
 
 /// Stream provider for watching all conversations (both direct and groups) in real-time.
 ///

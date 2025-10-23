@@ -46,7 +46,7 @@ class UserLookupCache extends _$UserLookupCache {
       return cached.user;
     }
 
-    // Fetch from repository
+    // Fetch from Firestore
     try {
       final userRepository = ref.read(userRepositoryProvider);
       final result = await userRepository.getUserById(userId);

@@ -50,7 +50,7 @@ final class TranslationControllerProvider
 }
 
 String _$translationControllerHash() =>
-    r'a719f10269bdee53301a37d9810bd8cfa9e7811d';
+    r'4419b77e13078fb4a0f2bc5487aa37d3a65b3551';
 
 /// Controller for managing translation state across all messages
 
