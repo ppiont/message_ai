@@ -6,6 +6,7 @@ library;
 
 import 'package:drift/drift.dart';
 import 'package:message_ai/core/database/app_database.dart';
+import 'package:message_ai/core/database/services/drift_write_queue.dart';
 import 'package:message_ai/features/authentication/data/models/user_model.dart';
 import 'package:message_ai/features/authentication/domain/entities/user.dart';
 import 'package:message_ai/features/authentication/domain/repositories/user_repository.dart';
@@ -23,11 +24,14 @@ class UserCacheService {
   UserCacheService({
     required AppDatabase database,
     required UserRepository userRepository,
+    required DriftWriteQueue writeQueue,
   })  : _database = database,
-        _userRepository = userRepository;
+        _userRepository = userRepository,
+        _writeQueue = writeQueue;
 
   final AppDatabase _database;
   final UserRepository _userRepository;
+  final DriftWriteQueue _writeQueue;
 
   /// Cache a single user by ID
   ///
@@ -73,7 +77,7 @@ class UserCacheService {
     }
   }
 
-  /// Save a user entity to Drift
+  /// Save a user entity to Drift via write queue
   Future<void> _saveUserToDrift(User user) async {
     final companion = UsersCompanion.insert(
       uid: user.uid,
@@ -87,7 +91,11 @@ class UserCacheService {
       isOnline: Value(user.isOnline),
     );
 
-    await _database.userDao.upsertUser(companion);
+    // Use write queue to prevent database locks
+    await _writeQueue.enqueue(
+      () => _database.userDao.upsertUser(companion),
+      debugLabel: 'Cache user: ${user.displayName} (${user.uid})',
+    );
   }
 
   /// Sync a user from Firestore to Drift

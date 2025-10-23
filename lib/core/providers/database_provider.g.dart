@@ -288,3 +288,92 @@ final class UserDaoProvider
 }
 
 String _$userDaoHash() => r'1f5bcc38defbf22a77df27fccff0ae4d120b87e9';
+
+/// Provides the centralized write queue for all Drift operations.
+///
+/// This queue ensures that all database writes are serialized, preventing
+/// SQLite's "database is locked" errors that occur with concurrent writes.
+///
+/// **Always use this queue for write operations:**
+/// ```dart
+/// final queue = ref.read(driftWriteQueueProvider);
+/// await queue.enqueue(() => db.userDao.updateUser(uid, companion));
+/// ```
+///
+/// **Read operations can bypass the queue:**
+/// ```dart
+/// final user = await db.userDao.getUserByUid(uid); // No queue needed
+/// ```
+
+@ProviderFor(driftWriteQueue)
+const driftWriteQueueProvider = DriftWriteQueueProvider._();
+
+/// Provides the centralized write queue for all Drift operations.
+///
+/// This queue ensures that all database writes are serialized, preventing
+/// SQLite's "database is locked" errors that occur with concurrent writes.
+///
+/// **Always use this queue for write operations:**
+/// ```dart
+/// final queue = ref.read(driftWriteQueueProvider);
+/// await queue.enqueue(() => db.userDao.updateUser(uid, companion));
+/// ```
+///
+/// **Read operations can bypass the queue:**
+/// ```dart
+/// final user = await db.userDao.getUserByUid(uid); // No queue needed
+/// ```
+
+final class DriftWriteQueueProvider
+    extends
+        $FunctionalProvider<DriftWriteQueue, DriftWriteQueue, DriftWriteQueue>
+    with $Provider<DriftWriteQueue> {
+  /// Provides the centralized write queue for all Drift operations.
+  ///
+  /// This queue ensures that all database writes are serialized, preventing
+  /// SQLite's "database is locked" errors that occur with concurrent writes.
+  ///
+  /// **Always use this queue for write operations:**
+  /// ```dart
+  /// final queue = ref.read(driftWriteQueueProvider);
+  /// await queue.enqueue(() => db.userDao.updateUser(uid, companion));
+  /// ```
+  ///
+  /// **Read operations can bypass the queue:**
+  /// ```dart
+  /// final user = await db.userDao.getUserByUid(uid); // No queue needed
+  /// ```
+  const DriftWriteQueueProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'driftWriteQueueProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$driftWriteQueueHash();
+
+  @$internal
+  @override
+  $ProviderElement<DriftWriteQueue> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  DriftWriteQueue create(Ref ref) {
+    return driftWriteQueue(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(DriftWriteQueue value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<DriftWriteQueue>(value),
+    );
+  }
+}
+
+String _$driftWriteQueueHash() => r'c576307c135985b1a61dced1fc22ace36a04c643';

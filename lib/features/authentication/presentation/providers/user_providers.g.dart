@@ -208,7 +208,7 @@ final class UserCacheServiceProvider
   }
 }
 
-String _$userCacheServiceHash() => r'5bce65efd92207c72af9f4165436ac66d1f31828';
+String _$userCacheServiceHash() => r'aeb87fc3aa77e33e1d061746cc70fbc83e983886';
 
 /// Provider for UserSyncService
 

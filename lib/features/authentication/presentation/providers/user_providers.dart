@@ -35,9 +35,11 @@ UserRepository userRepository(Ref ref) {
 UserCacheService userCacheService(Ref ref) {
   final database = ref.watch(databaseProvider);
   final userRepository = ref.watch(userRepositoryProvider);
+  final writeQueue = ref.watch(driftWriteQueueProvider);
   return UserCacheService(
     database: database,
     userRepository: userRepository,
+    writeQueue: writeQueue,
   );
 }
 

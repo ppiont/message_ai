@@ -114,7 +114,10 @@ LazyDatabase _openConnection() => LazyDatabase(() async {
   final dbFolder = await getApplicationDocumentsDirectory();
   final file = File(p.join(dbFolder.path, 'messageai.db'));
 
-  return NativeDatabase.createInBackground(
+  // Use single-isolate database to avoid lock contention
+  // Background isolate creates separate connection → database locks
+  // Write queue ensures sequential writes within single isolate
+  return NativeDatabase(
     file,
     logStatements: true, // Enable logging in debug mode
   );
