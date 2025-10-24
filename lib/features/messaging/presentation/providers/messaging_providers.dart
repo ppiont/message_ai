@@ -3,6 +3,7 @@ library;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:dartz/dartz.dart';
 import 'package:message_ai/core/providers/database_provider.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
 import 'package:message_ai/features/authentication/presentation/providers/user_providers.dart';
@@ -15,12 +16,18 @@ import 'package:message_ai/features/messaging/data/datasources/message_remote_da
 import 'package:message_ai/features/messaging/data/repositories/conversation_repository_impl.dart';
 import 'package:message_ai/features/messaging/data/repositories/group_conversation_repository_impl.dart';
 import 'package:message_ai/features/messaging/data/repositories/message_repository_impl.dart';
+import 'package:message_ai/core/error/failures.dart';
+import 'package:message_ai/features/authentication/domain/entities/user.dart';
 import 'package:message_ai/features/messaging/data/services/auto_delivery_marker.dart';
 import 'package:message_ai/features/messaging/data/services/fcm_service.dart';
 import 'package:message_ai/features/messaging/data/services/message_queue.dart';
 import 'package:message_ai/features/messaging/data/services/message_sync_service.dart';
-import 'package:message_ai/features/messaging/data/services/presence_service.dart';
+import 'package:message_ai/features/messaging/data/services/presence_service.dart'
+    show PresenceService, UserPresence;
 import 'package:message_ai/features/messaging/data/services/typing_indicator_service.dart';
+import 'package:message_ai/features/messaging/domain/entities/conversation.dart'
+    show Conversation, Participant;
+import 'package:message_ai/features/messaging/domain/entities/message.dart';
 import 'package:message_ai/features/messaging/domain/repositories/conversation_repository.dart';
 import 'package:message_ai/features/messaging/domain/repositories/group_conversation_repository.dart';
 import 'package:message_ai/features/messaging/domain/repositories/message_repository.dart';
@@ -39,7 +46,6 @@ import 'package:message_ai/features/messaging/domain/usecases/watch_messages.dar
 import 'package:message_ai/features/smart_replies/presentation/providers/embedding_providers.dart';
 import 'package:message_ai/features/translation/presentation/providers/language_detection_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:rxdart/rxdart.dart';
 
 part 'messaging_providers.g.dart';
 
@@ -110,6 +116,7 @@ SendMessage sendMessageUseCase(Ref ref) => SendMessage(
   conversationRepository: ref.watch(conversationRepositoryProvider),
   languageDetectionService: ref.watch(languageDetectionServiceProvider),
   embeddingGenerator: ref.watch(embeddingGeneratorProvider),
+  messageQueue: ref.watch(messageQueueProvider),
 );
 
 /// Provides the [WatchMessages] use case.
@@ -152,19 +159,21 @@ Stream<List<Map<String, dynamic>>> userConversationsStream(
   Ref ref,
   String userId,
 ) async* {
-  final watchUseCase = ref.watch(watchConversationsUseCaseProvider);
+  final WatchConversations watchUseCase =
+      ref.watch(watchConversationsUseCaseProvider);
 
-  await for (final result in watchUseCase(userId: userId)) {
+  await for (final Either<Failure, List<Conversation>> result
+      in watchUseCase(userId: userId)) {
     yield result.fold(
-      (failure) => [],
+      (Failure failure) => <Map<String, dynamic>>[],
       // Log error but return empty list to keep UI functional
-      (conversations) => conversations
+      (List<Conversation> conversations) => conversations
           .map(
-            (conv) => {
+            (Conversation conv) => <String, dynamic>{
               'id': conv.documentId,
               'participants': conv.participants
                   .map(
-                    (p) => {
+                    (Participant p) => <String, dynamic>{
                       'uid': p.uid,
                       'imageUrl': p.imageUrl,
                       'preferredLanguage': p.preferredLanguage,
@@ -205,10 +214,10 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
       (failure) => [],
 
       // Log error but return empty list to keep UI functional
-      (messages) {
+      (List<Message> messages) {
         // Sync all message senders to Drift for offline access
-        final allSenderIds = messages
-            .map((msg) => msg.senderId)
+        final List<String> allSenderIds = messages
+            .map((Message msg) => msg.senderId)
             .toSet()
             .toList();
         if (allSenderIds.isNotEmpty) {
@@ -216,9 +225,9 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
         }
 
         // Analyze cultural context for received messages (background, fire-and-forget)
-        currentUserAsync.whenData((currentUser) {
+        currentUserAsync.whenData((User? currentUser) {
           if (currentUser != null) {
-            for (final msg in messages) {
+            for (final Message msg in messages) {
               // Only analyze received messages without cultural hints
               if (msg.senderId != currentUserId && msg.culturalHint == null) {
                 culturalAnalyzer.analyzeMessageInBackground(
@@ -233,7 +242,7 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
 
         return messages
             .map(
-              (msg) => {
+              (Message msg) => <String, dynamic>{
                 'id': msg.id,
                 'text': msg.text,
                 'senderId': msg.senderId,
@@ -364,6 +373,7 @@ Stream<Map<String, dynamic>?> userPresence(Ref ref, String userId) {
 /// Handles background synchronization between local and remote storage.
 @Riverpod(keepAlive: true)
 MessageSyncService messageSyncService(Ref ref) {
+  final database = ref.watch(databaseProvider);
   final service =
       MessageSyncService(
           messageLocalDataSource: ref.watch(messageLocalDataSourceProvider),
@@ -372,6 +382,7 @@ MessageSyncService messageSyncService(Ref ref) {
             conversationLocalDataSourceProvider,
           ),
           conversationRepository: ref.watch(conversationRepositoryProvider),
+          messageDao: database.messageDao,
           connectivity: Connectivity(),
         )
         // Start monitoring connectivity and syncing
@@ -459,112 +470,65 @@ Stream<List<Map<String, dynamic>>> allConversationsStream(
   Ref ref,
   String userId,
 ) {
-  final watchConversationsUseCase = ref.watch(
-    watchConversationsUseCaseProvider,
-  );
-  final groupRepository = ref.watch(groupConversationRepositoryProvider);
+  final WatchConversations watchConversationsUseCase =
+      ref.watch(watchConversationsUseCaseProvider);
   final userSyncService = ref.watch(userSyncServiceProvider);
 
-  // Watch direct conversations
-  final directStream = watchConversationsUseCase(userId: userId).map(
-    (result) => result.fold((failure) => <Map<String, dynamic>>[], (
-      conversations,
+  // Watch all conversations (direct and groups)
+  // Note: watchConversationsUseCase returns all conversation types
+  return watchConversationsUseCase(userId: userId).map(
+    (Either<Failure, List<Conversation>> result) =>
+        result.fold((Failure failure) => <Map<String, dynamic>>[], (
+      List<Conversation> conversations,
     ) {
       // Sync all participant users to Drift for offline access (fire-and-forget)
       // Do this asynchronously to avoid blocking the stream
-      final allParticipantIds = conversations
-          .expand((conv) => conv.participants.map((p) => p.uid))
+      final List<String> allParticipantIds = conversations
+          .expand((Conversation conv) =>
+              conv.participants.map((Participant p) => p.uid))
           .toSet()
           .toList();
       if (allParticipantIds.isNotEmpty) {
         // Fire-and-forget: don't await, don't block the stream
-        Future.microtask(
+        Future<void>.microtask(
           () => userSyncService.syncConversationUsers(allParticipantIds),
         );
       }
 
-      return conversations
+      final List<Map<String, dynamic>> mapped = conversations
           .map(
-            (conv) => <String, dynamic>{
+            (Conversation conv) => <String, dynamic>{
               'id': conv.documentId,
-              'type': 'direct',
+              'type': conv.type,
+              'groupName': conv.groupName,
+              'groupImage': conv.groupImage,
               'participants': conv.participants
                   .map(
-                    (p) => <String, dynamic>{
+                    (Participant p) => <String, dynamic>{
                       'uid': p.uid,
                       'imageUrl': p.imageUrl,
                       'preferredLanguage': p.preferredLanguage,
                     },
                   )
                   .toList(),
+              'participantCount': conv.participantIds.length,
               'lastMessage': conv.lastMessage?.text,
               'lastUpdatedAt': conv.lastUpdatedAt,
               'unreadCount': conv.getUnreadCountForUser(userId),
             },
           )
           .toList();
-    }),
-  );
 
-  // Watch groups
-  final groupStream = groupRepository
-      .watchGroupsForUser(userId)
-      .map(
-        (result) => result.fold((failure) => <Map<String, dynamic>>[], (
-          groups,
-        ) {
-          // Sync all participant users to Drift for offline access (fire-and-forget)
-          // Do this asynchronously to avoid blocking the stream
-          final allParticipantIds = groups
-              .expand((group) => group.participants.map((p) => p.uid))
-              .toSet()
-              .toList();
-          if (allParticipantIds.isNotEmpty) {
-            // Fire-and-forget: don't await, don't block the stream
-            Future.microtask(
-              () => userSyncService.syncConversationUsers(allParticipantIds),
-            );
-          }
-
-          return groups
-              .map(
-                (group) => <String, dynamic>{
-                  'id': group.documentId,
-                  'type': 'group',
-                  'groupName': group.groupName,
-                  'groupImage': group.groupImage,
-                  'participants': group.participants
-                      .map(
-                        (p) => <String, dynamic>{
-                          'uid': p.uid,
-                          'imageUrl': p.imageUrl,
-                          'preferredLanguage': p.preferredLanguage,
-                        },
-                      )
-                      .toList(),
-                  'participantCount': group.participantIds.length,
-                  'lastMessage': group.lastMessage?.text,
-                  'lastUpdatedAt': group.lastUpdatedAt,
-                  'unreadCount': group.getUnreadCountForUser(userId),
-                },
-              )
-              .toList();
-        }),
-      );
-
-  // Merge the two streams using combineLatest2
-  // This ensures the combined stream emits whenever EITHER stream emits
-  return Rx.combineLatest2(directStream, groupStream, (directConvs, groups) {
-    final allConversations = <Map<String, dynamic>>[...directConvs, ...groups]
       // Sort by lastUpdatedAt (newest first)
-      ..sort((a, b) {
-        final aTime = a['lastUpdatedAt'] as DateTime;
-        final bTime = b['lastUpdatedAt'] as DateTime;
+      mapped.sort((Map<String, dynamic> a, Map<String, dynamic> b) {
+        final DateTime aTime = a['lastUpdatedAt'] as DateTime;
+        final DateTime bTime = b['lastUpdatedAt'] as DateTime;
         return bTime.compareTo(aTime);
       });
 
-    return allConversations;
-  });
+      return mapped;
+    }),
+  );
 }
 
 // ========== User Discovery Provider ==========
@@ -574,30 +538,33 @@ Stream<List<Map<String, dynamic>>> allConversationsStream(
 /// In a production app, this would be a proper user search/directory feature.
 @riverpod
 Stream<List<Map<String, dynamic>>> conversationUsersStream(Ref ref) {
-  final firestore = ref.watch(messagingFirestoreProvider);
-  final currentUser = ref.watch(currentUserProvider);
+  final FirebaseFirestore firestore =
+      ref.watch(messagingFirestoreProvider);
+  final User? currentUser = ref.watch(currentUserProvider);
 
   if (currentUser == null) {
-    return Stream.value([]);
+    return Stream<List<Map<String, dynamic>>>.value(<Map<String, dynamic>>[]);
   }
 
   return firestore
       .collection('users')
       .snapshots()
       .map(
-        (snapshot) => snapshot.docs
-            .where((doc) => doc.id != currentUser.uid) // Exclude current user
-            .map((doc) {
-              final data = doc.data();
-              return {
-                'uid': doc.id,
-                'name': data['displayName'] as String? ?? '',
-                'email': data['email'] as String? ?? '',
-                'preferredLanguage':
-                    data['preferredLanguage'] as String? ?? 'en',
-              };
-            })
-            .toList(),
+        (QuerySnapshot<Map<String, dynamic>> snapshot) =>
+            snapshot.docs
+                .where((DocumentSnapshot<Map<String, dynamic>> doc) =>
+                    doc.id != currentUser.uid) // Exclude current user
+                .map((DocumentSnapshot<Map<String, dynamic>> doc) {
+                  final Map<String, dynamic> data = doc.data() ?? {};
+                  return <String, dynamic>{
+                    'uid': doc.id,
+                    'name': data['displayName'] as String? ?? '',
+                    'email': data['email'] as String? ?? '',
+                    'preferredLanguage':
+                        data['preferredLanguage'] as String? ?? 'en',
+                  };
+                })
+                .toList(),
       );
 }
 
@@ -615,10 +582,11 @@ Stream<Map<String, dynamic>> groupPresenceStatus(
   Ref ref,
   List<String> participantIds,
 ) {
-  final presenceService = ref.watch(presenceServiceProvider);
+  final PresenceService presenceService =
+      ref.watch(presenceServiceProvider);
 
   if (participantIds.isEmpty) {
-    return Stream.value(<String, dynamic>{
+    return Stream<Map<String, dynamic>>.value(<String, dynamic>{
       'onlineCount': 0,
       'totalCount': 0,
       'onlineMembers': <String>[],
@@ -627,12 +595,12 @@ Stream<Map<String, dynamic>> groupPresenceStatus(
   }
 
   // Watch presence for all participants using Firestore real-time listener
-  return presenceService.watchUsersPresence(userIds: participantIds).map((
-    presenceMap,
-  ) {
-    final onlineMembers = presenceMap.entries
-        .where((entry) => entry.value.isOnline)
-        .map((entry) => entry.key)
+  return presenceService
+      .watchUsersPresence(userIds: participantIds)
+      .map((Map<String, UserPresence> presenceMap) {
+    final List<String> onlineMembers = presenceMap.entries
+        .where((MapEntry<String, UserPresence> entry) => entry.value.isOnline)
+        .map((MapEntry<String, UserPresence> entry) => entry.key)
         .toList();
 
     return <String, dynamic>{

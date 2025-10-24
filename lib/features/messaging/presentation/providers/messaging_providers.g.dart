@@ -425,7 +425,7 @@ final class SendMessageUseCaseProvider
 }
 
 String _$sendMessageUseCaseHash() =>
-    r'e4bb4f985403f02ef67dee98d62c8fc2f3d8f733';
+    r'2a140209617e601ce7d9328ed6a17a6b151b21a3';
 
 /// Provides the [WatchMessages] use case.
 
@@ -815,7 +815,7 @@ final class UserConversationsStreamProvider
 }
 
 String _$userConversationsStreamHash() =>
-    r'aa5b3879b0ff6de30968027ef9d4e2efee01407e';
+    r'0d8a38c714bbf7b6c561123e1ef3262db7ce8f1d';
 
 /// Stream provider for watching user's conversations in real-time.
 ///
@@ -919,7 +919,7 @@ final class ConversationMessagesStreamProvider
 }
 
 String _$conversationMessagesStreamHash() =>
-    r'4be709c2fce7bea8937a8810d0cb6889a8b3379a';
+    r'be655c9799a55970e32d7ddee8d2d991777d4365';
 
 /// Stream provider for watching messages in a conversation in real-time.
 ///
@@ -1424,7 +1424,7 @@ final class MessageSyncServiceProvider
 }
 
 String _$messageSyncServiceHash() =>
-    r'a0cf5b7c229ea25611a5931a112c39284592bea0';
+    r'ecc8f2ff52e4fa5e1fae9c8e385c5a6558ce8e7b';
 
 /// Provides the [MessageQueue] instance.
 ///
@@ -1903,7 +1903,7 @@ final class AllConversationsStreamProvider
 }
 
 String _$allConversationsStreamHash() =>
-    r'aac9559750e8ace127a03fcde04e451efef8145c';
+    r'7061aed4e5e0d961aacbbe2f04d2076ef73e3e7d';
 
 /// Stream provider for watching all conversations (both direct and groups) in real-time.
 ///
@@ -1984,7 +1984,7 @@ final class ConversationUsersStreamProvider
 }
 
 String _$conversationUsersStreamHash() =>
-    r'cece46cf74080b4624c763a668e62d0c6a63badb';
+    r'f384d3fc6f49b7262a472f27ba527c56a6864636';
 
 /// Provides aggregated online status for a group conversation.
 ///
@@ -2067,7 +2067,7 @@ final class GroupPresenceStatusProvider
 }
 
 String _$groupPresenceStatusHash() =>
-    r'12063051c2c71b3ff9500d77c447002552647d7a';
+    r'b3c7c0de3fc7556ef7333fc84b37370d27db2df5';
 
 /// Provides aggregated online status for a group conversation.
 ///

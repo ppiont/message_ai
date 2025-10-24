@@ -158,7 +158,7 @@ final class IdiomExplanationStateNotifierProvider
 }
 
 String _$idiomExplanationStateNotifierHash() =>
-    r'f88b195c236358ba5a502648be6641c2bf60a879';
+    r'c3eef69e3b1aced1e37e9a953b3113a544bf4ae7';
 
 /// Provider for idiom explanation state per message
 ///
@@ -378,7 +378,7 @@ final class ExplainIdiomsProvider
   }
 }
 
-String _$explainIdiomsHash() => r'32cf6a8d7f2a08d5457e24e60f0671e2dd701849';
+String _$explainIdiomsHash() => r'29e172da1ed2e9ebb91222dd6dd66987ab6044f0';
 
 /// Provider for explaining idioms in a message
 ///

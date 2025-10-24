@@ -2,6 +2,7 @@
 library;
 
 import 'package:dartz/dartz.dart';
+import 'package:flutter/foundation.dart';
 import 'package:message_ai/core/error/error_mapper.dart';
 import 'package:message_ai/core/error/exceptions.dart';
 import 'package:message_ai/core/error/failures.dart';
@@ -10,6 +11,7 @@ import 'package:message_ai/features/messaging/data/datasources/message_remote_da
 import 'package:message_ai/features/messaging/data/models/message_model.dart';
 import 'package:message_ai/features/messaging/domain/entities/message.dart';
 import 'package:message_ai/features/messaging/domain/repositories/message_repository.dart';
+import 'package:workmanager/workmanager.dart';
 
 /// Implementation of [MessageRepository] that uses both local and remote data sources
 /// for offline-first functionality.
@@ -63,13 +65,33 @@ class MessageRepositoryImpl implements MessageRepository {
         retryCount: 0,
       );
     } catch (e) {
-      // Sync failed - will be retried by sync service
+      debugPrint('Failed to sync message to remote: $e');
+
+      // Sync failed - mark as failed and increment retry count
       await _localDataSource.updateSyncStatus(
         messageId: message.id,
         syncStatus: 'failed',
         lastSyncAttempt: DateTime.now(),
         retryCount: 1,
       );
+
+      // Schedule WorkManager task for background retry
+      // This ensures sync happens even when app is closed
+      try {
+        await Workmanager().registerOneOffTask(
+          'sync-${message.id}',
+          'syncPendingMessages',
+          initialDelay: const Duration(seconds: 30), // Retry in 30 seconds
+          constraints: Constraints(
+            networkType: NetworkType.connected, // Only when online
+          ),
+        );
+        debugPrint('[WorkManager] Scheduled background sync for message ${message.id}');
+      } catch (workManagerError) {
+        // WorkManager registration failed - message will still be picked up
+        // by MessageSyncService on next app launch or connectivity change
+        debugPrint('[WorkManager] Failed to schedule task: $workManagerError');
+      }
     }
   }
 
@@ -203,10 +225,10 @@ class MessageRepositoryImpl implements MessageRepository {
       // Note: Delivery marking is handled by AutoDeliveryMarker service
       _remoteDataSource
           .watchMessages(conversationId: conversationId, limit: limit)
-          .listen((messageModels) async {
+          .listen((List<MessageModel> messageModels) async {
             try {
-              final messages = messageModels
-                  .map((model) => model.toEntity())
+              final List<Message> messages = messageModels
+                  .map((MessageModel model) => model.toEntity())
                   .toList();
 
               // Upsert to local database (updates existing, inserts new)
@@ -217,10 +239,11 @@ class MessageRepositoryImpl implements MessageRepository {
           });
 
       // Return local stream (which now gets updates from Firestore)
-      final localStream = _localDataSource.watchMessages(
-        conversationId: conversationId,
-        limit: limit,
-      );
+      final Stream<List<Message>> localStream =
+          _localDataSource.watchMessages(
+            conversationId: conversationId,
+            limit: limit,
+          );
 
       return localStream.map(Right<Failure, List<Message>>.new);
     } on AppException catch (e) {

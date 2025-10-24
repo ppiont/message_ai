@@ -98,7 +98,7 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
       ..where(messages.conversationId.equals(conversationId));
 
     final result = await query.getSingle();
-    return result.read(count) ?? 0;
+    return result.read(count) as int? ?? 0;
   }
 
   /// Count unread messages (status = 'delivered' for current user)
@@ -113,7 +113,7 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
       );
 
     final result = await query.getSingle();
-    return result.read(count) ?? 0;
+    return result.read(count) as int? ?? 0;
   }
 
   // ============================================================================
@@ -314,4 +314,16 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
             ..where((m) => m.replyTo.equals(messageId))
             ..orderBy([(m) => OrderingTerm.asc(m.timestamp)]))
           .watch();
+
+  /// Get retry count for a specific message
+  Future<int> getMessageRetryCount(String messageId) async {
+    final message = await getMessageById(messageId);
+    return message?.retryCount ?? 0;
+  }
+
+  /// Get last sync attempt timestamp for a specific message
+  Future<DateTime?> getMessageLastSyncAttempt(String messageId) async {
+    final message = await getMessageById(messageId);
+    return message?.lastSyncAttempt;
+  }
 }

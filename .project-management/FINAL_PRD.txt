@@ -29,12 +29,6 @@ Implementation Requirements:
 - 70% cache hit rate target to reduce API costs
 - Rate limiting (100 requests/hour per user)
 
-Testing:
-- Unit tests for Cloud Function
-- Test translation accuracy for multiple languages
-- Verify caching behavior
-- Test rate limiting
-
 ---
 
 ### Task: Implement Language Detection with ML Kit
@@ -56,12 +50,6 @@ Language Detection Flow:
 2. On send → detect language (ML Kit, <50ms)
 3. Store detectedLanguage in Message entity
 4. Trigger translation for recipients
-
-Testing:
-- Test detection accuracy (10+ languages)
-- Test confidence threshold
-- Test caching behavior
-- Test 'und' fallback
 
 ---
 
@@ -90,11 +78,6 @@ Firestore Schema:
   }
 }
 ```
-
-Testing:
-- Test serialization/deserialization
-- Test null translations handling
-- Test migration for existing messages
 
 ---
 
@@ -126,13 +109,6 @@ Translation Strategy:
 - On-receive: Translation already available (0 API calls, instant)
 - On-demand: If translation missing, request it (rare case)
 
-Testing:
-- Test translation toggle
-- Test animation
-- Test loading/error states
-- Test multiple languages
-- Test cache hit/miss
-
 ---
 
 ### Task: Feature 2 - Language Detection & Auto-Translate
@@ -154,12 +130,6 @@ Auto-Translate Flow:
 3. Translates: {"en": "Hello", "fr": "Bonjour"}
 4. Stores all versions in Firestore
 5. Recipients see translated version automatically
-
-Testing:
-- Test auto-detection accuracy
-- Test multi-recipient translation
-- Test preferred language retrieval
-- Test Firestore storage
 
 ---
 
@@ -197,11 +167,6 @@ UI/UX:
 - Tap badge → show AlertDialog with explanation
 - Example: "In Spanish culture, 'usted' shows respect and is used with strangers or elders."
 
-Testing:
-- Test detection accuracy (10+ test cases)
-- Test badge visibility
-- Test tooltip display
-- Test caching
 
 ---
 
@@ -243,13 +208,6 @@ UI/UX:
 - Tap chip → message rewrites in TextField
 - Can edit after adjustment
 - Loading indicator while adjusting
-
-Testing:
-- Test formality detection
-- Test rewriting accuracy
-- Test all 3 levels (casual, neutral, formal)
-- Test multiple languages
-- Test UI interactions
 
 ---
 
@@ -299,13 +257,6 @@ UI/UX:
   - Cultural note (italic, grey)
   - Equivalent expressions
 - "Got it" button to dismiss
-
-Testing:
-- Test idiom detection (10+ test cases)
-- Test long-press menu
-- Test bottom sheet display
-- Test multiple idioms in one message
-- Test "no idioms" case
 
 ---
 
@@ -387,16 +338,6 @@ Performance:
 - Cache style analysis (update every 20 messages)
 - Generate only for questions/requests (not statements)
 - Target: <2s generation time
-
-Testing:
-- Test embedding generation
-- Test semantic search
-- Test style learning accuracy
-- Test reply generation quality
-- Test all 3 intents
-- Test multiple languages
-- Test UI interactions
-- Test caching
 
 ---
 
