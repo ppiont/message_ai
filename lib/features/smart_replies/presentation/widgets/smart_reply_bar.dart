@@ -1,9 +1,9 @@
-/// Smart reply bar widget
+/// Smart reply bar widget - Material Design 3 optimized
 library;
 
 import 'dart:async';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:message_ai/features/messaging/domain/entities/message.dart';
 import 'package:message_ai/features/smart_replies/domain/entities/smart_reply.dart';
@@ -11,14 +11,14 @@ import 'package:message_ai/features/smart_replies/presentation/providers/smart_r
 
 /// Widget displaying smart reply suggestions for incoming messages.
 ///
-/// Shows horizontally scrollable action chips with AI-generated reply suggestions.
 /// Features:
-/// - Automatic generation when new message arrives
+/// - Only appears when suggestions are fully loaded (no loading state)
 /// - Intent-based icons (positive, neutral, question)
-/// - Shimmer loading state
 /// - Auto-hide after 30 seconds
 /// - Smooth slide-in/slide-out animations
-/// - Tap to pre-fill message input
+/// - Full accessibility support
+/// - Platform-adaptive behavior (iOS swipe-to-dismiss, Android back button)
+/// - Material Design 3 theming
 class SmartReplyBar extends ConsumerStatefulWidget {
   const SmartReplyBar({
     required this.conversationId,
@@ -28,17 +28,9 @@ class SmartReplyBar extends ConsumerStatefulWidget {
     super.key,
   });
 
-  /// The conversation ID for context
   final String conversationId;
-
-  /// The current user's ID (who will be replying)
   final String currentUserId;
-
-  /// Callback when a reply is selected
   final void Function(String) onReplySelected;
-
-  /// The incoming message that triggered reply generation
-  /// When this changes (new message), smart replies are regenerated
   final Message? incomingMessage;
 
   @override
@@ -47,57 +39,59 @@ class SmartReplyBar extends ConsumerStatefulWidget {
 
 class _SmartReplyBarState extends ConsumerState<SmartReplyBar>
     with SingleTickerProviderStateMixin {
-  /// Timer for auto-hide after 30 seconds
+
+  // Constants
+  static const _animationDuration = Duration(milliseconds: 300);
+  static const _autoHideDuration = Duration(seconds: 30);
+  static const Map<String, IconData> _intentIcons = {
+    'positive': Icons.thumb_up_outlined,
+    'neutral': Icons.chat_bubble_outline,
+    'question': Icons.help_outline,
+  };
+
+  // State
   Timer? _autoHideTimer;
-
-  /// Whether the bar is currently visible
-  bool _isVisible = false;
-
-  /// Animation controller for slide-in/slide-out
   late AnimationController _animationController;
   late Animation<Offset> _slideAnimation;
-
-  /// Track last message ID to avoid duplicate generation
   String? _lastMessageId;
-
-  /// Cache of generated suggestions per message ID
-  /// Maps message IDs to lists of generated smart reply suggestions
-  final Map<String, List<SmartReply>> _suggestionCache =
-      <String, List<SmartReply>>{};
-
+  bool _hasSuggestionsForCurrentMessage = false;
 
   @override
   void initState() {
     super.initState();
 
-    // Initialize slide animation
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 300),
+      duration: _animationDuration,
     );
-    _slideAnimation =
-        Tween<Offset>(
-          begin: const Offset(0, 1), // Start below screen
-          end: Offset.zero, // End at normal position
-        ).animate(
-          CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
-        );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 1),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic,
+      ),
+    );
   }
 
   @override
   void didUpdateWidget(SmartReplyBar oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // Check if we have a new incoming message that should trigger smart replies
     final newMessage = widget.incomingMessage;
     if (newMessage != null &&
         newMessage.id != _lastMessageId &&
         newMessage.senderId != widget.currentUserId) {
-      debugPrint(
-        '🤖 SmartReplyBar: New incoming message detected, generating smart replies...',
-      );
       _lastMessageId = newMessage.id;
-      _generateSmartReplies(newMessage);
+      _hasSuggestionsForCurrentMessage = false;
+
+      // Reset animation if showing previous suggestions
+      if (_animationController.isCompleted) {
+        _animationController.reset();
+      }
     }
   }
 
@@ -108,91 +102,51 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar>
     super.dispose();
   }
 
-  /// Generate smart replies for the incoming message
-  Future<void> _generateSmartReplies(Message message) async {
-    // Cancel any existing timer
-    _autoHideTimer?.cancel();
+  Future<void> _showBarWithSuggestions() async {
+    if (!mounted) {
+      return;
+    }
 
-    // Show the bar with loading state
-    if (!mounted) return;
-    setState(() {
-      _isVisible = true;
-    });
     await _animationController.forward();
 
-    // Start auto-hide timer (30 seconds)
-    if (mounted) {
-      _autoHideTimer = Timer(const Duration(seconds: 30), _hideBar);
-    }
+    _autoHideTimer?.cancel();
+    _autoHideTimer = Timer(_autoHideDuration, _hideBar);
   }
 
-  /// Hide the bar with animation
   Future<void> _hideBar() async {
     if (!mounted) {
       return;
     }
 
     await _animationController.reverse();
-
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      _isVisible = false;
-    });
     _autoHideTimer?.cancel();
+
+    if (mounted) {
+      setState(() {
+        _hasSuggestionsForCurrentMessage = false;
+      });
+    }
   }
 
-  /// Handle reply selection
   void _handleReplyTap(String replyText) {
-    debugPrint('🤖 SmartReplyBar: Reply selected: $replyText');
+    // Haptic feedback on iOS
+    if (Theme.of(context).platform == TargetPlatform.iOS) {
+      HapticFeedback.selectionClick();
+    }
+
     widget.onReplySelected(replyText);
     _hideBar();
   }
 
-  /// Get icon for intent
-  IconData _getIconForIntent(String intent) {
-    switch (intent.toLowerCase()) {
-      case 'positive':
-        return Icons.thumb_up;
-      case 'neutral':
-        return Icons.chat_bubble_outline;
-      case 'question':
-        return Icons.help_outline;
-      default:
-        return Icons.chat_bubble_outline;
-    }
-  }
-
-  /// Build shimmer loading effect
-  Widget _buildShimmerChip() => Container(
-    height: 36,
-    width: 100,
-    decoration: BoxDecoration(
-      color: Colors.grey[300],
-      borderRadius: BorderRadius.circular(18),
-    ),
-    child: const Center(
-      child: SizedBox(
-        width: 16,
-        height: 16,
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
-        ),
-      ),
-    ),
-  );
+  IconData _getIconForIntent(String intent) =>
+      _intentIcons[intent.toLowerCase()] ?? Icons.chat_bubble_outline;
 
   @override
   Widget build(BuildContext context) {
-    // Don't render anything if not visible
-    if (!_isVisible || widget.incomingMessage == null) {
+    if (widget.incomingMessage == null) {
       return const SizedBox.shrink();
     }
 
-    // Watch the smart reply provider for the current message
     final smartRepliesAsync = ref.watch(
       generateSmartRepliesProvider(
         conversationId: widget.conversationId,
@@ -201,115 +155,172 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar>
       ),
     );
 
+    return smartRepliesAsync.when(
+      data: (List<SmartReply> replies) {
+        if (replies.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        // Trigger animation on first load
+        if (!_hasSuggestionsForCurrentMessage) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              setState(() {
+                _hasSuggestionsForCurrentMessage = true;
+              });
+              _showBarWithSuggestions();
+            }
+          });
+        }
+
+        if (!_hasSuggestionsForCurrentMessage) {
+          return const SizedBox.shrink();
+        }
+
+        return _buildSmartReplyBar(context, replies);
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+    );
+  }
+
+  Widget _buildSmartReplyBar(BuildContext context, List<SmartReply> replies) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isIOS = theme.platform == TargetPlatform.iOS;
+
+    Widget barContent = Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        border: Border(
+          top: BorderSide(
+            color: colorScheme.outlineVariant,
+          ),
+        ),
+        boxShadow: isIOS ? null : [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.05),
+            blurRadius: 4,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildHeader(context),
+          const SizedBox(height: 8),
+          _buildChipList(context, replies),
+        ],
+      ),
+    );
+
+    // iOS: Add swipe-down to dismiss
+    if (isIOS) {
+      barContent = Dismissible(
+        key: const Key('smart_reply_bar_dismissible'),
+        direction: DismissDirection.down,
+        onDismissed: (_) => _hideBar(),
+        child: barContent,
+      );
+    }
+
     return SlideTransition(
       position: _slideAnimation,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 4,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header with dismiss button
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Quick replies',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(Icons.close, size: 16, color: Colors.grey[600]),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  onPressed: _hideBar,
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            // Smart reply chips
-            SizedBox(
-              height: 40,
-              child: smartRepliesAsync.when(
-                data: (List<SmartReply> replies) {
-                  // Cache successful results
-                  if (widget.incomingMessage != null) {
-                    _suggestionCache[widget.incomingMessage!.id] = replies;
-                  }
+      child: barContent,
+    );
+  }
 
-                  if (replies.isEmpty) {
-                    // Silently hide if no suggestions
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (mounted) {
-                        _hideBar();
-                      }
-                    });
-                    return const SizedBox.shrink();
-                  }
+  Widget _buildHeader(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
 
-                  return ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: replies.length,
-                    separatorBuilder: (BuildContext context, int index) =>
-                        const SizedBox(width: 8),
-                    itemBuilder: (BuildContext context, int index) {
-                      final reply = replies[index];
-                      return ActionChip(
-                        avatar: Icon(
-                          _getIconForIntent(reply.intent),
-                          size: 18,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        label: Text(
-                          reply.text,
-                          style: const TextStyle(fontSize: 13),
-                        ),
-                        onPressed: () => _handleReplyTap(reply.text),
-                        backgroundColor: Colors.grey[100],
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      );
-                    },
-                  );
-                },
-                loading: () => ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: 3,
-                  separatorBuilder: (BuildContext context, int index) =>
-                      const SizedBox(width: 8),
-                  itemBuilder: (BuildContext context, int index) =>
-                      _buildShimmerChip(),
-                ),
-                error: (Object error, StackTrace stack) {
-                  debugPrint(
-                    '❌ SmartReplyBar: Error generating replies: $error',
-                  );
-                  // Silently hide on error
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (mounted) {
-                      _hideBar();
-                    }
-                  });
-                  return const SizedBox.shrink();
-                },
-              ),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Semantics(
+          label: 'Quick reply suggestions',
+          hint: 'Swipe right to browse suggested responses',
+          child: Text(
+            'Quick replies',
+            style: TextStyle(
+              fontSize: 12,
+              color: colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w500,
+              letterSpacing: 0.5,
             ),
-          ],
+          ),
         ),
+        Semantics(
+          label: 'Dismiss quick replies',
+          button: true,
+          child: IconButton(
+            icon: Icon(
+              Icons.close,
+              size: 20,
+              color: colorScheme.onSurfaceVariant,
+            ),
+            constraints: const BoxConstraints(
+              minWidth: 48,
+              minHeight: 48,
+            ),
+            onPressed: _hideBar,
+            tooltip: 'Dismiss',
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildChipList(BuildContext context, List<SmartReply> replies) =>
+      Semantics(
+        label: 'Smart reply suggestions',
+        hint: '${replies.length} suggestions available',
+        child: RepaintBoundary(
+          child: SizedBox(
+            height: 48,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              itemCount: replies.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final reply = replies[index];
+                return Semantics(
+                  label: 'Reply with: ${reply.text}',
+                  hint: 'Intent: ${reply.intent}',
+                  button: true,
+                  child: _buildReplyChip(context, reply),
+                );
+              },
+            ),
+          ),
+        ),
+      );
+
+  Widget _buildReplyChip(BuildContext context, SmartReply reply) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return ActionChip(
+      avatar: Icon(
+        _getIconForIntent(reply.intent),
+        size: 18,
       ),
+      label: Text(reply.text),
+      onPressed: () => _handleReplyTap(reply.text),
+      backgroundColor: colorScheme.surfaceContainerHighest,
+      labelStyle: TextStyle(
+        fontSize: 14,
+        color: colorScheme.onSurface,
+      ),
+      iconTheme: IconThemeData(
+        color: colorScheme.onSurfaceVariant,
+      ),
+      visualDensity: VisualDensity.standard,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      elevation: 0,
+      pressElevation: 1,
     );
   }
 }
