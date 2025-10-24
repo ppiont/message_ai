@@ -13,14 +13,17 @@ class MessageModel extends Message {
     required super.senderId,
     required super.timestamp,
     required super.type,
-    required super.status,
-    required super.metadata, super.detectedLanguage,
+    required super.metadata,
+    super.detectedLanguage,
     super.translations,
     super.replyTo,
     super.embedding,
     super.aiAnalysis,
     super.culturalHint,
     super.contextDetails,
+    super.deliveredTo,
+    super.readBy,
+    super.status = 'sent',
   });
 
   /// Creates a MessageModel from a domain Message entity
@@ -39,6 +42,8 @@ class MessageModel extends Message {
       aiAnalysis: message.aiAnalysis,
       culturalHint: message.culturalHint,
       contextDetails: message.contextDetails,
+      deliveredTo: message.deliveredTo,
+      readBy: message.readBy,
     );
 
   /// Creates a MessageModel from JSON (Firestore document)
@@ -48,7 +53,7 @@ class MessageModel extends Message {
       senderId: json['senderId'] as String,
       timestamp: _parseDateTime(json['timestamp']),
       type: json['type'] as String,
-      status: json['status'] as String,
+      status: json['status'] as String? ?? 'sent',
       detectedLanguage: json['detectedLanguage'] as String?,
       translations: json['translations'] != null
           ? Map<String, String>.from(json['translations'] as Map)
@@ -73,7 +78,24 @@ class MessageModel extends Message {
               json['contextDetails'] as Map<String, dynamic>,
             )
           : null,
+      // NEW: Parse per-user read receipts
+      deliveredTo: _parseTimestampMap(json['deliveredTo']),
+      readBy: _parseTimestampMap(json['readBy']),
     );
+
+  /// Parse timestamp map from Firestore
+  static Map<String, DateTime>? _parseTimestampMap(dynamic value) {
+    if (value == null) return null;
+
+    final map = value as Map<String, dynamic>;
+    final result = <String, DateTime>{};
+
+    map.forEach((userId, timestamp) {
+      result[userId] = _parseDateTime(timestamp);
+    });
+
+    return result.isEmpty ? null : result;
+  }
 
   /// Helper method to parse DateTime from either Timestamp or String
   static DateTime _parseDateTime(dynamic value) {
@@ -103,7 +125,19 @@ class MessageModel extends Message {
         'aiAnalysis': MessageAIAnalysisModel.fromEntity(aiAnalysis!).toJson(),
       if (culturalHint != null) 'culturalHint': culturalHint,
       if (contextDetails != null) 'contextDetails': contextDetails!.toJson(),
+      // NEW: Serialize per-user read receipts
+      if (deliveredTo != null) 'deliveredTo': _serializeTimestampMap(deliveredTo!),
+      if (readBy != null) 'readBy': _serializeTimestampMap(readBy!),
     };
+
+  /// Serialize timestamp map to Firestore
+  static Map<String, dynamic> _serializeTimestampMap(Map<String, DateTime> map) {
+    final result = <String, dynamic>{};
+    map.forEach((userId, timestamp) {
+      result[userId] = Timestamp.fromDate(timestamp);
+    });
+    return result;
+  }
 
   /// Converts this model to a domain entity
   Message toEntity() => Message(
@@ -121,6 +155,8 @@ class MessageModel extends Message {
       aiAnalysis: aiAnalysis,
       culturalHint: culturalHint,
       contextDetails: contextDetails,
+      deliveredTo: deliveredTo,
+      readBy: readBy,
     );
 
   /// Creates a copy of this model with the given fields replaced
@@ -140,6 +176,8 @@ class MessageModel extends Message {
     MessageAIAnalysis? aiAnalysis,
     String? culturalHint,
     MessageContextDetails? contextDetails,
+    Map<String, DateTime>? deliveredTo,
+    Map<String, DateTime>? readBy,
   }) => MessageModel(
       id: id ?? this.id,
       text: text ?? this.text,
@@ -155,6 +193,8 @@ class MessageModel extends Message {
       aiAnalysis: aiAnalysis ?? this.aiAnalysis,
       culturalHint: culturalHint ?? this.culturalHint,
       contextDetails: contextDetails ?? this.contextDetails,
+      deliveredTo: deliveredTo ?? this.deliveredTo,
+      readBy: readBy ?? this.readBy,
     );
 }
 
