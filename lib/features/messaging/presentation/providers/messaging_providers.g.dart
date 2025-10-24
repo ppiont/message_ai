@@ -815,7 +815,7 @@ final class UserConversationsStreamProvider
 }
 
 String _$userConversationsStreamHash() =>
-    r'0d8a38c714bbf7b6c561123e1ef3262db7ce8f1d';
+    r'e6d24bd008f733f914d8a14362edb96172c9953a';
 
 /// Stream provider for watching user's conversations in real-time.
 ///
@@ -919,7 +919,7 @@ final class ConversationMessagesStreamProvider
 }
 
 String _$conversationMessagesStreamHash() =>
-    r'be655c9799a55970e32d7ddee8d2d991777d4365';
+    r'f6aa0db66a9bbbf6a41889c2b7eed4b7d245d823';
 
 /// Stream provider for watching messages in a conversation in real-time.
 ///
@@ -1903,7 +1903,7 @@ final class AllConversationsStreamProvider
 }
 
 String _$allConversationsStreamHash() =>
-    r'7061aed4e5e0d961aacbbe2f04d2076ef73e3e7d';
+    r'4ffde5a7bc18db79b9da1bfe8ab5e4f8667adf37';
 
 /// Stream provider for watching all conversations (both direct and groups) in real-time.
 ///
@@ -1984,7 +1984,7 @@ final class ConversationUsersStreamProvider
 }
 
 String _$conversationUsersStreamHash() =>
-    r'f384d3fc6f49b7262a472f27ba527c56a6864636';
+    r'13eee3b4a8ebc508b3cb643220cb5a2af6deab1a';
 
 /// Provides aggregated online status for a group conversation.
 ///
@@ -2067,7 +2067,7 @@ final class GroupPresenceStatusProvider
 }
 
 String _$groupPresenceStatusHash() =>
-    r'b3c7c0de3fc7556ef7333fc84b37370d27db2df5';
+    r'1548d5c934a736b4300a8bd4413af5418fafc4f6';
 
 /// Provides aggregated online status for a group conversation.
 ///

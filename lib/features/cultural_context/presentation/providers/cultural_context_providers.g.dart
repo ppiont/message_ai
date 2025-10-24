@@ -222,12 +222,18 @@ final class CulturalContextQueueDaoProvider
 String _$culturalContextQueueDaoHash() =>
     r'b7c19af73ba6d65f486d88a9a44807eb4fc437b7';
 
-/// Provider for cultural context queue (background processing)
+/// Provider for cultural context queue (event-driven processing)
+///
+/// Processes items immediately when enqueued (no polling).
+/// On startup, resumes any pending items from previous session.
 
 @ProviderFor(culturalContextQueue)
 const culturalContextQueueProvider = CulturalContextQueueProvider._();
 
-/// Provider for cultural context queue (background processing)
+/// Provider for cultural context queue (event-driven processing)
+///
+/// Processes items immediately when enqueued (no polling).
+/// On startup, resumes any pending items from previous session.
 
 final class CulturalContextQueueProvider
     extends
@@ -237,7 +243,10 @@ final class CulturalContextQueueProvider
           CulturalContextQueue
         >
     with $Provider<CulturalContextQueue> {
-  /// Provider for cultural context queue (background processing)
+  /// Provider for cultural context queue (event-driven processing)
+  ///
+  /// Processes items immediately when enqueued (no polling).
+  /// On startup, resumes any pending items from previous session.
   const CulturalContextQueueProvider._()
     : super(
         from: null,
@@ -273,7 +282,7 @@ final class CulturalContextQueueProvider
 }
 
 String _$culturalContextQueueHash() =>
-    r'ff6c5cd550667f6cfd4bcf8183fcb03c8b13b47d';
+    r'17a90a6ad56bdf04cd0af98f08f347164a405881';
 
 /// Provider for cultural context analyzer (background service)
 

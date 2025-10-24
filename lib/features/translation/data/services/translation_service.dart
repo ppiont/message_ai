@@ -25,25 +25,14 @@ class TranslationService {
       final result = await _functions
           .httpsCallable('translate_message')
           .call<Map<String, dynamic>>({
-            'messageId': messageId,
             'text': text,
-            'sourceLanguage': sourceLanguage,
-            'targetLanguage': targetLanguage,
+            'source_language': sourceLanguage,  // Python expects snake_case
+            'target_language': targetLanguage,  // Python expects snake_case
           });
 
       final data = result.data;
 
-      // Check for rate limit
-      if (data['rateLimitExceeded'] == true) {
-        return Left(
-          ServerFailure(
-            message:
-                'Translation rate limit exceeded. Try again in ${data['retryAfter']} seconds.',
-          ),
-        );
-      }
-
-      // Check for cached translation
+      // Extract translated text from response
       final translatedText = data['translatedText'] as String?;
       if (translatedText == null || translatedText.isEmpty) {
         return const Left(

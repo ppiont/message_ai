@@ -40,7 +40,10 @@ CulturalContextQueueDao culturalContextQueueDao(Ref ref) {
   return CulturalContextQueueDao(db);
 }
 
-/// Provider for cultural context queue (background processing)
+/// Provider for cultural context queue (event-driven processing)
+///
+/// Processes items immediately when enqueued (no polling).
+/// On startup, resumes any pending items from previous session.
 @Riverpod(keepAlive: true)
 CulturalContextQueue culturalContextQueue(Ref ref) {
   final queueDao = ref.watch(culturalContextQueueDaoProvider);
@@ -51,7 +54,7 @@ CulturalContextQueue culturalContextQueue(Ref ref) {
     queueDao: queueDao,
     culturalContextService: service,
     messageRepository: messageRepository,
-  )..startProcessing(); // Start processing queue in background
+  )..resumePendingItems(); // Resume any pending items from previous session (one-time on startup)
 
   // Clean up when provider is disposed
   ref.onDispose(queue.dispose);

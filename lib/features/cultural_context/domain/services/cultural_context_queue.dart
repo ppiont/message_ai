@@ -1,4 +1,4 @@
-/// Background queue system for cultural context analysis
+/// Event-driven queue system for cultural context analysis
 library;
 
 import 'dart:async';
@@ -13,14 +13,20 @@ import 'package:message_ai/features/messaging/domain/entities/message.dart';
 import 'package:message_ai/features/messaging/domain/repositories/message_repository.dart';
 import 'package:uuid/uuid.dart';
 
-/// Background queue system for cultural context analysis
+/// Event-driven queue system for cultural context analysis
 ///
 /// This service implements a robust queue system for analyzing cultural context:
 /// - Rate limiting: Max 10 analyses per minute
 /// - Retry failed requests (max 3 attempts with exponential backoff)
 /// - Persist queue state across app restarts (uses Drift)
-/// - Process queue in background
+/// - **Event-driven processing** - no polling, processes immediately on enqueue
 /// - PII detection and sanitization before analysis
+///
+/// Design:
+/// - When message is enqueued → immediately process (if under rate limit)
+/// - If rate limited → delay processing until rate limit clears
+/// - Failed items use exponential backoff (1s, 2s, 4s)
+/// - On app restart → call resumePendingItems() once (via WorkManager)
 class CulturalContextQueue {
   CulturalContextQueue({
     required CulturalContextQueueDao queueDao,
@@ -35,7 +41,6 @@ class CulturalContextQueue {
   final MessageRepository _messageRepository;
   final Uuid _uuid = const Uuid();
 
-  Timer? _processingTimer;
   bool _isProcessing = false;
 
   // Rate limiting: Track timestamps of recent analyses
@@ -43,35 +48,7 @@ class CulturalContextQueue {
   static const int _maxAnalysesPerMinute = 10;
   static const Duration _rateLimitWindow = Duration(minutes: 1);
 
-  /// Start the background queue processor
-  ///
-  /// Processes queue every 10 seconds
-  void startProcessing() {
-    if (_processingTimer != null) {
-      debugPrint('CulturalContextQueue: Already processing');
-      return;
-    }
-
-    debugPrint('CulturalContextQueue: Starting background processing');
-
-    // Process immediately on start
-    _processQueue();
-
-    // Then process every 10 seconds
-    _processingTimer = Timer.periodic(
-      const Duration(seconds: 10),
-      (_) => _processQueue(),
-    );
-  }
-
-  /// Stop the background queue processor
-  void stopProcessing() {
-    debugPrint('CulturalContextQueue: Stopping background processing');
-    _processingTimer?.cancel();
-    _processingTimer = null;
-  }
-
-  /// Add a message to the analysis queue
+  /// Add a message to the analysis queue and immediately trigger processing
   ///
   /// Returns true if added to queue, false if already queued or doesn't need analysis
   Future<bool> enqueueMessage({
@@ -114,14 +91,19 @@ class CulturalContextQueue {
 
     await _queueDao.addToQueue(queueEntry);
     debugPrint('CulturalContextQueue: Enqueued message ${message.id}');
+
+    // Immediately trigger processing (event-driven, no polling)
+    unawaited(_processNextBatch());
+
     return true;
   }
 
-  /// Process the queue in background
-  Future<void> _processQueue() async {
+  /// Process the next batch of pending items (event-driven)
+  ///
+  /// Called immediately when items are enqueued or when rate limit clears
+  Future<void> _processNextBatch() async {
     if (_isProcessing) {
-      debugPrint('CulturalContextQueue: Already processing, skipping cycle');
-      return;
+      return; // Already processing, will pick up new items
     }
 
     _isProcessing = true;
@@ -129,12 +111,6 @@ class CulturalContextQueue {
     try {
       // Clean up old rate limit entries
       _cleanupRateLimitHistory();
-
-      // Check rate limit
-      if (!_canProcessMore()) {
-        debugPrint('CulturalContextQueue: Rate limit reached (${_recentAnalyses.length}/$_maxAnalysesPerMinute)');
-        return;
-      }
 
       // Get pending requests (batch of 10)
       final pendingRequests = await _queueDao.getPendingRequests();
@@ -147,8 +123,21 @@ class CulturalContextQueue {
 
       // Process each request (respecting rate limit)
       for (final request in pendingRequests) {
+        // Check rate limit before each request
         if (!_canProcessMore()) {
-          debugPrint('CulturalContextQueue: Rate limit reached, stopping batch');
+          debugPrint('CulturalContextQueue: Rate limit reached (${_recentAnalyses.length}/$_maxAnalysesPerMinute), scheduling retry');
+
+          // Schedule retry when rate limit clears (delayed processing)
+          final oldestAnalysis = _recentAnalyses.isEmpty ? DateTime.now() : _recentAnalyses.first;
+          final timeUntilClear = _rateLimitWindow - DateTime.now().difference(oldestAnalysis);
+
+          if (timeUntilClear.isNegative) {
+            // Should not happen, but retry immediately if calculation is wrong
+            Future<void>.delayed(const Duration(seconds: 1), _processNextBatch);
+          } else {
+            // Retry when rate limit clears
+            Future<void>.delayed(timeUntilClear + const Duration(milliseconds: 100), _processNextBatch);
+          }
           break;
         }
 
@@ -158,10 +147,19 @@ class CulturalContextQueue {
       // Clean up old completed entries (older than 24 hours)
       await _queueDao.deleteOldCompleted(const Duration(hours: 24));
     } catch (e) {
-      debugPrint('CulturalContextQueue: Error processing queue: $e');
+      debugPrint('CulturalContextQueue: Error processing batch: $e');
     } finally {
       _isProcessing = false;
     }
+  }
+
+  /// Resume processing pending items (call on app restart via WorkManager)
+  ///
+  /// This should be called once when the app starts to process any
+  /// items that were queued before the app was closed.
+  Future<void> resumePendingItems() async {
+    debugPrint('CulturalContextQueue: Resuming pending items from previous session');
+    await _processNextBatch();
   }
 
   /// Check if we can process more requests within rate limit
@@ -253,8 +251,8 @@ class CulturalContextQueue {
   /// Clear the entire queue (for testing/debugging)
   Future<void> clearQueue() => _queueDao.clearQueue();
 
-  /// Dispose resources
+  /// Dispose resources (currently a no-op since we don't use timers)
   void dispose() {
-    stopProcessing();
+    // No cleanup needed - event-driven processing doesn't use timers
   }
 }

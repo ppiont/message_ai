@@ -48,6 +48,9 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   /// Latest incoming message (for smart reply generation)
   Message? _latestIncomingMessage;
 
+  /// Track previous message count to detect new messages vs updates
+  int _previousMessageCount = 0;
+
   @override
   void initState() {
     super.initState();
@@ -360,12 +363,18 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           }
         }
 
-        // Scroll to bottom when messages first load
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (_scrollController.hasClients) {
-            _scrollToBottom();
-          }
-        });
+        // Only scroll to bottom when NEW messages arrive (not on updates like translations)
+        final currentMessageCount = messages.length;
+        final isNewMessage = currentMessageCount > _previousMessageCount;
+
+        if (isNewMessage) {
+          _previousMessageCount = currentMessageCount;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (_scrollController.hasClients) {
+              _scrollToBottom();
+            }
+          });
+        }
 
         return ListView.builder(
           controller: _scrollController,
