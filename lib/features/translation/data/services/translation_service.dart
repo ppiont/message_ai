@@ -58,4 +58,54 @@ class TranslationService {
       return Left(ServerFailure(message: 'Translation failed: $e'));
     }
   }
+
+  /// Batch translate multiple messages to improve efficiency
+  ///
+  /// Translates all messages in parallel and returns a map of messageId to either
+  /// the translated text or a failure.
+  ///
+  /// This is more efficient than translating messages one-by-one as it:
+  /// - Reduces total latency (parallel execution)
+  /// - Better utilizes network connections
+  /// - Provides faster user experience when loading conversations
+  ///
+  /// Returns a `Map&lt;String, Either&lt;Failure, String&gt;&gt;` where:
+  /// - Key: messageId
+  /// - Value: Either a Failure or the translated text
+  Future<Map<String, Either<Failure, String>>> batchTranslateMessages({
+    required List<String> messageIds,
+    required List<String> texts,
+    required String sourceLanguage,
+    required String targetLanguage,
+  }) async {
+    // Validate input lengths match
+    if (messageIds.length != texts.length) {
+      throw ArgumentError(
+        'messageIds and texts lists must have the same length',
+      );
+    }
+
+    // Create parallel translation requests
+    final futures = <Future<MapEntry<String, Either<Failure, String>>>>[];
+
+    for (var i = 0; i < messageIds.length; i++) {
+      final messageId = messageIds[i];
+      final text = texts[i];
+
+      futures.add(
+        translateMessage(
+          messageId: messageId,
+          text: text,
+          sourceLanguage: sourceLanguage,
+          targetLanguage: targetLanguage,
+        ).then((result) => MapEntry(messageId, result)),
+      );
+    }
+
+    // Wait for all translations to complete
+    final results = await Future.wait(futures);
+
+    // Convert list of entries to map
+    return Map<String, Either<Failure, String>>.fromEntries(results);
+  }
 }

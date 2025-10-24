@@ -94,7 +94,7 @@ class MessageSyncService {
 
     try {
       // Check connectivity
-      final List<ConnectivityResult> connectivityResults =
+      final connectivityResults =
           await _connectivity.checkConnectivity();
       if (!_hasConnection(connectivityResults)) {
         return SyncResult(
@@ -104,9 +104,9 @@ class MessageSyncService {
         );
       }
 
-      final List<String> errors = <String>[];
-      int messagesSynced = 0;
-      int conversationsSynced = 0;
+      final errors = <String>[];
+      var messagesSynced = 0;
+      var conversationsSynced = 0;
 
       // Sync conversations first (messages depend on them)
       try {
@@ -275,25 +275,25 @@ class MessageSyncService {
 
   /// Syncs all unsynced messages.
   Future<int> _syncMessages() async {
-    int synced = 0;
+    var synced = 0;
 
     // Get messages that need syncing (includes 'pending' and 'failed')
-    final List<Message> unsyncedMessages =
+    final unsyncedMessages =
         await _messageLocalDataSource.getUnsyncedMessages();
 
-    for (final Message message in unsyncedMessages) {
+    for (final message in unsyncedMessages) {
       try {
         // Get actual retry count from Drift
-        final int retryCount = await _getMessageRetryCount(message.id);
+        final retryCount = await _getMessageRetryCount(message.id);
 
         // Calculate exponential backoff delay
-        final Duration backoffDelay = _calculateBackoffDelay(retryCount);
+        final backoffDelay = _calculateBackoffDelay(retryCount);
 
         // If not enough time has passed since last attempt, skip
-        final DateTime? lastAttempt =
+        final lastAttempt =
             await _getMessageLastSyncAttempt(message.id);
         if (lastAttempt != null) {
-          final Duration timeSinceLastAttempt =
+          final timeSinceLastAttempt =
               DateTime.now().difference(lastAttempt);
           if (timeSinceLastAttempt < backoffDelay) {
             continue; // Too soon to retry
@@ -314,11 +314,11 @@ class MessageSyncService {
 
         // Get all conversations to find which one contains this message
         // This is inefficient - in production, we'd track conversationId in the message
-        final List<Conversation> allConversations =
+        final allConversations =
             await _conversationLocalDataSource.getAllConversations(limit: 1000);
 
         String? conversationId;
-        for (final Conversation conv in allConversations) {
+        for (final conv in allConversations) {
           // Check if message belongs to this conversation
           // In a real implementation, we'd have a better way to track this
           conversationId = conv.documentId;
@@ -326,7 +326,7 @@ class MessageSyncService {
         }
 
         if (conversationId != null) {
-          final bool success = await syncMessage(
+          final success = await syncMessage(
             conversationId: conversationId,
             message: message,
           );
@@ -337,7 +337,7 @@ class MessageSyncService {
         }
       } catch (e) {
         // Increment retry count on failure
-        final int retryCount = await _getMessageRetryCount(message.id);
+        final retryCount = await _getMessageRetryCount(message.id);
         await _messageLocalDataSource.updateSyncStatus(
           messageId: message.id,
           syncStatus: 'failed',
@@ -353,15 +353,15 @@ class MessageSyncService {
 
   /// Syncs all unsynced conversations.
   Future<int> _syncConversations() async {
-    int synced = 0;
+    var synced = 0;
 
     // Get conversations that need syncing
-    final List<Conversation> unsyncedConversations =
+    final unsyncedConversations =
         await _conversationLocalDataSource.getUnsyncedConversations();
 
-    for (final Conversation conversation in unsyncedConversations) {
+    for (final conversation in unsyncedConversations) {
       try {
-        final bool success = await syncConversation(conversation);
+        final success = await syncConversation(conversation);
         if (success) {
           synced++;
         }

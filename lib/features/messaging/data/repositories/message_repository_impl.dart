@@ -227,7 +227,7 @@ class MessageRepositoryImpl implements MessageRepository {
           .watchMessages(conversationId: conversationId, limit: limit)
           .listen((List<MessageModel> messageModels) async {
             try {
-              final List<Message> messages = messageModels
+              final messages = messageModels
                   .map((MessageModel model) => model.toEntity())
                   .toList();
 
@@ -239,7 +239,7 @@ class MessageRepositoryImpl implements MessageRepository {
           });
 
       // Return local stream (which now gets updates from Firestore)
-      final Stream<List<Message>> localStream =
+      final localStream =
           _localDataSource.watchMessages(
             conversationId: conversationId,
             limit: limit,

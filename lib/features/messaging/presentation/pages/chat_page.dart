@@ -14,6 +14,7 @@ import 'package:message_ai/features/messaging/presentation/widgets/message_bubbl
 import 'package:message_ai/features/messaging/presentation/widgets/message_input.dart';
 import 'package:message_ai/features/messaging/presentation/widgets/typing_indicator.dart';
 import 'package:message_ai/features/smart_replies/presentation/widgets/smart_reply_bar.dart';
+import 'package:message_ai/features/translation/presentation/providers/translation_providers.dart';
 
 /// Main chat screen for displaying and sending messages.
 ///
@@ -48,7 +49,28 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   Message? _latestIncomingMessage;
 
   @override
+  void initState() {
+    super.initState();
+
+    // Start auto-translation service when entering conversation
+    // This will automatically translate incoming messages based on user preference
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final currentUser = ref.read(currentUserWithFirestoreProvider).value;
+      if (currentUser != null) {
+        ref.read(autoTranslationServiceProvider).start(
+          conversationId: widget.conversationId,
+          currentUserId: currentUser.uid,
+          userPreferredLanguage: currentUser.preferredLanguage,
+        );
+      }
+    });
+  }
+
+  @override
   void dispose() {
+    // Stop auto-translation service when leaving conversation
+    ref.read(autoTranslationServiceProvider).stop();
+
     _scrollController.dispose();
     _messageInputController.dispose();
     super.dispose();

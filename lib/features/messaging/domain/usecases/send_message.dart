@@ -76,7 +76,7 @@ class SendMessage {
     // Create message with detected language
     // If detection failed or confidence was low, detectedLanguage will be null
     // and the Message entity will use the existing detectedLanguage value (if any)
-    final Message messageWithLanguage = detectedLanguage != null
+    final messageWithLanguage = detectedLanguage != null
         ? message.copyWith(detectedLanguage: detectedLanguage)
         : message;
 

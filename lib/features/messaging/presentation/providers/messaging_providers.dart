@@ -4,7 +4,9 @@ library;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dartz/dartz.dart';
+import 'package:message_ai/core/error/failures.dart';
 import 'package:message_ai/core/providers/database_provider.dart';
+import 'package:message_ai/features/authentication/domain/entities/user.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
 import 'package:message_ai/features/authentication/presentation/providers/user_providers.dart';
 import 'package:message_ai/features/cultural_context/presentation/providers/cultural_context_providers.dart';
@@ -16,8 +18,6 @@ import 'package:message_ai/features/messaging/data/datasources/message_remote_da
 import 'package:message_ai/features/messaging/data/repositories/conversation_repository_impl.dart';
 import 'package:message_ai/features/messaging/data/repositories/group_conversation_repository_impl.dart';
 import 'package:message_ai/features/messaging/data/repositories/message_repository_impl.dart';
-import 'package:message_ai/core/error/failures.dart';
-import 'package:message_ai/features/authentication/domain/entities/user.dart';
 import 'package:message_ai/features/messaging/data/services/auto_delivery_marker.dart';
 import 'package:message_ai/features/messaging/data/services/fcm_service.dart';
 import 'package:message_ai/features/messaging/data/services/message_queue.dart';
@@ -159,7 +159,7 @@ Stream<List<Map<String, dynamic>>> userConversationsStream(
   Ref ref,
   String userId,
 ) async* {
-  final WatchConversations watchUseCase =
+  final watchUseCase =
       ref.watch(watchConversationsUseCaseProvider);
 
   await for (final Either<Failure, List<Conversation>> result
@@ -216,7 +216,7 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
       // Log error but return empty list to keep UI functional
       (List<Message> messages) {
         // Sync all message senders to Drift for offline access
-        final List<String> allSenderIds = messages
+        final allSenderIds = messages
             .map((Message msg) => msg.senderId)
             .toSet()
             .toList();
@@ -227,7 +227,7 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
         // Analyze cultural context for received messages (background, fire-and-forget)
         currentUserAsync.whenData((User? currentUser) {
           if (currentUser != null) {
-            for (final Message msg in messages) {
+            for (final msg in messages) {
               // Only analyze received messages without cultural hints
               if (msg.senderId != currentUserId && msg.culturalHint == null) {
                 culturalAnalyzer.analyzeMessageInBackground(
@@ -470,7 +470,7 @@ Stream<List<Map<String, dynamic>>> allConversationsStream(
   Ref ref,
   String userId,
 ) {
-  final WatchConversations watchConversationsUseCase =
+  final watchConversationsUseCase =
       ref.watch(watchConversationsUseCaseProvider);
   final userSyncService = ref.watch(userSyncServiceProvider);
 
@@ -483,7 +483,7 @@ Stream<List<Map<String, dynamic>>> allConversationsStream(
     ) {
       // Sync all participant users to Drift for offline access (fire-and-forget)
       // Do this asynchronously to avoid blocking the stream
-      final List<String> allParticipantIds = conversations
+      final allParticipantIds = conversations
           .expand((Conversation conv) =>
               conv.participants.map((Participant p) => p.uid))
           .toSet()
@@ -495,7 +495,7 @@ Stream<List<Map<String, dynamic>>> allConversationsStream(
         );
       }
 
-      final List<Map<String, dynamic>> mapped = conversations
+      final mapped = conversations
           .map(
             (Conversation conv) => <String, dynamic>{
               'id': conv.documentId,
@@ -521,8 +521,8 @@ Stream<List<Map<String, dynamic>>> allConversationsStream(
 
       // Sort by lastUpdatedAt (newest first)
       mapped.sort((Map<String, dynamic> a, Map<String, dynamic> b) {
-        final DateTime aTime = a['lastUpdatedAt'] as DateTime;
-        final DateTime bTime = b['lastUpdatedAt'] as DateTime;
+        final aTime = a['lastUpdatedAt'] as DateTime;
+        final bTime = b['lastUpdatedAt'] as DateTime;
         return bTime.compareTo(aTime);
       });
 
@@ -538,9 +538,9 @@ Stream<List<Map<String, dynamic>>> allConversationsStream(
 /// In a production app, this would be a proper user search/directory feature.
 @riverpod
 Stream<List<Map<String, dynamic>>> conversationUsersStream(Ref ref) {
-  final FirebaseFirestore firestore =
+  final firestore =
       ref.watch(messagingFirestoreProvider);
-  final User? currentUser = ref.watch(currentUserProvider);
+  final currentUser = ref.watch(currentUserProvider);
 
   if (currentUser == null) {
     return Stream<List<Map<String, dynamic>>>.value(<Map<String, dynamic>>[]);
@@ -555,7 +555,7 @@ Stream<List<Map<String, dynamic>>> conversationUsersStream(Ref ref) {
                 .where((DocumentSnapshot<Map<String, dynamic>> doc) =>
                     doc.id != currentUser.uid) // Exclude current user
                 .map((DocumentSnapshot<Map<String, dynamic>> doc) {
-                  final Map<String, dynamic> data = doc.data() ?? {};
+                  final data = doc.data() ?? {};
                   return <String, dynamic>{
                     'uid': doc.id,
                     'name': data['displayName'] as String? ?? '',
@@ -582,7 +582,7 @@ Stream<Map<String, dynamic>> groupPresenceStatus(
   Ref ref,
   List<String> participantIds,
 ) {
-  final PresenceService presenceService =
+  final presenceService =
       ref.watch(presenceServiceProvider);
 
   if (participantIds.isEmpty) {
@@ -598,7 +598,7 @@ Stream<Map<String, dynamic>> groupPresenceStatus(
   return presenceService
       .watchUsersPresence(userIds: participantIds)
       .map((Map<String, UserPresence> presenceMap) {
-    final List<String> onlineMembers = presenceMap.entries
+    final onlineMembers = presenceMap.entries
         .where((MapEntry<String, UserPresence> entry) => entry.value.isOnline)
         .map((MapEntry<String, UserPresence> entry) => entry.key)
         .toList();

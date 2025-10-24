@@ -98,7 +98,7 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
       ..where(messages.conversationId.equals(conversationId));
 
     final result = await query.getSingle();
-    return result.read(count) as int? ?? 0;
+    return result.read(count) ?? 0;
   }
 
   /// Count unread messages (status = 'delivered' for current user)
@@ -113,7 +113,7 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
       );
 
     final result = await query.getSingle();
-    return result.read(count) as int? ?? 0;
+    return result.read(count) ?? 0;
   }
 
   // ============================================================================
