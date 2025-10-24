@@ -17,10 +17,9 @@ class ExplainMessageIdioms {
     required String text,
     required String sourceLanguage,
     required String targetLanguage,
-  }) async =>
-      _idiomExplanationService.explainIdioms(
-        text: text,
-        sourceLanguage: sourceLanguage,
-        targetLanguage: targetLanguage,
-      );
+  }) async => _idiomExplanationService.explainIdioms(
+    text: text,
+    sourceLanguage: sourceLanguage,
+    targetLanguage: targetLanguage,
+  );
 }

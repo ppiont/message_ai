@@ -1,8 +1,10 @@
 /// Idiom explanation entity
 library;
 
+import 'package:equatable/equatable.dart';
+
 /// Represents an explanation of an idiom, slang, or colloquial expression
-class IdiomExplanation {
+class IdiomExplanation extends Equatable {
   const IdiomExplanation({
     required this.phrase,
     required this.meaning,
@@ -11,27 +13,26 @@ class IdiomExplanation {
   });
 
   /// Create IdiomExplanation from JSON
-  factory IdiomExplanation.fromJson(Map<String, dynamic> json) {
-    // Handle equivalentIn map properly
-    Map<String, String> parseEquivalents(dynamic equivalentIn) {
-      if (equivalentIn == null) {
-        return {};
-      }
-      if (equivalentIn is Map) {
-        return equivalentIn.map(
-          (key, value) => MapEntry(key.toString(), value.toString()),
-        );
-      }
-      return {};
-    }
+  factory IdiomExplanation.fromJson(Map<String, dynamic> json) =>
+      IdiomExplanation(
+        phrase: json['phrase'] as String? ?? '',
+        meaning: json['meaning'] as String? ?? '',
+        culturalNote: json['culturalNote'] as String? ?? '',
+        equivalents: _parseEquivalents(json['equivalentIn']),
+      );
 
-    return IdiomExplanation(
-      phrase: json['phrase'] as String? ?? '',
-      meaning: json['meaning'] as String? ?? '',
-      culturalNote: json['culturalNote'] as String? ?? '',
-      equivalents: parseEquivalents(json['equivalentIn']),
-    );
-  }
+  /// Parse equivalents map from dynamic type
+  // ignore: prefer_final_locals
+  static Map<String, String> _parseEquivalents(final Object? equivalentIn) =>
+      switch (equivalentIn) {
+        null => <String, String>{},
+        // ignore: prefer_final_locals
+        Map<Object?, Object?> map => <String, String>{
+          for (final MapEntry<Object?, Object?> mapEntry in map.entries)
+            mapEntry.key.toString(): mapEntry.value.toString(),
+        },
+        _ => <String, String>{},
+      };
 
   /// The idiomatic phrase or slang term
   final String phrase;
@@ -48,30 +49,34 @@ class IdiomExplanation {
 
   /// Convert to JSON
   Map<String, dynamic> toJson() => {
-      'phrase': phrase,
-      'meaning': meaning,
-      'culturalNote': culturalNote,
-      'equivalentIn': equivalents,
-    };
+    'phrase': phrase,
+    'meaning': meaning,
+    'culturalNote': culturalNote,
+    'equivalentIn': equivalents,
+  };
+
+  @override
+  List<Object?> get props => [phrase, meaning, culturalNote, equivalents];
 }
 
 /// Container for a list of idiom explanations
 class IdiomExplanationResult {
-  const IdiomExplanationResult({
-    required this.idioms,
-  });
+  const IdiomExplanationResult({required this.idioms});
 
   /// Create from JSON
   factory IdiomExplanationResult.fromJson(Map<String, dynamic> json) {
-    final idiomsJson = json['idioms'] as List<dynamic>? ?? [];
-    final idiomsList = idiomsJson.map((idiom) {
-      if (idiom is Map) {
-        final idiomMap = Map<String, dynamic>.from(idiom);
-        return IdiomExplanation.fromJson(idiomMap);
-      }
-      // Skip invalid entries
-      return null;
-    }).whereType<IdiomExplanation>().toList();
+    final idiomsJson = json['idioms'] as List<dynamic>? ?? <dynamic>[];
+    final idiomsList = idiomsJson
+        .map<IdiomExplanation?>((final Object? idiom) {
+          if (idiom is Map<Object?, Object?>) {
+            final idiomMap = Map<String, dynamic>.from(idiom);
+            return IdiomExplanation.fromJson(idiomMap);
+          }
+          // Skip invalid entries
+          return null;
+        })
+        .whereType<IdiomExplanation>()
+        .toList();
 
     return IdiomExplanationResult(idioms: idiomsList);
   }
@@ -84,6 +89,6 @@ class IdiomExplanationResult {
 
   /// Convert to JSON
   Map<String, dynamic> toJson() => {
-      'idioms': idioms.map((idiom) => idiom.toJson()).toList(),
-    };
+    'idioms': idioms.map((idiom) => idiom.toJson()).toList(),
+  };
 }

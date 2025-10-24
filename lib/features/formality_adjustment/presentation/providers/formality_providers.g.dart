@@ -405,7 +405,7 @@ final class FormalityStateNotifierProvider
 }
 
 String _$formalityStateNotifierHash() =>
-    r'933ee611e58aea889f09d17a59af65b3ce40aa8e';
+    r'dd64e8dd3e8e6e6a7add34427f12c8254f0c681b';
 
 /// State provider for formality adjustment with FormalityState
 ///

@@ -35,7 +35,8 @@
       "Bash(dart format:*)",
       "mcp__dart__dart_format",
       "mcp__GitKraken__git_status",
-      "mcp__dart__hover"
+      "mcp__dart__hover",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []
