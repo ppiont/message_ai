@@ -7,9 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:message_ai/features/authentication/presentation/providers/user_lookup_provider.dart';
-import 'package:message_ai/features/idiom_explanation/presentation/providers/idiom_providers.dart';
-import 'package:message_ai/features/idiom_explanation/presentation/widgets/idiom_explanation_bottom_sheet.dart';
 import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
+import 'package:message_ai/features/messaging/presentation/widgets/message_context_dialog.dart';
 import 'package:message_ai/features/translation/data/services/language_detection_service.dart';
 import 'package:message_ai/features/translation/presentation/providers/translation_providers.dart';
 
@@ -461,25 +460,25 @@ class _MessageBubbleState extends ConsumerState<MessageBubble> {
       ),
       items: [
         const PopupMenuItem<String>(
-          value: 'explain_idioms',
+          value: 'show_context',
           child: Row(
             children: [
-              Icon(Icons.lightbulb, size: 20, color: Colors.amber),
+              Icon(Icons.translate, size: 20, color: Colors.blue),
               SizedBox(width: 12),
-              Text('Explain idioms'),
+              Text('Show Context'),
             ],
           ),
         ),
       ],
     );
 
-    if (result == 'explain_idioms' && context.mounted) {
-      await _handleExplainIdioms(context, ref);
+    if (result == 'show_context' && context.mounted) {
+      await _handleShowContext(context, ref);
     }
   }
 
-  /// Handle explain idioms action
-  Future<void> _handleExplainIdioms(BuildContext context, WidgetRef ref) async {
+  /// Handle show context action (unified cultural context + idioms)
+  Future<void> _handleShowContext(BuildContext context, WidgetRef ref) async {
     // Show loading indicator
     unawaited(
       showDialog<void>(
@@ -492,18 +491,14 @@ class _MessageBubbleState extends ConsumerState<MessageBubble> {
     );
 
     try {
-      final explainIdiomsUseCase = ref.read(explainMessageIdiomsProvider);
+      final messageContextService = ref.read(messageContextServiceProvider);
 
-      // Get detected language for source
-      final sourceLang = effectiveDetectedLanguage ?? 'en';
+      // Get detected language
+      final language = effectiveDetectedLanguage ?? 'en';
 
-      // Get user's preferred language for target (equivalents)
-      final targetLang = widget.userPreferredLanguage ?? 'en';
-
-      final result = await explainIdiomsUseCase(
+      final result = await messageContextService.analyzeMessageContext(
         text: widget.message,
-        sourceLanguage: sourceLang,
-        targetLanguage: targetLang,
+        language: language,
       );
 
       if (!context.mounted) {
@@ -518,14 +513,23 @@ class _MessageBubbleState extends ConsumerState<MessageBubble> {
           // Show error
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Failed to explain idioms: ${failure.message}'),
+              content: Text('Failed to analyze context: ${failure.message}'),
               backgroundColor: Colors.red,
             ),
           );
         },
-        (idiomResult) {
-          // Show bottom sheet with explanations
-          IdiomExplanationBottomSheet.show(context, idiomResult);
+        (contextDetails) {
+          if (contextDetails == null || !contextDetails.hasContent) {
+            // Show "no context" message
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('No cultural context needed for this message'),
+              ),
+            );
+          } else {
+            // Show dialog with context details
+            MessageContextDialog.show(context, contextDetails);
+          }
         },
       );
     } catch (e) {

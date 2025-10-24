@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:message_ai/features/messaging/domain/entities/message_context_details.dart';
 
 /// Domain entity representing a message in a conversation
 ///
@@ -20,6 +21,7 @@ class Message extends Equatable {
     this.embedding,
     this.aiAnalysis,
     this.culturalHint,
+    this.contextDetails,
   });
   /// Unique identifier for the message
   final String id;
@@ -59,8 +61,14 @@ class Message extends Equatable {
   /// AI-generated analysis of the message
   final MessageAIAnalysis? aiAnalysis;
 
-  /// Cultural context hint explaining nuances, idioms, or formality
+  /// Cultural context hint explaining nuances, idioms, or formality (brief summary)
   final String? culturalHint;
+
+  /// Detailed context analysis including formality, cultural notes, and idioms
+  ///
+  /// This is fetched on-demand when user requests context analysis and cached
+  /// in Firestore for eventual consistency across all users in group chats.
+  final MessageContextDetails? contextDetails;
 
   /// Creates a copy of this message with the given fields replaced
   Message copyWith({
@@ -77,6 +85,7 @@ class Message extends Equatable {
     List<double>? embedding,
     MessageAIAnalysis? aiAnalysis,
     String? culturalHint,
+    MessageContextDetails? contextDetails,
   }) => Message(
       id: id ?? this.id,
       text: text ?? this.text,
@@ -91,6 +100,7 @@ class Message extends Equatable {
       embedding: embedding ?? this.embedding,
       aiAnalysis: aiAnalysis ?? this.aiAnalysis,
       culturalHint: culturalHint ?? this.culturalHint,
+      contextDetails: contextDetails ?? this.contextDetails,
     );
 
   @override
@@ -108,6 +118,7 @@ class Message extends Equatable {
         embedding,
         aiAnalysis,
         culturalHint,
+        contextDetails,
       ];
 }
 

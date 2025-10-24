@@ -380,6 +380,112 @@ final class ConversationRepositoryProvider
 String _$conversationRepositoryHash() =>
     r'd2156b8fbd2bc2788083f7a39cbaeb4404020224';
 
+/// Provides Firebase Functions instance for message context analysis
+
+@ProviderFor(messageContextFunctions)
+const messageContextFunctionsProvider = MessageContextFunctionsProvider._();
+
+/// Provides Firebase Functions instance for message context analysis
+
+final class MessageContextFunctionsProvider
+    extends
+        $FunctionalProvider<
+          FirebaseFunctions,
+          FirebaseFunctions,
+          FirebaseFunctions
+        >
+    with $Provider<FirebaseFunctions> {
+  /// Provides Firebase Functions instance for message context analysis
+  const MessageContextFunctionsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'messageContextFunctionsProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$messageContextFunctionsHash();
+
+  @$internal
+  @override
+  $ProviderElement<FirebaseFunctions> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  FirebaseFunctions create(Ref ref) {
+    return messageContextFunctions(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(FirebaseFunctions value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<FirebaseFunctions>(value),
+    );
+  }
+}
+
+String _$messageContextFunctionsHash() =>
+    r'ab7ffaf1990d0a9902e31897a7bbbcf0605ed4bd';
+
+/// Provides the [MessageContextService] for analyzing message cultural context, formality, and idioms
+
+@ProviderFor(messageContextService)
+const messageContextServiceProvider = MessageContextServiceProvider._();
+
+/// Provides the [MessageContextService] for analyzing message cultural context, formality, and idioms
+
+final class MessageContextServiceProvider
+    extends
+        $FunctionalProvider<
+          MessageContextService,
+          MessageContextService,
+          MessageContextService
+        >
+    with $Provider<MessageContextService> {
+  /// Provides the [MessageContextService] for analyzing message cultural context, formality, and idioms
+  const MessageContextServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'messageContextServiceProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$messageContextServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<MessageContextService> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  MessageContextService create(Ref ref) {
+    return messageContextService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(MessageContextService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<MessageContextService>(value),
+    );
+  }
+}
+
+String _$messageContextServiceHash() =>
+    r'114aed6960eab3ef822125bef7440c05cb675eeb';
+
 /// Provides the [SendMessage] use case with language detection.
 
 @ProviderFor(sendMessageUseCase)
@@ -847,7 +953,6 @@ final class UserConversationsStreamFamily extends $Family
 ///
 /// Automatically updates when messages change in Firestore.
 /// Automatically marks incoming messages as delivered.
-/// Automatically analyzes cultural context for received messages.
 
 @ProviderFor(conversationMessagesStream)
 const conversationMessagesStreamProvider = ConversationMessagesStreamFamily._();
@@ -856,7 +961,6 @@ const conversationMessagesStreamProvider = ConversationMessagesStreamFamily._();
 ///
 /// Automatically updates when messages change in Firestore.
 /// Automatically marks incoming messages as delivered.
-/// Automatically analyzes cultural context for received messages.
 
 final class ConversationMessagesStreamProvider
     extends
@@ -872,7 +976,6 @@ final class ConversationMessagesStreamProvider
   ///
   /// Automatically updates when messages change in Firestore.
   /// Automatically marks incoming messages as delivered.
-  /// Automatically analyzes cultural context for received messages.
   const ConversationMessagesStreamProvider._({
     required ConversationMessagesStreamFamily super.from,
     required (String, String) super.argument,
@@ -919,13 +1022,12 @@ final class ConversationMessagesStreamProvider
 }
 
 String _$conversationMessagesStreamHash() =>
-    r'f6aa0db66a9bbbf6a41889c2b7eed4b7d245d823';
+    r'559f434a591f40f168d977f07468dccf2abb088c';
 
 /// Stream provider for watching messages in a conversation in real-time.
 ///
 /// Automatically updates when messages change in Firestore.
 /// Automatically marks incoming messages as delivered.
-/// Automatically analyzes cultural context for received messages.
 
 final class ConversationMessagesStreamFamily extends $Family
     with
@@ -946,7 +1048,6 @@ final class ConversationMessagesStreamFamily extends $Family
   ///
   /// Automatically updates when messages change in Firestore.
   /// Automatically marks incoming messages as delivered.
-  /// Automatically analyzes cultural context for received messages.
 
   ConversationMessagesStreamProvider call(
     String conversationId,

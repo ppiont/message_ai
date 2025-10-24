@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:message_ai/app.dart';
@@ -23,25 +22,26 @@ import 'package:workmanager/workmanager.dart';
 /// This is called by the Android/iOS system when a background task runs.
 @pragma('vm:entry-point')
 void callbackDispatcher() {
-  Workmanager().executeTask(
-    (String task, Map<String, dynamic>? inputData) async {
-      try {
-        debugPrint('[WorkManager] Executing task: $task');
+  Workmanager().executeTask((
+    String task,
+    Map<String, dynamic>? inputData,
+  ) async {
+    try {
+      debugPrint('[WorkManager] Executing task: $task');
 
-        switch (task) {
-          case 'syncPendingMessages':
-            await _syncPendingMessagesTask();
-            return true;
-          default:
-            debugPrint('[WorkManager] Unknown task: $task');
-            return false;
-        }
-      } catch (e) {
-        debugPrint('[WorkManager] Task failed: $e');
-        return false;
+      switch (task) {
+        case 'syncPendingMessages':
+          await _syncPendingMessagesTask();
+          return true;
+        default:
+          debugPrint('[WorkManager] Unknown task: $task');
+          return false;
       }
-    },
-  );
+    } catch (e) {
+      debugPrint('[WorkManager] Task failed: $e');
+      return false;
+    }
+  });
 }
 
 /// Background task to sync pending messages.
@@ -121,10 +121,7 @@ void main() async {
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   // Initialize WorkManager for background tasks
-  await Workmanager().initialize(
-    callbackDispatcher,
-    isInDebugMode: kDebugMode,
-  );
+  await Workmanager().initialize(callbackDispatcher);
 
   // Initialize error logging
   await ErrorLogger.initialize();

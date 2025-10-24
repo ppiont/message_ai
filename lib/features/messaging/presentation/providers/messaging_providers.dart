@@ -2,14 +2,13 @@
 library;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dartz/dartz.dart';
 import 'package:message_ai/core/error/failures.dart';
 import 'package:message_ai/core/providers/database_provider.dart';
-import 'package:message_ai/features/authentication/domain/entities/user.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
 import 'package:message_ai/features/authentication/presentation/providers/user_providers.dart';
-import 'package:message_ai/features/cultural_context/presentation/providers/cultural_context_providers.dart';
 import 'package:message_ai/features/messaging/data/datasources/conversation_local_datasource.dart';
 import 'package:message_ai/features/messaging/data/datasources/conversation_remote_datasource.dart';
 import 'package:message_ai/features/messaging/data/datasources/group_conversation_remote_datasource.dart';
@@ -20,6 +19,7 @@ import 'package:message_ai/features/messaging/data/repositories/group_conversati
 import 'package:message_ai/features/messaging/data/repositories/message_repository_impl.dart';
 import 'package:message_ai/features/messaging/data/services/auto_delivery_marker.dart';
 import 'package:message_ai/features/messaging/data/services/fcm_service.dart';
+import 'package:message_ai/features/messaging/data/services/message_context_service.dart';
 import 'package:message_ai/features/messaging/data/services/message_queue.dart';
 import 'package:message_ai/features/messaging/data/services/message_sync_service.dart';
 import 'package:message_ai/features/messaging/data/services/presence_service.dart'
@@ -102,10 +102,16 @@ ConversationRepository conversationRepository(Ref ref) =>
       localDataSource: ref.watch(conversationLocalDataSourceProvider),
     );
 
-// ========== Cultural Context Providers ==========
-// Note: CulturalContextAnalyzer provider is now defined in
-// features/cultural_context/presentation/providers/cultural_context_providers.dart
-// to avoid circular dependencies and maintain proper layer separation.
+// ========== Message Context Providers ==========
+
+/// Provides Firebase Functions instance for message context analysis
+@riverpod
+FirebaseFunctions messageContextFunctions(Ref ref) => FirebaseFunctions.instance;
+
+/// Provides the [MessageContextService] for analyzing message cultural context, formality, and idioms
+@riverpod
+MessageContextService messageContextService(Ref ref) =>
+    MessageContextService(functions: ref.watch(messageContextFunctionsProvider));
 
 // ========== Use Case Providers ==========
 
@@ -194,7 +200,6 @@ Stream<List<Map<String, dynamic>>> userConversationsStream(
 ///
 /// Automatically updates when messages change in Firestore.
 /// Automatically marks incoming messages as delivered.
-/// Automatically analyzes cultural context for received messages.
 @riverpod
 Stream<List<Map<String, dynamic>>> conversationMessagesStream(
   Ref ref,
@@ -203,8 +208,6 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
 ) async* {
   final watchUseCase = ref.watch(watchMessagesUseCaseProvider);
   final userSyncService = ref.watch(userSyncServiceProvider);
-  final culturalAnalyzer = ref.watch(culturalContextAnalyzerProvider);
-  final currentUserAsync = ref.watch(currentUserWithFirestoreProvider);
 
   await for (final result in watchUseCase(
     conversationId: conversationId,
@@ -223,22 +226,6 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
         if (allSenderIds.isNotEmpty) {
           allSenderIds.forEach(userSyncService.syncMessageSender);
         }
-
-        // Analyze cultural context for received messages (background, fire-and-forget)
-        currentUserAsync.whenData((User? currentUser) {
-          if (currentUser != null) {
-            for (final msg in messages) {
-              // Only analyze received messages without cultural hints
-              if (msg.senderId != currentUserId && msg.culturalHint == null) {
-                culturalAnalyzer.analyzeMessageInBackground(
-                  conversationId: conversationId,
-                  message: msg,
-                  currentUser: currentUser,
-                );
-              }
-            }
-          }
-        });
 
         return messages
             .map(

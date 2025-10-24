@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:message_ai/features/messaging/domain/entities/message.dart';
+import 'package:message_ai/features/messaging/domain/entities/message_context_details.dart';
 
 /// Data model for Message that adds serialization capabilities
 ///
@@ -19,6 +20,7 @@ class MessageModel extends Message {
     super.embedding,
     super.aiAnalysis,
     super.culturalHint,
+    super.contextDetails,
   });
 
   /// Creates a MessageModel from a domain Message entity
@@ -36,6 +38,7 @@ class MessageModel extends Message {
       embedding: message.embedding,
       aiAnalysis: message.aiAnalysis,
       culturalHint: message.culturalHint,
+      contextDetails: message.contextDetails,
     );
 
   /// Creates a MessageModel from JSON (Firestore document)
@@ -65,6 +68,11 @@ class MessageModel extends Message {
             )
           : null,
       culturalHint: json['culturalHint'] as String?,
+      contextDetails: json['contextDetails'] != null
+          ? MessageContextDetails.fromJson(
+              json['contextDetails'] as Map<String, dynamic>,
+            )
+          : null,
     );
 
   /// Helper method to parse DateTime from either Timestamp or String
@@ -94,6 +102,7 @@ class MessageModel extends Message {
       if (aiAnalysis != null)
         'aiAnalysis': MessageAIAnalysisModel.fromEntity(aiAnalysis!).toJson(),
       if (culturalHint != null) 'culturalHint': culturalHint,
+      if (contextDetails != null) 'contextDetails': contextDetails!.toJson(),
     };
 
   /// Converts this model to a domain entity
@@ -111,6 +120,7 @@ class MessageModel extends Message {
       embedding: embedding,
       aiAnalysis: aiAnalysis,
       culturalHint: culturalHint,
+      contextDetails: contextDetails,
     );
 
   /// Creates a copy of this model with the given fields replaced
@@ -129,6 +139,7 @@ class MessageModel extends Message {
     List<double>? embedding,
     MessageAIAnalysis? aiAnalysis,
     String? culturalHint,
+    MessageContextDetails? contextDetails,
   }) => MessageModel(
       id: id ?? this.id,
       text: text ?? this.text,
@@ -143,6 +154,7 @@ class MessageModel extends Message {
       embedding: embedding ?? this.embedding,
       aiAnalysis: aiAnalysis ?? this.aiAnalysis,
       culturalHint: culturalHint ?? this.culturalHint,
+      contextDetails: contextDetails ?? this.contextDetails,
     );
 }
 
