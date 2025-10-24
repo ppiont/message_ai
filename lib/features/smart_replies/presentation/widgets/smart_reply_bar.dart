@@ -114,13 +114,16 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar>
     _autoHideTimer?.cancel();
 
     // Show the bar with loading state
+    if (!mounted) return;
     setState(() {
       _isVisible = true;
     });
     await _animationController.forward();
 
     // Start auto-hide timer (30 seconds)
-    _autoHideTimer = Timer(const Duration(seconds: 30), _hideBar);
+    if (mounted) {
+      _autoHideTimer = Timer(const Duration(seconds: 30), _hideBar);
+    }
   }
 
   /// Hide the bar with animation
@@ -130,11 +133,14 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar>
     }
 
     await _animationController.reverse();
-    if (mounted) {
-      setState(() {
-        _isVisible = false;
-      });
+
+    if (!mounted) {
+      return;
     }
+
+    setState(() {
+      _isVisible = false;
+    });
     _autoHideTimer?.cancel();
   }
 
@@ -247,7 +253,9 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar>
                   if (replies.isEmpty) {
                     // Silently hide if no suggestions
                     WidgetsBinding.instance.addPostFrameCallback((_) {
-                      _hideBar();
+                      if (mounted) {
+                        _hideBar();
+                      }
                     });
                     return const SizedBox.shrink();
                   }
@@ -291,7 +299,9 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar>
                   );
                   // Silently hide on error
                   WidgetsBinding.instance.addPostFrameCallback((_) {
-                    _hideBar();
+                    if (mounted) {
+                      _hideBar();
+                    }
                   });
                   return const SizedBox.shrink();
                 },
