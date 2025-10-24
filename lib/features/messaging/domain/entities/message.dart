@@ -14,14 +14,20 @@ class Message extends Equatable {
     required this.senderId,
     required this.timestamp,
     required this.type,
-    required this.status,
-    required this.metadata, this.detectedLanguage,
+    required this.metadata,
+    this.detectedLanguage,
     this.translations,
     this.replyTo,
     this.embedding,
     this.aiAnalysis,
     this.culturalHint,
     this.contextDetails,
+    // NEW FIELDS for per-user read receipts
+    this.deliveredTo,
+    this.readBy,
+    // DEPRECATED: Keep for backward compatibility with old messages
+    @Deprecated('Use readBy/deliveredTo for per-user tracking')
+    this.status = 'sent',
   });
   /// Unique identifier for the message
   final String id;
@@ -40,7 +46,9 @@ class Message extends Equatable {
   /// Type of message (text, image, audio, video, etc.)
   final String type;
 
-  /// Delivery status (sent, delivered, read, failed)
+  /// DEPRECATED: Global delivery status for backward compatibility
+  /// For new messages, use readBy/deliveredTo instead
+  @Deprecated('Use readBy/deliveredTo for per-user tracking')
   final String status;
 
   /// Detected language code (e.g., 'en', 'es', 'fr')
@@ -70,6 +78,109 @@ class Message extends Equatable {
   /// in Firestore for eventual consistency across all users in group chats.
   final MessageContextDetails? contextDetails;
 
+  // ========== NEW: Per-User Read Receipt Fields ==========
+
+  /// Map of userId -> timestamp when message was delivered to that user
+  /// Null or empty for messages sent before this feature was implemented
+  /// For sender's own messages, this tracks delivery to OTHER participants
+  final Map<String, DateTime>? deliveredTo;
+
+  /// Map of userId -> timestamp when message was read by that user
+  /// Null or empty for messages sent before this feature was implemented
+  /// For sender's own messages, this tracks reads by OTHER participants
+  final Map<String, DateTime>? readBy;
+
+  // ========== Helper Methods for Read Receipt Logic ==========
+
+  /// Check if message has been delivered to a specific user
+  bool isDeliveredTo(String userId) {
+    if (userId == senderId) {
+      return true;
+    } // Sender always has it delivered
+    return deliveredTo?.containsKey(userId) ?? false;
+  }
+
+  /// Check if message has been read by a specific user
+  bool isReadBy(String userId) {
+    if (userId == senderId) {
+      return true;
+    } // Sender always has read their own message
+    return readBy?.containsKey(userId) ?? false;
+  }
+
+  /// Get delivery status for a specific user (for UI display)
+  /// Returns: 'sent', 'delivered', 'read'
+  String getStatusForUser(String userId) {
+    if (isReadBy(userId)) {
+      return 'read';
+    }
+    if (isDeliveredTo(userId)) {
+      return 'delivered';
+    }
+    return 'sent';
+  }
+
+  /// Get aggregate status for sender's messages in group chats
+  /// Logic:
+  /// - If ALL participants have read: 'read'
+  /// - If ALL participants have delivered (but not all read): 'delivered'
+  /// - Otherwise: 'sent'
+  String getAggregateStatus(List<String> allParticipantIds) {
+    // Filter out sender from participants
+    final otherParticipants =
+        allParticipantIds.where((id) => id != senderId).toList();
+
+    if (otherParticipants.isEmpty) {
+      return 'sent';
+    } // No other participants
+
+    // Check for backward compatibility (old messages without per-user tracking)
+    if (readBy == null && deliveredTo == null) {
+      return status; // Fall back to old global status
+    }
+
+    // Check if ALL other participants have read
+    final allRead = otherParticipants
+        .every((userId) => readBy?.containsKey(userId) ?? false);
+    if (allRead && otherParticipants.isNotEmpty) {
+      return 'read';
+    }
+
+    // Check if ALL other participants have at least delivered
+    final allDelivered = otherParticipants.every((userId) =>
+        (readBy?.containsKey(userId) ?? false) ||
+        (deliveredTo?.containsKey(userId) ?? false));
+    if (allDelivered) {
+      return 'delivered';
+    }
+
+    return 'sent';
+  }
+
+  /// Get read count for group messages (how many users have read)
+  int getReadCount(List<String> allParticipantIds) {
+    final otherParticipants =
+        allParticipantIds.where((id) => id != senderId).toList();
+    if (readBy == null) {
+      return 0;
+    }
+    return otherParticipants
+        .where((userId) => readBy!.containsKey(userId))
+        .length;
+  }
+
+  /// Get list of users who have read this message
+  List<String> getReadByUserIds() {
+    return readBy?.keys.toList() ?? [];
+  }
+
+  /// Get list of users who have received but not read this message
+  List<String> getDeliveredButNotReadUserIds() {
+    final delivered = deliveredTo?.keys.toSet() ?? {};
+    final read = readBy?.keys.toSet() ?? {};
+    return delivered.difference(read).toList();
+  }
+
   /// Creates a copy of this message with the given fields replaced
   Message copyWith({
     String? id,
@@ -86,6 +197,8 @@ class Message extends Equatable {
     MessageAIAnalysis? aiAnalysis,
     String? culturalHint,
     MessageContextDetails? contextDetails,
+    Map<String, DateTime>? deliveredTo,
+    Map<String, DateTime>? readBy,
   }) => Message(
       id: id ?? this.id,
       text: text ?? this.text,
@@ -101,6 +214,8 @@ class Message extends Equatable {
       aiAnalysis: aiAnalysis ?? this.aiAnalysis,
       culturalHint: culturalHint ?? this.culturalHint,
       contextDetails: contextDetails ?? this.contextDetails,
+      deliveredTo: deliveredTo ?? this.deliveredTo,
+      readBy: readBy ?? this.readBy,
     );
 
   @override
@@ -119,6 +234,8 @@ class Message extends Equatable {
         aiAnalysis,
         culturalHint,
         contextDetails,
+        deliveredTo,
+        readBy,
       ];
 }
 
