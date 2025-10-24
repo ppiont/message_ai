@@ -31,104 +31,33 @@ class SemanticSearchService {
   final MessageRepository _messageRepository;
   final FirebaseFunctions _functions;
 
-  // Configuration (optimized for demo speed)
-  static const int _defaultLimit = 5; // Reduced from 10 for faster response
-  static const int _fallbackLimit = 10; // For fallback when no embedding
+  // Configuration
+  static const int _defaultLimit = 50; // Sufficient context for smart replies
+  static const int _fallbackLimit = 50; // For fallback when no embedding
 
-  /// Searches for the most relevant messages in a conversation for RAG context.
+  /// Gets recent conversation context for smart reply generation.
   ///
-  /// **Fast path:** Uses Firestore vector search via Cloud Function
-  /// **Fallback:** Returns recent messages if embedding unavailable
+  /// **Important:** Uses chronological order (not semantic search) to ensure
+  /// messages from BOTH participants are included. Semantic search might return
+  /// all messages from one person, losing conversation flow.
   ///
   /// Parameters:
-  /// - [conversationId]: The conversation to search within
-  /// - [incomingMessage]: The message to find relevant context for
-  /// - [limit]: Maximum number of results to return (default: 5, optimized)
+  /// - [conversationId]: The conversation to get context from
+  /// - [incomingMessage]: The message (unused, kept for API compatibility)
+  /// - [limit]: Maximum number of recent messages (default: 50)
   ///
-  /// Returns: List of most relevant messages, sorted by relevance (descending)
+  /// Returns: List of recent messages in chronological order, naturally balanced
   Future<List<Message>> searchRelevantContext(
     String conversationId,
     Message incomingMessage, {
     int limit = _defaultLimit,
   }) async {
-    try {
-      debugPrint(
-        'SemanticSearchService: Searching for relevant context (limit: $limit)',
-      );
-
-      final startTime = DateTime.now();
-
-      // Check if incoming message has embedding
-      if (incomingMessage.embedding == null ||
-          incomingMessage.embedding!.isEmpty) {
-        debugPrint(
-          'SemanticSearchService: No embedding, falling back to recent messages',
-        );
-        return _getFallbackMessages(conversationId);
-      }
-
-      // Call Firestore vector search Cloud Function
-      try {
-        final result = await _functions
-            .httpsCallable('search_messages_semantic')
-            .call<Map<String, dynamic>>({
-          'conversationId': conversationId,
-          'queryEmbedding': incomingMessage.embedding,
-          'limit': limit.toInt(), // Ensure int type for Python validation
-        });
-
-        final data = result.data;
-        final messagesJson = data['messages'] as List<dynamic>?;
-        final cached = data['cached'] as bool? ?? false;
-        final latency = data['latency'] as num? ?? 0;
-
-        if (messagesJson == null || messagesJson.isEmpty) {
-          debugPrint(
-            'SemanticSearchService: No results from vector search, using fallback',
-          );
-          return _getFallbackMessages(conversationId);
-        }
-
-        // Parse messages from JSON
-        final messages = messagesJson.map((json) {
-          final msgData = json as Map<String, dynamic>;
-          return Message(
-            id: msgData['id'] as String,
-            text: msgData['text'] as String,
-            senderId: msgData['senderId'] as String,
-            timestamp: (msgData['timestamp'] as Timestamp).toDate(),
-            type: 'text',
-            status: 'sent',
-            metadata: MessageMetadata.defaultMetadata(),
-            detectedLanguage: msgData['detectedLanguage'] as String?,
-            translations: msgData['translations'] != null
-                ? Map<String, String>.from(
-                    msgData['translations'] as Map<String, dynamic>,
-                  )
-                : null,
-            // Embedding not included in response for performance
-          );
-        }).toList();
-
-        final elapsed = DateTime.now().difference(startTime).inMilliseconds;
-        debugPrint(
-          'SemanticSearchService: Found ${messages.length} messages '
-          '(${cached ? "cached" : "fresh"}, server: ${latency}ms, total: ${elapsed}ms)',
-        );
-
-        return messages;
-      } on FirebaseFunctionsException catch (e) {
-        debugPrint(
-          'SemanticSearchService: Cloud Function error: ${e.code} - ${e.message}',
-        );
-
-        // Fallback to recent messages on error
-        return _getFallbackMessages(conversationId);
-      }
-    } catch (e) {
-      debugPrint('SemanticSearchService: Unexpected error: $e');
-      return _getFallbackMessages(conversationId);
-    }
+    // Always use chronological fallback for smart reply context
+    // This ensures we get recent conversation flow from BOTH sides
+    debugPrint(
+      'SemanticSearchService: Getting recent conversation context (limit: $limit)',
+    );
+    return _getFallbackMessages(conversationId);
   }
 
   /// Fallback method: Returns most recent messages when vector search unavailable.

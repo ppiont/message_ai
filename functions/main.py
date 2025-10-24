@@ -1414,10 +1414,10 @@ def search_messages_semantic(req: https_fn.CallableRequest) -> dict[str, Any]:
             message=f"'queryEmbedding' must be 1536 dimensions, got {len(query_embedding)}"
         )
 
-    if not isinstance(limit, int) or limit < 1 or limit > 20:
+    if not isinstance(limit, int) or limit < 1 or limit > 100:
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
-            message="'limit' must be an integer between 1 and 20"
+            message="'limit' must be an integer between 1 and 100"
         )
 
     print(f"Semantic search: conversation={conversation_id}, limit={limit}")
