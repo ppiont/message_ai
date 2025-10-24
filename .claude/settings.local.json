@@ -42,7 +42,10 @@
       "mcp__taskmaster-ai__get_tasks",
       "WebSearch",
       "Bash(git restore:*)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(firebase deploy:*)",
+      "mcp__taskmaster-ai__update_task",
+      "mcp__taskmaster-ai__remove_task"
     ],
     "deny": [],
     "ask": []
