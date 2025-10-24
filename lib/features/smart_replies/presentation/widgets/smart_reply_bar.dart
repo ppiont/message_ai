@@ -1,7 +1,6 @@
 /// Smart reply bar widget - Material Design 3 optimized
 library;
 
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,7 +13,7 @@ import 'package:message_ai/features/smart_replies/presentation/providers/smart_r
 /// Features:
 /// - Only appears when suggestions are fully loaded (no loading state)
 /// - Simple text chips (no icons, no header, no dismiss button)
-/// - Auto-hide after 30 seconds
+/// - Stays visible until user selects a reply
 /// - Smooth slide-in/slide-out animations
 /// - Minimal, keyboard-like design
 /// - Material Design 3 theming
@@ -41,10 +40,8 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar>
 
   // Constants
   static const _animationDuration = Duration(milliseconds: 300);
-  static const _autoHideDuration = Duration(seconds: 30);
 
   // State
-  Timer? _autoHideTimer;
   late AnimationController _animationController;
   late Animation<Offset> _slideAnimation;
   String? _lastMessageId;
@@ -91,7 +88,6 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar>
 
   @override
   void dispose() {
-    _autoHideTimer?.cancel();
     _animationController.dispose();
     super.dispose();
   }
@@ -102,9 +98,6 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar>
     }
 
     await _animationController.forward();
-
-    _autoHideTimer?.cancel();
-    _autoHideTimer = Timer(_autoHideDuration, _hideBar);
   }
 
   Future<void> _hideBar() async {
@@ -113,7 +106,6 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar>
     }
 
     await _animationController.reverse();
-    _autoHideTimer?.cancel();
 
     if (mounted) {
       setState(() {
