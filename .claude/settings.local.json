@@ -34,7 +34,8 @@
       "mcp__dart__dart_fix",
       "Bash(dart format:*)",
       "mcp__dart__dart_format",
-      "mcp__GitKraken__git_status"
+      "mcp__GitKraken__git_status",
+      "mcp__dart__hover"
     ],
     "deny": [],
     "ask": []
