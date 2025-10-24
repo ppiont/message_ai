@@ -55,19 +55,6 @@
                     "order": "DESCENDING"
                 }
             ]
-        },
-        {
-            "collectionGroup": "messages",
-            "queryScope": "COLLECTION_GROUP",
-            "fields": [
-                {
-                    "fieldPath": "embedding",
-                    "vectorConfig": {
-                        "dimension": 1536,
-                        "flat": {}
-                    }
-                }
-            ]
         }
     ],
     "fieldOverrides": [

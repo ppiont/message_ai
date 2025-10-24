@@ -339,135 +339,6 @@ Return ONLY the rewritten message."""
 
 
 @https_fn.on_call(secrets=[OPENAI_API_KEY])
-def explain_idioms(req: https_fn.CallableRequest) -> dict[str, Any]:
-    """
-    Explains idioms, slang, and colloquialisms in a message using GPT-4o-mini.
-
-    Args:
-        req.data should contain:
-            - text (str): The text to analyze
-            - source_language (str): Source language code (e.g., 'en', 'es')
-            - target_language (str): Target language code for equivalent expressions
-
-    Returns:
-        dict: {
-            'idioms': [
-                {
-                    'phrase': str,
-                    'meaning': str,
-                    'culturalNote': str,
-                    'equivalentIn': {language_code: equivalent_phrase}
-                }
-            ]
-        }
-
-    Raises:
-        https_fn.HttpsError: If validation fails or explanation errors occur
-    """
-    # Extract and validate request data
-    data = req.data
-
-    if not isinstance(data, dict):
-        raise https_fn.HttpsError(
-            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
-            message="Request data must be a dictionary"
-        )
-
-    text = data.get("text")
-    source_language = data.get("source_language", "en")
-    target_language = data.get("target_language", "en")
-
-    # Validate required fields
-    if not text or not isinstance(text, str):
-        raise https_fn.HttpsError(
-            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
-            message="'text' field is required and must be a string"
-        )
-
-    if len(text.strip()) == 0:
-        raise https_fn.HttpsError(
-            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
-            message="'text' cannot be empty"
-        )
-
-    # Log idiom explanation request
-    print(f"Idiom explanation request: '{text[:50]}...' (source: {source_language}, target: {target_language})")
-
-    try:
-        start_time = time.time()
-
-        # Get OpenAI client
-        client = get_openai_client(OPENAI_API_KEY.value)
-
-        # Construct the prompt for GPT-4o-mini
-        system_prompt = (
-            "You are a language expert specializing in idioms, slang, and colloquialisms. "
-            "Analyze messages to identify and explain idiomatic expressions, slang terms, "
-            "and colloquialisms. Provide cultural context and equivalent expressions in other "
-            "languages. Always return valid JSON."
-        )
-
-        user_prompt = f"""Analyze this message for idioms, slang, or colloquialisms and provide explanations.
-
-Source language: {source_language}
-Target language: {target_language}
-Message: "{text}"
-
-Return JSON in this exact format:
-{{
-  "idioms": [
-    {{
-      "phrase": "the exact phrase from the message",
-      "meaning": "clear explanation of what it means",
-      "culturalNote": "cultural context or origin",
-      "equivalentIn": {{"es": "equivalent in Spanish", "fr": "equivalent in French"}}
-    }}
-  ]
-}}
-
-If no idioms/slang found, return {{"idioms": []}}.
-Only return the JSON, no additional text."""
-
-        # Call OpenAI API (GPT-4o-mini)
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            temperature=0.3,  # Lower temperature for more consistent JSON
-            max_tokens=1000,
-            response_format={"type": "json_object"}  # Ensure JSON response
-        )
-
-        elapsed_time = time.time() - start_time
-
-        # Extract and parse response
-        response_text = response.choices[0].message.content.strip()
-
-        # Parse JSON response
-        import json
-        try:
-            result = json.loads(response_text)
-        except json.JSONDecodeError as e:
-            print(f"Failed to parse JSON response: {e}")
-            print(f"Response was: {response_text}")
-            # Return empty result if parsing fails
-            result = {"idioms": []}
-
-        print(f"Idiom explanation successful in {elapsed_time:.2f}s: found {len(result.get('idioms', []))} idiom(s)")
-
-        return result
-
-    except Exception as e:
-        print(f"Idiom explanation error: {e}")
-        raise https_fn.HttpsError(
-            code=https_fn.FunctionsErrorCode.INTERNAL,
-            message=f"Idiom explanation failed: {str(e)}"
-        )
-
-
-@https_fn.on_call(secrets=[OPENAI_API_KEY])
 def generate_embedding(req: https_fn.CallableRequest) -> dict[str, Any]:
     """
     Generates a 1536-dimensional embedding vector for text using text-embedding-3-small.
@@ -597,152 +468,6 @@ def generate_embedding(req: https_fn.CallableRequest) -> dict[str, Any]:
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INTERNAL,
             message=f"Embedding generation failed: {str(e)}"
-        )
-
-
-@https_fn.on_call(secrets=[OPENAI_API_KEY])
-def analyze_cultural_context(req: https_fn.CallableRequest) -> dict[str, Any]:
-    """
-    Analyzes a message for cultural nuances, idioms, or formality using GPT-4o-mini.
-
-    Args:
-        req.data should contain:
-            - text (str): The text to analyze
-            - language (str): Language code (e.g., 'en', 'es')
-
-    Returns:
-        dict: {
-            'culturalHint': str | None  # null if no cultural context needed
-        }
-
-    Raises:
-        https_fn.HttpsError: If validation fails or analysis errors occur
-    """
-    # Extract and validate request data
-    data = req.data
-
-    if not isinstance(data, dict):
-        raise https_fn.HttpsError(
-            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
-            message="Request data must be a dictionary"
-        )
-
-    text = data.get("text")
-    language = data.get("language", "en")
-
-    # Validate required fields
-    if not text or not isinstance(text, str):
-        raise https_fn.HttpsError(
-            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
-            message="'text' field is required and must be a string"
-        )
-
-    if len(text.strip()) == 0:
-        raise https_fn.HttpsError(
-            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
-            message="'text' cannot be empty"
-        )
-
-    # Log cultural context request
-    print(f"Cultural context analysis request: '{text[:50]}...' (lang: {language})")
-
-    try:
-        start_time = time.time()
-
-        # Step 1: Check cache first (30-day TTL for cost reduction)
-        db = firestore.client()
-        cache_collection = db.collection("cultural_context_cache")
-
-        # Create cache key from text + language
-        cache_key = f"{text}_{language}"
-        cache_ref = cache_collection.document(cache_key)
-        cache_doc = cache_ref.get()
-
-        # Check if cache entry exists and is not expired (30 days = 2592000 seconds)
-        if cache_doc.exists:
-            cache_data = cache_doc.to_dict()
-            timestamp = cache_data.get("timestamp")
-
-            if timestamp:
-                # Check if cache is still valid (30 days)
-                age_seconds = time.time() - timestamp
-                if age_seconds < 2592000:  # 30 days
-                    # Cache hit!
-                    elapsed_time = time.time() - start_time
-                    print(f"Cultural context cache HIT in {elapsed_time:.3f}s (age: {age_seconds/86400:.1f} days)")
-
-                    return {
-                        "culturalHint": cache_data.get("culturalHint"),
-                        "cached": True,
-                        "cacheAge": age_seconds,
-                    }
-
-        # Step 2: Cache miss - call OpenAI API
-        print("Cultural context cache MISS - calling OpenAI API")
-
-        # Get OpenAI client
-        client = get_openai_client(OPENAI_API_KEY.value)
-
-        # Construct the prompt for GPT-4o-mini
-        system_prompt = (
-            "Analyze this message for cultural nuances, idioms, or formality that might not be obvious to non-native speakers. "
-            "Focus on: Cultural greetings or expressions, Formal vs informal language use, Idioms or colloquialisms, Cultural references. "
-            "Keep explanations under 50 words. If the message is straightforward with no cultural context needed, return null."
-        )
-
-        user_prompt = f"""Analyze this message for cultural context:
-
-Language: {language}
-Message: "{text}"
-
-If the message contains cultural nuances, idioms, formal greetings, or references that might not be obvious to non-native speakers, provide a brief explanation (under 50 words).
-
-If the message is straightforward and doesn't require cultural explanation, respond with exactly: null
-
-Return only the explanation or null, no additional formatting."""
-
-        # Call OpenAI API (GPT-4o-mini)
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            temperature=0.3,  # Lower temperature for consistent analysis
-            max_tokens=100,   # Keep explanations short
-        )
-
-        elapsed_time = time.time() - start_time
-
-        # Extract cultural hint
-        cultural_hint_raw = response.choices[0].message.content.strip()
-
-        # Parse response - handle "null" or actual explanation
-        cultural_hint = None
-        if cultural_hint_raw.lower() != "null":
-            cultural_hint = cultural_hint_raw
-
-        # Step 3: Store in cache for future requests (30-day TTL)
-        cache_ref.set({
-            "text": text,
-            "language": language,
-            "culturalHint": cultural_hint,
-            "timestamp": time.time(),
-        })
-
-        print(f"Cultural context analysis successful in {elapsed_time:.2f}s: "
-              f"{'Found context' if cultural_hint else 'No context needed'}")
-
-        return {
-            "culturalHint": cultural_hint,
-            "cached": False,
-        }
-
-    except Exception as e:
-        print(f"Cultural context analysis error: {e}")
-        raise https_fn.HttpsError(
-            code=https_fn.FunctionsErrorCode.INTERNAL,
-            message=f"Cultural context analysis failed: {str(e)}"
         )
 
 
@@ -1810,4 +1535,215 @@ def search_messages_semantic(req: https_fn.CallableRequest) -> dict[str, Any]:
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INTERNAL,
             message=f"Semantic search failed: {str(e)}"
+        )
+
+
+@https_fn.on_call(secrets=[OPENAI_API_KEY])
+def analyze_message_context(req: https_fn.CallableRequest) -> dict[str, Any]:
+    """
+    Analyzes a message for cultural context, formality, and idioms using GPT-4o-mini.
+
+    This unified function replaces both analyze_cultural_context and explain_idioms,
+    providing comprehensive cultural analysis in a single API call.
+
+    Args:
+        req.data should contain:
+            - text (str): The text to analyze
+            - language (str): Language code (e.g., 'en', 'es')
+
+    Returns:
+        dict: {
+            'culturalHint': str | None,      # Brief 1-sentence summary
+            'formality': str | None,         # 'very formal', 'formal', 'neutral', 'casual', 'very casual'
+            'culturalNote': str | None,      # Detailed cultural explanation
+            'idioms': [                      # List of idioms found
+                {
+                    'phrase': str,
+                    'meaning': str,
+                    'culturalNote': str,
+                    'equivalentIn': {language_code: equivalent_phrase}
+                }
+            ],
+            'cached': bool
+        }
+
+    Raises:
+        https_fn.HttpsError: If validation fails or analysis errors occur
+    """
+    # Extract and validate request data
+    data = req.data
+
+    if not isinstance(data, dict):
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="Request data must be a dictionary"
+        )
+
+    text = data.get("text")
+    language = data.get("language", "en")
+
+    # Validate required fields
+    if not text or not isinstance(text, str):
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="'text' field is required and must be a string"
+        )
+
+    if len(text.strip()) == 0:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="'text' cannot be empty"
+        )
+
+    # Log message context request
+    print(f"Message context analysis request: '{text[:50]}...' (lang: {language})")
+
+    try:
+        start_time = time.time()
+
+        # Step 1: Check cache first (30-day TTL for cost reduction)
+        db = firestore.client()
+        cache_collection = db.collection("message_context_cache")
+
+        # Create cache key from text + language
+        cache_key = f"{text}_{language}"
+        cache_ref = cache_collection.document(cache_key)
+        cache_doc = cache_ref.get()
+
+        # Check if cache entry exists and is not expired (30 days = 2592000 seconds)
+        if cache_doc.exists:
+            cache_data = cache_doc.to_dict()
+            timestamp = cache_data.get("timestamp")
+
+            if timestamp:
+                # Check if cache is still valid (30 days)
+                age_seconds = time.time() - timestamp
+                if age_seconds < 2592000:  # 30 days
+                    # Cache hit!
+                    elapsed_time = time.time() - start_time
+                    print(f"Message context cache HIT in {elapsed_time:.3f}s (age: {age_seconds/86400:.1f} days)")
+
+                    return {
+                        "culturalHint": cache_data.get("culturalHint"),
+                        "formality": cache_data.get("formality"),
+                        "culturalNote": cache_data.get("culturalNote"),
+                        "idioms": cache_data.get("idioms", []),
+                        "cached": True,
+                        "cacheAge": age_seconds,
+                    }
+
+        # Step 2: Cache miss - call OpenAI API
+        print("Message context cache MISS - calling OpenAI API")
+
+        # Get OpenAI client
+        client = get_openai_client(OPENAI_API_KEY.value)
+
+        # Construct the unified prompt for GPT-4o-mini
+        system_prompt = (
+            "You are a language expert specializing in cultural analysis, formality detection, "
+            "and idiomatic expressions. Analyze messages comprehensively for cultural nuances, "
+            "formality level, and idioms/slang. Always return valid JSON."
+        )
+
+        user_prompt = f"""Analyze this message for cultural context, formality, and idioms.
+
+Language: {language}
+Message: "{text}"
+
+Provide a comprehensive analysis in JSON format:
+1. culturalHint: Brief 1-sentence summary of key cultural aspects (or null if none)
+2. formality: Assess formality level - choose from: "very formal", "formal", "neutral", "casual", "very casual" (or null if unclear)
+3. culturalNote: Detailed explanation of cultural nuances, greetings, customs, or references that might not be obvious to non-native speakers (or null if none)
+4. idioms: Array of idioms, slang, or colloquialisms found in the message
+
+For each idiom, provide:
+- phrase: exact phrase from the message
+- meaning: clear explanation of what it means
+- culturalNote: cultural context or origin
+- equivalentIn: equivalent expressions in 6-8 major languages (en, es, fr, de, zh, ja, ar, pt)
+
+Return JSON in this exact format:
+{{
+  "culturalHint": "brief summary or null",
+  "formality": "very formal|formal|neutral|casual|very casual or null",
+  "culturalNote": "detailed explanation or null",
+  "idioms": [
+    {{
+      "phrase": "exact phrase",
+      "meaning": "explanation",
+      "culturalNote": "cultural context",
+      "equivalentIn": {{"es": "equivalent in Spanish", "fr": "equivalent in French", ...}}
+    }}
+  ]
+}}
+
+If the message is straightforward with no cultural context, return all fields as null except idioms as empty array.
+Only return the JSON, no additional text."""
+
+        # Call OpenAI API (GPT-4o-mini)
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.3,  # Lower temperature for consistent analysis
+            max_tokens=1000,   # Allow for detailed analysis
+            response_format={"type": "json_object"}  # Ensure JSON response
+        )
+
+        elapsed_time = time.time() - start_time
+
+        # Extract and parse response
+        response_text = response.choices[0].message.content.strip()
+
+        # Parse JSON response
+        import json
+        try:
+            result = json.loads(response_text)
+        except json.JSONDecodeError as e:
+            print(f"Failed to parse JSON response: {e}")
+            print(f"Response was: {response_text}")
+            # Return empty result if parsing fails
+            result = {
+                "culturalHint": None,
+                "formality": None,
+                "culturalNote": None,
+                "idioms": []
+            }
+
+        # Extract fields with defaults
+        cultural_hint = result.get("culturalHint")
+        formality = result.get("formality")
+        cultural_note = result.get("culturalNote")
+        idioms = result.get("idioms", [])
+
+        # Step 3: Store in cache for future requests (30-day TTL)
+        cache_ref.set({
+            "text": text,
+            "language": language,
+            "culturalHint": cultural_hint,
+            "formality": formality,
+            "culturalNote": cultural_note,
+            "idioms": idioms,
+            "timestamp": time.time(),
+        })
+
+        print(f"Message context analysis successful in {elapsed_time:.2f}s: "
+              f"formality={formality}, idioms={len(idioms)}, "
+              f"{'has cultural context' if cultural_hint else 'no cultural context'}")
+
+        return {
+            "culturalHint": cultural_hint,
+            "formality": formality,
+            "culturalNote": cultural_note,
+            "idioms": idioms,
+            "cached": False,
+        }
+
+    except Exception as e:
+        print(f"Message context analysis error: {e}")
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INTERNAL,
+            message=f"Message context analysis failed: {str(e)}"
         )
