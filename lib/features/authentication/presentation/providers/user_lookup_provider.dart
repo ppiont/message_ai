@@ -174,6 +174,7 @@ class UserLookupCache extends _$UserLookupCache {
       final userCacheService = ref.read(userCacheServiceProvider);
 
       // Create a stream from the repository's watch method
+      // ignore: cancel_subscriptions - Subscription is properly cancelled in ref.onDispose() (line 44-49)
       final subscription = userRepository.watchUser(userId).listen(
         (result) async {
           if (!ref.mounted) {

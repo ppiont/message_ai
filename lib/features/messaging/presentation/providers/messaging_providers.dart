@@ -517,14 +517,13 @@ Stream<List<Map<String, dynamic>>> allConversationsStream(
               'unreadCount': conv.getUnreadCountForUser(userId),
             },
           )
-          .toList();
-
-      // Sort by lastUpdatedAt (newest first)
-      mapped.sort((Map<String, dynamic> a, Map<String, dynamic> b) {
-        final aTime = a['lastUpdatedAt'] as DateTime;
-        final bTime = b['lastUpdatedAt'] as DateTime;
-        return bTime.compareTo(aTime);
-      });
+          .toList()
+        // Sort by lastUpdatedAt (newest first)
+        ..sort((Map<String, dynamic> a, Map<String, dynamic> b) {
+          final aTime = a['lastUpdatedAt'] as DateTime;
+          final bTime = b['lastUpdatedAt'] as DateTime;
+          return bTime.compareTo(aTime);
+        });
 
       return mapped;
     }),
