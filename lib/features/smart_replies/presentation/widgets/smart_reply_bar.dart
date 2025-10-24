@@ -13,11 +13,10 @@ import 'package:message_ai/features/smart_replies/presentation/providers/smart_r
 ///
 /// Features:
 /// - Only appears when suggestions are fully loaded (no loading state)
-/// - Intent-based icons (positive, neutral, question)
+/// - Simple text chips (no icons, no header, no dismiss button)
 /// - Auto-hide after 30 seconds
 /// - Smooth slide-in/slide-out animations
-/// - Full accessibility support
-/// - Platform-adaptive behavior (iOS swipe-to-dismiss, Android back button)
+/// - Minimal, keyboard-like design
 /// - Material Design 3 theming
 class SmartReplyBar extends ConsumerStatefulWidget {
   const SmartReplyBar({
@@ -43,11 +42,6 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar>
   // Constants
   static const _animationDuration = Duration(milliseconds: 300);
   static const _autoHideDuration = Duration(seconds: 30);
-  static const Map<String, IconData> _intentIcons = {
-    'positive': Icons.thumb_up_outlined,
-    'neutral': Icons.chat_bubble_outline,
-    'question': Icons.help_outline,
-  };
 
   // State
   Timer? _autoHideTimer;
@@ -138,9 +132,6 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar>
     _hideBar();
   }
 
-  IconData _getIconForIntent(String intent) =>
-      _intentIcons[intent.toLowerCase()] ?? Icons.chat_bubble_outline;
-
   @override
   Widget build(BuildContext context) {
     if (widget.incomingMessage == null) {
@@ -185,117 +176,29 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar>
   }
 
   Widget _buildSmartReplyBar(BuildContext context, List<SmartReply> replies) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isIOS = theme.platform == TargetPlatform.iOS;
-
-    Widget barContent = Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        border: Border(
-          top: BorderSide(
-            color: colorScheme.outlineVariant,
-          ),
-        ),
-        boxShadow: isIOS ? null : [
-          BoxShadow(
-            color: colorScheme.shadow.withValues(alpha: 0.05),
-            blurRadius: 4,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHeader(context),
-          const SizedBox(height: 8),
-          _buildChipList(context, replies),
-        ],
-      ),
-    );
-
-    // iOS: Add swipe-down to dismiss
-    if (isIOS) {
-      barContent = Dismissible(
-        key: const Key('smart_reply_bar_dismissible'),
-        direction: DismissDirection.down,
-        onDismissed: (_) => _hideBar(),
-        child: barContent,
-      );
-    }
+    final colorScheme = Theme.of(context).colorScheme;
 
     return SlideTransition(
       position: _slideAnimation,
-      child: barContent,
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Semantics(
-          label: 'Quick reply suggestions',
-          hint: 'Swipe right to browse suggested responses',
-          child: Text(
-            'Quick replies',
-            style: TextStyle(
-              fontSize: 12,
-              color: colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 0.5,
-            ),
-          ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
         ),
-        Semantics(
-          label: 'Dismiss quick replies',
-          button: true,
-          child: IconButton(
-            icon: Icon(
-              Icons.close,
-              size: 20,
-              color: colorScheme.onSurfaceVariant,
-            ),
-            constraints: const BoxConstraints(
-              minWidth: 48,
-              minHeight: 48,
-            ),
-            onPressed: _hideBar,
-            tooltip: 'Dismiss',
-          ),
-        ),
-      ],
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: _buildChipList(context, replies),
+      ),
     );
   }
 
   Widget _buildChipList(BuildContext context, List<SmartReply> replies) =>
-      Semantics(
-        label: 'Smart reply suggestions',
-        hint: '${replies.length} suggestions available',
-        child: RepaintBoundary(
-          child: SizedBox(
-            height: 48,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              itemCount: replies.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 8),
-              itemBuilder: (context, index) {
-                final reply = replies[index];
-                return Semantics(
-                  label: 'Reply with: ${reply.text}',
-                  hint: 'Intent: ${reply.intent}',
-                  button: true,
-                  child: _buildReplyChip(context, reply),
-                );
-              },
-            ),
-          ),
+      SizedBox(
+        height: 40,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          itemCount: replies.length,
+          separatorBuilder: (_, _) => const SizedBox(width: 8),
+          itemBuilder: (context, index) => _buildReplyChip(context, replies[index]),
         ),
       );
 
@@ -303,10 +206,6 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar>
     final colorScheme = Theme.of(context).colorScheme;
 
     return ActionChip(
-      avatar: Icon(
-        _getIconForIntent(reply.intent),
-        size: 18,
-      ),
       label: Text(reply.text),
       onPressed: () => _handleReplyTap(reply.text),
       backgroundColor: colorScheme.surfaceContainerHighest,
@@ -314,13 +213,10 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar>
         fontSize: 14,
         color: colorScheme.onSurface,
       ),
-      iconTheme: IconThemeData(
-        color: colorScheme.onSurfaceVariant,
-      ),
-      visualDensity: VisualDensity.standard,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      visualDensity: VisualDensity.compact,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      side: BorderSide.none,
       elevation: 0,
-      pressElevation: 1,
     );
   }
 }
