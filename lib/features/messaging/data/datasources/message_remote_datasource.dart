@@ -38,11 +38,19 @@ abstract class MessageRemoteDataSource {
     int limit = 50,
   });
 
-  /// Marks a message as delivered
-  Future<void> markAsDelivered(String conversationId, String messageId);
+  /// Marks a message as delivered for a specific user
+  Future<void> markAsDelivered(
+    String conversationId,
+    String messageId,
+    String userId,
+  );
 
-  /// Marks a message as read
-  Future<void> markAsRead(String conversationId, String messageId);
+  /// Marks a message as read for a specific user
+  Future<void> markAsRead(
+    String conversationId,
+    String messageId,
+    String userId,
+  );
 }
 
 /// Implementation of [MessageRemoteDataSource] using Firebase Firestore.
@@ -286,10 +294,18 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
   }
 
   @override
-  Future<void> markAsDelivered(String conversationId, String messageId) async {
+  Future<void> markAsDelivered(
+    String conversationId,
+    String messageId,
+    String userId,
+  ) async {
     try {
       final messagesRef = await _messagesRef(conversationId);
-      await messagesRef.doc(messageId).update({'status': 'delivered'});
+      // Update per-user delivery tracking
+      // Uses nested map syntax: 'deliveredTo.userId': timestamp
+      await messagesRef.doc(messageId).update({
+        'deliveredTo.$userId': FieldValue.serverTimestamp(),
+      });
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
@@ -304,10 +320,18 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
   }
 
   @override
-  Future<void> markAsRead(String conversationId, String messageId) async {
+  Future<void> markAsRead(
+    String conversationId,
+    String messageId,
+    String userId,
+  ) async {
     try {
       final messagesRef = await _messagesRef(conversationId);
-      await messagesRef.doc(messageId).update({'status': 'read'});
+      // Update per-user read tracking
+      // Uses nested map syntax: 'readBy.userId': timestamp
+      await messagesRef.doc(messageId).update({
+        'readBy.$userId': FieldValue.serverTimestamp(),
+      });
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
