@@ -1625,3 +1625,189 @@ Only return the JSON, no additional text."""
             code=https_fn.FunctionsErrorCode.INTERNAL,
             message=f"Smart reply generation failed: {str(e)}"
         )
+
+
+@https_fn.on_call()
+def search_messages_semantic(req: https_fn.CallableRequest) -> dict[str, Any]:
+    """
+    Performs semantic search on messages using Firestore vector search.
+
+    Optimized for speed with aggressive caching and smart defaults.
+    Target latency: <100ms (cached) or <500ms (fresh query)
+
+    Args:
+        req.data should contain:
+            - conversationId (str): The conversation to search within
+            - queryEmbedding (list): 1536-dimensional embedding vector
+            - limit (int, optional): Max results (default: 5, optimized for speed)
+
+    Returns:
+        dict: {
+            'messages': List of semantically similar messages,
+            'count': Number of results,
+            'cached': Whether results were cached,
+            'latency': Query execution time in milliseconds
+        }
+
+    Performance optimizations:
+    - 5-minute result caching (aggressive for demo smoothness)
+    - Firestore vector search (server-side cosine similarity)
+    - Smaller result set (5 instead of 10) for faster response
+    - Minimal payload (exclude embeddings from response)
+    """
+    start_time = time.time()
+
+    # Extract and validate request data
+    data = req.data
+
+    if not isinstance(data, dict):
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="Request data must be a dictionary"
+        )
+
+    conversation_id = data.get("conversationId")
+    query_embedding = data.get("queryEmbedding")
+    limit = data.get("limit", 5)  # Default 5 for speed
+
+    # Validate required fields
+    if not conversation_id or not isinstance(conversation_id, str):
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="'conversationId' field is required and must be a string"
+        )
+
+    if not query_embedding or not isinstance(query_embedding, list):
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="'queryEmbedding' field is required and must be a list"
+        )
+
+    if len(query_embedding) != 1536:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message=f"'queryEmbedding' must be 1536 dimensions, got {len(query_embedding)}"
+        )
+
+    if not isinstance(limit, int) or limit < 1 or limit > 20:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            message="'limit' must be an integer between 1 and 20"
+        )
+
+    print(f"Semantic search: conversation={conversation_id}, limit={limit}")
+
+    try:
+        # Step 1: Check cache (5-minute TTL for demo smoothness)
+        import hashlib
+        import json
+
+        db = firestore.client()
+
+        # Create cache key from hash of inputs
+        cache_input = {
+            "conversationId": conversation_id,
+            "queryEmbedding": query_embedding,
+            "limit": limit,
+        }
+        cache_key_hash = hashlib.sha256(
+            json.dumps(cache_input, sort_keys=True).encode('utf-8')
+        ).hexdigest()
+
+        cache_collection = db.collection("semantic_search_cache")
+        cache_ref = cache_collection.document(cache_key_hash)
+        cache_doc = cache_ref.get()
+
+        # Check if cache entry exists and is not expired (5 minutes = 300 seconds)
+        if cache_doc.exists:
+            cache_data = cache_doc.to_dict()
+            timestamp = cache_data.get("timestamp")
+
+            if timestamp:
+                age_seconds = time.time() - timestamp
+                if age_seconds < 300:  # 5 minutes
+                    elapsed_ms = (time.time() - start_time) * 1000
+                    print(f"Semantic search cache HIT ({elapsed_ms:.1f}ms, age: {age_seconds:.1f}s)")
+
+                    return {
+                        "messages": cache_data["messages"],
+                        "count": len(cache_data["messages"]),
+                        "cached": True,
+                        "latency": elapsed_ms,
+                    }
+
+        # Step 2: Cache miss - perform Firestore vector search
+        print("Semantic search cache MISS - querying Firestore")
+
+        # Import vector search dependencies
+        from google.cloud.firestore_v1.vector import Vector
+        from google.cloud.firestore_v1.base_vector_query import DistanceMeasure
+
+        # Get messages collection for this conversation
+        messages_ref = db.collection_group("messages")
+
+        # Perform k-NN vector search with Firestore
+        vector_query = messages_ref.find_nearest(
+            vector_field="embedding",
+            query_vector=Vector(query_embedding),
+            distance_measure=DistanceMeasure.COSINE,
+            limit=limit * 2,  # Get more candidates for filtering
+        ).where("conversationId", "==", conversation_id)
+
+        # Execute query
+        results = vector_query.get()
+
+        # Convert to list and format (exclude embeddings to reduce payload)
+        messages = []
+        for doc in results:
+            try:
+                message_data = doc.to_dict()
+
+                # Format for response (remove embedding to reduce payload size)
+                formatted_message = {
+                    "id": doc.id,
+                    "text": message_data.get("text", ""),
+                    "senderId": message_data.get("senderId", ""),
+                    "timestamp": message_data.get("timestamp"),
+                    "detectedLanguage": message_data.get("detectedLanguage"),
+                    "translations": message_data.get("translations"),
+                    # embedding excluded for performance
+                }
+
+                messages.append(formatted_message)
+
+                # Stop once we have enough results
+                if len(messages) >= limit:
+                    break
+
+            except Exception as e:
+                print(f"Error processing message {doc.id}: {e}")
+                continue
+
+        elapsed_ms = (time.time() - start_time) * 1000
+        print(f"Semantic search found {len(messages)} messages in {elapsed_ms:.1f}ms")
+
+        # Step 3: Cache the results for 5 minutes
+        cache_ref.set({
+            "conversationId": conversation_id,
+            "messages": messages,
+            "timestamp": time.time(),
+            "limit": limit,
+        })
+
+        return {
+            "messages": messages,
+            "count": len(messages),
+            "cached": False,
+            "latency": elapsed_ms,
+        }
+
+    except Exception as e:
+        print(f"Semantic search error: {e}")
+        import traceback
+        traceback.print_exc()
+
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.INTERNAL,
+            message=f"Semantic search failed: {str(e)}"
+        )

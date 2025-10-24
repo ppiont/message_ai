@@ -354,6 +354,12 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                               msg['translations'] as Map<String, dynamic>,
                             )
                           : null,
+                      embedding: msg['embedding'] != null
+                          ? List<double>.from(
+                              (msg['embedding'] as List<dynamic>)
+                                  .map((e) => (e as num).toDouble()),
+                            )
+                          : null,
                     );
                   });
                 }
