@@ -1971,6 +1971,28 @@ class $MessagesTable extends Messages
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _deliveredToJsonMeta = const VerificationMeta(
+    'deliveredToJson',
+  );
+  @override
+  late final GeneratedColumn<String> deliveredToJson = GeneratedColumn<String>(
+    'delivered_to_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _readByJsonMeta = const VerificationMeta(
+    'readByJson',
+  );
+  @override
+  late final GeneratedColumn<String> readByJson = GeneratedColumn<String>(
+    'read_by_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _syncStatusMeta = const VerificationMeta(
     'syncStatus',
   );
@@ -2033,6 +2055,8 @@ class $MessagesTable extends Messages
     culturalHint,
     contextDetails,
     embedding,
+    deliveredToJson,
+    readByJson,
     syncStatus,
     retryCount,
     tempId,
@@ -2168,6 +2192,24 @@ class $MessagesTable extends Messages
         embedding.isAcceptableOrUnknown(data['embedding']!, _embeddingMeta),
       );
     }
+    if (data.containsKey('delivered_to_json')) {
+      context.handle(
+        _deliveredToJsonMeta,
+        deliveredToJson.isAcceptableOrUnknown(
+          data['delivered_to_json']!,
+          _deliveredToJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('read_by_json')) {
+      context.handle(
+        _readByJsonMeta,
+        readByJson.isAcceptableOrUnknown(
+          data['read_by_json']!,
+          _readByJsonMeta,
+        ),
+      );
+    }
     if (data.containsKey('sync_status')) {
       context.handle(
         _syncStatusMeta,
@@ -2264,6 +2306,14 @@ class $MessagesTable extends Messages
         DriftSqlType.string,
         data['${effectivePrefix}embedding'],
       ),
+      deliveredToJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}delivered_to_json'],
+      ),
+      readByJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}read_by_json'],
+      ),
       syncStatus: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}sync_status'],
@@ -2336,6 +2386,12 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
   /// Embedding vector for RAG (stored as JSON array)
   final String? embedding;
 
+  /// Per-user delivery tracking (JSON: {userId: timestamp})
+  final String? deliveredToJson;
+
+  /// Per-user read tracking (JSON: {userId: timestamp})
+  final String? readByJson;
+
   /// Sync status: 'pending', 'synced', 'failed'
   final String syncStatus;
 
@@ -2363,6 +2419,8 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
     this.culturalHint,
     this.contextDetails,
     this.embedding,
+    this.deliveredToJson,
+    this.readByJson,
     required this.syncStatus,
     required this.retryCount,
     this.tempId,
@@ -2401,6 +2459,12 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
     }
     if (!nullToAbsent || embedding != null) {
       map['embedding'] = Variable<String>(embedding);
+    }
+    if (!nullToAbsent || deliveredToJson != null) {
+      map['delivered_to_json'] = Variable<String>(deliveredToJson);
+    }
+    if (!nullToAbsent || readByJson != null) {
+      map['read_by_json'] = Variable<String>(readByJson);
     }
     map['sync_status'] = Variable<String>(syncStatus);
     map['retry_count'] = Variable<int>(retryCount);
@@ -2446,6 +2510,12 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
       embedding: embedding == null && nullToAbsent
           ? const Value.absent()
           : Value(embedding),
+      deliveredToJson: deliveredToJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deliveredToJson),
+      readByJson: readByJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(readByJson),
       syncStatus: Value(syncStatus),
       retryCount: Value(retryCount),
       tempId: tempId == null && nullToAbsent
@@ -2478,6 +2548,8 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
       culturalHint: serializer.fromJson<String?>(json['culturalHint']),
       contextDetails: serializer.fromJson<String?>(json['contextDetails']),
       embedding: serializer.fromJson<String?>(json['embedding']),
+      deliveredToJson: serializer.fromJson<String?>(json['deliveredToJson']),
+      readByJson: serializer.fromJson<String?>(json['readByJson']),
       syncStatus: serializer.fromJson<String>(json['syncStatus']),
       retryCount: serializer.fromJson<int>(json['retryCount']),
       tempId: serializer.fromJson<String?>(json['tempId']),
@@ -2503,6 +2575,8 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
       'culturalHint': serializer.toJson<String?>(culturalHint),
       'contextDetails': serializer.toJson<String?>(contextDetails),
       'embedding': serializer.toJson<String?>(embedding),
+      'deliveredToJson': serializer.toJson<String?>(deliveredToJson),
+      'readByJson': serializer.toJson<String?>(readByJson),
       'syncStatus': serializer.toJson<String>(syncStatus),
       'retryCount': serializer.toJson<int>(retryCount),
       'tempId': serializer.toJson<String?>(tempId),
@@ -2526,6 +2600,8 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
     Value<String?> culturalHint = const Value.absent(),
     Value<String?> contextDetails = const Value.absent(),
     Value<String?> embedding = const Value.absent(),
+    Value<String?> deliveredToJson = const Value.absent(),
+    Value<String?> readByJson = const Value.absent(),
     String? syncStatus,
     int? retryCount,
     Value<String?> tempId = const Value.absent(),
@@ -2550,6 +2626,10 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
         ? contextDetails.value
         : this.contextDetails,
     embedding: embedding.present ? embedding.value : this.embedding,
+    deliveredToJson: deliveredToJson.present
+        ? deliveredToJson.value
+        : this.deliveredToJson,
+    readByJson: readByJson.present ? readByJson.value : this.readByJson,
     syncStatus: syncStatus ?? this.syncStatus,
     retryCount: retryCount ?? this.retryCount,
     tempId: tempId.present ? tempId.value : this.tempId,
@@ -2590,6 +2670,12 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
           ? data.contextDetails.value
           : this.contextDetails,
       embedding: data.embedding.present ? data.embedding.value : this.embedding,
+      deliveredToJson: data.deliveredToJson.present
+          ? data.deliveredToJson.value
+          : this.deliveredToJson,
+      readByJson: data.readByJson.present
+          ? data.readByJson.value
+          : this.readByJson,
       syncStatus: data.syncStatus.present
           ? data.syncStatus.value
           : this.syncStatus,
@@ -2621,6 +2707,8 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
           ..write('culturalHint: $culturalHint, ')
           ..write('contextDetails: $contextDetails, ')
           ..write('embedding: $embedding, ')
+          ..write('deliveredToJson: $deliveredToJson, ')
+          ..write('readByJson: $readByJson, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('retryCount: $retryCount, ')
           ..write('tempId: $tempId, ')
@@ -2630,7 +2718,7 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     conversationId,
     messageText,
@@ -2646,11 +2734,13 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
     culturalHint,
     contextDetails,
     embedding,
+    deliveredToJson,
+    readByJson,
     syncStatus,
     retryCount,
     tempId,
     lastSyncAttempt,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2670,6 +2760,8 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
           other.culturalHint == this.culturalHint &&
           other.contextDetails == this.contextDetails &&
           other.embedding == this.embedding &&
+          other.deliveredToJson == this.deliveredToJson &&
+          other.readByJson == this.readByJson &&
           other.syncStatus == this.syncStatus &&
           other.retryCount == this.retryCount &&
           other.tempId == this.tempId &&
@@ -2692,6 +2784,8 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
   final Value<String?> culturalHint;
   final Value<String?> contextDetails;
   final Value<String?> embedding;
+  final Value<String?> deliveredToJson;
+  final Value<String?> readByJson;
   final Value<String> syncStatus;
   final Value<int> retryCount;
   final Value<String?> tempId;
@@ -2713,6 +2807,8 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
     this.culturalHint = const Value.absent(),
     this.contextDetails = const Value.absent(),
     this.embedding = const Value.absent(),
+    this.deliveredToJson = const Value.absent(),
+    this.readByJson = const Value.absent(),
     this.syncStatus = const Value.absent(),
     this.retryCount = const Value.absent(),
     this.tempId = const Value.absent(),
@@ -2735,6 +2831,8 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
     this.culturalHint = const Value.absent(),
     this.contextDetails = const Value.absent(),
     this.embedding = const Value.absent(),
+    this.deliveredToJson = const Value.absent(),
+    this.readByJson = const Value.absent(),
     this.syncStatus = const Value.absent(),
     this.retryCount = const Value.absent(),
     this.tempId = const Value.absent(),
@@ -2761,6 +2859,8 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
     Expression<String>? culturalHint,
     Expression<String>? contextDetails,
     Expression<String>? embedding,
+    Expression<String>? deliveredToJson,
+    Expression<String>? readByJson,
     Expression<String>? syncStatus,
     Expression<int>? retryCount,
     Expression<String>? tempId,
@@ -2783,6 +2883,8 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
       if (culturalHint != null) 'cultural_hint': culturalHint,
       if (contextDetails != null) 'context_details': contextDetails,
       if (embedding != null) 'embedding': embedding,
+      if (deliveredToJson != null) 'delivered_to_json': deliveredToJson,
+      if (readByJson != null) 'read_by_json': readByJson,
       if (syncStatus != null) 'sync_status': syncStatus,
       if (retryCount != null) 'retry_count': retryCount,
       if (tempId != null) 'temp_id': tempId,
@@ -2807,6 +2909,8 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
     Value<String?>? culturalHint,
     Value<String?>? contextDetails,
     Value<String?>? embedding,
+    Value<String?>? deliveredToJson,
+    Value<String?>? readByJson,
     Value<String>? syncStatus,
     Value<int>? retryCount,
     Value<String?>? tempId,
@@ -2829,6 +2933,8 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
       culturalHint: culturalHint ?? this.culturalHint,
       contextDetails: contextDetails ?? this.contextDetails,
       embedding: embedding ?? this.embedding,
+      deliveredToJson: deliveredToJson ?? this.deliveredToJson,
+      readByJson: readByJson ?? this.readByJson,
       syncStatus: syncStatus ?? this.syncStatus,
       retryCount: retryCount ?? this.retryCount,
       tempId: tempId ?? this.tempId,
@@ -2885,6 +2991,12 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
     if (embedding.present) {
       map['embedding'] = Variable<String>(embedding.value);
     }
+    if (deliveredToJson.present) {
+      map['delivered_to_json'] = Variable<String>(deliveredToJson.value);
+    }
+    if (readByJson.present) {
+      map['read_by_json'] = Variable<String>(readByJson.value);
+    }
     if (syncStatus.present) {
       map['sync_status'] = Variable<String>(syncStatus.value);
     }
@@ -2921,6 +3033,8 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
           ..write('culturalHint: $culturalHint, ')
           ..write('contextDetails: $contextDetails, ')
           ..write('embedding: $embedding, ')
+          ..write('deliveredToJson: $deliveredToJson, ')
+          ..write('readByJson: $readByJson, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('retryCount: $retryCount, ')
           ..write('tempId: $tempId, ')
@@ -3745,6 +3859,8 @@ typedef $$MessagesTableCreateCompanionBuilder =
       Value<String?> culturalHint,
       Value<String?> contextDetails,
       Value<String?> embedding,
+      Value<String?> deliveredToJson,
+      Value<String?> readByJson,
       Value<String> syncStatus,
       Value<int> retryCount,
       Value<String?> tempId,
@@ -3768,6 +3884,8 @@ typedef $$MessagesTableUpdateCompanionBuilder =
       Value<String?> culturalHint,
       Value<String?> contextDetails,
       Value<String?> embedding,
+      Value<String?> deliveredToJson,
+      Value<String?> readByJson,
       Value<String> syncStatus,
       Value<int> retryCount,
       Value<String?> tempId,
@@ -3856,6 +3974,16 @@ class $$MessagesTableFilterComposer
 
   ColumnFilters<String> get embedding => $composableBuilder(
     column: $table.embedding,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deliveredToJson => $composableBuilder(
+    column: $table.deliveredToJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get readByJson => $composableBuilder(
+    column: $table.readByJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3964,6 +4092,16 @@ class $$MessagesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get deliveredToJson => $composableBuilder(
+    column: $table.deliveredToJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get readByJson => $composableBuilder(
+    column: $table.readByJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get syncStatus => $composableBuilder(
     column: $table.syncStatus,
     builder: (column) => ColumnOrderings(column),
@@ -4055,6 +4193,16 @@ class $$MessagesTableAnnotationComposer
   GeneratedColumn<String> get embedding =>
       $composableBuilder(column: $table.embedding, builder: (column) => column);
 
+  GeneratedColumn<String> get deliveredToJson => $composableBuilder(
+    column: $table.deliveredToJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get readByJson => $composableBuilder(
+    column: $table.readByJson,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get syncStatus => $composableBuilder(
     column: $table.syncStatus,
     builder: (column) => column,
@@ -4120,6 +4268,8 @@ class $$MessagesTableTableManager
                 Value<String?> culturalHint = const Value.absent(),
                 Value<String?> contextDetails = const Value.absent(),
                 Value<String?> embedding = const Value.absent(),
+                Value<String?> deliveredToJson = const Value.absent(),
+                Value<String?> readByJson = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
                 Value<int> retryCount = const Value.absent(),
                 Value<String?> tempId = const Value.absent(),
@@ -4141,6 +4291,8 @@ class $$MessagesTableTableManager
                 culturalHint: culturalHint,
                 contextDetails: contextDetails,
                 embedding: embedding,
+                deliveredToJson: deliveredToJson,
+                readByJson: readByJson,
                 syncStatus: syncStatus,
                 retryCount: retryCount,
                 tempId: tempId,
@@ -4164,6 +4316,8 @@ class $$MessagesTableTableManager
                 Value<String?> culturalHint = const Value.absent(),
                 Value<String?> contextDetails = const Value.absent(),
                 Value<String?> embedding = const Value.absent(),
+                Value<String?> deliveredToJson = const Value.absent(),
+                Value<String?> readByJson = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
                 Value<int> retryCount = const Value.absent(),
                 Value<String?> tempId = const Value.absent(),
@@ -4185,6 +4339,8 @@ class $$MessagesTableTableManager
                 culturalHint: culturalHint,
                 contextDetails: contextDetails,
                 embedding: embedding,
+                deliveredToJson: deliveredToJson,
+                readByJson: readByJson,
                 syncStatus: syncStatus,
                 retryCount: retryCount,
                 tempId: tempId,

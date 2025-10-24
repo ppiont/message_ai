@@ -52,6 +52,12 @@ class Messages extends Table {
   /// Embedding vector for RAG (stored as JSON array)
   TextColumn get embedding => text().nullable()();
 
+  /// Per-user delivery tracking (JSON: {userId: timestamp})
+  TextColumn get deliveredToJson => text().nullable()();
+
+  /// Per-user read tracking (JSON: {userId: timestamp})
+  TextColumn get readByJson => text().nullable()();
+
   /// Sync status: 'pending', 'synced', 'failed'
   TextColumn get syncStatus => text().withDefault(const Constant('pending'))();
 

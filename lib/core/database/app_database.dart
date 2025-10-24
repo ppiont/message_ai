@@ -36,7 +36,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -108,6 +108,14 @@ class AppDatabase extends _$AppDatabase {
         // Add cultural_hint column to messages table
         await m.addColumn(messages, messages.culturalHint);
         debugPrint('✅ Migration v2→v3: Added culturalHint column to messages');
+      }
+
+      // Migration from v3 to v4: Add per-user read receipt tracking
+      if (from <= 3 && to >= 4) {
+        // Add deliveredToJson and readByJson columns for per-user tracking
+        await m.addColumn(messages, messages.deliveredToJson);
+        await m.addColumn(messages, messages.readByJson);
+        debugPrint('✅ Migration v3→v4: Added per-user read receipt columns to messages');
       }
     },
     beforeOpen: (details) async {
