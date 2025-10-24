@@ -257,6 +257,7 @@ class MessageRepositoryImpl implements MessageRepository {
   Future<Either<Failure, void>> markAsDelivered(
     String conversationId,
     String messageId,
+    String userId,
   ) async {
     try {
       // Get message from local
@@ -265,13 +266,18 @@ class MessageRepositoryImpl implements MessageRepository {
         return const Left(RecordNotFoundFailure(recordType: 'Message'));
       }
 
-      // Offline-first: Update local immediately
-      final updatedMessage = message.copyWith(status: 'delivered');
+      // Offline-first: Update local immediately with per-user tracking
+      final updatedDeliveredTo = {
+        ...?message.deliveredTo,
+        userId: DateTime.now(),
+      };
+
+      final updatedMessage = message.copyWith(deliveredTo: updatedDeliveredTo);
 
       await _localDataSource.updateMessage(conversationId, updatedMessage);
 
       // Background sync to remote
-      await _remoteDataSource.markAsDelivered(conversationId, messageId);
+      await _remoteDataSource.markAsDelivered(conversationId, messageId, userId);
 
       return const Right(null);
     } on AppException catch (e) {
@@ -285,6 +291,7 @@ class MessageRepositoryImpl implements MessageRepository {
   Future<Either<Failure, void>> markAsRead(
     String conversationId,
     String messageId,
+    String userId,
   ) async {
     try {
       // Get message from local
@@ -293,13 +300,18 @@ class MessageRepositoryImpl implements MessageRepository {
         return const Left(RecordNotFoundFailure(recordType: 'Message'));
       }
 
-      // Offline-first: Update local immediately
-      final updatedMessage = message.copyWith(status: 'read');
+      // Offline-first: Update local immediately with per-user tracking
+      final updatedReadBy = {
+        ...?message.readBy,
+        userId: DateTime.now(),
+      };
+
+      final updatedMessage = message.copyWith(readBy: updatedReadBy);
 
       await _localDataSource.updateMessage(conversationId, updatedMessage);
 
       // Background sync to remote
-      await _remoteDataSource.markAsRead(conversationId, messageId);
+      await _remoteDataSource.markAsRead(conversationId, messageId, userId);
 
       return const Right(null);
     } on AppException catch (e) {
