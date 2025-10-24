@@ -79,15 +79,15 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     super.dispose();
   }
 
-  /// Marks a message as read (when user actually sees it)
+  /// Marks a message as read for the current user (when user actually sees it)
   /// Note: Messages are automatically marked as delivered in the repository
-  void _markMessageAsRead(String messageId) {
+  void _markMessageAsRead(String messageId, String userId) {
     // Add to set immediately to prevent duplicate calls
     _markedAsRead.add(messageId);
 
-    // Call use case asynchronously
+    // Call use case asynchronously with userId for per-user tracking
     final markAsReadUseCase = ref.read(markMessageAsReadUseCaseProvider);
-    markAsReadUseCase(widget.conversationId, messageId).then((result) {
+    markAsReadUseCase(widget.conversationId, messageId, userId).then((result) {
       result.fold(
         (failure) {
           // Silently fail - read receipts are not critical
@@ -398,7 +398,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             if (!isMe &&
                 status == 'delivered' &&
                 !_markedAsRead.contains(messageId)) {
-              _markMessageAsRead(messageId);
+              _markMessageAsRead(messageId, currentUser.uid);
             }
 
             // Check if we should show timestamp
