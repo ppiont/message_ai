@@ -1,53 +1,48 @@
-/// Helper functions for displaying read receipts in the UI
+/// Helper utilities for displaying per-user read receipts in the UI.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:message_ai/features/messaging/domain/entities/message.dart';
 
-/// Helper class for read receipt UI logic
+/// Helper class providing UI utilities for read receipt display.
+///
+/// Provides static methods for converting read receipt data into
+/// user-friendly icons, colors, and text formats.
 class ReadReceiptHelpers {
-  ReadReceiptHelpers._(); // Private constructor - static class only
+  /// Private constructor - this is a static utility class
+  ReadReceiptHelpers._();
 
-  /// Gets the appropriate icon for a message status
+  /// Gets the appropriate icon for a message status.
   ///
-  /// - 'sent': Single checkmark
-  /// - 'delivered': Double checkmark (grey)
-  /// - 'read': Double checkmark (blue)
-  static IconData getStatusIcon(String status) {
-    switch (status) {
-      case 'sent':
-        return Icons.check; // Single checkmark
-      case 'delivered':
-        return Icons.done_all; // Double checkmark
-      case 'read':
-        return Icons.done_all; // Double checkmark (color changes)
-      default:
-        return Icons.schedule; // Clock for pending/sending
-    }
-  }
+  /// Maps status values to Material Design icons:
+  /// - 'sent': [Icons.check] (single checkmark)
+  /// - 'delivered': [Icons.done_all] (double checkmark)
+  /// - 'read': [Icons.done_all] (double checkmark, color differs)
+  /// - other: [Icons.schedule] (clock for pending/sending)
+  static IconData getStatusIcon(final String status) => switch (status) {
+        'sent' => Icons.check,
+        'delivered' || 'read' => Icons.done_all,
+        _ => Icons.schedule,
+      };
 
-  /// Gets the appropriate color for a message status
+  /// Gets the appropriate color for a message status.
   ///
-  /// - 'read': Primary color (blue)
-  /// - Others: Grey
-  static Color getStatusColor(BuildContext context, String status) {
+  /// Uses the theme's color scheme:
+  /// - 'read': [ColorScheme.primary] (blue)
+  /// - other: [ColorScheme.outline] (grey)
+  static Color getStatusColor(final BuildContext context, final String status) {
     final colorScheme = Theme.of(context).colorScheme;
-
-    if (status == 'read') {
-      return colorScheme.primary; // Blue for read
-    }
-
-    return colorScheme.outline; // Grey for sent/delivered
+    return status == 'read' ? colorScheme.primary : colorScheme.outline;
   }
 
-  /// Formats the read receipt status for display
+  /// Formats the read receipt status for display in the UI.
   ///
-  /// For group chats, shows count like "Read by 3/5"
-  /// For 1-on-1 chats, shows simple status like "Read"
+  /// For 1-on-1 chats, shows simple status: "Read", "Delivered", or "Sent"
+  /// For group chats, shows count: "Read by 3/5" or "Delivered to 2/5"
   static String formatStatus({
-    required Message message,
-    required List<String> allParticipantIds,
-    required bool isGroupChat,
+    required final Message message,
+    required final List<String> allParticipantIds,
+    required final bool isGroupChat,
   }) {
     if (!isGroupChat) {
       // 1-on-1 chat: Simple status
@@ -55,88 +50,98 @@ class ReadReceiptHelpers {
       return _capitalizeFirst(status);
     }
 
-    // Group chat: Show read count
+    // Group chat: Show read/delivered count
     final readCount = message.getReadCount(allParticipantIds);
-    final otherParticipants = allParticipantIds
-        .where((id) => id != message.senderId)
-        .length;
-
+    final otherParticipants =
+        allParticipantIds.where((final id) => id != message.senderId).length;
     final status = message.getAggregateStatus(allParticipantIds);
 
-    if (status == 'read') {
-      return 'Read by $readCount/$otherParticipants';
-    } else if (status == 'delivered') {
-      return 'Delivered to $readCount/$otherParticipants';
-    } else {
-      return _capitalizeFirst(status);
-    }
+    return switch (status) {
+      'read' => 'Read by $readCount/$otherParticipants',
+      'delivered' => 'Delivered to $readCount/$otherParticipants',
+      _ => _capitalizeFirst(status),
+    };
   }
 
-  /// Gets a list of participant names who have read the message
+  /// Gets a list of display names for users who have read the message.
   ///
-  /// Used for displaying detailed read receipt info (e.g., in a dialog)
+  /// Used for displaying detailed read receipt information in dialogs.
+  /// Returns 'Unknown' for users not found in the [userIdToNameMap].
   static List<String> getReadByNames({
-    required Message message,
-    required Map<String, String> userIdToNameMap,
-  }) {
-    final readByIds = message.getReadByUserIds();
-    return readByIds
-        .map((userId) => userIdToNameMap[userId] ?? 'Unknown')
-        .toList();
-  }
+    required final Message message,
+    required final Map<String, String> userIdToNameMap,
+  }) =>
+      message
+          .getReadByUserIds()
+          .map((final userId) => userIdToNameMap[userId] ?? 'Unknown')
+          .toList();
 
-  /// Gets a list of participant names who received but haven't read
+  /// Gets a list of display names for users who received but haven't read.
   ///
-  /// Used for displaying detailed read receipt info
+  /// Used for displaying detailed read receipt information in dialogs.
+  /// Returns 'Unknown' for users not found in the [userIdToNameMap].
   static List<String> getDeliveredButNotReadNames({
-    required Message message,
-    required Map<String, String> userIdToNameMap,
-  }) {
-    final deliveredIds = message.getDeliveredButNotReadUserIds();
-    return deliveredIds
-        .map((userId) => userIdToNameMap[userId] ?? 'Unknown')
-        .toList();
-  }
+    required final Message message,
+    required final Map<String, String> userIdToNameMap,
+  }) =>
+      message
+          .getDeliveredButNotReadUserIds()
+          .map((final userId) => userIdToNameMap[userId] ?? 'Unknown')
+          .toList();
 
-  /// Formats a timestamp for read receipt display
+  /// Formats a timestamp for read receipt display.
   ///
-  /// Shows relative time like "2m ago" or "Yesterday at 3:45 PM"
-  static String formatTimestamp(DateTime timestamp) {
+  /// Returns relative time for recent events and absolute times for older events:
+  /// - Less than 1 minute ago: "Just now"
+  /// - Less than 1 hour ago: "2m ago"
+  /// - Less than 1 day ago: "3h ago"
+  /// - Yesterday: "Yesterday at 3:45 PM"
+  /// - Less than 1 week ago: "Monday at 3:45 PM"
+  /// - Older: "31/12/2024 3:45 PM"
+  static String formatTimestamp(final DateTime timestamp) {
     final now = DateTime.now();
     final difference = now.difference(timestamp);
 
-    if (difference.inMinutes < 1) {
-      return 'Just now';
-    } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes}m ago';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inDays == 1) {
-      return 'Yesterday at ${_formatTime(timestamp)}';
-    } else if (difference.inDays < 7) {
-      return '${_getDayName(timestamp)} at ${_formatTime(timestamp)}';
-    } else {
-      return '${timestamp.day}/${timestamp.month}/${timestamp.year} ${_formatTime(timestamp)}';
-    }
+    return switch (difference) {
+      Duration(inMinutes: < 1) => 'Just now',
+      Duration(inMinutes: final m, inHours: < 1) => '${m}m ago',
+      Duration(inHours: final h, inDays: < 1) => '${h}h ago',
+      Duration(inDays: 1) => 'Yesterday at ${_formatTime(timestamp)}',
+      Duration(inDays: final d) when d < 7 =>
+        '${_getDayName(timestamp)} at ${_formatTime(timestamp)}',
+      _ =>
+        '${timestamp.day}/${timestamp.month}/${timestamp.year} ${_formatTime(timestamp)}',
+    };
   }
 
-  /// Capitalizes first letter of a string
-  static String _capitalizeFirst(String text) {
-    if (text.isEmpty) return text;
+  /// Capitalizes the first character of a string.
+  static String _capitalizeFirst(final String text) {
+    if (text.isEmpty) {
+      return text;
+    }
     return text[0].toUpperCase() + text.substring(1);
   }
 
-  /// Formats time as HH:MM AM/PM
-  static String _formatTime(DateTime time) {
-    final hour = time.hour > 12 ? time.hour - 12 : (time.hour == 0 ? 12 : time.hour);
+  /// Formats time as HH:MM AM/PM (12-hour format).
+  static String _formatTime(final DateTime time) {
+    final hour =
+        time.hour > 12 ? time.hour - 12 : (time.hour == 0 ? 12 : time.hour);
     final minute = time.minute.toString().padLeft(2, '0');
     final period = time.hour >= 12 ? 'PM' : 'AM';
     return '$hour:$minute $period';
   }
 
-  /// Gets day name (Monday, Tuesday, etc.)
-  static String _getDayName(DateTime date) {
-    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  /// Gets the day of week name for a given date.
+  static String _getDayName(final DateTime date) {
+    const days = <String>[
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday'
+    ];
     return days[date.weekday - 1];
   }
 }

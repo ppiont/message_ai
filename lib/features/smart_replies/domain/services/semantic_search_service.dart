@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:message_ai/features/messaging/domain/entities/message.dart';
@@ -72,7 +71,6 @@ class SemanticSearchService {
 
       final messagesResult = await _messageRepository.getMessages(
         conversationId: conversationId,
-        limit: _fallbackLimit,
       );
 
       return messagesResult.fold<List<Message>>(

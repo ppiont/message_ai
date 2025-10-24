@@ -2,11 +2,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:message_ai/features/messaging/domain/entities/message.dart';
 import 'package:message_ai/features/messaging/domain/entities/message_context_details.dart';
 
-/// Data model for Message that adds serialization capabilities
+/// Data model for Message that adds serialization capabilities.
 ///
-/// This model extends the domain entity and adds fromJson/toJson methods
-/// for Firebase Firestore integration.
+/// This model extends the domain [Message] entity and adds fromJson/toJson methods
+/// for Firebase Firestore integration. It handles JSON serialization of per-user
+/// read receipt maps and timestamp conversions.
 class MessageModel extends Message {
+  /// Creates a new message model instance.
   const MessageModel({
     required super.id,
     required super.text,
@@ -83,29 +85,38 @@ class MessageModel extends Message {
       readBy: _parseTimestampMap(json['readBy']),
     );
 
-  /// Parse timestamp map from Firestore
-  static Map<String, DateTime>? _parseTimestampMap(dynamic value) {
-    if (value == null) return null;
+  /// Parses timestamp map from Firestore JSON.
+  ///
+  /// Converts Firestore Timestamp objects to Dart DateTime instances.
+  /// Returns null if the input is null or if the resulting map is empty.
+  static Map<String, DateTime>? _parseTimestampMap(final dynamic value) {
+    if (value == null) {
+      return null;
+    }
 
     final map = value as Map<String, dynamic>;
     final result = <String, DateTime>{};
 
-    map.forEach((userId, timestamp) {
+    map.forEach((final userId, final timestamp) {
       result[userId] = _parseDateTime(timestamp);
     });
 
     return result.isEmpty ? null : result;
   }
 
-  /// Helper method to parse DateTime from either Timestamp or String
-  static DateTime _parseDateTime(dynamic value) {
+  /// Parses a DateTime from Firestore Timestamp or ISO 8601 string.
+  ///
+  /// Handles both Firestore Timestamp objects and ISO 8601 string formats
+  /// for backward compatibility with different data sources.
+  /// Throws [ArgumentError] if the value is in an unsupported format.
+  static DateTime _parseDateTime(final dynamic value) {
     if (value is Timestamp) {
       return value.toDate();
-    } else if (value is String) {
-      return DateTime.parse(value);
-    } else {
-      throw ArgumentError('Invalid datetime value: $value');
     }
+    if (value is String) {
+      return DateTime.parse(value);
+    }
+    throw ArgumentError('Invalid datetime value: $value');
   }
 
   /// Converts this MessageModel to JSON for Firestore
@@ -130,10 +141,15 @@ class MessageModel extends Message {
       if (readBy != null) 'readBy': _serializeTimestampMap(readBy!),
     };
 
-  /// Serialize timestamp map to Firestore
-  static Map<String, dynamic> _serializeTimestampMap(Map<String, DateTime> map) {
+  /// Serializes a timestamp map to Firestore format.
+  ///
+  /// Converts Dart DateTime instances to Firestore Timestamp objects
+  /// for proper JSON serialization.
+  static Map<String, dynamic> _serializeTimestampMap(
+    final Map<String, DateTime> map,
+  ) {
     final result = <String, dynamic>{};
-    map.forEach((userId, timestamp) {
+    map.forEach((final userId, final timestamp) {
       result[userId] = Timestamp.fromDate(timestamp);
     });
     return result;
@@ -198,8 +214,9 @@ class MessageModel extends Message {
     );
 }
 
-/// Data model for MessageMetadata with serialization
+/// Data model for [MessageMetadata] with Firestore serialization.
 class MessageMetadataModel extends MessageMetadata {
+  /// Creates a new message metadata model instance.
   const MessageMetadataModel({
     required super.edited,
     required super.deleted,
@@ -207,72 +224,77 @@ class MessageMetadataModel extends MessageMetadata {
     required super.hasIdioms,
   });
 
-  /// Creates a MessageMetadataModel from a domain MessageMetadata entity
-  factory MessageMetadataModel.fromEntity(MessageMetadata metadata) => MessageMetadataModel(
-      edited: metadata.edited,
-      deleted: metadata.deleted,
-      priority: metadata.priority,
-      hasIdioms: metadata.hasIdioms,
-    );
+  /// Creates a [MessageMetadataModel] from a domain entity.
+  factory MessageMetadataModel.fromEntity(final MessageMetadata metadata) =>
+      MessageMetadataModel(
+        edited: metadata.edited,
+        deleted: metadata.deleted,
+        priority: metadata.priority,
+        hasIdioms: metadata.hasIdioms,
+      );
 
-  /// Creates a MessageMetadataModel from JSON
-  factory MessageMetadataModel.fromJson(Map<String, dynamic> json) => MessageMetadataModel(
-      edited: json['edited'] as bool,
-      deleted: json['deleted'] as bool,
-      priority: json['priority'] as String,
-      hasIdioms: json['hasIdioms'] as bool,
-    );
+  /// Creates a [MessageMetadataModel] from JSON (Firestore document).
+  factory MessageMetadataModel.fromJson(final Map<String, dynamic> json) =>
+      MessageMetadataModel(
+        edited: json['edited'] as bool,
+        deleted: json['deleted'] as bool,
+        priority: json['priority'] as String,
+        hasIdioms: json['hasIdioms'] as bool,
+      );
 
-  /// Converts this model to JSON
-  Map<String, dynamic> toJson() => {
-      'edited': edited,
-      'deleted': deleted,
-      'priority': priority,
-      'hasIdioms': hasIdioms,
-    };
+  /// Converts this model to JSON for Firestore.
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'edited': edited,
+        'deleted': deleted,
+        'priority': priority,
+        'hasIdioms': hasIdioms,
+      };
 
-  /// Converts this model to a domain entity
+  /// Converts this model to a domain entity.
   MessageMetadata toEntity() => MessageMetadata(
-      edited: edited,
-      deleted: deleted,
-      priority: priority,
-      hasIdioms: hasIdioms,
-    );
+        edited: edited,
+        deleted: deleted,
+        priority: priority,
+        hasIdioms: hasIdioms,
+      );
 }
 
-/// Data model for MessageAIAnalysis with serialization
+/// Data model for [MessageAIAnalysis] with Firestore serialization.
 class MessageAIAnalysisModel extends MessageAIAnalysis {
+  /// Creates a new AI analysis model instance.
   const MessageAIAnalysisModel({
     required super.priority,
     required super.actionItems,
     required super.sentiment,
   });
 
-  /// Creates a MessageAIAnalysisModel from a domain MessageAIAnalysis entity
-  factory MessageAIAnalysisModel.fromEntity(MessageAIAnalysis analysis) => MessageAIAnalysisModel(
-      priority: analysis.priority,
-      actionItems: analysis.actionItems,
-      sentiment: analysis.sentiment,
-    );
+  /// Creates a [MessageAIAnalysisModel] from a domain entity.
+  factory MessageAIAnalysisModel.fromEntity(final MessageAIAnalysis analysis) =>
+      MessageAIAnalysisModel(
+        priority: analysis.priority,
+        actionItems: analysis.actionItems,
+        sentiment: analysis.sentiment,
+      );
 
-  /// Creates a MessageAIAnalysisModel from JSON
-  factory MessageAIAnalysisModel.fromJson(Map<String, dynamic> json) => MessageAIAnalysisModel(
-      priority: json['priority'] as String,
-      actionItems: List<String>.from(json['actionItems'] as List),
-      sentiment: json['sentiment'] as String,
-    );
+  /// Creates a [MessageAIAnalysisModel] from JSON (Firestore document).
+  factory MessageAIAnalysisModel.fromJson(final Map<String, dynamic> json) =>
+      MessageAIAnalysisModel(
+        priority: json['priority'] as String,
+        actionItems: List<String>.from(json['actionItems'] as List<dynamic>),
+        sentiment: json['sentiment'] as String,
+      );
 
-  /// Converts this model to JSON
-  Map<String, dynamic> toJson() => {
-      'priority': priority,
-      'actionItems': actionItems,
-      'sentiment': sentiment,
-    };
+  /// Converts this model to JSON for Firestore.
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'priority': priority,
+        'actionItems': actionItems,
+        'sentiment': sentiment,
+      };
 
-  /// Converts this model to a domain entity
+  /// Converts this model to a domain entity.
   MessageAIAnalysis toEntity() => MessageAIAnalysis(
-      priority: priority,
-      actionItems: actionItems,
-      sentiment: sentiment,
-    );
+        priority: priority,
+        actionItems: actionItems,
+        sentiment: sentiment,
+      );
 }

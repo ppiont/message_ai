@@ -190,7 +190,6 @@ class _MessageInputState extends ConsumerState<MessageInput> {
         senderId: widget.currentUserId,
         text: text,
         timestamp: DateTime.now(),
-        status: 'sent',
         type: 'text',
         metadata: MessageMetadata.defaultMetadata(),
       );

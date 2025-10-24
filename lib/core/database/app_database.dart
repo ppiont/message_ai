@@ -135,7 +135,6 @@ LazyDatabase _openConnection() => LazyDatabase(() async {
   // Write queue ensures sequential writes within single isolate
   return NativeDatabase(
     file,
-    logStatements: false, // Disabled: embeddings cause massive log bloat
     setup: (db) {
       // Enable WAL mode for better concurrency
       // WAL allows multiple readers + one writer simultaneously
