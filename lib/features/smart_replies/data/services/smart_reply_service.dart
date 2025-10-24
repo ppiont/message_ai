@@ -96,7 +96,9 @@ class SmartReplyService {
 
       // Parse suggestions
       final suggestions = suggestionsJson
-          .map((json) => SmartReply.fromJson(json as Map<String, dynamic>))
+          .map((json) => SmartReply.fromJson(
+                Map<String, dynamic>.from(json as Map<Object?, Object?>),
+              ))
           .toList();
 
       final cached = data['cached'] as bool? ?? false;

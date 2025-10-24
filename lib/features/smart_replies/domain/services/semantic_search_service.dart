@@ -74,7 +74,7 @@ class SemanticSearchService {
             .call<Map<String, dynamic>>({
           'conversationId': conversationId,
           'queryEmbedding': incomingMessage.embedding,
-          'limit': limit,
+          'limit': limit.toInt(), // Ensure int type for Python validation
         });
 
         final data = result.data;

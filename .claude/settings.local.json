@@ -37,7 +37,12 @@
       "mcp__GitKraken__git_status",
       "mcp__dart__hover",
       "Bash(find:*)",
-      "Bash(firebase functions:config:get:*)"
+      "Bash(firebase functions:config:get:*)",
+      "Bash(firebase functions:list:*)",
+      "mcp__taskmaster-ai__get_tasks",
+      "WebSearch",
+      "Bash(git restore:*)",
+      "Bash(git log:*)"
     ],
     "deny": [],
     "ask": []

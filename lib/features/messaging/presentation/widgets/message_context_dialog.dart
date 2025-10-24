@@ -73,8 +73,7 @@ class MessageContextDialog extends StatelessWidget {
                       _buildCulturalNoteSection(context),
 
                     // Idioms
-                    if (contextDetails.hasIdioms)
-                      _buildIdiomsSection(context),
+                    if (contextDetails.hasIdioms) _buildIdiomsSection(context),
                   ],
                 ),
               ),
@@ -120,11 +119,7 @@ class MessageContextDialog extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                _getFormalityIcon(),
-                color: _getFormalityColor(),
-                size: 20,
-              ),
+              Icon(_getFormalityIcon(), color: _getFormalityColor(), size: 20),
               const SizedBox(width: 8),
               const Text(
                 'Formality Level',
@@ -305,22 +300,42 @@ class MessageContextDialog extends StatelessWidget {
   /// Get formality icon based on level
   IconData _getFormalityIcon() {
     final formality = contextDetails.formality?.toLowerCase();
-    if (formality == null) return Icons.help_outline;
-    if (formality.contains('very formal')) return Icons.business_center;
-    if (formality.contains('formal')) return Icons.business;
-    if (formality.contains('casual')) return Icons.chat_bubble_outline;
-    if (formality.contains('very casual')) return Icons.emoji_emotions;
+    if (formality == null) {
+      return Icons.help_outline;
+    }
+    if (formality.contains('very formal')) {
+      return Icons.business_center;
+    }
+    if (formality.contains('formal')) {
+      return Icons.business;
+    }
+    if (formality.contains('casual')) {
+      return Icons.chat_bubble_outline;
+    }
+    if (formality.contains('very casual')) {
+      return Icons.emoji_emotions;
+    }
     return Icons.message;
   }
 
   /// Get formality color based on level
   Color _getFormalityColor() {
     final formality = contextDetails.formality?.toLowerCase();
-    if (formality == null) return Colors.grey;
-    if (formality.contains('very formal')) return Colors.indigo;
-    if (formality.contains('formal')) return Colors.blue;
-    if (formality.contains('casual')) return Colors.orange;
-    if (formality.contains('very casual')) return Colors.deepOrange;
+    if (formality == null) {
+      return Colors.grey;
+    }
+    if (formality.contains('very formal')) {
+      return Colors.indigo;
+    }
+    if (formality.contains('formal')) {
+      return Colors.blue;
+    }
+    if (formality.contains('casual')) {
+      return Colors.orange;
+    }
+    if (formality.contains('very casual')) {
+      return Colors.deepOrange;
+    }
     return Colors.green;
   }
 
