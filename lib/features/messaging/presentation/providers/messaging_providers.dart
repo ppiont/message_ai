@@ -243,11 +243,9 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
         }
 
         return messages.map((Message msg) {
-          // Compute aggregate status for group messages using per-user tracking
-          // Falls back to deprecated global status for backward compatibility
-          final status = participantIds.isNotEmpty
-              ? msg.getAggregateStatus(participantIds)
-              : msg.status;
+          // Compute aggregate status using per-user tracking
+          // getAggregateStatus handles empty participant lists by returning 'sent'
+          final status = msg.getAggregateStatus(participantIds);
 
           return <String, dynamic>{
             'id': msg.id,

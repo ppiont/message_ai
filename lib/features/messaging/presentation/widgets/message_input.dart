@@ -192,6 +192,8 @@ class _MessageInputState extends ConsumerState<MessageInput> {
         timestamp: DateTime.now(),
         type: 'text',
         metadata: MessageMetadata.defaultMetadata(),
+        deliveredTo: const {}, // Initialize with empty map for per-user tracking
+        readBy: const {}, // Initialize with empty map for per-user tracking
       );
 
       // Send message via use case

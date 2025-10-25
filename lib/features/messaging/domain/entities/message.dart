@@ -137,8 +137,7 @@ class Message extends Equatable {
   /// - If ALL other participants have delivered (but not all read): returns 'delivered'
   /// - Otherwise: returns 'sent'
   ///
-  /// Falls back to deprecated global [status] field for backward compatibility
-  /// with messages created before per-user tracking was implemented.
+  /// Returns 'sent' for messages without per-user tracking data.
   String getAggregateStatus(final List<String> allParticipantIds) {
     // Filter out sender from participants
     final otherParticipants =
@@ -148,9 +147,10 @@ class Message extends Equatable {
       return 'sent';
     }
 
-    // Backward compatibility: old messages without per-user tracking
-    if (readBy == null && deliveredTo == null) {
-      return status;
+    // Messages without per-user tracking data default to 'sent' status
+    if ((readBy == null || readBy!.isEmpty) &&
+        (deliveredTo == null || deliveredTo!.isEmpty)) {
+      return 'sent';
     }
 
     // Check if ALL other participants have read

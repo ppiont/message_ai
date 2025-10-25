@@ -119,10 +119,10 @@ class AutoDeliveryMarker {
               // Mark incoming messages as delivered
               for (final message in messages) {
                 final isIncoming = message.senderId != _currentUserId;
-                final isSent = message.status == 'sent';
+                final isNotYetDelivered = !message.isDeliveredTo(_currentUserId);
                 final notYetMarked = !_markedMessages.contains(message.id);
 
-                if (isIncoming && isSent && notYetMarked) {
+                if (isIncoming && isNotYetDelivered && notYetMarked) {
                   _markedMessages.add(message.id);
                   unawaited(
                     _messageRepository.markAsDelivered(
