@@ -371,7 +371,7 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
 
   /// Serializes a timestamp map to JSON for Drift storage.
   ///
-  /// Converts Map<String, DateTime> to JSON string with ISO 8601 timestamps.
+  /// Converts `Map<String, DateTime>` to JSON string with ISO 8601 timestamps.
   String _serializeTimestampMap(Map<String, DateTime> map) {
     final serialized = map.map((userId, timestamp) =>
       MapEntry(userId, timestamp.toIso8601String()),
@@ -381,7 +381,7 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
 
   /// Deserializes a timestamp map from JSON stored in Drift.
   ///
-  /// Converts JSON string back to Map<String, DateTime>.
+  /// Converts JSON string back to `Map<String, DateTime>`.
   Map<String, DateTime>? _deserializeTimestampMap(String json) {
     try {
       final decoded = jsonDecode(json) as Map<String, dynamic>;

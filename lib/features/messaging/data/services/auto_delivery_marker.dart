@@ -158,7 +158,7 @@ class AutoDeliveryMarker {
                             // Keep in set (already added above)
                           },
                         );
-                      }).catchError((error) {
+                      }).catchError((Object error, StackTrace stackTrace) {
                         debugPrint('💥 AutoDeliveryMarker: Exception marking message ${message.id}: $error');
                         // Remove from set to allow retry
                         _markedMessages.remove(message.id);
