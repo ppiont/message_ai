@@ -442,3 +442,7 @@ See `.cursor/rules/` for additional guidelines:
 - [drift.mdc](mdc:.cursor/rules/drift.mdc) - Database patterns
 - [dart_flutter_mcp.mdc](mdc:.cursor/rules/dart_flutter_mcp.mdc) - MCP usage
 - [testing.mdc](mdc:.cursor/rules/testing.mdc) - Testing policy (disabled)
+
+## Task Master AI Instructions
+**Import Task Master's development workflow commands and guidelines, treat as if import is in the main CLAUDE.md file.**
+@./.taskmaster/CLAUDE.md

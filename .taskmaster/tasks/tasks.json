@@ -1,0 +1,275 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Create MessageStatusTable in Drift",
+        "description": "Create new Drift table for per-user message status tracking",
+        "details": "Create lib/core/database/tables/message_status_table.dart with:\n- messageId (text) column\n- userId (text) column  \n- status (text) column for 'sent'/'delivered'/'read'\n- timestamp (datetime nullable) column\n- Composite primary key on (messageId, userId)\n- Foreign key reference to Messages table\n\nThen run: dart run build_runner build --delete-conflicting-outputs",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Create MessageStatusDao with core queries",
+        "description": "Implement DAO for message status operations",
+        "details": "Create lib/core/database/daos/message_status_dao.dart with methods:\n- markAllAsDelivered() - Batch mark messages in conversation as delivered\n- markAsRead() - Mark individual message as read\n- getUnreadCount() - Efficient query for unread message count\n- watchStatusForMessage() - Stream of status updates for a message\n\nAdd DAO to AppDatabase class.",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Create MessageSyncWorker",
+        "description": "Implement worker to sync pending messages to Firestore",
+        "details": "Create lib/workers/message_sync_worker.dart with:\n- syncAll() method to query pending messages from Drift\n- Batch sync pending messages to Firestore\n- Update local DB with sync status\n- Proper error handling and logging\n\nThis replaces MessageSyncService and MessageQueue.",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Create DeliveryTrackingWorker",
+        "description": "Implement worker to batch process delivery confirmations",
+        "details": "Create lib/workers/delivery_tracking_worker.dart with:\n- processDeliveries() method to query pending delivery records\n- Batch sync delivery status to Firestore\n- Update local MessageStatus table\n- Error handling and retry logic",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Create ReadReceiptWorker",
+        "description": "Implement worker to sync read receipts to Firestore",
+        "details": "Create lib/workers/read_receipt_worker.dart with:\n- syncReadReceipts() method to query pending read receipts\n- Batch sync read status to Firestore\n- Update local MessageStatus table\n- Error handling",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Update main.dart with unified WorkManager callback dispatcher",
+        "description": "Replace duplicate WorkManager code with unified dispatcher",
+        "details": "In main.dart:\n- Create workManagerCallbackDispatcher() with @pragma('vm:entry-point')\n- Initialize Firebase in background isolate\n- Route to MessageSyncWorker, DeliveryTrackingWorker, or ReadReceiptWorker based on task name\n- Proper error handling and database cleanup\n- Remove old duplicate sync code",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Register WorkManager periodic tasks",
+        "description": "Setup periodic background sync tasks",
+        "details": "In main.dart main() function:\n- Initialize WorkManager with callback dispatcher\n- Register 'message-sync' periodic task (every 15 minutes)\n- Register 'delivery-tracking' periodic task (every 5 minutes)\n- Add constraints: networkType.connected, requiresBatteryNotLow\n- Use ExistingWorkPolicy.keep to avoid duplicates",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Create markMessagesDeliveredProvider",
+        "description": "Replace AutoDeliveryMarker with simple Riverpod provider",
+        "details": "Create provider in messaging_providers.dart:\n- @riverpod Future<void> markMessagesDelivered(Ref ref, String conversationId, String userId)\n- Update local DB via MessageStatusDao.markAllAsDelivered()\n- Schedule one-off WorkManager task for Firestore sync\n- No global subscriptions, no memory leaks\n\nThis replaces the entire AutoDeliveryMarker service.",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 9,
+        "title": "Delete AutoDeliveryMarker and related code",
+        "description": "Remove AutoDeliveryMarker service completely",
+        "details": "Delete:\n- lib/features/messaging/data/services/auto_delivery_marker.dart\n- autoDeliveryMarkerProvider from messaging_providers.dart\n- All references to AutoDeliveryMarker\n- _markedMessages tracking set from ChatPage\n\nVerify no compilation errors after deletion.",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 10,
+        "title": "Update ChatPage to use new delivery marking",
+        "description": "Integrate new markMessagesDeliveredProvider in ChatPage",
+        "details": "In chat_page.dart:\n- Remove _markedAsRead set\n- Remove manual _markMessageAsRead() logic\n- Call ref.read(markMessagesDeliveredProvider(...)) in initState\n- Use addPostFrameCallback for timing\n- Simplify code significantly",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 11,
+        "title": "Remove deprecated fields from Message entity",
+        "description": "Clean up Message domain entity",
+        "details": "In lib/features/messaging/domain/entities/message.dart:\n- Remove @Deprecated status field\n- Remove deliveredTo Map<String, DateTime>? field\n- Remove readBy Map<String, DateTime>? field\n- Keep only core message fields (id, text, senderId, timestamp, type, metadata)\n\nUpdate MessageModel to match.",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 12,
+        "title": "Remove helper methods from Message entity",
+        "description": "Delete status computation logic from domain entity",
+        "details": "Delete these methods from Message entity:\n- isDeliveredTo(String userId)\n- isReadBy(String userId)\n- getStatusForUser(String userId)\n- getAggregateStatus(List<String> allParticipantIds)\n- getReadCount(List<String> allParticipantIds)\n- getReadByUserIds()\n- getDeliveredButNotReadUserIds()\n\nThis logic will move to presentation layer.",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 13,
+        "title": "Create MessageWithStatus view class",
+        "description": "Create presentation layer wrapper for Message with computed status",
+        "details": "Create MessageWithStatus class (location TBD, likely in presentation/):\n- Contains Message message field\n- Contains String status computed from MessageStatusTable\n- Contains int readCount for group chats\n- Factory method: fromQuery() to build from Message + List<MessageStatusEntity>\n- Compute status and readCount in factory\n\nUse this in UI instead of Message directly.",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 14,
+        "title": "Update UI to use MessageWithStatus",
+        "description": "Refactor message display widgets to use MessageWithStatus",
+        "details": "Update:\n- MessageBubble widget to accept MessageWithStatus\n- Update providers to query both Messages and MessageStatus tables\n- Join queries to construct MessageWithStatus objects\n- Update all message list builders\n- Verify status display works correctly (sent/delivered/read indicators)",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 15,
+        "title": "Update Firestore schema to use subcollections",
+        "description": "Implement efficient Firestore status storage",
+        "details": "Update MessageRemoteDataSource:\n- Create messages/{messageId}/status/{userId} subcollection structure\n- Write status documents with fields: status, timestamp, userId\n- Query status subcollections efficiently\n- Implement backwards compatibility for reading old map-based status\n- Update sendMessage to create initial status records",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 16,
+        "title": "Delete old service files",
+        "description": "Remove all deprecated sync services",
+        "details": "Delete files:\n- lib/features/messaging/data/services/message_sync_service.dart\n- lib/features/messaging/data/services/message_queue.dart\n- lib/features/messaging/data/services/auto_delivery_marker.dart (if not already deleted)\n\nDelete providers from messaging_providers.dart:\n- messageSyncServiceProvider\n- messageQueueProvider\n- autoDeliveryMarkerProvider (if not already deleted)\n\nRun dart analyze to verify no broken references.",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 17,
+        "title": "Manual testing - Direct conversation delivery/read status",
+        "description": "Verify message status updates work in direct conversations",
+        "details": "Test scenario:\n1. Send message in direct conversation\n2. Verify \"sent\" indicator appears immediately\n3. On receiving device, open conversation\n4. Verify message shows \"delivered\" on sender's device\n5. Read message on receiving device\n6. Verify message shows \"read\" on sender's device\n7. Check Firestore console to verify status subcollection created\n\nSuccess: All status transitions work correctly.",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 18,
+        "title": "Manual testing - Group conversation aggregate status",
+        "description": "Verify aggregate status computation in group chats",
+        "details": "Test scenario:\n1. Send message in group conversation (3+ participants)\n2. Verify message shows readCount (e.g., \"Read by 2/3\")\n3. Each participant opens conversation\n4. Verify readCount increments correctly\n5. Verify \"delivered\" vs \"read\" status computed correctly\n\nSuccess: Aggregate status reflects all participants correctly.",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 19,
+        "title": "Manual testing - Background sync with app closed",
+        "description": "Verify WorkManager syncs messages when app is closed",
+        "details": "Test scenario:\n1. Close app completely (force stop)\n2. Send message from another device\n3. Wait 5-15 minutes (delivery-tracking periodic task)\n4. Open app\n5. Verify message appears without delay\n6. Send message while offline (on sender device)\n7. Close app\n8. Turn on connectivity\n9. Wait 15 minutes (message-sync periodic task)\n10. Verify message synced to Firestore\n\nSuccess: Background sync works reliably without app running.",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 20,
+        "title": "Manual testing - Offline mode sync",
+        "description": "Verify offline message queueing and sync",
+        "details": "Test scenario:\n1. Turn off network connectivity (airplane mode)\n2. Send message\n3. Verify message shows \"sent\" status in UI\n4. Verify message stored in local Drift DB\n5. Turn on network connectivity\n6. Verify message syncs to Firestore automatically\n7. Verify status updates to \"delivered\" when recipient opens\n8. Check logs to verify WorkManager executed sync task\n\nSuccess: Messages sent offline sync reliably when connectivity restored.",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 21,
+        "title": "Performance testing - Memory usage verification",
+        "description": "Verify memory usage reduction target achieved",
+        "details": "Test scenario:\n1. Load app with 50+ conversations\n2. Use Android Studio Profiler or Xcode Instruments\n3. Monitor memory usage over 10 minutes\n4. Open and close several conversations\n5. Verify memory stays under 5 MB for messaging feature\n6. Compare with baseline (before refactor: 15-20 MB)\n7. Verify no memory leaks (check for growing heap)\n\nSuccess: Memory usage <5 MB, 85% reduction achieved.\n\nTarget: <5 MB (down from 15-20 MB)",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 22,
+        "title": "Performance testing - Background task verification",
+        "description": "Verify WorkManager periodic tasks registered correctly",
+        "details": "Test scenario:\n1. Android: Settings → Apps → MessageAI → Battery → Background usage\n2. iOS: Settings → General → Background App Refresh\n3. Verify app has background permissions\n4. Use WorkManager Inspector (Android) or logs to verify:\n   - 'message-sync' task scheduled for every 15 minutes\n   - 'delivery-tracking' task scheduled for every 5 minutes\n5. Verify tasks execute on schedule (check logs)\n6. Verify battery usage <1% per day\n\nSuccess: All periodic tasks registered and executing correctly.",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 23,
+        "title": "Code quality - Run dart analyze and fix issues",
+        "description": "Ensure code passes static analysis",
+        "details": "Run:\n1. dart analyze\n2. Fix any errors or warnings\n3. Run dart fix --apply for auto-fixable issues\n4. Verify zero analysis issues\n\nSuccess: dart analyze passes with no errors or warnings.",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "low",
+        "subtasks": []
+      },
+      {
+        "id": 24,
+        "title": "Code quality - Format code and final verification",
+        "description": "Format all code and verify compilation",
+        "details": "Run:\n1. dart format lib/\n2. flutter clean\n3. flutter pub get\n4. dart run build_runner build --delete-conflicting-outputs\n5. flutter run (verify app compiles and runs)\n6. Verify no compilation errors\n\nSuccess: Code formatted, compiles cleanly, app runs.",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "low",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-10-25T05:15:41.947Z",
+      "description": "Default tasks context",
+      "updated": "2025-10-25T05:17:03.529Z"
+    }
+  }
+}

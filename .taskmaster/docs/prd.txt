@@ -1,0 +1,338 @@
+# Message Status Implementation Refactor - Product Requirements Document
+
+## Project Overview
+
+This is a critical architectural refactoring of the MessageAI app's message delivery and read status implementation. The current implementation suffers from severe architectural antipatterns causing:
+- Performance issues (unbounded memory growth, excessive Firestore subscriptions)
+- Maintainability issues (logic scattered across 5+ files, unclear responsibilities)
+- Reliability issues (race conditions, no guaranteed delivery tracking)
+- Complexity issues (~1000+ lines of code for what should be a simple feature)
+
+This refactor will replace the existing implementation with modern Flutter/Riverpod/WorkManager patterns.
+
+## Project Goals
+
+1. **Performance**: Reduce memory usage by 85% (from 15-20 MB to 2-3 MB)
+2. **Code Quality**: Reduce code complexity by 75% (from ~1200 lines to ~300 lines)
+3. **Reliability**: Implement guaranteed background sync using WorkManager
+4. **Maintainability**: Replace 5 services with 3 simple workers
+5. **Offline Support**: Complete offline support with persistent message queuing
+
+## Technical Context
+
+### Current Architecture Problems
+
+1. **AutoDeliveryMarker** - Watches ALL conversations simultaneously, creating memory leaks
+   - Unbounded deduplication set (_markedMessages) grows forever
+   - Map of StreamSubscriptions (_messageSubs) never cleaned up
+   - Processes 50+ conversations with 100s of messages each
+
+2. **MessageSyncService** - Runs continuously in app, draining battery
+   - Connectivity subscription leaks
+   - Duplicates WorkManager functionality
+   - Never stops properly
+
+3. **MessageQueue** - In-memory queue lost on app restart
+   - Timer-based processing (should be WorkManager's job)
+   - Dead letter queue adds unnecessary complexity
+   - Circular dependency with MessageSyncService
+
+4. **WorkManager Underutilization** - Scheduled per-message instead of periodic batching
+   - Duplicate initialization code in main.dart
+   - Only handles messages, not delivery/read tracking
+
+5. **Message Entity Bloat** - Domain entity contains presentation logic
+   - Deprecated status field
+   - deliveredTo and readBy maps (inefficient in Firestore)
+   - 8 helper methods for status computation
+
+### New Architecture
+
+- **WorkManager-First**: Periodic background tasks for all sync operations
+- **Drift as Single Source of Truth**: Local DB is authoritative, Firestore is remote backup
+- **Separate Status Table**: Efficient per-user status tracking with proper indexing
+- **Clean Domain Entities**: Remove presentation logic from Message entity
+- **Firestore Subcollections**: Efficient status storage instead of maps
+
+## User Stories
+
+As a user, I want:
+1. Messages to be delivered reliably even when the app is closed
+2. Read receipts to update in real-time without draining my battery
+3. The app to use less memory and battery
+4. Messages sent offline to sync automatically when I'm back online
+5. Group chat status to show accurate read counts
+
+As a developer, I want:
+6. Clean, maintainable code with clear separation of concerns
+7. Easy-to-test components without complex mocking
+8. No memory leaks or resource leaks
+9. Simple debugging and monitoring
+10. Code that follows Flutter/Riverpod best practices
+
+## Feature Requirements
+
+### Phase 1: Infrastructure Setup (1 hour)
+
+#### FR1.1: MessageStatusTable (Drift)
+- Create Drift table with columns: messageId, userId, status, timestamp
+- Composite primary key on (messageId, userId)
+- Foreign key reference to Messages table
+- Generate Drift code
+
+#### FR1.2: MessageStatusDao
+- markAllAsDelivered() - Batch mark messages in conversation
+- markAsRead() - Mark individual message as read
+- getUnreadCount() - Efficient query for unread count
+- watchStatusForMessage() - Stream of status updates
+
+#### FR1.3: Worker Classes
+- MessageSyncWorker - Sync pending messages to Firestore
+- DeliveryTrackingWorker - Batch process delivery confirmations
+- ReadReceiptWorker - Sync read receipts to Firestore
+- All workers initialized in background isolate
+
+### Phase 2: WorkManager Integration (2 hours)
+
+#### FR2.1: Unified Callback Dispatcher
+- Single entry point in main.dart for all background tasks
+- Firebase initialization in background isolate
+- Database initialization in background isolate
+- Task routing based on task name
+
+#### FR2.2: Periodic Task Registration
+- Message sync every 15 minutes
+- Delivery tracking every 5 minutes
+- Network-aware constraints
+- Battery-efficient constraints
+
+#### FR2.3: Worker Implementation
+- MessageSyncWorker.syncAll() - Query pending messages, batch sync to Firestore
+- DeliveryTrackingWorker.processDeliveries() - Sync local delivery records to Firestore
+- ReadReceiptWorker.syncReadReceipts() - Batch sync read receipts
+- Proper error handling and retry logic
+
+### Phase 3: Remove AutoDeliveryMarker (30 minutes)
+
+#### FR3.1: Riverpod Provider Replacement
+- Create markMessagesDeliveredProvider
+- Triggers when conversation opens
+- Updates local DB immediately
+- Schedules WorkManager task for Firestore sync
+
+#### FR3.2: Delete AutoDeliveryMarker
+- Remove class file
+- Remove provider registration
+- Remove all references
+- Verify no compilation errors
+
+#### FR3.3: Update ChatPage
+- Call markMessagesDeliveredProvider in initState
+- Remove manual tracking set
+- Simplify code
+
+### Phase 4: Simplify Message Entity (1 hour)
+
+#### FR4.1: Remove Deprecated Fields
+- Delete status field
+- Delete deliveredTo map
+- Delete readBy map
+- Update all data sources
+
+#### FR4.2: Remove Helper Methods
+- Delete isDeliveredTo()
+- Delete isReadBy()
+- Delete getStatusForUser()
+- Delete getAggregateStatus()
+- Delete getReadCount()
+- Delete getReadByUserIds()
+- Delete getDeliveredButNotReadUserIds()
+
+#### FR4.3: Create MessageWithStatus View Class
+- Wrapper around Message entity
+- Computed status field
+- Computed readCount for groups
+- Factory method to build from query results
+
+#### FR4.4: Update UI References
+- Update all widgets to use MessageWithStatus
+- Update providers to compute status from DB
+- Verify UI displays correctly
+
+### Phase 5: Update Firestore Schema (1 hour)
+
+#### FR5.1: Firestore Subcollections
+- Create messages/{id}/status/{userId} structure
+- Documents contain: status, timestamp, userId
+- Efficient queries and indexing
+
+#### FR5.2: Cloud Function (Optional)
+- Trigger on status document write
+- Aggregate status in parent message
+- Maintain backwards compatibility
+- Compute readCount for groups
+
+#### FR5.3: Remote Data Source Updates
+- Update MessageRemoteDataSource to use subcollections
+- Write status records on message send
+- Query status records efficiently
+- Handle backwards compatibility
+
+#### FR5.4: Data Migration
+- Script to convert existing maps to subcollections
+- Run on staging first
+- Rollback mechanism
+- Monitor migration progress
+
+### Phase 6: Cleanup & Verification (2 hours)
+
+#### FR6.1: Delete Old Services
+- Delete message_sync_service.dart
+- Delete message_queue.dart
+- Delete auto_delivery_marker.dart
+- Remove provider registrations
+
+#### FR6.2: Manual Testing Scenarios
+- Send messages in direct conversation
+- Verify delivery and read status updates
+- Send messages in group conversation
+- Verify aggregate status computation
+- Close app, send from another device
+- Verify WorkManager background sync
+- Test offline mode
+- Send message offline, go online, verify sync
+
+#### FR6.3: Performance Verification
+- Monitor memory usage with 50+ conversations
+- Target: <5 MB
+- Check background tasks in device settings
+- Verify periodic tasks registered
+- Monitor battery usage
+- Target: <1% per day
+
+#### FR6.4: Code Quality
+- Run dart analyze
+- Fix any issues
+- Run dart format
+- Verify no compilation errors
+
+## Success Criteria
+
+### Performance Metrics
+- Memory usage: <5 MB for typical usage (50 conversations)
+- Message send latency: <100ms (optimistic update)
+- Delivery confirmation: <5s when online
+- Read receipt: <2s when online
+- Background sync: Every 15 minutes
+- Cold start time: <2s
+- Battery usage: <1% per day
+
+### Code Quality Metrics
+- Total lines: ~300 (75% reduction from ~1200)
+- Number of services: 0 (replaced by workers)
+- Active Firestore subscriptions: 1 per open chat (98% reduction from 50+)
+- Number of files: 6 (50% reduction from 12)
+
+### Reliability Metrics
+- No crashes for 7 days
+- All Firestore subscriptions properly cleaned up
+- Offline messages sync 100% reliably
+- WorkManager tasks execute on schedule
+
+### Manual Testing Scenarios
+1. ✅ Send messages in direct conversation → Delivery/read status updates
+2. ✅ Send messages in group conversation → Aggregate status computation
+3. ✅ Close app, send from another device → WorkManager syncs in background
+4. ✅ Test offline mode → Message sent offline syncs when online
+5. ✅ Monitor memory with 50+ conversations → <5 MB
+6. ✅ Check background tasks → Periodic tasks registered
+
+## Technical Requirements
+
+### Dependencies
+- workmanager: ^0.5.2 (already in project)
+- drift: ^2.x (already in project)
+- riverpod: ^2.x (already in project)
+- firebase_core (already in project)
+- cloud_firestore (already in project)
+
+### Platform Support
+- Android: WorkManager periodic tasks
+- iOS: Background fetch
+- Both: Offline-first architecture
+
+### Database Schema
+```sql
+CREATE TABLE message_status (
+  message_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  status TEXT NOT NULL,  -- 'sent', 'delivered', 'read'
+  timestamp INTEGER,
+  PRIMARY KEY (message_id, user_id),
+  FOREIGN KEY (message_id) REFERENCES messages(id)
+);
+```
+
+### Firestore Schema
+```
+messages/{messageId}
+  ├── text: string
+  ├── senderId: string
+  ├── timestamp: timestamp
+  └── ...
+
+messages/{messageId}/status/{userId}
+  ├── status: "sent" | "delivered" | "read"
+  ├── timestamp: timestamp
+  └── userId: string
+```
+
+## Risk Mitigation
+
+### Risk 1: Data Loss During Migration
+- Mitigation: Migration script with rollback
+- Test on staging environment first
+- Keep old fields temporarily for backwards compatibility
+
+### Risk 2: Breaking Real-Time Updates
+- Mitigation: Maintain single stream listener pattern
+- Test with multiple devices
+- Implement feature flag for gradual rollout
+
+### Risk 3: WorkManager Not Executing
+- Mitigation: Test on multiple Android versions
+- Implement fallback to in-app sync
+- Add monitoring/logging
+
+## Out of Scope
+
+- Push notifications (already implemented)
+- Message encryption (future feature)
+- Message editing (future feature)
+- Message reactions (future feature)
+- Testing (project has no testing policy)
+
+## Timeline
+
+Total estimated effort: 8-10 hours
+
+- Phase 1 (Setup): 1 hour
+- Phase 2 (WorkManager): 2 hours
+- Phase 3 (Remove AutoDeliveryMarker): 30 minutes
+- Phase 4 (Simplify Entity): 1 hour
+- Phase 5 (Firestore Schema): 1 hour
+- Phase 6 (Cleanup & Verification): 2 hours
+- Buffer for issues: 2-3 hours
+
+## Definition of Done
+
+- All 5 old services deleted
+- WorkManager handling all background tasks
+- Memory usage <5 MB for typical usage
+- All manual testing scenarios pass
+- No crashes for manual testing period
+- Battery usage <1% per day
+- All Firestore subscriptions properly cleaned up
+- Code passes dart analyze
+- Code formatted with dart format
+- No compilation errors

@@ -51,7 +51,11 @@
       "Bash(firebase firestore:get:*)",
       "Bash(git checkout:*)",
       "Bash(git stash:*)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "mcp__taskmaster__get_tasks",
+      "mcp__taskmaster__add_task",
+      "mcp__taskmaster__initialize_project",
+      "mcp__taskmaster__parse_prd"
     ],
     "deny": [],
     "ask": []
