@@ -320,13 +320,27 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     try {
       final messagesRef = await _messagesRef(conversationId);
 
-      // Use subcollection structure for efficient status tracking:
-      // messages/{messageId}/status/{userId}
-      await messagesRef.doc(messageId).collection('status').doc(userId).set({
-        'status': 'delivered',
-        'timestamp': FieldValue.serverTimestamp(),
-        'userId': userId,
-      }, SetOptions(merge: true)); // Merge to avoid overwriting read status
+      // Check current status first - don't downgrade from 'read' to 'delivered'
+      final statusDoc = await messagesRef
+          .doc(messageId)
+          .collection('status')
+          .doc(userId)
+          .get();
+
+      final currentStatus = statusDoc.data()?['status'] as String?;
+
+      // Only mark as delivered if:
+      // 1. No status exists yet (first time)
+      // 2. Current status is 'sent' (upgrade to delivered)
+      // Never downgrade from 'read' to 'delivered'
+      if (currentStatus == null || currentStatus == 'sent') {
+        await messagesRef.doc(messageId).collection('status').doc(userId).set({
+          'status': 'delivered',
+          'timestamp': FieldValue.serverTimestamp(),
+          'userId': userId,
+        });
+      }
+      // If already 'read', do nothing (don't downgrade)
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
