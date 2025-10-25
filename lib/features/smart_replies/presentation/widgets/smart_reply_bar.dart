@@ -45,6 +45,7 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar>
   late Animation<Offset> _slideAnimation;
   String? _lastMessageId;
   bool _hasSuggestionsForCurrentMessage = false;
+  bool _enableSmartReplies = false; // Defer generation for performance
 
   @override
   void initState() {
@@ -63,6 +64,17 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar>
             reverseCurve: Curves.easeInCubic,
           ),
         );
+
+    // PERFORMANCE: Defer smart reply generation by 2 seconds to avoid blocking page load
+    // The RAG pipeline (embedding + semantic search + GPT-4o-mini) takes 2-3 seconds
+    // and should not run during critical page load time
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        setState(() {
+          _enableSmartReplies = true;
+        });
+      }
+    });
   }
 
   @override
@@ -123,7 +135,7 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar>
 
   @override
   Widget build(BuildContext context) {
-    if (widget.incomingMessage == null) {
+    if (widget.incomingMessage == null || !_enableSmartReplies) {
       return const SizedBox.shrink();
     }
 

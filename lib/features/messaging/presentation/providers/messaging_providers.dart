@@ -220,7 +220,6 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
   final groupConversationRepository = ref.watch(
     groupConversationRepositoryProvider,
   );
-  final firestore = ref.watch(messagingFirestoreProvider);
 
   // Track which messages we've already marked as read to prevent infinite loop
   final markedAsRead = <String>{};
@@ -262,22 +261,28 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
     },
   );
 
-  // Create a stream that watches ALL status subcollections for this conversation
-  // This triggers whenever ANY status changes (delivered/read)
-  final statusUpdatesStream = firestore
-      .collectionGroup('status')
-      .snapshots()
-      .map((snapshot) => snapshot.docs.length)
-      .startWith(0); // Ensure immediate emission so combineLatest2 works
+  // PERFORMANCE FIX: Removed global collectionGroup status watcher
+  // The previous implementation watched ALL status subcollections across the
+  // ENTIRE Firestore database, not just this conversation. This caused:
+  // - Excessive Firestore reads
+  // - Unnecessary rebuilds when other conversations' statuses changed
+  // - Poor scalability with large databases
+  //
+  // TODO: Consider re-adding a scoped status watcher if real-time status
+  // updates are needed. Options:
+  // 1. Watch messages collection (doesn't catch subcollection changes)
+  // 2. Create individual watchers per message (complex)
+  // 3. Poll for status updates periodically
+  // 4. Add conversationId field to status documents for filtering
+  //
+  // For now, status updates are fetched when messages stream emits.
 
-  // Combine messages stream with status updates stream
-  // When EITHER changes, rebuild the message list
-  await for (final combined in Rx.combineLatest2(
-    watchUseCase(conversationId: conversationId, currentUserId: currentUserId),
-    statusUpdatesStream,
-    (Either<Failure, List<Message>> result, int statusCount) => result,
+  // Process messages stream directly (status fetched per message below)
+  await for (final result in watchUseCase(
+    conversationId: conversationId,
+    currentUserId: currentUserId,
   )) {
-    yield await combined.fold(
+    yield await result.fold(
       (failure) async => [],
 
       // Log error but return empty list to keep UI functional
@@ -297,28 +302,48 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
           messageRemoteDataSourceProvider,
         );
 
-        for (final msg in messages) {
-          // Only mark as READ if:
-          // 1. Not sent by me
-          // 2. Not already marked by us (deduplication)
-          // Note: We mark as read when chat is open, AutoDeliveryMarker handles "delivered"
-          if (msg.senderId != currentUserId && !markedAsRead.contains(msg.id)) {
-            try {
-              debugPrint(
-                '📖 Marking message ${msg.id.substring(0, 8)} as READ for user ${currentUserId.substring(0, 8)}',
-              );
-              // Chat is open = mark as READ
-              await messageRemoteDataSource.markAsRead(
-                conversationId,
-                msg.id,
-                currentUserId,
-              );
-              markedAsRead.add(msg.id); // Track to prevent re-marking
-              debugPrint('✅ Successfully marked as READ');
-            } catch (e) {
-              debugPrint('❌ Failed to mark as READ: $e');
+        // Collect messages that need to be marked as read
+        final messagesToMark = messages
+            .where(
+              (msg) =>
+                  msg.senderId != currentUserId &&
+                  !markedAsRead.contains(msg.id),
+            )
+            .toList();
+
+        if (messagesToMark.isNotEmpty) {
+          debugPrint(
+            '📖 Marking ${messagesToMark.length} messages as READ in parallel for user ${currentUserId.substring(0, 8)}',
+          );
+
+          // Mark all messages as READ in parallel (significant performance improvement)
+          final results = await Future.wait(
+            messagesToMark.map((msg) async {
+              try {
+                await messageRemoteDataSource.markAsRead(
+                  conversationId,
+                  msg.id,
+                  currentUserId,
+                );
+                return (msg.id, true); // Success
+              } catch (e) {
+                debugPrint(
+                  '❌ Failed to mark ${msg.id.substring(0, 8)} as READ: $e',
+                );
+                return (msg.id, false); // Failure
+              }
+            }),
+          );
+
+          // Track successfully marked messages to prevent re-marking
+          final successCount = results.where((r) => r.$2).length;
+          for (final (messageId, success) in results) {
+            if (success) {
+              markedAsRead.add(messageId);
             }
           }
+
+          debugPrint('✅ Successfully marked $successCount/${messagesToMark.length} messages as READ');
         }
 
         // Build MessageWithStatus objects by querying Firestore for current status

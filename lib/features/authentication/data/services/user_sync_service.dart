@@ -33,6 +33,11 @@ class UserSyncService {
   final Map<String, StreamSubscription<dynamic>> _userWatchers = {};
   Timer? _refreshTimer;
 
+  // Debouncing for syncConversationUsers to prevent duplicate syncs
+  DateTime? _lastSyncTime;
+  Set<String>? _lastSyncedUserIds;
+  static const _syncDebounceThreshold = Duration(milliseconds: 500);
+
   /// Start background syncing
   ///
   /// Call this when the app starts and user is authenticated
@@ -62,10 +67,34 @@ class UserSyncService {
   /// Sync users when conversations load
   ///
   /// Call this when conversation list is displayed
+  ///
+  /// PERFORMANCE: Includes debouncing to prevent redundant syncs when called
+  /// multiple times in quick succession with the same user set (e.g., during
+  /// stream initialization when Firestore listeners trigger multiple emissions)
   Future<void> syncConversationUsers(List<String> participantIds) async {
+    final now = DateTime.now();
+    final userIdSet = participantIds.toSet();
+
+    // DEBOUNCING: Skip if we synced these exact same users within the threshold
+    if (_lastSyncTime != null &&
+        _lastSyncedUserIds != null &&
+        now.difference(_lastSyncTime!) < _syncDebounceThreshold &&
+        userIdSet.difference(_lastSyncedUserIds!).isEmpty &&
+        _lastSyncedUserIds!.difference(userIdSet).isEmpty) {
+      debugPrint(
+        '⏭️ UserSync: Skipping duplicate sync (${participantIds.length} users, ${now.difference(_lastSyncTime!).inMilliseconds}ms since last sync)',
+      );
+      return;
+    }
+
     debugPrint(
       '🔄 UserSync: Syncing ${participantIds.length} conversation users',
     );
+
+    // Update debounce tracking
+    _lastSyncTime = now;
+    _lastSyncedUserIds = userIdSet;
+
     await _userCacheService.cacheUsers(participantIds);
 
     // Start watching these users for real-time updates
