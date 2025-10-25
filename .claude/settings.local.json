@@ -45,7 +45,10 @@
       "Bash(git log:*)",
       "Bash(firebase deploy:*)",
       "mcp__taskmaster-ai__update_task",
-      "mcp__taskmaster-ai__remove_task"
+      "mcp__taskmaster-ai__remove_task",
+      "Bash(cat:*)",
+      "Bash(firebase firestore:indexes:*)",
+      "Bash(firebase firestore:get:*)"
     ],
     "deny": [],
     "ask": []

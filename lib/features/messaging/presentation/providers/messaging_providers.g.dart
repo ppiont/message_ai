@@ -2007,7 +2007,7 @@ final class AllConversationsStreamProvider
 }
 
 String _$allConversationsStreamHash() =>
-    r'4ffde5a7bc18db79b9da1bfe8ab5e4f8667adf37';
+    r'45fe048a7a04907d45b7ef1c2832c34207ecd517';
 
 /// Stream provider for watching all conversations (both direct and groups) in real-time.
 ///
