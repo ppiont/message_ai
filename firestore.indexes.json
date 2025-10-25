@@ -67,6 +67,15 @@
                     "queryScope": "COLLECTION"
                 }
             ]
+        },
+        {
+            "collectionGroup": "messages",
+            "fieldPath": "embedding",
+            "indexes": [],
+            "vectorConfig": {
+                "dimension": 768,
+                "flat": {}
+            }
         }
     ]
 }
