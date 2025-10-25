@@ -427,6 +427,7 @@ AutoDeliveryMarker autoDeliveryMarker(Ref ref) {
 
   final marker = AutoDeliveryMarker(
     conversationRepository: ref.watch(conversationRepositoryProvider),
+    groupConversationRepository: ref.watch(groupConversationRepositoryProvider),
     messageRepository: ref.watch(messageRepositoryProvider),
     currentUserId: currentUser.uid,
   );

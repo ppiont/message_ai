@@ -56,7 +56,8 @@
       "mcp__taskmaster__add_task",
       "mcp__taskmaster__initialize_project",
       "mcp__taskmaster__parse_prd",
-      "mcp__taskmaster__set_task_status"
+      "mcp__taskmaster__set_task_status",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
