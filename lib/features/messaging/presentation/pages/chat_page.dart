@@ -14,6 +14,7 @@ import 'package:message_ai/features/messaging/presentation/widgets/message_bubbl
 import 'package:message_ai/features/messaging/presentation/widgets/message_input.dart';
 import 'package:message_ai/features/messaging/presentation/widgets/typing_indicator.dart';
 import 'package:message_ai/features/smart_replies/presentation/widgets/smart_reply_bar.dart';
+import 'package:message_ai/features/translation/data/services/auto_translation_service.dart';
 import 'package:message_ai/features/translation/presentation/providers/translation_providers.dart';
 
 /// Main chat screen for displaying and sending messages.
@@ -49,6 +50,9 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   /// Track previous message count to detect new messages vs updates
   int _previousMessageCount = 0;
 
+  /// Auto-translation service instance (saved to avoid using ref in dispose)
+  AutoTranslationService? _autoTranslationService;
+
   @override
   void initState() {
     super.initState();
@@ -58,13 +62,12 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final currentUser = ref.read(currentUserWithFirestoreProvider).value;
       if (currentUser != null) {
-        ref
-            .read(autoTranslationServiceProvider)
-            .start(
-              conversationId: widget.conversationId,
-              currentUserId: currentUser.uid,
-              userPreferredLanguage: currentUser.preferredLanguage,
-            );
+        _autoTranslationService = ref.read(autoTranslationServiceProvider);
+        _autoTranslationService!.start(
+          conversationId: widget.conversationId,
+          currentUserId: currentUser.uid,
+          userPreferredLanguage: currentUser.preferredLanguage,
+        );
       }
     });
   }
@@ -72,7 +75,8 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   @override
   void dispose() {
     // Stop auto-translation service when leaving conversation
-    ref.read(autoTranslationServiceProvider).stop();
+    // Safe: using saved instance instead of ref.read() during dispose
+    _autoTranslationService?.stop();
 
     _scrollController.dispose();
     _messageInputController.dispose();
