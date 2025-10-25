@@ -4,7 +4,6 @@ import 'package:message_ai/features/authentication/domain/repositories/auth_repo
 
 /// Use case for signing out the current user
 class SignOut {
-
   SignOut(this._repository);
   final AuthRepository _repository;
 

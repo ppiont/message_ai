@@ -3,9 +3,10 @@ library;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
+import 'package:message_ai/core/database/app_database.dart'
+    show MessageStatusEntity;
 import 'package:message_ai/core/error/failures.dart';
 import 'package:message_ai/core/providers/database_provider.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
@@ -18,11 +19,8 @@ import 'package:message_ai/features/messaging/data/datasources/message_remote_da
 import 'package:message_ai/features/messaging/data/repositories/conversation_repository_impl.dart';
 import 'package:message_ai/features/messaging/data/repositories/group_conversation_repository_impl.dart';
 import 'package:message_ai/features/messaging/data/repositories/message_repository_impl.dart';
-import 'package:message_ai/features/messaging/data/services/auto_delivery_marker.dart';
 import 'package:message_ai/features/messaging/data/services/fcm_service.dart';
 import 'package:message_ai/features/messaging/data/services/message_context_service.dart';
-import 'package:message_ai/features/messaging/data/services/message_queue.dart';
-import 'package:message_ai/features/messaging/data/services/message_sync_service.dart';
 import 'package:message_ai/features/messaging/data/services/presence_service.dart'
     show PresenceService, UserPresence;
 import 'package:message_ai/features/messaging/data/services/typing_indicator_service.dart';
@@ -44,10 +42,12 @@ import 'package:message_ai/features/messaging/domain/usecases/send_message.dart'
 import 'package:message_ai/features/messaging/domain/usecases/update_group_info.dart';
 import 'package:message_ai/features/messaging/domain/usecases/watch_conversations.dart';
 import 'package:message_ai/features/messaging/domain/usecases/watch_messages.dart';
+import 'package:message_ai/features/messaging/presentation/models/message_with_status.dart';
 import 'package:message_ai/features/smart_replies/presentation/providers/embedding_providers.dart';
 import 'package:message_ai/features/translation/presentation/providers/language_detection_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:rxdart/rxdart.dart';
+import 'package:workmanager/workmanager.dart';
 
 part 'messaging_providers.g.dart';
 
@@ -120,13 +120,14 @@ MessageContextService messageContextService(Ref ref) => MessageContextService(
 // ========== Use Case Providers ==========
 
 /// Provides the [SendMessage] use case with language detection.
+///
+/// Note: messageQueue removed - WorkManager handles background sync now
 @riverpod
 SendMessage sendMessageUseCase(Ref ref) => SendMessage(
   messageRepository: ref.watch(messageRepositoryProvider),
   conversationRepository: ref.watch(conversationRepositoryProvider),
   languageDetectionService: ref.watch(languageDetectionServiceProvider),
   embeddingGenerator: ref.watch(embeddingGeneratorProvider),
-  messageQueue: ref.watch(messageQueueProvider),
 );
 
 /// Provides the [WatchMessages] use case.
@@ -203,18 +204,28 @@ Stream<List<Map<String, dynamic>>> userConversationsStream(
 /// Stream provider for watching messages in a conversation in real-time.
 ///
 /// Automatically updates when messages change in Firestore.
-/// Automatically marks incoming messages as delivered.
-/// Computes aggregate read receipt status for group messages.
+/// Returns messages with computed status from Firestore.
+///
+/// Uses real-time listeners for BOTH messages AND status subcollections.
+/// When receiver marks delivered/read, sender sees it instantly.
 @riverpod
 Stream<List<Map<String, dynamic>>> conversationMessagesStream(
   Ref ref,
   String conversationId,
   String currentUserId,
 ) async* {
+
   final watchUseCase = ref.watch(watchMessagesUseCaseProvider);
   final userSyncService = ref.watch(userSyncServiceProvider);
   final getConversationUseCase = ref.watch(getConversationByIdUseCaseProvider);
-  final groupConversationRepository = ref.watch(groupConversationRepositoryProvider);
+  final groupConversationRepository = ref.watch(
+    groupConversationRepositoryProvider,
+  );
+  final database = ref.watch(databaseProvider);
+  final firestore = ref.watch(messagingFirestoreProvider);
+
+  // Track which messages we've already marked as read to prevent infinite loop
+  final markedAsRead = <String>{};
 
   // Get conversation to extract participant IDs for aggregate status computation
   // Try direct conversation first, then group conversation
@@ -225,33 +236,56 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
   await directConvResult.fold(
     (failure) async {
       // Direct conversation fetch failed, try group conversation
-      debugPrint('📨 conversationMessagesStream: Not a direct conversation, trying group...');
-      final groupResult = await groupConversationRepository.getGroupById(conversationId);
+      debugPrint(
+        '📨 conversationMessagesStream: Not a direct conversation, trying group...',
+      );
+      final groupResult = await groupConversationRepository.getGroupById(
+        conversationId,
+      );
       groupResult.fold(
         (groupFailure) {
-          debugPrint('❌ conversationMessagesStream: Failed to get conversation $conversationId: ${groupFailure.message}');
+          debugPrint(
+            '❌ conversationMessagesStream: Failed to get conversation $conversationId: ${groupFailure.message}',
+          );
         },
         (conversation) {
           participantIds = conversation.participants.map((p) => p.uid).toList();
-          debugPrint('✅ conversationMessagesStream: Got ${participantIds.length} participants for status computation: $participantIds');
+          debugPrint(
+            '✅ conversationMessagesStream: Got ${participantIds.length} participants for status computation: $participantIds',
+          );
         },
       );
     },
     (conversation) async {
       participantIds = conversation.participants.map((p) => p.uid).toList();
-      debugPrint('✅ conversationMessagesStream: Got ${participantIds.length} participants for status computation: $participantIds');
+      debugPrint(
+        '✅ conversationMessagesStream: Got ${participantIds.length} participants for status computation: $participantIds',
+      );
     },
   );
 
-  await for (final result in watchUseCase(
-    conversationId: conversationId,
-    currentUserId: currentUserId,
+  // Create a stream that watches ALL status subcollections for this conversation
+  // This triggers whenever ANY status changes (delivered/read)
+  final statusUpdatesStream = firestore
+      .collectionGroup('status')
+      .snapshots()
+      .map((snapshot) => snapshot.docs.length); // Just count changes as trigger
+
+  // Combine messages stream with status updates stream
+  // When EITHER changes, rebuild the message list
+  await for (final combined in Rx.combineLatest2(
+    watchUseCase(
+      conversationId: conversationId,
+      currentUserId: currentUserId,
+    ),
+    statusUpdatesStream,
+    (Either<Failure, List<Message>> result, int statusCount) => result,
   )) {
-    yield result.fold(
-      (failure) => [],
+    yield await combined.fold(
+      (failure) async => [],
 
       // Log error but return empty list to keep UI functional
-      (List<Message> messages) {
+      (List<Message> messages) async {
         // Sync all message senders to Drift for offline access
         final allSenderIds = messages
             .map((Message msg) => msg.senderId)
@@ -261,28 +295,86 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
           allSenderIds.forEach(userSyncService.syncMessageSender);
         }
 
-        return messages.map((Message msg) {
-          // Compute aggregate status using per-user tracking
-          // getAggregateStatus handles empty participant lists by returning 'sent'
-          final status = msg.getAggregateStatus(participantIds);
+        // WhatsApp-style: When chat is OPEN, mark messages as DELIVERED (not read)
+        // "Read" status will be set later by scroll-based visibility detection
+        final messageRemoteDataSource = ref.read(messageRemoteDataSourceProvider);
 
-          debugPrint('📊 Message ${msg.id.substring(0, 8)}: computed status=$status (participantIds=$participantIds, deliveredTo=${msg.deliveredTo?.keys.toList()}, readBy=${msg.readBy?.keys.toList()})');
+        for (final msg in messages) {
+          if (msg.senderId != currentUserId && !markedAsRead.contains(msg.id)) {
+            try {
+              // Chat is open = message reached the device and is visible = mark as DELIVERED
+              // This ensures messages show "delivered" when chat is open
+              await messageRemoteDataSource.markAsDelivered(
+                conversationId,
+                msg.id,
+                currentUserId,
+              );
+              markedAsRead.add(msg.id); // Track to prevent re-marking
+            } catch (e) {
+              // Silently fail
+            }
+          }
+        }
 
-          return <String, dynamic>{
-            'id': msg.id,
-            'text': msg.text,
-            'senderId': msg.senderId,
-            'timestamp': msg.timestamp,
-            'status': status,
-            'type': msg.type,
-            'detectedLanguage': msg.detectedLanguage,
-            'translations': msg.translations,
-            'culturalHint': msg.culturalHint,
-            // Include per-user tracking maps for potential future use
-            'deliveredTo': msg.deliveredTo,
-            'readBy': msg.readBy,
-          };
-        }).toList();
+        // Build MessageWithStatus objects by querying Firestore for current status
+        final messagesWithStatus = await Future.wait(
+          messages.map((Message msg) async {
+            // For messages sent by current user, query Firestore for recipients' status
+            List<MessageStatusEntity> statusRecords = [];
+
+            if (msg.senderId == currentUserId) {
+              try {
+                final messageRemoteDataSource = ref.read(
+                  messageRemoteDataSourceProvider,
+                );
+                final firestoreStatusMaps = await messageRemoteDataSource
+                    .getMessageStatus(conversationId, msg.id);
+
+                // Convert Firestore status maps to MessageStatusEntity objects
+                statusRecords = firestoreStatusMaps.map((data) {
+                  return MessageStatusEntity(
+                    messageId: msg.id,
+                    userId: data['userId'] as String,
+                    status: data['status'] as String,
+                    timestamp: data['timestamp'] != null
+                        ? (data['timestamp'] as Timestamp).toDate()
+                        : null,
+                  );
+                }).toList();
+              } catch (e) {
+                debugPrint(
+                  '⚠️ Failed to fetch Firestore status for ${msg.id}: $e',
+                );
+                // Empty list on error
+              }
+            }
+
+            // Build MessageWithStatus using factory
+            final messageWithStatus = MessageWithStatus.fromStatusRecords(
+              message: msg,
+              statusRecords: statusRecords,
+              currentUserId: currentUserId,
+              allParticipantIds: participantIds,
+            );
+
+            // Return as Map for backward compatibility with UI
+            return <String, dynamic>{
+              'id': msg.id,
+              'text': msg.text,
+              'senderId': msg.senderId,
+              'timestamp': msg.timestamp,
+              'status': messageWithStatus.status,
+              'type': msg.type,
+              'detectedLanguage': msg.detectedLanguage,
+              'translations': msg.translations,
+              'culturalHint': msg.culturalHint,
+              'readCount': messageWithStatus.readCount,
+              'deliveredCount': messageWithStatus.deliveredCount,
+            };
+          }),
+        );
+
+        return messagesWithStatus;
       },
     );
   }
@@ -317,38 +409,104 @@ Stream<List<TypingUser>> conversationTypingUsers(
   );
 }
 
-// ========== Auto Delivery Marker ==========
+// ========== Background Delivery Status Marker ==========
 
-/// Provides the [AutoDeliveryMarker] service.
+/// Background provider that marks ALL incoming messages as "delivered"
+/// WhatsApp-style: Message reached device = 2 checkmarks
 ///
-/// Automatically marks incoming messages as delivered for all conversations
-/// (both direct and group conversations).
-@Riverpod(keepAlive: true)
-AutoDeliveryMarker? autoDeliveryMarker(Ref ref) {
-  final currentUser = ref.watch(authStateProvider).value;
+/// Runs in background, marks messages as delivered when they arrive,
+/// even if chat is not open.
+@riverpod
+Stream<void> autoDeliveryMarker(Ref ref, String userId) async* {
+  final database = ref.watch(databaseProvider);
+  final messageRemoteDataSource = ref.watch(messageRemoteDataSourceProvider);
+  final firestore = ref.watch(messagingFirestoreProvider);
 
-  // Return null if user is not authenticated (e.g., on logout)
-  if (currentUser == null) {
-    return null;
+  debugPrint('[autoDeliveryMarker] Starting for user $userId');
+
+  // Track which messages we've already marked as delivered
+  final markedAsDelivered = <String>{};
+
+  // Watch local DB for new messages (they get synced from Firestore automatically)
+  // When a message appears in local DB, it means it "arrived" → mark as delivered
+  await for (final messages in database.messageDao.watchAllMessages()) {
+    for (final msg in messages) {
+      if (msg.senderId != userId && !markedAsDelivered.contains(msg.id)) {
+        // This is a received message - mark as delivered
+        try {
+          await messageRemoteDataSource.markAsDelivered(
+            msg.conversationId,
+            msg.id,
+            userId,
+          );
+          markedAsDelivered.add(msg.id); // Track that we marked this
+        } catch (e) {
+          // Silently fail - will retry on next iteration
+        }
+      }
+    }
+
+    yield null; // Keep stream alive
+  }
+}
+
+// ========== Message Status Delivery Marker ==========
+
+/// Marks all messages in a conversation as delivered for the current user.
+///
+/// Simple approach: Writes directly to Firestore subcollections.
+/// Sender listens to these subcollections for instant status updates.
+///
+/// Flow:
+/// 1. Get all messages not sent by current user
+/// 2. Write "delivered" to Firestore: conversations/{convId}/messages/{msgId}/status/{userId}
+/// 3. Sender's listener picks it up instantly
+@riverpod
+Future<void> markMessagesDelivered(
+  Ref ref,
+  String conversationId,
+  String userId,
+) async {
+  final messageRemoteDataSource = ref.read(messageRemoteDataSourceProvider);
+
+  debugPrint('[markMessagesDelivered] Fetching messages from Firestore...');
+
+  // Query FIRESTORE directly (not local DB which might be empty!)
+  final messages = await messageRemoteDataSource.getMessages(
+    conversationId: conversationId,
+    limit: 100, // Get recent messages
+  );
+
+  debugPrint('[markMessagesDelivered] Found ${messages.length} messages in Firestore');
+
+  // Filter messages not sent by this user
+  final otherMessages = messages.where((m) => m.senderId != userId).toList();
+
+  if (otherMessages.isEmpty) {
+    debugPrint('[markMessagesDelivered] No messages to mark as delivered');
+    return;
   }
 
-  final marker =
-      AutoDeliveryMarker(
-          conversationRepository: ref.watch(conversationRepositoryProvider),
-          groupConversationRepository: ref.watch(
-            groupConversationRepositoryProvider,
-          ),
-          messageRepository: ref.watch(messageRepositoryProvider),
-          currentUserId: currentUser.uid,
-        )
-        // Start watching
-        // ignore: cascade_invocations
-        ..start();
+  debugPrint(
+    '[markMessagesDelivered] Marking ${otherMessages.length} messages as delivered in Firestore',
+  );
 
-  // Dispose when provider is disposed
-  ref.onDispose(marker.stop);
+  // Write directly to Firestore subcollections
+  for (final message in otherMessages) {
+    try {
+      debugPrint('[markMessagesDelivered] Writing status for message ${message.id}');
+      await messageRemoteDataSource.markAsDelivered(
+        conversationId,
+        message.id,
+        userId,
+      );
+      debugPrint('[markMessagesDelivered] ✅ Wrote status for ${message.id}');
+    } catch (e) {
+      debugPrint('[markMessagesDelivered] ❌ Failed to mark ${message.id}: $e');
+    }
+  }
 
-  return marker;
+  debugPrint('[markMessagesDelivered] ✅ All delivered statuses written to Firestore');
 }
 
 // ========== Presence Providers ==========
@@ -399,54 +557,11 @@ Stream<Map<String, dynamic>?> userPresence(Ref ref, String userId) {
 }
 
 // ========== Offline & Sync Providers ==========
-
-/// Provides the [MessageSyncService] instance.
-///
-/// Handles background synchronization between local and remote storage.
-@Riverpod(keepAlive: true)
-MessageSyncService messageSyncService(Ref ref) {
-  final database = ref.watch(databaseProvider);
-  final service =
-      MessageSyncService(
-          messageLocalDataSource: ref.watch(messageLocalDataSourceProvider),
-          messageRepository: ref.watch(messageRepositoryProvider),
-          conversationLocalDataSource: ref.watch(
-            conversationLocalDataSourceProvider,
-          ),
-          conversationRepository: ref.watch(conversationRepositoryProvider),
-          messageDao: database.messageDao,
-          connectivity: Connectivity(),
-        )
-        // Start monitoring connectivity and syncing
-        // ignore: cascade_invocations
-        ..start();
-
-  // Dispose when provider is disposed
-  ref.onDispose(service.stop);
-
-  return service;
-}
-
-/// Provides the [MessageQueue] instance.
-///
-/// Handles optimistic UI updates and background message processing.
-@Riverpod(keepAlive: true)
-MessageQueue messageQueue(Ref ref) {
-  final queue =
-      MessageQueue(
-          localDataSource: ref.watch(messageLocalDataSourceProvider),
-          syncService: ref.watch(messageSyncServiceProvider),
-        )
-        // Start processing queue
-        // ignore: cascade_invocations
-        ..start();
-
-  // Dispose when provider is disposed
-  ref.onDispose(queue.stop);
-
-  return queue;
-}
-
+//
+// NOTE: MessageSyncService and MessageQueue have been removed.
+// Background sync is now handled by WorkManager periodic tasks.
+// See lib/workers/ for MessageSyncWorker, DeliveryTrackingWorker, ReadReceiptWorker.
+//
 // ========== Group Conversation Providers ==========
 
 /// Provides the [GroupConversationRemoteDataSource] implementation.

@@ -5,7 +5,6 @@ import 'package:message_ai/features/authentication/domain/repositories/auth_repo
 
 /// Use case for getting the currently signed-in user
 class GetCurrentUser {
-
   GetCurrentUser(this._repository);
   final AuthRepository _repository;
 

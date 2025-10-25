@@ -18,10 +18,9 @@ class TranslateMessage {
     required String sourceLanguage,
     required String targetLanguage,
   }) async => _translationService.translateMessage(
-      messageId: messageId,
-      text: text,
-      sourceLanguage: sourceLanguage,
-      targetLanguage: targetLanguage,
-    );
+    messageId: messageId,
+    text: text,
+    sourceLanguage: sourceLanguage,
+    targetLanguage: targetLanguage,
+  );
 }
-

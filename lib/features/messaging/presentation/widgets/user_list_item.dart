@@ -24,25 +24,19 @@ class UserListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      leading: _buildAvatar(),
-      title: Text(
-        displayName.isEmpty ? 'Unknown User' : displayName,
-        style: const TextStyle(
-          fontWeight: FontWeight.w500,
-          fontSize: 16,
-        ),
-      ),
-      subtitle: Text(
-        email,
-        style: TextStyle(
-          color: Colors.grey[600],
-          fontSize: 14,
-        ),
-      ),
-      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-      onTap: onTap,
-    );
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    leading: _buildAvatar(),
+    title: Text(
+      displayName.isEmpty ? 'Unknown User' : displayName,
+      style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 16),
+    ),
+    subtitle: Text(
+      email,
+      style: TextStyle(color: Colors.grey[600], fontSize: 14),
+    ),
+    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+    onTap: onTap,
+  );
 
   Widget _buildAvatar() {
     if (imageUrl != null && imageUrl!.isNotEmpty) {
@@ -54,7 +48,9 @@ class UserListItem extends StatelessWidget {
     }
 
     // Generate color from name for consistent avatar colors
-    final color = _generateColorFromString(displayName.isNotEmpty ? displayName : email);
+    final color = _generateColorFromString(
+      displayName.isNotEmpty ? displayName : email,
+    );
 
     return CircleAvatar(
       radius: 24,

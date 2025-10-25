@@ -175,38 +175,42 @@ class UserLookupCache extends _$UserLookupCache {
 
       // Create a stream from the repository's watch method
       // ignore: cancel_subscriptions - Subscription is properly cancelled in ref.onDispose() (line 44-49)
-      final subscription = userRepository.watchUser(userId).listen(
-        (result) async {
-          if (!ref.mounted) {
-            return;
-          }
+      final subscription = userRepository
+          .watchUser(userId)
+          .listen(
+            (result) async {
+              if (!ref.mounted) {
+                return;
+              }
 
-          // Handle Either<Failure, User> result
-          await result.fold(
-            (failure) async {
-              debugPrint(
-                '❌ User watch failure for $userId: ${failure.message}',
+              // Handle Either<Failure, User> result
+              await result.fold(
+                (failure) async {
+                  debugPrint(
+                    '❌ User watch failure for $userId: ${failure.message}',
+                  );
+                },
+                (user) async {
+                  debugPrint(
+                    '🔄 User updated via listener: ${user.displayName} ($userId)',
+                  );
+
+                  // Update memory cache
+                  state = {...state, userId: CachedUser(user, DateTime.now())};
+
+                  // Update Drift for offline access
+                  await userCacheService.syncUserToDrift(user);
+
+                  debugPrint(
+                    '✅ Cache & Drift updated for: ${user.displayName}',
+                  );
+                },
               );
             },
-            (user) async {
-              debugPrint(
-                '🔄 User updated via listener: ${user.displayName} ($userId)',
-              );
-
-              // Update memory cache
-              state = {...state, userId: CachedUser(user, DateTime.now())};
-
-              // Update Drift for offline access
-              await userCacheService.syncUserToDrift(user);
-
-              debugPrint('✅ Cache & Drift updated for: ${user.displayName}');
+            onError: (Object error) {
+              debugPrint('❌ Firestore listener error for $userId: $error');
             },
           );
-        },
-        onError: (Object error) {
-          debugPrint('❌ Firestore listener error for $userId: $error');
-        },
-      );
 
       _listeners[userId] = subscription;
     } catch (e) {

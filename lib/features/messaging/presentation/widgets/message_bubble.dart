@@ -75,14 +75,18 @@ class _MessageBubbleState extends ConsumerState<MessageBubble> {
 
     try {
       final languageDetectionService = LanguageDetectionService();
-      final detected = await languageDetectionService.detectLanguage(widget.message);
+      final detected = await languageDetectionService.detectLanguage(
+        widget.message,
+      );
 
       if (mounted && detected != null) {
         setState(() {
           _fallbackDetectedLanguage = detected;
         });
 
-        debugPrint('✅ Fallback language detection: ${widget.message.substring(0, widget.message.length.clamp(0, 30))}... -> $detected');
+        debugPrint(
+          '✅ Fallback language detection: ${widget.message.substring(0, widget.message.length.clamp(0, 30))}... -> $detected',
+        );
 
         // Update the message in Firestore with detected language for future
         final messageRepository = ref.read(messageRepositoryProvider);
@@ -93,7 +97,9 @@ class _MessageBubbleState extends ConsumerState<MessageBubble> {
 
         await messageResult.fold(
           (failure) async {
-            debugPrint('Failed to get message for language update: ${failure.message}');
+            debugPrint(
+              'Failed to get message for language update: ${failure.message}',
+            );
           },
           (messageEntity) async {
             final updatedMessage = messageEntity.copyWith(
@@ -188,7 +194,8 @@ class _MessageBubbleState extends ConsumerState<MessageBubble> {
                   ),
                 ),
               GestureDetector(
-                onLongPressStart: (details) => _showContextMenu(context, details, ref),
+                onLongPressStart: (details) =>
+                    _showContextMenu(context, details, ref),
                 child: Container(
                   decoration: BoxDecoration(
                     color: widget.isMe
@@ -213,7 +220,10 @@ class _MessageBubbleState extends ConsumerState<MessageBubble> {
                         duration: const Duration(milliseconds: 300),
                         transitionBuilder:
                             (Widget child, Animation<double> animation) =>
-                                FadeTransition(opacity: animation, child: child),
+                                FadeTransition(
+                                  opacity: animation,
+                                  child: child,
+                                ),
                         child: Text(
                           displayText,
                           key: ValueKey(translationState.isTranslated),
@@ -232,7 +242,9 @@ class _MessageBubbleState extends ConsumerState<MessageBubble> {
                             DateFormat.jm().format(widget.timestamp),
                             style: TextStyle(
                               fontSize: 11,
-                              color: widget.isMe ? Colors.white70 : Colors.grey[600],
+                              color: widget.isMe
+                                  ? Colors.white70
+                                  : Colors.grey[600],
                             ),
                           ),
                           // Cultural context badge (only for received messages with hints)
@@ -243,7 +255,9 @@ class _MessageBubbleState extends ConsumerState<MessageBubble> {
                               child: Icon(
                                 Icons.public,
                                 size: 14,
-                                color: widget.isMe ? Colors.white70 : Colors.grey[600],
+                                color: widget.isMe
+                                    ? Colors.white70
+                                    : Colors.grey[600],
                               ),
                             ),
                           ],
@@ -302,7 +316,8 @@ class _MessageBubbleState extends ConsumerState<MessageBubble> {
     }
 
     // Don't show translate button if message is already in user's language
-    final isAlreadyInUserLanguage = detectedLang == widget.userPreferredLanguage;
+    final isAlreadyInUserLanguage =
+        detectedLang == widget.userPreferredLanguage;
 
     // Show translate button if languages differ
     return !isAlreadyInUserLanguage;
@@ -484,9 +499,7 @@ class _MessageBubbleState extends ConsumerState<MessageBubble> {
       showDialog<void>(
         context: context,
         barrierDismissible: false,
-        builder: (context) => const Center(
-          child: CircularProgressIndicator(),
-        ),
+        builder: (context) => const Center(child: CircularProgressIndicator()),
       ),
     );
 
@@ -541,10 +554,7 @@ class _MessageBubbleState extends ConsumerState<MessageBubble> {
       Navigator.of(context).pop();
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
       );
     }
   }
@@ -598,7 +608,8 @@ class _MessageBubbleState extends ConsumerState<MessageBubble> {
 
     // Check if translation already exists
     final targetLanguage = widget.userPreferredLanguage!;
-    if (widget.translations != null && widget.translations!.containsKey(targetLanguage)) {
+    if (widget.translations != null &&
+        widget.translations!.containsKey(targetLanguage)) {
       // Translation exists, just toggle display
       translationController.toggleTranslation(widget.messageId);
       return;
@@ -607,7 +618,10 @@ class _MessageBubbleState extends ConsumerState<MessageBubble> {
     // Need to fetch translation - use effective detected language
     final sourceLang = effectiveDetectedLanguage;
     if (sourceLang == null) {
-      translationController.setError(widget.messageId, 'Cannot detect message language');
+      translationController.setError(
+        widget.messageId,
+        'Cannot detect message language',
+      );
       return;
     }
 

@@ -9,7 +9,6 @@ import 'package:message_ai/features/messaging/domain/repositories/group_conversa
 ///
 /// Only group admins should be able to remove members.
 class RemoveGroupMember {
-
   RemoveGroupMember(this._groupRepository);
   final GroupConversationRepository _groupRepository;
 

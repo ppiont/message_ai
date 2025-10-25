@@ -20,9 +20,8 @@ import 'package:message_ai/features/messaging/domain/repositories/message_reposi
 /// - Server-side caching (5-minute TTL)
 /// - Smaller result set (5 instead of 10 for speed)
 class SemanticSearchService {
-  SemanticSearchService({
-    required MessageRepository messageRepository,
-  }) : _messageRepository = messageRepository;
+  SemanticSearchService({required MessageRepository messageRepository})
+    : _messageRepository = messageRepository;
 
   final MessageRepository _messageRepository;
 

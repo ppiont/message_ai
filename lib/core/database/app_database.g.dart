@@ -3045,17 +3045,348 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
   }
 }
 
+class $MessageStatusTable extends MessageStatus
+    with TableInfo<$MessageStatusTable, MessageStatusEntity> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MessageStatusTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _messageIdMeta = const VerificationMeta(
+    'messageId',
+  );
+  @override
+  late final GeneratedColumn<String> messageId = GeneratedColumn<String>(
+    'message_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _timestampMeta = const VerificationMeta(
+    'timestamp',
+  );
+  @override
+  late final GeneratedColumn<DateTime> timestamp = GeneratedColumn<DateTime>(
+    'timestamp',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [messageId, userId, status, timestamp];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'message_status';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MessageStatusEntity> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('message_id')) {
+      context.handle(
+        _messageIdMeta,
+        messageId.isAcceptableOrUnknown(data['message_id']!, _messageIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_messageIdMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_statusMeta);
+    }
+    if (data.containsKey('timestamp')) {
+      context.handle(
+        _timestampMeta,
+        timestamp.isAcceptableOrUnknown(data['timestamp']!, _timestampMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {messageId, userId};
+  @override
+  MessageStatusEntity map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MessageStatusEntity(
+      messageId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}message_id'],
+      )!,
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      timestamp: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}timestamp'],
+      ),
+    );
+  }
+
+  @override
+  $MessageStatusTable createAlias(String alias) {
+    return $MessageStatusTable(attachedDatabase, alias);
+  }
+}
+
+class MessageStatusEntity extends DataClass
+    implements Insertable<MessageStatusEntity> {
+  /// Message ID (foreign key to Messages table)
+  final String messageId;
+
+  /// User ID this status applies to
+  final String userId;
+
+  /// Status: 'sent', 'delivered', 'read'
+  ///
+  /// - 'sent': Message sent by sender
+  /// - 'delivered': Message received by this user's device
+  /// - 'read': Message opened/viewed by this user
+  final String status;
+
+  /// Timestamp when this status was set
+  ///
+  /// Nullable because 'sent' status may not have a timestamp
+  /// (it's implicitly the message timestamp)
+  final DateTime? timestamp;
+  const MessageStatusEntity({
+    required this.messageId,
+    required this.userId,
+    required this.status,
+    this.timestamp,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['message_id'] = Variable<String>(messageId);
+    map['user_id'] = Variable<String>(userId);
+    map['status'] = Variable<String>(status);
+    if (!nullToAbsent || timestamp != null) {
+      map['timestamp'] = Variable<DateTime>(timestamp);
+    }
+    return map;
+  }
+
+  MessageStatusCompanion toCompanion(bool nullToAbsent) {
+    return MessageStatusCompanion(
+      messageId: Value(messageId),
+      userId: Value(userId),
+      status: Value(status),
+      timestamp: timestamp == null && nullToAbsent
+          ? const Value.absent()
+          : Value(timestamp),
+    );
+  }
+
+  factory MessageStatusEntity.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MessageStatusEntity(
+      messageId: serializer.fromJson<String>(json['messageId']),
+      userId: serializer.fromJson<String>(json['userId']),
+      status: serializer.fromJson<String>(json['status']),
+      timestamp: serializer.fromJson<DateTime?>(json['timestamp']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'messageId': serializer.toJson<String>(messageId),
+      'userId': serializer.toJson<String>(userId),
+      'status': serializer.toJson<String>(status),
+      'timestamp': serializer.toJson<DateTime?>(timestamp),
+    };
+  }
+
+  MessageStatusEntity copyWith({
+    String? messageId,
+    String? userId,
+    String? status,
+    Value<DateTime?> timestamp = const Value.absent(),
+  }) => MessageStatusEntity(
+    messageId: messageId ?? this.messageId,
+    userId: userId ?? this.userId,
+    status: status ?? this.status,
+    timestamp: timestamp.present ? timestamp.value : this.timestamp,
+  );
+  MessageStatusEntity copyWithCompanion(MessageStatusCompanion data) {
+    return MessageStatusEntity(
+      messageId: data.messageId.present ? data.messageId.value : this.messageId,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      status: data.status.present ? data.status.value : this.status,
+      timestamp: data.timestamp.present ? data.timestamp.value : this.timestamp,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MessageStatusEntity(')
+          ..write('messageId: $messageId, ')
+          ..write('userId: $userId, ')
+          ..write('status: $status, ')
+          ..write('timestamp: $timestamp')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(messageId, userId, status, timestamp);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MessageStatusEntity &&
+          other.messageId == this.messageId &&
+          other.userId == this.userId &&
+          other.status == this.status &&
+          other.timestamp == this.timestamp);
+}
+
+class MessageStatusCompanion extends UpdateCompanion<MessageStatusEntity> {
+  final Value<String> messageId;
+  final Value<String> userId;
+  final Value<String> status;
+  final Value<DateTime?> timestamp;
+  final Value<int> rowid;
+  const MessageStatusCompanion({
+    this.messageId = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.status = const Value.absent(),
+    this.timestamp = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MessageStatusCompanion.insert({
+    required String messageId,
+    required String userId,
+    required String status,
+    this.timestamp = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : messageId = Value(messageId),
+       userId = Value(userId),
+       status = Value(status);
+  static Insertable<MessageStatusEntity> custom({
+    Expression<String>? messageId,
+    Expression<String>? userId,
+    Expression<String>? status,
+    Expression<DateTime>? timestamp,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (messageId != null) 'message_id': messageId,
+      if (userId != null) 'user_id': userId,
+      if (status != null) 'status': status,
+      if (timestamp != null) 'timestamp': timestamp,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MessageStatusCompanion copyWith({
+    Value<String>? messageId,
+    Value<String>? userId,
+    Value<String>? status,
+    Value<DateTime?>? timestamp,
+    Value<int>? rowid,
+  }) {
+    return MessageStatusCompanion(
+      messageId: messageId ?? this.messageId,
+      userId: userId ?? this.userId,
+      status: status ?? this.status,
+      timestamp: timestamp ?? this.timestamp,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (messageId.present) {
+      map['message_id'] = Variable<String>(messageId.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (timestamp.present) {
+      map['timestamp'] = Variable<DateTime>(timestamp.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MessageStatusCompanion(')
+          ..write('messageId: $messageId, ')
+          ..write('userId: $userId, ')
+          ..write('status: $status, ')
+          ..write('timestamp: $timestamp, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $UsersTable users = $UsersTable(this);
   late final $ConversationsTable conversations = $ConversationsTable(this);
   late final $MessagesTable messages = $MessagesTable(this);
+  late final $MessageStatusTable messageStatus = $MessageStatusTable(this);
   late final MessageDao messageDao = MessageDao(this as AppDatabase);
   late final ConversationDao conversationDao = ConversationDao(
     this as AppDatabase,
   );
   late final UserDao userDao = UserDao(this as AppDatabase);
+  late final MessageStatusDao messageStatusDao = MessageStatusDao(
+    this as AppDatabase,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3064,6 +3395,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     users,
     conversations,
     messages,
+    messageStatus,
   ];
 }
 
@@ -4372,6 +4704,191 @@ typedef $$MessagesTableProcessedTableManager =
       MessageEntity,
       PrefetchHooks Function()
     >;
+typedef $$MessageStatusTableCreateCompanionBuilder =
+    MessageStatusCompanion Function({
+      required String messageId,
+      required String userId,
+      required String status,
+      Value<DateTime?> timestamp,
+      Value<int> rowid,
+    });
+typedef $$MessageStatusTableUpdateCompanionBuilder =
+    MessageStatusCompanion Function({
+      Value<String> messageId,
+      Value<String> userId,
+      Value<String> status,
+      Value<DateTime?> timestamp,
+      Value<int> rowid,
+    });
+
+class $$MessageStatusTableFilterComposer
+    extends Composer<_$AppDatabase, $MessageStatusTable> {
+  $$MessageStatusTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get messageId => $composableBuilder(
+    column: $table.messageId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get timestamp => $composableBuilder(
+    column: $table.timestamp,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$MessageStatusTableOrderingComposer
+    extends Composer<_$AppDatabase, $MessageStatusTable> {
+  $$MessageStatusTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get messageId => $composableBuilder(
+    column: $table.messageId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get timestamp => $composableBuilder(
+    column: $table.timestamp,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$MessageStatusTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MessageStatusTable> {
+  $$MessageStatusTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get messageId =>
+      $composableBuilder(column: $table.messageId, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get timestamp =>
+      $composableBuilder(column: $table.timestamp, builder: (column) => column);
+}
+
+class $$MessageStatusTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MessageStatusTable,
+          MessageStatusEntity,
+          $$MessageStatusTableFilterComposer,
+          $$MessageStatusTableOrderingComposer,
+          $$MessageStatusTableAnnotationComposer,
+          $$MessageStatusTableCreateCompanionBuilder,
+          $$MessageStatusTableUpdateCompanionBuilder,
+          (
+            MessageStatusEntity,
+            BaseReferences<
+              _$AppDatabase,
+              $MessageStatusTable,
+              MessageStatusEntity
+            >,
+          ),
+          MessageStatusEntity,
+          PrefetchHooks Function()
+        > {
+  $$MessageStatusTableTableManager(_$AppDatabase db, $MessageStatusTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MessageStatusTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MessageStatusTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MessageStatusTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> messageId = const Value.absent(),
+                Value<String> userId = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<DateTime?> timestamp = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MessageStatusCompanion(
+                messageId: messageId,
+                userId: userId,
+                status: status,
+                timestamp: timestamp,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String messageId,
+                required String userId,
+                required String status,
+                Value<DateTime?> timestamp = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MessageStatusCompanion.insert(
+                messageId: messageId,
+                userId: userId,
+                status: status,
+                timestamp: timestamp,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$MessageStatusTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MessageStatusTable,
+      MessageStatusEntity,
+      $$MessageStatusTableFilterComposer,
+      $$MessageStatusTableOrderingComposer,
+      $$MessageStatusTableAnnotationComposer,
+      $$MessageStatusTableCreateCompanionBuilder,
+      $$MessageStatusTableUpdateCompanionBuilder,
+      (
+        MessageStatusEntity,
+        BaseReferences<_$AppDatabase, $MessageStatusTable, MessageStatusEntity>,
+      ),
+      MessageStatusEntity,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -4382,4 +4899,6 @@ class $AppDatabaseManager {
       $$ConversationsTableTableManager(_db, _db.conversations);
   $$MessagesTableTableManager get messages =>
       $$MessagesTableTableManager(_db, _db.messages);
+  $$MessageStatusTableTableManager get messageStatus =>
+      $$MessageStatusTableTableManager(_db, _db.messageStatus);
 }

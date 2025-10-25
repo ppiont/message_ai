@@ -64,24 +64,22 @@ class _MessageInputState extends ConsumerState<MessageInput> {
     });
     final typingService = ref.read(typingIndicatorServiceProvider);
     // ignore: cascade_invocations
-    typingService
-      .setTyping(
-        conversationId: widget.conversationId,
-        userId: widget.currentUserId,
-        userName: widget.currentUserName,
-        isTyping: text.isNotEmpty,
-      );
+    typingService.setTyping(
+      conversationId: widget.conversationId,
+      userId: widget.currentUserId,
+      userName: widget.currentUserName,
+      isTyping: text.isNotEmpty,
+    );
   }
 
   void _clearTypingStatus() {
     final typingService = ref.read(typingIndicatorServiceProvider);
     // ignore: cascade_invocations
-    typingService
-      .clearTyping(
-        conversationId: widget.conversationId,
-        userId: widget.currentUserId,
-        userName: widget.currentUserName,
-      );
+    typingService.clearTyping(
+      conversationId: widget.conversationId,
+      userId: widget.currentUserId,
+      userName: widget.currentUserName,
+    );
   }
 
   @override
@@ -192,8 +190,7 @@ class _MessageInputState extends ConsumerState<MessageInput> {
         timestamp: DateTime.now(),
         type: 'text',
         metadata: MessageMetadata.defaultMetadata(),
-        deliveredTo: const <String, DateTime>{}, // Initialize with empty map
-        readBy: const <String, DateTime>{}, // Initialize with empty map
+        // Note: Status tracking done separately via MessageStatus table
       );
 
       // Send message via use case

@@ -5,8 +5,10 @@ import 'package:drift/native.dart';
 import 'package:flutter/foundation.dart';
 import 'package:message_ai/core/database/daos/conversation_dao.dart';
 import 'package:message_ai/core/database/daos/message_dao.dart';
+import 'package:message_ai/core/database/daos/message_status_dao.dart';
 import 'package:message_ai/core/database/daos/user_dao.dart';
 import 'package:message_ai/core/database/tables/conversations_table.dart';
+import 'package:message_ai/core/database/tables/message_status_table.dart';
 import 'package:message_ai/core/database/tables/messages_table.dart';
 import 'package:message_ai/core/database/tables/users_table.dart';
 import 'package:path/path.dart' as p;
@@ -25,8 +27,8 @@ part 'app_database.g.dart';
 /// - User profiles cache
 /// - Message queue for syncing
 @DriftDatabase(
-  tables: [Users, Conversations, Messages],
-  daos: [MessageDao, ConversationDao, UserDao],
+  tables: [Users, Conversations, Messages, MessageStatus],
+  daos: [MessageDao, ConversationDao, UserDao, MessageStatusDao],
 )
 class AppDatabase extends _$AppDatabase {
   /// Create database instance
@@ -36,7 +38,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -100,7 +102,9 @@ class AppDatabase extends _$AppDatabase {
         await customStatement('DROP TABLE messages;');
         await customStatement('ALTER TABLE messages_new RENAME TO messages;');
 
-        debugPrint('✅ Migration v1→v2: Removed senderName column from messages');
+        debugPrint(
+          '✅ Migration v1→v2: Removed senderName column from messages',
+        );
       }
 
       // Migration from v2 to v3: Add cultural_hint column to messages
@@ -115,7 +119,16 @@ class AppDatabase extends _$AppDatabase {
         // Add deliveredToJson and readByJson columns for per-user tracking
         await m.addColumn(messages, messages.deliveredToJson);
         await m.addColumn(messages, messages.readByJson);
-        debugPrint('✅ Migration v3→v4: Added per-user read receipt columns to messages');
+        debugPrint(
+          '✅ Migration v3→v4: Added per-user read receipt columns to messages',
+        );
+      }
+
+      // Migration from v4 to v5: Add MessageStatus table
+      if (from <= 4 && to >= 5) {
+        // Create new MessageStatus table for efficient per-user status tracking
+        await m.createTable(messageStatus);
+        debugPrint('✅ Migration v4→v5: Created MessageStatus table');
       }
     },
     beforeOpen: (details) async {

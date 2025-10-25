@@ -34,11 +34,7 @@ class HomePage extends ConsumerWidget {
             return Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
-                  Icons.check_circle,
-                  size: 80,
-                  color: Colors.green,
-                ),
+                const Icon(Icons.check_circle, size: 80, color: Colors.green),
                 const SizedBox(height: 24),
                 Text(
                   'Welcome!',
@@ -52,26 +48,21 @@ class HomePage extends ConsumerWidget {
                 const SizedBox(height: 8),
                 Text(
                   user.displayName,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey[600],
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
                 ),
                 const SizedBox(height: 32),
                 const Text(
                   '🚧 Messaging features coming soon! 🚧',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontStyle: FontStyle.italic,
-                  ),
+                  style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic),
                 ),
               ],
             );
           },
           loading: () => const CircularProgressIndicator(),
-          error: (error, stack) => Text(
-            'Error: $error',
-            style: const TextStyle(color: Colors.red),
-          ),
+          error: (error, stack) =>
+              Text('Error: $error', style: const TextStyle(color: Colors.red)),
         ),
       ),
     );

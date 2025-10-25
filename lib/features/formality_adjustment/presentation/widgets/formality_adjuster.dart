@@ -49,31 +49,35 @@ class FormalityAdjuster extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              ...FormalityLevel.values.map((level) => Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: ChoiceChip(
-                  label: Text(level.displayName),
-                  selected: state.selectedFormality == level,
-                  onSelected: state.isAdjusting ? null : (selected) {
-                    if (selected) {
-                      controller.setSelectedFormality(level);
-                      _adjustFormality(ref, level);
-                    }
-                  },
-                  selectedColor: Theme.of(context).colorScheme.primary,
-                  labelStyle: TextStyle(
-                    color: state.selectedFormality == level
-                        ? Colors.white
-                        : Colors.black87,
-                    fontSize: 12,
+              ...FormalityLevel.values.map(
+                (level) => Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ChoiceChip(
+                    label: Text(level.displayName),
+                    selected: state.selectedFormality == level,
+                    onSelected: state.isAdjusting
+                        ? null
+                        : (selected) {
+                            if (selected) {
+                              controller.setSelectedFormality(level);
+                              _adjustFormality(ref, level);
+                            }
+                          },
+                    selectedColor: Theme.of(context).colorScheme.primary,
+                    labelStyle: TextStyle(
+                      color: state.selectedFormality == level
+                          ? Colors.white
+                          : Colors.black87,
+                      fontSize: 12,
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-              )),
+              ),
               if (state.isAdjusting) ...[
                 const SizedBox(width: 8),
                 const SizedBox(
@@ -89,10 +93,7 @@ class FormalityAdjuster extends ConsumerWidget {
               padding: const EdgeInsets.only(top: 4),
               child: Text(
                 state.error!,
-                style: const TextStyle(
-                  color: Colors.red,
-                  fontSize: 11,
-                ),
+                style: const TextStyle(color: Colors.red, fontSize: 11),
               ),
             ),
         ],

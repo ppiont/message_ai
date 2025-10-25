@@ -19,9 +19,9 @@ class AdjustMessageFormality {
     FormalityLevel? currentFormality,
     String? language,
   }) async => _formalityAdjustmentService.adjustFormality(
-      text: text,
-      targetFormality: targetFormality,
-      currentFormality: currentFormality,
-      language: language,
-    );
+    text: text,
+    targetFormality: targetFormality,
+    currentFormality: currentFormality,
+    language: language,
+  );
 }

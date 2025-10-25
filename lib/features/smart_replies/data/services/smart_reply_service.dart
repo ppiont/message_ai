@@ -52,9 +52,7 @@ class SmartReplyService {
       if (incomingMessage.embedding == null ||
           incomingMessage.embedding!.isEmpty) {
         return const Left(
-          ValidationFailure(
-            message: 'Incoming message must have an embedding',
-          ),
+          ValidationFailure(message: 'Incoming message must have an embedding'),
         );
       }
 
@@ -64,11 +62,13 @@ class SmartReplyService {
 
       // Convert context messages to JSON format
       final contextJson = relevantContext
-          .map((msg) => <String, dynamic>{
-            'text': msg.text,
-            'senderId': msg.senderId,
-            'timestamp': msg.timestamp.toIso8601String(),
-          })
+          .map(
+            (msg) => <String, dynamic>{
+              'text': msg.text,
+              'senderId': msg.senderId,
+              'timestamp': msg.timestamp.toIso8601String(),
+            },
+          )
           .toList();
 
       // Call Cloud Function
@@ -96,9 +96,11 @@ class SmartReplyService {
 
       // Parse suggestions
       final suggestions = suggestionsJson
-          .map((json) => SmartReply.fromJson(
-                Map<String, dynamic>.from(json as Map<Object?, Object?>),
-              ))
+          .map(
+            (json) => SmartReply.fromJson(
+              Map<String, dynamic>.from(json as Map<Object?, Object?>),
+            ),
+          )
           .toList();
 
       final cached = data['cached'] as bool? ?? false;
@@ -133,7 +135,8 @@ class SmartReplyService {
         default:
           return Left(
             AIServiceFailure(
-              message: e.message ?? 'Failed to generate smart replies: ${e.code}',
+              message:
+                  e.message ?? 'Failed to generate smart replies: ${e.code}',
             ),
           );
       }

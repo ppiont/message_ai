@@ -5,7 +5,8 @@ import 'package:dartz/dartz.dart';
 import 'package:message_ai/core/error/failures.dart';
 import 'package:message_ai/features/authentication/domain/entities/user.dart';
 import 'package:message_ai/features/authentication/domain/repositories/user_repository.dart';
-import 'package:message_ai/features/authentication/domain/usecases/ensure_user_exists_in_firestore.dart' show EnsureUserExistsInFirestore;
+import 'package:message_ai/features/authentication/domain/usecases/ensure_user_exists_in_firestore.dart'
+    show EnsureUserExistsInFirestore;
 
 /// Syncs a Firebase Auth user to Firestore users collection.
 ///
@@ -19,7 +20,6 @@ import 'package:message_ai/features/authentication/domain/usecases/ensure_user_e
 /// **Do NOT use for sign-in flows** - use [EnsureUserExistsInFirestore] instead,
 /// which only creates if missing (avoids unnecessary writes).
 class SyncUserToFirestore {
-
   SyncUserToFirestore(this._userRepository);
   final UserRepository _userRepository;
 

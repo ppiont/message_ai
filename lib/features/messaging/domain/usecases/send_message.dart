@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
 import 'package:message_ai/core/error/failures.dart';
-import 'package:message_ai/features/messaging/data/services/message_queue.dart';
 import 'package:message_ai/features/messaging/domain/entities/message.dart';
 import 'package:message_ai/features/messaging/domain/repositories/conversation_repository.dart';
 import 'package:message_ai/features/messaging/domain/repositories/message_repository.dart';
@@ -20,23 +19,21 @@ import 'package:message_ai/features/translation/data/services/language_detection
 ///
 /// Returns the created message or a Failure.
 class SendMessage {
-
   SendMessage({
     required MessageRepository messageRepository,
     required ConversationRepository conversationRepository,
     required LanguageDetectionService languageDetectionService,
     EmbeddingGenerator? embeddingGenerator,
-    MessageQueue? messageQueue,
-  })  : _messageRepository = messageRepository,
-        _conversationRepository = conversationRepository,
-        _languageDetectionService = languageDetectionService,
-        _embeddingGenerator = embeddingGenerator,
-        _messageQueue = messageQueue;
+    @Deprecated('MessageQueue removed - WorkManager handles sync')
+    Object? messageQueue,
+  }) : _messageRepository = messageRepository,
+       _conversationRepository = conversationRepository,
+       _languageDetectionService = languageDetectionService,
+       _embeddingGenerator = embeddingGenerator;
   final MessageRepository _messageRepository;
   final ConversationRepository _conversationRepository;
   final LanguageDetectionService _languageDetectionService;
   final EmbeddingGenerator? _embeddingGenerator;
-  final MessageQueue? _messageQueue;
 
   /// Sends a message to a conversation.
   ///
@@ -87,31 +84,10 @@ class SendMessage {
       messageWithLanguage,
     );
 
-    // Check if message queue is available and enqueue if needed
-    // This ensures robust retry logic even if repository sync fails
-    if (_messageQueue != null) {
-      await result.fold(
-        (failure) async {
-          // Repository create failed - enqueue for retry
-          try {
-            await _messageQueue.enqueue(
-              conversationId: conversationId,
-              message: messageWithLanguage,
-            );
-          } catch (e) {
-            // Queue enqueue failed - message is still in local DB
-            // and will be picked up by MessageSyncService
-            debugPrint('Failed to enqueue message: $e');
-          }
-        },
-        (createdMessage) async {
-          // Message created - check if it's in failed state and needs retry
-          // This handles the case where repository marked it as 'failed'
-          // The message is already in local DB, just ensuring it's queued for retry
-          // MessageQueue will handle duplicate prevention via local DB
-        },
-      );
-    }
+    // Note: MessageQueue removed - WorkManager now handles background retry
+    // Messages are synced via WorkManager periodic tasks (every 15 minutes)
+    // If Firestore sync fails, message stays in local DB with syncStatus='failed'
+    // and will be retried by MessageSyncWorker automatically
 
     return result.fold<Future<Either<Failure, Message>>>(
       (failure) async => Left(failure),

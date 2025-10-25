@@ -7,11 +7,10 @@ import 'package:google_mlkit_language_id/google_mlkit_language_id.dart';
 /// Provides on-device language detection with caching to optimize performance.
 /// Uses a confidence threshold of 0.5 to filter out unreliable detections.
 class LanguageDetectionService {
-
   LanguageDetectionService()
-      : _languageIdentifier = LanguageIdentifier(
-          confidenceThreshold: confidenceThreshold,
-        );
+    : _languageIdentifier = LanguageIdentifier(
+        confidenceThreshold: confidenceThreshold,
+      );
   final LanguageIdentifier _languageIdentifier;
 
   /// Cache for detected languages to avoid redundant processing.
@@ -47,7 +46,8 @@ class LanguageDetectionService {
     // Check cache first
     if (_detectionCache.containsKey(text)) {
       final cached = _detectionCache[text]!;
-      return cached.languageTag != 'und' && cached.confidence >= confidenceThreshold
+      return cached.languageTag != 'und' &&
+              cached.confidence >= confidenceThreshold
           ? cached.languageTag
           : null;
     }
@@ -55,8 +55,8 @@ class LanguageDetectionService {
     try {
       // Perform language identification
       // This returns a list of possible languages with confidence scores
-      final possibleLanguages =
-          await _languageIdentifier.identifyPossibleLanguages(text);
+      final possibleLanguages = await _languageIdentifier
+          .identifyPossibleLanguages(text);
 
       // Check if any languages were detected
       if (possibleLanguages.isEmpty) {
@@ -113,8 +113,8 @@ class LanguageDetectionService {
       }
 
       // Perform detection
-      final possibleLanguages =
-          await _languageIdentifier.identifyPossibleLanguages(text);
+      final possibleLanguages = await _languageIdentifier
+          .identifyPossibleLanguages(text);
 
       if (possibleLanguages.isEmpty) {
         return null;
@@ -159,7 +159,6 @@ class LanguageDetectionService {
 
 /// Result of language detection with confidence information.
 class LanguageDetectionResult {
-
   const LanguageDetectionResult({
     required this.languageCode,
     required this.confidence,

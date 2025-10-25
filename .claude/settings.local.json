@@ -55,7 +55,8 @@
       "mcp__taskmaster__get_tasks",
       "mcp__taskmaster__add_task",
       "mcp__taskmaster__initialize_project",
-      "mcp__taskmaster__parse_prd"
+      "mcp__taskmaster__parse_prd",
+      "mcp__taskmaster__set_task_status"
     ],
     "deny": [],
     "ask": []

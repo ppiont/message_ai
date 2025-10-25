@@ -10,7 +10,6 @@ import 'package:message_ai/features/messaging/domain/repositories/group_conversa
 /// Any member can leave a group, but the last admin cannot leave
 /// without first promoting another member to admin.
 class LeaveGroup {
-
   LeaveGroup(this._groupRepository);
   final GroupConversationRepository _groupRepository;
 

@@ -179,7 +179,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         Future.wait([
           updateUseCase(displayName: displayName).then((result) {
             result.fold(
-              (failure) => debugPrint('❌ Auth update failed: ${failure.message}'),
+              (failure) =>
+                  debugPrint('❌ Auth update failed: ${failure.message}'),
               (_) => debugPrint('✅ Firebase Auth updated'),
             );
           }),
@@ -187,8 +188,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               .updateUser(currentUser.copyWith(displayName: displayName))
               .then((result) {
                 result.fold(
-                  (failure) =>
-                      debugPrint('❌ Firestore update failed: ${failure.message}'),
+                  (failure) => debugPrint(
+                    '❌ Firestore update failed: ${failure.message}',
+                  ),
                   (_) => debugPrint('✅ Firestore updated'),
                 );
               }),

@@ -11,7 +11,6 @@ import 'package:message_ai/features/messaging/domain/repositories/message_reposi
 /// Returns a stream of messages that updates whenever messages are added,
 /// modified, or deleted in the conversation.
 class WatchMessages {
-
   WatchMessages(this._messageRepository);
   final MessageRepository _messageRepository;
 

@@ -6,7 +6,6 @@ import 'package:equatable/equatable.dart';
 /// They are returned by repositories and use cases instead of throwing exceptions.
 /// This allows for functional error handling and better testability.
 abstract class Failure extends Equatable {
-
   const Failure({required this.message, this.code});
   final String message;
   final String? code;
@@ -43,7 +42,6 @@ class NetworkTimeoutFailure extends Failure {
 
 /// Failure when server returns an error
 class ServerFailure extends Failure {
-
   const ServerFailure({
     super.message = 'Server error occurred. Please try again later.',
     super.code,
@@ -125,7 +123,6 @@ class DatabaseFailure extends Failure {
 
 /// Failure when a record is not found
 class RecordNotFoundFailure extends Failure {
-
   const RecordNotFoundFailure({required this.recordType, String? message})
     : super(
         message: message ?? 'The requested $recordType was not found.',
@@ -150,7 +147,6 @@ class ConstraintViolationFailure extends Failure {
 
 /// Failure when input validation fails
 class ValidationFailure extends Failure {
-
   const ValidationFailure({
     super.message = 'Please correct the errors and try again.',
     this.fieldErrors,
@@ -170,7 +166,6 @@ class ValidationFailure extends Failure {
 
 /// Failure when input format is invalid
 class InvalidFormatFailure extends Failure {
-
   const InvalidFormatFailure({required this.fieldName, String? message})
     : super(
         message: message ?? 'Invalid format for $fieldName.',
@@ -257,7 +252,6 @@ class TranslationFailure extends Failure {
 
 /// Failure when rate limit is exceeded
 class RateLimitExceededFailure extends Failure {
-
   const RateLimitExceededFailure({this.retryAfter})
     : super(
         message: 'Too many requests. Please try again in a few moments.',

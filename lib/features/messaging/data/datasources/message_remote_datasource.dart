@@ -51,6 +51,24 @@ abstract class MessageRemoteDataSource {
     String messageId,
     String userId,
   );
+
+  /// Gets status records for a message from Firestore subcollections
+  ///
+  /// Returns a list of status records (userId, status, timestamp) for all users
+  /// who have interacted with the message. Used by senders to see delivery/read status.
+  Future<List<Map<String, dynamic>>> getMessageStatus(
+    String conversationId,
+    String messageId,
+  );
+
+  /// Watches status changes for a message in real-time
+  ///
+  /// Returns a stream of status records that updates whenever recipients mark
+  /// messages as delivered/read. Used by senders for instant status updates.
+  Stream<List<Map<String, dynamic>>> watchMessageStatus(
+    String conversationId,
+    String messageId,
+  );
 }
 
 /// Implementation of [MessageRemoteDataSource] using Firebase Firestore.
@@ -301,11 +319,14 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
   ) async {
     try {
       final messagesRef = await _messagesRef(conversationId);
-      // Update per-user delivery tracking
-      // Uses nested map syntax: 'deliveredTo.userId': timestamp
-      await messagesRef.doc(messageId).update({
-        'deliveredTo.$userId': FieldValue.serverTimestamp(),
-      });
+
+      // Use subcollection structure for efficient status tracking:
+      // messages/{messageId}/status/{userId}
+      await messagesRef.doc(messageId).collection('status').doc(userId).set({
+        'status': 'delivered',
+        'timestamp': FieldValue.serverTimestamp(),
+        'userId': userId,
+      }, SetOptions(merge: true)); // Merge to avoid overwriting read status
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
@@ -327,11 +348,14 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
   ) async {
     try {
       final messagesRef = await _messagesRef(conversationId);
-      // Update per-user read tracking
-      // Uses nested map syntax: 'readBy.userId': timestamp
-      await messagesRef.doc(messageId).update({
-        'readBy.$userId': FieldValue.serverTimestamp(),
-      });
+
+      // Use subcollection structure for efficient status tracking:
+      // messages/{messageId}/status/{userId}
+      await messagesRef.doc(messageId).collection('status').doc(userId).set({
+        'status': 'read',
+        'timestamp': FieldValue.serverTimestamp(),
+        'userId': userId,
+      }); // No merge needed for read - it's the final state
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
@@ -340,6 +364,66 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
       }
       throw UnknownException(
         message: 'Failed to mark message as read',
+        originalError: e,
+      );
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getMessageStatus(
+    String conversationId,
+    String messageId,
+  ) async {
+    try {
+      final messagesRef = await _messagesRef(conversationId);
+
+      // Query the status subcollection for all users
+      final statusSnapshot = await messagesRef
+          .doc(messageId)
+          .collection('status')
+          .get();
+
+      // Convert to list of maps
+      return statusSnapshot.docs.map((doc) => doc.data()).toList();
+    } on FirebaseException catch (e) {
+      throw _mapFirestoreException(e);
+    } catch (e) {
+      if (e is AppException) {
+        rethrow;
+      }
+      throw UnknownException(
+        message: 'Failed to get message status',
+        originalError: e,
+      );
+    }
+  }
+
+  @override
+  Stream<List<Map<String, dynamic>>> watchMessageStatus(
+    String conversationId,
+    String messageId,
+  ) {
+    try {
+      // Convert Future to Stream, then flatten
+      return Stream.fromFuture(_messagesRef(conversationId)).asyncExpand(
+        (messagesRef) => messagesRef
+            .doc(messageId)
+            .collection('status')
+            .snapshots()
+            .map(
+              (snapshot) => snapshot.docs
+                  .map((doc) => doc.data())
+                  .toList(),
+            ),
+      );
+    } on FirebaseException catch (e) {
+      throw _mapFirestoreException(e);
+    } catch (e) {
+      if (e is AppException) {
+        rethrow;
+      }
+      throw UnknownException(
+        message: 'Failed to watch message status',
         originalError: e,
       );
     }

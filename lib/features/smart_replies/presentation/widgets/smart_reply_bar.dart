@@ -37,7 +37,6 @@ class SmartReplyBar extends ConsumerStatefulWidget {
 
 class _SmartReplyBarState extends ConsumerState<SmartReplyBar>
     with SingleTickerProviderStateMixin {
-
   // Constants
   static const _animationDuration = Duration(milliseconds: 300);
 
@@ -56,16 +55,14 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar>
       duration: _animationDuration,
     );
 
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 1),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeOutCubic,
-        reverseCurve: Curves.easeInCubic,
-      ),
-    );
+    _slideAnimation = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+            reverseCurve: Curves.easeInCubic,
+          ),
+        );
   }
 
   @override
@@ -173,9 +170,7 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar>
     return SlideTransition(
       position: _slideAnimation,
       child: Container(
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-        ),
+        decoration: BoxDecoration(color: colorScheme.surface),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: _buildChipList(context, replies),
       ),
@@ -190,7 +185,8 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar>
           physics: const BouncingScrollPhysics(),
           itemCount: replies.length,
           separatorBuilder: (_, _) => const SizedBox(width: 8),
-          itemBuilder: (context, index) => _buildReplyChip(context, replies[index]),
+          itemBuilder: (context, index) =>
+              _buildReplyChip(context, replies[index]),
         ),
       );
 
@@ -201,10 +197,7 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar>
       label: Text(reply.text),
       onPressed: () => _handleReplyTap(reply.text),
       backgroundColor: colorScheme.surfaceContainerHighest,
-      labelStyle: TextStyle(
-        fontSize: 14,
-        color: colorScheme.onSurface,
-      ),
+      labelStyle: TextStyle(fontSize: 14, color: colorScheme.onSurface),
       visualDensity: VisualDensity.compact,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       side: BorderSide.none,

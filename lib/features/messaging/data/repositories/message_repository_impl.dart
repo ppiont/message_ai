@@ -86,7 +86,9 @@ class MessageRepositoryImpl implements MessageRepository {
             networkType: NetworkType.connected, // Only when online
           ),
         );
-        debugPrint('[WorkManager] Scheduled background sync for message ${message.id}');
+        debugPrint(
+          '[WorkManager] Scheduled background sync for message ${message.id}',
+        );
       } catch (workManagerError) {
         // WorkManager registration failed - message will still be picked up
         // by MessageSyncService on next app launch or connectivity change
@@ -239,11 +241,10 @@ class MessageRepositoryImpl implements MessageRepository {
           });
 
       // Return local stream (which now gets updates from Firestore)
-      final localStream =
-          _localDataSource.watchMessages(
-            conversationId: conversationId,
-            limit: limit,
-          );
+      final localStream = _localDataSource.watchMessages(
+        conversationId: conversationId,
+        limit: limit,
+      );
 
       return localStream.map(Right<Failure, List<Message>>.new);
     } on AppException catch (e) {
@@ -260,24 +261,15 @@ class MessageRepositoryImpl implements MessageRepository {
     String userId,
   ) async {
     try {
-      // Get message from local
-      final message = await _localDataSource.getMessage(messageId);
-      if (message == null) {
-        return const Left(RecordNotFoundFailure(recordType: 'Message'));
-      }
+      // Note: This method is deprecated - use MessageStatusDao.markAllAsDelivered instead
+      // Kept for backward compatibility with old code paths
 
-      // Offline-first: Update local immediately with per-user tracking
-      final updatedDeliveredTo = {
-        ...?message.deliveredTo,
-        userId: DateTime.now(),
-      };
-
-      final updatedMessage = message.copyWith(deliveredTo: updatedDeliveredTo);
-
-      await _localDataSource.updateMessage(conversationId, updatedMessage);
-
-      // Background sync to remote
-      await _remoteDataSource.markAsDelivered(conversationId, messageId, userId);
+      // Background sync to remote (WorkManager handles batch sync)
+      await _remoteDataSource.markAsDelivered(
+        conversationId,
+        messageId,
+        userId,
+      );
 
       return const Right(null);
     } on AppException catch (e) {
@@ -294,23 +286,10 @@ class MessageRepositoryImpl implements MessageRepository {
     String userId,
   ) async {
     try {
-      // Get message from local
-      final message = await _localDataSource.getMessage(messageId);
-      if (message == null) {
-        return const Left(RecordNotFoundFailure(recordType: 'Message'));
-      }
+      // Note: This method is deprecated - use MessageStatusDao.markAsRead instead
+      // Kept for backward compatibility with old code paths
 
-      // Offline-first: Update local immediately with per-user tracking
-      final updatedReadBy = {
-        ...?message.readBy,
-        userId: DateTime.now(),
-      };
-
-      final updatedMessage = message.copyWith(readBy: updatedReadBy);
-
-      await _localDataSource.updateMessage(conversationId, updatedMessage);
-
-      // Background sync to remote
+      // Background sync to remote (WorkManager handles batch sync)
       await _remoteDataSource.markAsRead(conversationId, messageId, userId);
 
       return const Right(null);

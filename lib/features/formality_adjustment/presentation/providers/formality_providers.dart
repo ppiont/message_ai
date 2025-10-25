@@ -22,9 +22,7 @@ FormalityAdjustmentService formalityService(Ref ref) =>
 /// Provider for AdjustMessageFormality use case
 @riverpod
 AdjustMessageFormality adjustMessageFormality(Ref ref) =>
-    AdjustMessageFormality(
-      ref.watch(formalityServiceProvider),
-    );
+    AdjustMessageFormality(ref.watch(formalityServiceProvider));
 
 /// Provider for adjusting formality with state management
 ///
@@ -67,10 +65,7 @@ Future<Either<Failure, FormalityLevel>> detectFormality(
 }) async {
   final service = ref.watch(formalityServiceProvider);
 
-  return service.detectFormality(
-    text: text,
-    language: language,
-  );
+  return service.detectFormality(text: text, language: language);
 }
 
 /// State provider for formality adjustment with FormalityState
@@ -117,10 +112,7 @@ class FormalityStateNotifier extends _$FormalityStateNotifier {
   }
 
   /// Detect the formality level of text
-  Future<void> detect({
-    required String text,
-    String? language,
-  }) async {
+  Future<void> detect({required String text, String? language}) async {
     // Set loading state
     state = const FormalityStateLoading();
 

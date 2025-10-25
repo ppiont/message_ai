@@ -4,10 +4,7 @@ import 'package:flutter/material.dart';
 ///
 /// Shows when other users are typing in the conversation.
 class TypingIndicator extends StatefulWidget {
-
-  const TypingIndicator({
-    required this.typingUserNames, super.key,
-  });
+  const TypingIndicator({required this.typingUserNames, super.key});
   final List<String> typingUserNames;
 
   @override
@@ -49,9 +46,9 @@ class _TypingIndicatorState extends State<TypingIndicator>
             child: Text(
               _buildTypingText(),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey[600],
-                    fontStyle: FontStyle.italic,
-                  ),
+                color: Colors.grey[600],
+                fontStyle: FontStyle.italic,
+              ),
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -62,33 +59,36 @@ class _TypingIndicatorState extends State<TypingIndicator>
 
   /// Builds the animated dots indicator.
   Widget _buildAnimatedDots() => SizedBox(
-      width: 40,
-      height: 20,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: List.generate(3, (index) => AnimatedBuilder(
-            animation: _controller,
-            builder: (context, child) {
-              final delay = index * 0.2;
-              final value = (_controller.value - delay).clamp(0.0, 1.0);
-              final opacity = (value < 0.5 ? value * 2 : (1 - value) * 2);
+    width: 40,
+    height: 20,
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(
+        3,
+        (index) => AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) {
+            final delay = index * 0.2;
+            final value = (_controller.value - delay).clamp(0.0, 1.0);
+            final opacity = (value < 0.5 ? value * 2 : (1 - value) * 2);
 
-              return Opacity(
-                opacity: opacity,
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 2),
-                  width: 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[600],
-                    shape: BoxShape.circle,
-                  ),
+            return Opacity(
+              opacity: opacity,
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 2),
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: Colors.grey[600],
+                  shape: BoxShape.circle,
                 ),
-              );
-            },
-          )),
+              ),
+            );
+          },
+        ),
       ),
-    );
+    ),
+  );
 
   /// Builds the typing text based on number of users.
   String _buildTypingText() {

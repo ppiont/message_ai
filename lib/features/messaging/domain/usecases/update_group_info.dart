@@ -9,7 +9,6 @@ import 'package:message_ai/features/messaging/domain/repositories/group_conversa
 ///
 /// Only group admins should be able to update group info.
 class UpdateGroupInfo {
-
   UpdateGroupInfo(this._groupRepository);
   final GroupConversationRepository _groupRepository;
 

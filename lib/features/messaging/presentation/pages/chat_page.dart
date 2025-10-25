@@ -41,8 +41,6 @@ class ChatPage extends ConsumerStatefulWidget {
 
 class _ChatPageState extends ConsumerState<ChatPage> {
   final ScrollController _scrollController = ScrollController();
-  final Set<String> _markedAsRead =
-      {}; // Track which messages we've marked as read
   final TextEditingController _messageInputController = TextEditingController();
 
   /// Latest incoming message (for smart reply generation)
@@ -60,11 +58,13 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final currentUser = ref.read(currentUserWithFirestoreProvider).value;
       if (currentUser != null) {
-        ref.read(autoTranslationServiceProvider).start(
-          conversationId: widget.conversationId,
-          currentUserId: currentUser.uid,
-          userPreferredLanguage: currentUser.preferredLanguage,
-        );
+        ref
+            .read(autoTranslationServiceProvider)
+            .start(
+              conversationId: widget.conversationId,
+              currentUserId: currentUser.uid,
+              userPreferredLanguage: currentUser.preferredLanguage,
+            );
       }
     });
   }
@@ -77,28 +77,6 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     _scrollController.dispose();
     _messageInputController.dispose();
     super.dispose();
-  }
-
-  /// Marks a message as read for the current user (when user actually sees it)
-  /// Note: Messages are automatically marked as delivered in the repository
-  void _markMessageAsRead(String messageId, String userId) {
-    // Add to set immediately to prevent duplicate calls
-    _markedAsRead.add(messageId);
-
-    // Call use case asynchronously with userId for per-user tracking
-    final markAsReadUseCase = ref.read(markMessageAsReadUseCaseProvider);
-    markAsReadUseCase(widget.conversationId, messageId, userId).then((result) {
-      result.fold(
-        (failure) {
-          // Silently fail - read receipts are not critical
-          // Remove from set so we can retry later
-          _markedAsRead.remove(messageId);
-        },
-        (_) {
-          // Success - keep in set
-        },
-      );
-    });
   }
 
   @override
@@ -346,7 +324,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                       senderId: senderId,
                       timestamp: msg['timestamp'] as DateTime,
                       type: msg['type'] as String? ?? 'text',
-                      status: msg['status'] as String? ?? 'sent',
+                      // Note: msg['status'] ignored - status now tracked separately
                       metadata: MessageMetadata.defaultMetadata(),
                       detectedLanguage: msg['detectedLanguage'] as String?,
                       translations: msg['translations'] != null
@@ -356,8 +334,9 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                           : null,
                       embedding: msg['embedding'] != null
                           ? List<double>.from(
-                              (msg['embedding'] as List<dynamic>)
-                                  .map((e) => (e as num).toDouble()),
+                              (msg['embedding'] as List<dynamic>).map(
+                                (e) => (e as num).toDouble(),
+                              ),
                             )
                           : null,
                     );
@@ -394,12 +373,8 @@ class _ChatPageState extends ConsumerState<ChatPage> {
 
             // Mark incoming messages as read when user sees them (only once)
             // Only mark as read if already delivered (not sent)
-            // Note: Messages are automatically marked as delivered in the repository
-            if (!isMe &&
-                status == 'delivered' &&
-                !_markedAsRead.contains(messageId)) {
-              _markMessageAsRead(messageId, currentUser.uid);
-            }
+            // Note: Messages are automatically marked as delivered when conversation opens
+            // Read receipts are handled separately by markMessageAsReadUseCase if needed
 
             // Check if we should show timestamp
             final showTimestamp = _shouldShowTimestamp(messages, index);
@@ -473,10 +448,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     ),
   );
 
-  bool _shouldShowTimestamp(
-    List<Map<String, dynamic>> messages,
-    int index,
-  ) {
+  bool _shouldShowTimestamp(List<Map<String, dynamic>> messages, int index) {
     if (index == 0) {
       return true; // Always show for first message
     }

@@ -63,7 +63,9 @@ class UserSyncService {
   ///
   /// Call this when conversation list is displayed
   Future<void> syncConversationUsers(List<String> participantIds) async {
-    debugPrint('🔄 UserSync: Syncing ${participantIds.length} conversation users');
+    debugPrint(
+      '🔄 UserSync: Syncing ${participantIds.length} conversation users',
+    );
     await _userCacheService.cacheUsers(participantIds);
 
     // Start watching these users for real-time updates
@@ -97,7 +99,9 @@ class UserSyncService {
       result.fold(
         (failure) {
           // User deleted or network error
-          debugPrint('⚠️ UserSync: Watch failed for $userId: ${failure.message}');
+          debugPrint(
+            '⚠️ UserSync: Watch failed for $userId: ${failure.message}',
+          );
         },
         (user) async {
           // User profile updated → sync to Drift

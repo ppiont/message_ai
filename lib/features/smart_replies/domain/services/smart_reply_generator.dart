@@ -31,10 +31,10 @@ class SmartReplyGenerator {
     required SemanticSearchService semanticSearchService,
     required UserStyleAnalyzer userStyleAnalyzer,
     required SmartReplyService smartReplyService,
-  })  : _embeddingService = embeddingService,
-        _semanticSearchService = semanticSearchService,
-        _userStyleAnalyzer = userStyleAnalyzer,
-        _smartReplyService = smartReplyService;
+  }) : _embeddingService = embeddingService,
+       _semanticSearchService = semanticSearchService,
+       _userStyleAnalyzer = userStyleAnalyzer,
+       _smartReplyService = smartReplyService;
 
   final EmbeddingService _embeddingService;
   final SemanticSearchService _semanticSearchService;
@@ -84,19 +84,17 @@ class SmartReplyGenerator {
           'SmartReplyGenerator: Generating embedding for incoming message',
         );
 
-        final embeddingResult =
-            await _embeddingService.generateEmbedding(incomingMessage.text);
+        final embeddingResult = await _embeddingService.generateEmbedding(
+          incomingMessage.text,
+        );
 
         // If embedding fails, we can't proceed (needed for semantic search)
-        final embedding = embeddingResult.fold<List<double>?>(
-          (failure) {
-            debugPrint(
-              'SmartReplyGenerator: Failed to generate embedding: $failure',
-            );
-            return null;
-          },
-          (emb) => emb,
-        );
+        final embedding = embeddingResult.fold<List<double>?>((failure) {
+          debugPrint(
+            'SmartReplyGenerator: Failed to generate embedding: $failure',
+          );
+          return null;
+        }, (emb) => emb);
 
         if (embedding == null) {
           return Left(
@@ -114,10 +112,8 @@ class SmartReplyGenerator {
 
       // Step 2: Perform semantic search for relevant context
       debugPrint('SmartReplyGenerator: Performing semantic search');
-      final relevantContext = await _semanticSearchService.searchRelevantContext(
-        conversationId,
-        messageWithEmbedding,
-      );
+      final relevantContext = await _semanticSearchService
+          .searchRelevantContext(conversationId, messageWithEmbedding);
 
       debugPrint(
         'SmartReplyGenerator: Found ${relevantContext.length} relevant context messages',

@@ -4,7 +4,6 @@ import 'package:message_ai/features/authentication/domain/repositories/auth_repo
 
 /// Use case for sending a password reset email
 class SendPasswordResetEmail {
-
   SendPasswordResetEmail(this._repository);
   final AuthRepository _repository;
 

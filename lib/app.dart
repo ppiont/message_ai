@@ -100,24 +100,18 @@ class App extends ConsumerWidget {
     if (user != null) {
       // Initialize offline-first services
       // These are keepAlive providers, so watching them ensures they start
-      ref
-        ..watch(messageSyncServiceProvider)
-        ..watch(messageQueueProvider)
-        // Initialize presence controller
-        // Automatically manages online/offline status based on auth
-        ..watch(presenceControllerProvider);
+      // Note: MessageSyncService and MessageQueue removed - now handled by WorkManager
+      // Initialize presence controller
+      // Automatically manages online/offline status based on auth
+      ref.watch(presenceControllerProvider);
 
       // Initialize user sync service
       // Automatically syncs user profiles from Firestore to Drift
       ref.watch(userSyncServiceProvider).startBackgroundSync();
 
-      // Initialize auto delivery marker
-      // Automatically marks incoming messages as delivered across all conversations
-      try {
-        ref.watch(autoDeliveryMarkerProvider);
-      } catch (e) {
-        // Silently fail if marker can't be initialized
-      }
+      // Initialize background delivery marker
+      // Marks incoming messages as "delivered" across all conversations
+      ref.watch(autoDeliveryMarkerProvider(user.uid));
 
       // Initialize FCM for push notifications
       // This is done here (not in sign-in/sign-up pages) to avoid unmounted widget issues

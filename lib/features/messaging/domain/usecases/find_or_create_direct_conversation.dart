@@ -12,9 +12,8 @@ import 'package:uuid/uuid.dart';
 /// This is the primary way to initiate a 1-to-1 chat. It ensures that
 /// only one direct conversation exists between any two users.
 class FindOrCreateDirectConversation {
-
   FindOrCreateDirectConversation(this._conversationRepository)
-      : _uuid = const Uuid();
+    : _uuid = const Uuid();
   final ConversationRepository _conversationRepository;
   final Uuid _uuid;
 
@@ -52,33 +51,32 @@ class FindOrCreateDirectConversation {
     }
 
     // Try to find existing conversation
-    final findResult =
-        await _conversationRepository.findDirectConversation(userId1, userId2);
-
-    return findResult.fold(
-      Left.new,
-      (existingConversation) async {
-        // If conversation exists, return it
-        if (existingConversation != null) {
-          return Right(existingConversation);
-        }
-
-        // Otherwise, create new conversation
-        final now = DateTime.now();
-        final newConversation = Conversation(
-          documentId: _uuid.v4(),
-          type: 'direct',
-          participantIds: [userId1, userId2],
-          participants: [user1Participant, user2Participant],
-          lastUpdatedAt: now,
-          initiatedAt: now,
-          unreadCount: {userId1: 0, userId2: 0},
-          translationEnabled: false,
-          autoDetectLanguage: false,
-        );
-
-        return _conversationRepository.createConversation(newConversation);
-      },
+    final findResult = await _conversationRepository.findDirectConversation(
+      userId1,
+      userId2,
     );
+
+    return findResult.fold(Left.new, (existingConversation) async {
+      // If conversation exists, return it
+      if (existingConversation != null) {
+        return Right(existingConversation);
+      }
+
+      // Otherwise, create new conversation
+      final now = DateTime.now();
+      final newConversation = Conversation(
+        documentId: _uuid.v4(),
+        type: 'direct',
+        participantIds: [userId1, userId2],
+        participants: [user1Participant, user2Participant],
+        lastUpdatedAt: now,
+        initiatedAt: now,
+        unreadCount: {userId1: 0, userId2: 0},
+        translationEnabled: false,
+        autoDetectLanguage: false,
+      );
+
+      return _conversationRepository.createConversation(newConversation);
+    });
   }
 }

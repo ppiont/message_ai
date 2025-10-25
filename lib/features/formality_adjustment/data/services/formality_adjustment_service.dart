@@ -20,7 +20,9 @@ class _AdjustmentResponse {
   factory _AdjustmentResponse.fromData(Map<String, dynamic> data) {
     final adjustedText = data['adjustedText'] as String?;
     if (adjustedText == null || adjustedText.isEmpty) {
-      throw const FormatException('adjustedText is required and cannot be empty');
+      throw const FormatException(
+        'adjustedText is required and cannot be empty',
+      );
     }
 
     final detectedFormality = data['detectedFormality'] as String? ?? 'neutral';
@@ -43,19 +45,13 @@ class _AdjustmentResponse {
 
 /// Rate limit information from cloud function
 class _RateLimit {
-  const _RateLimit({
-    required this.remaining,
-    required this.resetInSeconds,
-  });
+  const _RateLimit({required this.remaining, required this.resetInSeconds});
 
   /// Parse rate limit data with type safety
   factory _RateLimit.fromData(Map<String, dynamic> data) {
     final remaining = data['remaining'] as int? ?? 0;
     final resetInSeconds = data['resetInSeconds'] as int? ?? 3600;
-    return _RateLimit(
-      remaining: remaining,
-      resetInSeconds: resetInSeconds,
-    );
+    return _RateLimit(remaining: remaining, resetInSeconds: resetInSeconds);
   }
 
   final int remaining;
@@ -124,17 +120,19 @@ class FormalityAdjustmentService {
       // Validate input
       if (text.trim().isEmpty) {
         debugPrint('FormalityAdjustmentService: Empty text provided');
-        return const Left(
-          ValidationFailure(message: 'Text cannot be empty'),
-        );
+        return const Left(ValidationFailure(message: 'Text cannot be empty'));
       }
 
       // Detect and sanitize PII before sending to cloud function
       final piiResult = PIIDetector.detectAndSanitize(text);
 
       if (piiResult.containsPII) {
-        debugPrint('FormalityAdjustmentService: Detected PII - types: ${piiResult.detectedTypes}');
-        debugPrint('FormalityAdjustmentService: Original text length: ${text.length}, Sanitized: ${piiResult.sanitizedText.length}');
+        debugPrint(
+          'FormalityAdjustmentService: Detected PII - types: ${piiResult.detectedTypes}',
+        );
+        debugPrint(
+          'FormalityAdjustmentService: Original text length: ${text.length}, Sanitized: ${piiResult.sanitizedText.length}',
+        );
       }
 
       // Use sanitized text for adjustment
@@ -165,7 +163,9 @@ class FormalityAdjustmentService {
 
       while (attempt < _maxRetries) {
         try {
-          debugPrint('FormalityAdjustmentService: Attempt ${attempt + 1}/$_maxRetries - Adjusting text (target: ${targetFormality.value}, lang: $languageCode)');
+          debugPrint(
+            'FormalityAdjustmentService: Attempt ${attempt + 1}/$_maxRetries - Adjusting text (target: ${targetFormality.value}, lang: $languageCode)',
+          );
 
           final result = await _functions
               .httpsCallable('adjust_formality')
@@ -191,7 +191,9 @@ class FormalityAdjustmentService {
             );
           }
 
-          debugPrint('FormalityAdjustmentService: Adjustment successful - detected: ${response.detectedFormality}, target: ${targetFormality.value}');
+          debugPrint(
+            'FormalityAdjustmentService: Adjustment successful - detected: ${response.detectedFormality}, target: ${targetFormality.value}',
+          );
 
           // Cache the result
           _cache[cacheKey] = _CacheEntry(
@@ -203,11 +205,15 @@ class FormalityAdjustmentService {
           return Right(response.adjustedText);
         } on FirebaseFunctionsException catch (e) {
           lastException = e;
-          debugPrint('FormalityAdjustmentService: Firebase Functions error (attempt ${attempt + 1}): ${e.code} - ${e.message}');
+          debugPrint(
+            'FormalityAdjustmentService: Firebase Functions error (attempt ${attempt + 1}): ${e.code} - ${e.message}',
+          );
 
           // Handle specific error codes
           if (e.code == 'resource-exhausted') {
-            debugPrint('FormalityAdjustmentService: Rate limit exceeded (non-retryable)');
+            debugPrint(
+              'FormalityAdjustmentService: Rate limit exceeded (non-retryable)',
+            );
             return Left(
               RateLimitExceededFailure(
                 retryAfter: DateTime.now().add(const Duration(hours: 1)),
@@ -219,10 +225,13 @@ class FormalityAdjustmentService {
           if (e.code == 'unauthenticated' ||
               e.code == 'permission-denied' ||
               e.code == 'invalid-argument') {
-            debugPrint('FormalityAdjustmentService: Non-retryable error, failing immediately');
+            debugPrint(
+              'FormalityAdjustmentService: Non-retryable error, failing immediately',
+            );
             return Left(
               AIServiceFailure(
-                message: 'Formality adjustment failed: ${e.message ?? "Unknown error"}',
+                message:
+                    'Formality adjustment failed: ${e.message ?? "Unknown error"}',
                 code: e.code,
               ),
             );
@@ -234,12 +243,16 @@ class FormalityAdjustmentService {
             final backoffDuration = Duration(
               milliseconds: 1000 * (1 << (attempt - 1)), // 1s, 2s, 4s
             );
-            debugPrint('FormalityAdjustmentService: Retrying after ${backoffDuration.inSeconds}s backoff...');
+            debugPrint(
+              'FormalityAdjustmentService: Retrying after ${backoffDuration.inSeconds}s backoff...',
+            );
             await Future<void>.delayed(backoffDuration);
           }
         } catch (e) {
           lastException = e is Exception ? e : Exception(e.toString());
-          debugPrint('FormalityAdjustmentService: Unexpected error (attempt ${attempt + 1}): $e');
+          debugPrint(
+            'FormalityAdjustmentService: Unexpected error (attempt ${attempt + 1}): $e',
+          );
 
           attempt++;
           if (attempt < _maxRetries) {
@@ -252,19 +265,18 @@ class FormalityAdjustmentService {
       }
 
       // All retries exhausted
-      debugPrint('FormalityAdjustmentService: All $attempt retry attempts exhausted');
+      debugPrint(
+        'FormalityAdjustmentService: All $attempt retry attempts exhausted',
+      );
       return Left(
         AIServiceFailure(
-          message: 'Formality adjustment failed after $_maxRetries attempts: ${lastException?.toString() ?? "Unknown error"}',
+          message:
+              'Formality adjustment failed after $_maxRetries attempts: ${lastException?.toString() ?? "Unknown error"}',
         ),
       );
     } catch (e) {
       debugPrint('FormalityAdjustmentService: Fatal error: $e');
-      return Left(
-        AIServiceFailure(
-          message: 'Formality adjustment failed: $e',
-        ),
-      );
+      return Left(AIServiceFailure(message: 'Formality adjustment failed: $e'));
     }
   }
 
@@ -284,17 +296,19 @@ class FormalityAdjustmentService {
     try {
       // Validate input
       if (text.trim().isEmpty) {
-        debugPrint('FormalityAdjustmentService: Empty text provided for detection');
-        return const Left(
-          ValidationFailure(message: 'Text cannot be empty'),
+        debugPrint(
+          'FormalityAdjustmentService: Empty text provided for detection',
         );
+        return const Left(ValidationFailure(message: 'Text cannot be empty'));
       }
 
       // Detect and sanitize PII before sending to cloud function
       final piiResult = PIIDetector.detectAndSanitize(text);
 
       if (piiResult.containsPII) {
-        debugPrint('FormalityAdjustmentService: Detected PII in detection - types: ${piiResult.detectedTypes}');
+        debugPrint(
+          'FormalityAdjustmentService: Detected PII in detection - types: ${piiResult.detectedTypes}',
+        );
       }
 
       // Use sanitized text for detection
@@ -322,7 +336,9 @@ class FormalityAdjustmentService {
 
       while (attempt < _maxRetries) {
         try {
-          debugPrint('FormalityAdjustmentService: Attempt ${attempt + 1}/$_maxRetries - Detecting formality (lang: $languageCode)');
+          debugPrint(
+            'FormalityAdjustmentService: Attempt ${attempt + 1}/$_maxRetries - Detecting formality (lang: $languageCode)',
+          );
 
           // Use adjust_formality with target = current to get detection only
           // This is a clever reuse of the existing cloud function
@@ -338,7 +354,9 @@ class FormalityAdjustmentService {
           // Parse response with type safety
           final response = _AdjustmentResponse.fromData(result.data);
 
-          debugPrint('FormalityAdjustmentService: Detection successful - detected: ${response.detectedFormality}');
+          debugPrint(
+            'FormalityAdjustmentService: Detection successful - detected: ${response.detectedFormality}',
+          );
 
           // Cache the result
           _cache[cacheKey] = _CacheEntry(
@@ -350,17 +368,22 @@ class FormalityAdjustmentService {
           return Right(FormalityLevel.fromString(response.detectedFormality));
         } on FirebaseFunctionsException catch (e) {
           lastException = e;
-          debugPrint('FormalityAdjustmentService: Firebase Functions error in detection (attempt ${attempt + 1}): ${e.code} - ${e.message}');
+          debugPrint(
+            'FormalityAdjustmentService: Firebase Functions error in detection (attempt ${attempt + 1}): ${e.code} - ${e.message}',
+          );
 
           // Don't retry on specific error codes
           if (e.code == 'unauthenticated' ||
               e.code == 'permission-denied' ||
               e.code == 'invalid-argument' ||
               e.code == 'resource-exhausted') {
-            debugPrint('FormalityAdjustmentService: Non-retryable error in detection');
+            debugPrint(
+              'FormalityAdjustmentService: Non-retryable error in detection',
+            );
             return Left(
               AIServiceFailure(
-                message: 'Formality detection failed: ${e.message ?? "Unknown error"}',
+                message:
+                    'Formality detection failed: ${e.message ?? "Unknown error"}',
                 code: e.code,
               ),
             );
@@ -372,12 +395,16 @@ class FormalityAdjustmentService {
             final backoffDuration = Duration(
               milliseconds: 1000 * (1 << (attempt - 1)),
             );
-            debugPrint('FormalityAdjustmentService: Retrying detection after ${backoffDuration.inSeconds}s backoff...');
+            debugPrint(
+              'FormalityAdjustmentService: Retrying detection after ${backoffDuration.inSeconds}s backoff...',
+            );
             await Future<void>.delayed(backoffDuration);
           }
         } catch (e) {
           lastException = e is Exception ? e : Exception(e.toString());
-          debugPrint('FormalityAdjustmentService: Unexpected error in detection (attempt ${attempt + 1}): $e');
+          debugPrint(
+            'FormalityAdjustmentService: Unexpected error in detection (attempt ${attempt + 1}): $e',
+          );
 
           attempt++;
           if (attempt < _maxRetries) {
@@ -390,19 +417,18 @@ class FormalityAdjustmentService {
       }
 
       // All retries exhausted
-      debugPrint('FormalityAdjustmentService: All $attempt detection retry attempts exhausted');
+      debugPrint(
+        'FormalityAdjustmentService: All $attempt detection retry attempts exhausted',
+      );
       return Left(
         AIServiceFailure(
-          message: 'Formality detection failed after $_maxRetries attempts: ${lastException?.toString() ?? "Unknown error"}',
+          message:
+              'Formality detection failed after $_maxRetries attempts: ${lastException?.toString() ?? "Unknown error"}',
         ),
       );
     } catch (e) {
       debugPrint('FormalityAdjustmentService: Fatal error in detection: $e');
-      return Left(
-        AIServiceFailure(
-          message: 'Formality detection failed: $e',
-        ),
-      );
+      return Left(AIServiceFailure(message: 'Formality detection failed: $e'));
     }
   }
 
@@ -421,8 +447,7 @@ class FormalityAdjustmentService {
   String _buildDetectionCacheKey({
     required String text,
     required String language,
-  }) =>
-      'DETECT|$text|$language';
+  }) => 'DETECT|$text|$language';
 
   /// Clean up expired cache entries
   void _cleanExpiredCache() {
@@ -437,7 +462,9 @@ class FormalityAdjustmentService {
     expiredKeys.forEach(_cache.remove);
 
     if (expiredKeys.isNotEmpty) {
-      debugPrint('FormalityAdjustmentService: Cleaned ${expiredKeys.length} expired cache entries');
+      debugPrint(
+        'FormalityAdjustmentService: Cleaned ${expiredKeys.length} expired cache entries',
+      );
     }
   }
 

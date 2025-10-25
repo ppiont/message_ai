@@ -8,7 +8,6 @@ import 'package:message_ai/features/authentication/domain/repositories/auth_repo
 /// This use case handles updating user profile data such as display name
 /// and profile photo URL. It validates inputs and delegates to the repository.
 class UpdateUserProfile {
-
   UpdateUserProfile(this._repository);
   final AuthRepository _repository;
 

@@ -25,8 +25,8 @@ class AutoTranslationService {
   AutoTranslationService({
     required TranslationService translationService,
     required MessageRepository messageRepository,
-  })  : _translationService = translationService,
-        _messageRepository = messageRepository;
+  }) : _translationService = translationService,
+       _messageRepository = messageRepository;
 
   final TranslationService _translationService;
   final MessageRepository _messageRepository;
@@ -59,22 +59,24 @@ class AutoTranslationService {
           currentUserId: currentUserId,
         )
         .listen((result) {
-      result.fold(
-        (failure) {
-          // Log error but don't crash
-          debugPrint('[AutoTranslationService] Error watching messages: ${failure.message}');
-        },
-        (messages) {
-          // Process messages for auto-translation
-          _processMessages(
-            messages: messages,
-            conversationId: conversationId,
-            currentUserId: currentUserId,
-            userPreferredLanguage: userPreferredLanguage,
+          result.fold(
+            (failure) {
+              // Log error but don't crash
+              debugPrint(
+                '[AutoTranslationService] Error watching messages: ${failure.message}',
+              );
+            },
+            (messages) {
+              // Process messages for auto-translation
+              _processMessages(
+                messages: messages,
+                conversationId: conversationId,
+                currentUserId: currentUserId,
+                userPreferredLanguage: userPreferredLanguage,
+              );
+            },
           );
-        },
-      );
-    });
+        });
   }
 
   /// Stop auto-translation and clean up

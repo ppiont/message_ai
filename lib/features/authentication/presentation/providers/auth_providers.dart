@@ -23,7 +23,8 @@ part 'auth_providers.g.dart';
 
 /// Provider for Firebase Auth instance
 @riverpod
-firebase_auth.FirebaseAuth firebaseAuth(Ref ref) => firebase_auth.FirebaseAuth.instance;
+firebase_auth.FirebaseAuth firebaseAuth(Ref ref) =>
+    firebase_auth.FirebaseAuth.instance;
 
 /// Provider for authentication remote data source
 @riverpod
@@ -151,13 +152,12 @@ Future<User?> currentUserWithFirestore(Ref ref) async {
     final userRepository = ref.watch(userRepositoryProvider);
     final result = await userRepository.getUserById(authUser.uid);
 
-    return result.fold(
-      (failure) {
-        debugPrint('⚠️ Failed to fetch Firestore user data, using Auth user: ${failure.message}');
-        return authUser; // Fallback to auth user
-      },
-      (firestoreUser) => firestoreUser,
-    );
+    return result.fold((failure) {
+      debugPrint(
+        '⚠️ Failed to fetch Firestore user data, using Auth user: ${failure.message}',
+      );
+      return authUser; // Fallback to auth user
+    }, (firestoreUser) => firestoreUser);
   } catch (e) {
     debugPrint('⚠️ Error fetching Firestore user data: $e');
     return authUser; // Fallback to auth user

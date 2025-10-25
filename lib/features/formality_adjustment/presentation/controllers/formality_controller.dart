@@ -28,9 +28,8 @@ class FormalityAdjustmentState {
   );
 
   /// Create a fresh state (clears adjusted text and errors)
-  FormalityAdjustmentState clear() => FormalityAdjustmentState(
-    selectedFormality: selectedFormality,
-  );
+  FormalityAdjustmentState clear() =>
+      FormalityAdjustmentState(selectedFormality: selectedFormality);
 }
 
 /// Controller for managing formality adjustment state during message composition
@@ -55,9 +54,7 @@ class FormalityController extends Notifier<FormalityAdjustmentState> {
 
   /// Set error state
   void setError(String error) {
-    state = state.copyWith(
-      error: error,
-    );
+    state = state.copyWith(error: error);
   }
 
   /// Clear error
@@ -74,5 +71,5 @@ class FormalityController extends Notifier<FormalityAdjustmentState> {
 /// Provider for FormalityController
 final formalityControllerProvider =
     NotifierProvider<FormalityController, FormalityAdjustmentState>(
-  FormalityController.new,
-);
+      FormalityController.new,
+    );

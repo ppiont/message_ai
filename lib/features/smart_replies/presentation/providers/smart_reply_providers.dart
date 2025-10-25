@@ -14,18 +14,16 @@ part 'smart_reply_providers.g.dart';
 
 /// Provider for SmartReplyService
 @riverpod
-SmartReplyService smartReplyService(Ref ref) =>
-  SmartReplyService();
+SmartReplyService smartReplyService(Ref ref) => SmartReplyService();
 
 /// Provider for SmartReplyGenerator
 @riverpod
-SmartReplyGenerator smartReplyGenerator(Ref ref) =>
-  SmartReplyGenerator(
-    embeddingService: ref.watch(embeddingServiceProvider),
-    semanticSearchService: ref.watch(semanticSearchServiceProvider),
-    userStyleAnalyzer: ref.watch(userStyleAnalyzerProvider),
-    smartReplyService: ref.watch(smartReplyServiceProvider),
-  );
+SmartReplyGenerator smartReplyGenerator(Ref ref) => SmartReplyGenerator(
+  embeddingService: ref.watch(embeddingServiceProvider),
+  semanticSearchService: ref.watch(semanticSearchServiceProvider),
+  userStyleAnalyzer: ref.watch(userStyleAnalyzerProvider),
+  smartReplyService: ref.watch(smartReplyServiceProvider),
+);
 
 /// Provider for generating smart replies for a specific message
 ///
