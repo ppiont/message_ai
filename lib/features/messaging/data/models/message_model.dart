@@ -88,7 +88,8 @@ class MessageModel extends Message {
   /// Parses timestamp map from Firestore JSON.
   ///
   /// Converts Firestore Timestamp objects to Dart DateTime instances.
-  /// Returns null if the input is null or if the resulting map is empty.
+  /// Returns null if the input is null, but returns an empty map if the
+  /// input is an empty map (to maintain consistency with message creation).
   static Map<String, DateTime>? _parseTimestampMap(final dynamic value) {
     if (value == null) {
       return null;
@@ -104,7 +105,8 @@ class MessageModel extends Message {
       }
     });
 
-    return result.isEmpty ? null : result;
+    // Return empty map instead of null to match message creation behavior
+    return result;
   }
 
   /// Parses a DateTime from Firestore Timestamp or ISO 8601 string.
