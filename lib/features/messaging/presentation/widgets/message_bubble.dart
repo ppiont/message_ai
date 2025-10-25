@@ -427,17 +427,9 @@ class _MessageBubbleState extends ConsumerState<MessageBubble> {
     Widget statusIcon;
     switch (widget.status) {
       case 'sent':
-        statusIcon = const Icon(
-          Icons.check,
-          size: 16,
-          color: Colors.white,
-        );
+        statusIcon = const Icon(Icons.check, size: 16, color: Colors.white);
       case 'delivered':
-        statusIcon = const Icon(
-          Icons.done_all,
-          size: 16,
-          color: Colors.white,
-        );
+        statusIcon = const Icon(Icons.done_all, size: 16, color: Colors.white);
       case 'read':
         statusIcon = const Icon(
           Icons.done_all,
@@ -507,10 +499,7 @@ class _MessageBubbleState extends ConsumerState<MessageBubble> {
             const SizedBox(height: 8),
             Text(
               'Total recipients: ${widget.totalRecipients ?? 0}',
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
             ),
           ],
         ),
@@ -529,21 +518,16 @@ class _MessageBubbleState extends ConsumerState<MessageBubble> {
     required Color color,
     required String label,
     required int count,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: color),
-          const SizedBox(width: 8),
-          Text(
-            '$label $count',
-            style: const TextStyle(fontSize: 14),
-          ),
-        ],
-      ),
-    );
-  }
+  }) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(
+      children: [
+        Icon(icon, size: 18, color: color),
+        const SizedBox(width: 8),
+        Text('$label $count', style: const TextStyle(fontSize: 14)),
+      ],
+    ),
+  );
 
   String _formatTimestampDivider(DateTime ts) {
     final now = DateTime.now();

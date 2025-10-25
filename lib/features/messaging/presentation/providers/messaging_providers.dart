@@ -214,7 +214,6 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
   String conversationId,
   String currentUserId,
 ) async* {
-
   final watchUseCase = ref.watch(watchMessagesUseCaseProvider);
   final userSyncService = ref.watch(userSyncServiceProvider);
   final getConversationUseCase = ref.watch(getConversationByIdUseCaseProvider);
@@ -274,10 +273,7 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
   // Combine messages stream with status updates stream
   // When EITHER changes, rebuild the message list
   await for (final combined in Rx.combineLatest2(
-    watchUseCase(
-      conversationId: conversationId,
-      currentUserId: currentUserId,
-    ),
+    watchUseCase(conversationId: conversationId, currentUserId: currentUserId),
     statusUpdatesStream,
     (Either<Failure, List<Message>> result, int statusCount) => result,
   )) {
@@ -297,15 +293,16 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
 
         // WhatsApp-style: When chat is OPEN, mark messages as READ
         // Note: Delivery marking is handled automatically by AutoDeliveryMarker service
-        final messageRemoteDataSource = ref.read(messageRemoteDataSourceProvider);
+        final messageRemoteDataSource = ref.read(
+          messageRemoteDataSourceProvider,
+        );
 
         for (final msg in messages) {
           // Only mark as READ if:
           // 1. Not sent by me
           // 2. Not already marked by us (deduplication)
           // Note: We mark as read when chat is open, AutoDeliveryMarker handles "delivered"
-          if (msg.senderId != currentUserId &&
-              !markedAsRead.contains(msg.id)) {
+          if (msg.senderId != currentUserId && !markedAsRead.contains(msg.id)) {
             try {
               debugPrint(
                 '📖 Marking message ${msg.id.substring(0, 8)} as READ for user ${currentUserId.substring(0, 8)}',
@@ -328,7 +325,7 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
         final messagesWithStatus = await Future.wait(
           messages.map((Message msg) async {
             // For messages sent by current user, query Firestore for recipients' status
-            List<MessageStatusEntity> statusRecords = [];
+            var statusRecords = <MessageStatusEntity>[];
 
             if (msg.senderId == currentUserId) {
               try {
@@ -339,16 +336,18 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
                     .getMessageStatus(conversationId, msg.id);
 
                 // Convert Firestore status maps to MessageStatusEntity objects
-                statusRecords = firestoreStatusMaps.map((data) {
-                  return MessageStatusEntity(
-                    messageId: msg.id,
-                    userId: data['userId'] as String,
-                    status: data['status'] as String,
-                    timestamp: data['timestamp'] != null
-                        ? (data['timestamp'] as Timestamp).toDate()
-                        : null,
-                  );
-                }).toList();
+                statusRecords = firestoreStatusMaps
+                    .map(
+                      (data) => MessageStatusEntity(
+                        messageId: msg.id,
+                        userId: data['userId'] as String,
+                        status: data['status'] as String,
+                        timestamp: data['timestamp'] != null
+                            ? (data['timestamp'] as Timestamp).toDate()
+                            : null,
+                      ),
+                    )
+                    .toList();
               } catch (e) {
                 debugPrint(
                   '⚠️ Failed to fetch Firestore status for ${msg.id}: $e',
@@ -434,20 +433,20 @@ AutoDeliveryMarker autoDeliveryMarker(Ref ref) {
     throw Exception('User must be authenticated');
   }
 
-  final marker = AutoDeliveryMarker(
-    conversationRepository: ref.watch(conversationRepositoryProvider),
-    groupConversationRepository: ref.watch(groupConversationRepositoryProvider),
-    messageRepository: ref.watch(messageRepositoryProvider),
-    currentUserId: currentUser.uid,
-  );
-
-  // Start watching
-  marker.start();
+  final marker =
+      AutoDeliveryMarker(
+          conversationRepository: ref.watch(conversationRepositoryProvider),
+          groupConversationRepository: ref.watch(
+            groupConversationRepositoryProvider,
+          ),
+          messageRepository: ref.watch(messageRepositoryProvider),
+          currentUserId: currentUser.uid,
+        )
+        // Start watching
+        ..start();
 
   // Dispose when provider is disposed
-  ref.onDispose(() {
-    marker.stop();
-  });
+  ref.onDispose(marker.stop);
 
   return marker;
 }
@@ -479,7 +478,9 @@ Future<void> markMessagesDelivered(
     limit: 100, // Get recent messages
   );
 
-  debugPrint('[markMessagesDelivered] Found ${messages.length} messages in Firestore');
+  debugPrint(
+    '[markMessagesDelivered] Found ${messages.length} messages in Firestore',
+  );
 
   // Filter messages not sent by this user
   final otherMessages = messages.where((m) => m.senderId != userId).toList();
@@ -496,7 +497,9 @@ Future<void> markMessagesDelivered(
   // Write directly to Firestore subcollections
   for (final message in otherMessages) {
     try {
-      debugPrint('[markMessagesDelivered] Writing status for message ${message.id}');
+      debugPrint(
+        '[markMessagesDelivered] Writing status for message ${message.id}',
+      );
       await messageRemoteDataSource.markAsDelivered(
         conversationId,
         message.id,
@@ -508,7 +511,9 @@ Future<void> markMessagesDelivered(
     }
   }
 
-  debugPrint('[markMessagesDelivered] ✅ All delivered statuses written to Firestore');
+  debugPrint(
+    '[markMessagesDelivered] ✅ All delivered statuses written to Firestore',
+  );
 }
 
 // ========== Presence Providers ==========

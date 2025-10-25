@@ -51,6 +51,7 @@ class MessageWithStatus extends Equatable {
   }
 
   /// Computes status for messages sent by the current user (aggregate across all recipients).
+  // ignore: prefer_constructors_over_static_methods
   static MessageWithStatus _computeStatusForSender({
     required Message message,
     required List<MessageStatusEntity> statusRecords,
@@ -114,6 +115,7 @@ class MessageWithStatus extends Equatable {
   }
 
   /// Computes status for messages received by the current user (simple lookup).
+  // ignore: prefer_constructors_over_static_methods
   static MessageWithStatus _computeStatusForReceiver({
     required Message message,
     required List<MessageStatusEntity> statusRecords,
