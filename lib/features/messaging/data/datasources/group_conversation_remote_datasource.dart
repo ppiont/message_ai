@@ -369,13 +369,14 @@ class GroupConversationRemoteDataSourceImpl
           .where((p) => p['uid'] != userId)
           .toList();
 
-      // Remove member from participants array
+      // Remove member from participants array and their unread count
       await docRef.update({
         'participantIds': FieldValue.arrayRemove([userId]),
         'participants': updatedParticipants,
         'adminIds': FieldValue.arrayRemove([
           userId,
         ]), // Also remove from admins if present
+        'unreadCount.$userId': FieldValue.delete(), // Remove their unread count
         'lastUpdatedAt': FieldValue.serverTimestamp(),
       });
     } on FirebaseException catch (e) {

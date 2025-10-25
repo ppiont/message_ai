@@ -84,13 +84,18 @@ class _GroupManagementPageState extends ConsumerState<GroupManagementPage> {
 
   Future<void> _addMember(String currentUserId) async {
     // Show user selection dialog
-    await showDialog<void>(
+    final success = await showDialog<bool>(
       context: context,
       builder: (context) => _AddMemberDialog(
         conversationId: widget.conversationId,
         currentUserId: currentUserId,
       ),
     );
+
+    // Invalidate provider to refresh UI if member was added
+    if (success == true && mounted) {
+      ref.invalidate(getConversationByIdProvider(widget.conversationId));
+    }
   }
 
   Future<void> _removeMember(
@@ -145,6 +150,8 @@ class _GroupManagementPageState extends ConsumerState<GroupManagementPage> {
       },
       (_) {
         if (mounted) {
+          // Invalidate provider to refresh UI with updated member list
+          ref.invalidate(getConversationByIdProvider(widget.conversationId));
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(const SnackBar(content: Text('Member removed')));
@@ -539,7 +546,7 @@ class _AddMemberDialogState extends ConsumerState<_AddMemberDialog> {
       },
       (_) {
         if (mounted) {
-          Navigator.pop(context);
+          Navigator.pop(context, true); // Return true on success
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(const SnackBar(content: Text('Member added')));
