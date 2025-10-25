@@ -219,19 +219,25 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
   // Get conversation to extract participant IDs for aggregate status computation
   // Try direct conversation first, then group conversation
   var participantIds = <String>[];
-  var conversationResult = await getConversationUseCase(conversationId);
+  final directConvResult = await getConversationUseCase(conversationId);
 
-  // If direct conversation fetch failed, try group conversation
-  if (conversationResult.isLeft()) {
-    debugPrint('📨 conversationMessagesStream: Not a direct conversation, trying group...');
-    conversationResult = await groupConversationRepository.getGroupById(conversationId);
-  }
-
-  conversationResult.fold(
-    (failure) {
-      debugPrint('❌ conversationMessagesStream: Failed to get conversation $conversationId: ${failure.message}');
+  // Check if we got a conversation or need to try group repository
+  await directConvResult.fold(
+    (failure) async {
+      // Direct conversation fetch failed, try group conversation
+      debugPrint('📨 conversationMessagesStream: Not a direct conversation, trying group...');
+      final groupResult = await groupConversationRepository.getGroupById(conversationId);
+      groupResult.fold(
+        (groupFailure) {
+          debugPrint('❌ conversationMessagesStream: Failed to get conversation $conversationId: ${groupFailure.message}');
+        },
+        (conversation) {
+          participantIds = conversation.participants.map((p) => p.uid).toList();
+          debugPrint('✅ conversationMessagesStream: Got ${participantIds.length} participants for status computation: $participantIds');
+        },
+      );
     },
-    (conversation) {
+    (conversation) async {
       participantIds = conversation.participants.map((p) => p.uid).toList();
       debugPrint('✅ conversationMessagesStream: Got ${participantIds.length} participants for status computation: $participantIds');
     },
