@@ -953,6 +953,7 @@ final class UserConversationsStreamFamily extends $Family
 ///
 /// Automatically updates when messages change in Firestore.
 /// Automatically marks incoming messages as delivered.
+/// Computes aggregate read receipt status for group messages.
 
 @ProviderFor(conversationMessagesStream)
 const conversationMessagesStreamProvider = ConversationMessagesStreamFamily._();
@@ -961,6 +962,7 @@ const conversationMessagesStreamProvider = ConversationMessagesStreamFamily._();
 ///
 /// Automatically updates when messages change in Firestore.
 /// Automatically marks incoming messages as delivered.
+/// Computes aggregate read receipt status for group messages.
 
 final class ConversationMessagesStreamProvider
     extends
@@ -976,6 +978,7 @@ final class ConversationMessagesStreamProvider
   ///
   /// Automatically updates when messages change in Firestore.
   /// Automatically marks incoming messages as delivered.
+  /// Computes aggregate read receipt status for group messages.
   const ConversationMessagesStreamProvider._({
     required ConversationMessagesStreamFamily super.from,
     required (String, String) super.argument,
@@ -1022,12 +1025,13 @@ final class ConversationMessagesStreamProvider
 }
 
 String _$conversationMessagesStreamHash() =>
-    r'559f434a591f40f168d977f07468dccf2abb088c';
+    r'86bd8395481159ff6b95ace34f0c8f71b5f2f9d9';
 
 /// Stream provider for watching messages in a conversation in real-time.
 ///
 /// Automatically updates when messages change in Firestore.
 /// Automatically marks incoming messages as delivered.
+/// Computes aggregate read receipt status for group messages.
 
 final class ConversationMessagesStreamFamily extends $Family
     with
@@ -1048,6 +1052,7 @@ final class ConversationMessagesStreamFamily extends $Family
   ///
   /// Automatically updates when messages change in Firestore.
   /// Automatically marks incoming messages as delivered.
+  /// Computes aggregate read receipt status for group messages.
 
   ConversationMessagesStreamProvider call(
     String conversationId,

@@ -203,6 +203,7 @@ Stream<List<Map<String, dynamic>>> userConversationsStream(
 ///
 /// Automatically updates when messages change in Firestore.
 /// Automatically marks incoming messages as delivered.
+/// Computes aggregate read receipt status for group messages.
 @riverpod
 Stream<List<Map<String, dynamic>>> conversationMessagesStream(
   Ref ref,
@@ -211,6 +212,17 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
 ) async* {
   final watchUseCase = ref.watch(watchMessagesUseCaseProvider);
   final userSyncService = ref.watch(userSyncServiceProvider);
+  final getConversationUseCase = ref.watch(getConversationByIdUseCaseProvider);
+
+  // Get conversation to extract participant IDs for aggregate status computation
+  var participantIds = <String>[];
+  final conversationResult = await getConversationUseCase(conversationId);
+  conversationResult.fold(
+    (_) {}, // Ignore failure, will use fallback status
+    (conversation) {
+      participantIds = conversation.participants.map((p) => p.uid).toList();
+    },
+  );
 
   await for (final result in watchUseCase(
     conversationId: conversationId,
@@ -230,21 +242,28 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
           allSenderIds.forEach(userSyncService.syncMessageSender);
         }
 
-        return messages
-            .map(
-              (Message msg) => <String, dynamic>{
-                'id': msg.id,
-                'text': msg.text,
-                'senderId': msg.senderId,
-                'timestamp': msg.timestamp,
-                'status': msg.status,
-                'type': msg.type,
-                'detectedLanguage': msg.detectedLanguage,
-                'translations': msg.translations,
-                'culturalHint': msg.culturalHint,
-              },
-            )
-            .toList();
+        return messages.map((Message msg) {
+          // Compute aggregate status for group messages using per-user tracking
+          // Falls back to deprecated global status for backward compatibility
+          final status = participantIds.isNotEmpty
+              ? msg.getAggregateStatus(participantIds)
+              : msg.status;
+
+          return <String, dynamic>{
+            'id': msg.id,
+            'text': msg.text,
+            'senderId': msg.senderId,
+            'timestamp': msg.timestamp,
+            'status': status,
+            'type': msg.type,
+            'detectedLanguage': msg.detectedLanguage,
+            'translations': msg.translations,
+            'culturalHint': msg.culturalHint,
+            // Include per-user tracking maps for potential future use
+            'deliveredTo': msg.deliveredTo,
+            'readBy': msg.readBy,
+          };
+        }).toList();
       },
     );
   }
