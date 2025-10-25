@@ -268,7 +268,8 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
   final statusUpdatesStream = firestore
       .collectionGroup('status')
       .snapshots()
-      .map((snapshot) => snapshot.docs.length); // Just count changes as trigger
+      .map((snapshot) => snapshot.docs.length)
+      .startWith(0); // Ensure immediate emission so combineLatest2 works
 
   // Combine messages stream with status updates stream
   // When EITHER changes, rebuild the message list
@@ -306,6 +307,9 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
           if (msg.senderId != currentUserId &&
               !markedAsRead.contains(msg.id)) {
             try {
+              debugPrint(
+                '📖 Marking message ${msg.id.substring(0, 8)} as READ for user ${currentUserId.substring(0, 8)}',
+              );
               // Chat is open = mark as READ
               await messageRemoteDataSource.markAsRead(
                 conversationId,
@@ -313,8 +317,9 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
                 currentUserId,
               );
               markedAsRead.add(msg.id); // Track to prevent re-marking
+              debugPrint('✅ Successfully marked as READ');
             } catch (e) {
-              // Silently fail
+              debugPrint('❌ Failed to mark as READ: $e');
             }
           }
         }
