@@ -98,7 +98,10 @@ class MessageModel extends Message {
     final result = <String, DateTime>{};
 
     map.forEach((final userId, final timestamp) {
-      result[userId] = _parseDateTime(timestamp);
+      // Skip null timestamps (incomplete/corrupted data)
+      if (timestamp != null) {
+        result[userId] = _parseDateTime(timestamp);
+      }
     });
 
     return result.isEmpty ? null : result;
