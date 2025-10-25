@@ -133,9 +133,13 @@ class AutoDeliveryMarker {
                 debugPrint('📨 AutoDeliveryMarker: Message ${message.id.substring(0, 8)}: isIncoming=$isIncoming, isNotYetDelivered=$isNotYetDelivered, notYetMarked=$notYetMarked');
 
                 if (isIncoming && isNotYetDelivered && notYetMarked) {
-                  debugPrint('✅ AutoDeliveryMarker: Marking message ${message.id} as delivered to $_currentUserId');
+                  debugPrint('📤 AutoDeliveryMarker: Attempting to mark message ${message.id} as delivered to $_currentUserId');
 
-                  // Mark as delivered and only add to deduplication set on success
+                  // CRITICAL: Add to deduplication set IMMEDIATELY to prevent infinite loops
+                  // If marking fails, we'll retry on next stream update
+                  _markedMessages.add(message.id);
+
+                  // Attempt to mark as delivered
                   _messageRepository
                       .markAsDelivered(
                         conversationId,
@@ -146,12 +150,18 @@ class AutoDeliveryMarker {
                         result.fold(
                           (final failure) {
                             debugPrint('❌ AutoDeliveryMarker: Failed to mark message ${message.id} as delivered: ${failure.message}');
+                            // Remove from set to allow retry on next update
+                            _markedMessages.remove(message.id);
                           },
                           (_) {
                             debugPrint('✅ AutoDeliveryMarker: Successfully marked message ${message.id} as delivered');
-                            _markedMessages.add(message.id);
+                            // Keep in set (already added above)
                           },
                         );
+                      }).catchError((error) {
+                        debugPrint('💥 AutoDeliveryMarker: Exception marking message ${message.id}: $error');
+                        // Remove from set to allow retry
+                        _markedMessages.remove(message.id);
                       });
                 }
               }
