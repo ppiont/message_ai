@@ -134,14 +134,25 @@ class AutoDeliveryMarker {
 
                 if (isIncoming && isNotYetDelivered && notYetMarked) {
                   debugPrint('✅ AutoDeliveryMarker: Marking message ${message.id} as delivered to $_currentUserId');
-                  _markedMessages.add(message.id);
-                  unawaited(
-                    _messageRepository.markAsDelivered(
-                      conversationId,
-                      message.id,
-                      _currentUserId,
-                    ),
-                  );
+
+                  // Mark as delivered and only add to deduplication set on success
+                  _messageRepository
+                      .markAsDelivered(
+                        conversationId,
+                        message.id,
+                        _currentUserId,
+                      )
+                      .then((final result) {
+                        result.fold(
+                          (final failure) {
+                            debugPrint('❌ AutoDeliveryMarker: Failed to mark message ${message.id} as delivered: ${failure.message}');
+                          },
+                          (_) {
+                            debugPrint('✅ AutoDeliveryMarker: Successfully marked message ${message.id} as delivered');
+                            _markedMessages.add(message.id);
+                          },
+                        );
+                      });
                 }
               }
             },
