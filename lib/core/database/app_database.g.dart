@@ -1850,17 +1850,6 @@ class $MessagesTable extends Messages
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _senderNameMeta = const VerificationMeta(
-    'senderName',
-  );
-  @override
-  late final GeneratedColumn<String> senderName = GeneratedColumn<String>(
-    'sender_name',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
   static const VerificationMeta _timestampMeta = const VerificationMeta(
     'timestamp',
   );
@@ -1949,12 +1938,56 @@ class $MessagesTable extends Messages
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _culturalHintMeta = const VerificationMeta(
+    'culturalHint',
+  );
+  @override
+  late final GeneratedColumn<String> culturalHint = GeneratedColumn<String>(
+    'cultural_hint',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _contextDetailsMeta = const VerificationMeta(
+    'contextDetails',
+  );
+  @override
+  late final GeneratedColumn<String> contextDetails = GeneratedColumn<String>(
+    'context_details',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _embeddingMeta = const VerificationMeta(
     'embedding',
   );
   @override
   late final GeneratedColumn<String> embedding = GeneratedColumn<String>(
     'embedding',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _deliveredToJsonMeta = const VerificationMeta(
+    'deliveredToJson',
+  );
+  @override
+  late final GeneratedColumn<String> deliveredToJson = GeneratedColumn<String>(
+    'delivered_to_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _readByJsonMeta = const VerificationMeta(
+    'readByJson',
+  );
+  @override
+  late final GeneratedColumn<String> readByJson = GeneratedColumn<String>(
+    'read_by_json',
     aliasedName,
     true,
     type: DriftSqlType.string,
@@ -2011,7 +2044,6 @@ class $MessagesTable extends Messages
     conversationId,
     messageText,
     senderId,
-    senderName,
     timestamp,
     messageType,
     status,
@@ -2020,7 +2052,11 @@ class $MessagesTable extends Messages
     replyTo,
     metadata,
     aiAnalysis,
+    culturalHint,
+    contextDetails,
     embedding,
+    deliveredToJson,
+    readByJson,
     syncStatus,
     retryCount,
     tempId,
@@ -2072,14 +2108,6 @@ class $MessagesTable extends Messages
       );
     } else if (isInserting) {
       context.missing(_senderIdMeta);
-    }
-    if (data.containsKey('sender_name')) {
-      context.handle(
-        _senderNameMeta,
-        senderName.isAcceptableOrUnknown(data['sender_name']!, _senderNameMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_senderNameMeta);
     }
     if (data.containsKey('timestamp')) {
       context.handle(
@@ -2140,10 +2168,46 @@ class $MessagesTable extends Messages
         aiAnalysis.isAcceptableOrUnknown(data['ai_analysis']!, _aiAnalysisMeta),
       );
     }
+    if (data.containsKey('cultural_hint')) {
+      context.handle(
+        _culturalHintMeta,
+        culturalHint.isAcceptableOrUnknown(
+          data['cultural_hint']!,
+          _culturalHintMeta,
+        ),
+      );
+    }
+    if (data.containsKey('context_details')) {
+      context.handle(
+        _contextDetailsMeta,
+        contextDetails.isAcceptableOrUnknown(
+          data['context_details']!,
+          _contextDetailsMeta,
+        ),
+      );
+    }
     if (data.containsKey('embedding')) {
       context.handle(
         _embeddingMeta,
         embedding.isAcceptableOrUnknown(data['embedding']!, _embeddingMeta),
+      );
+    }
+    if (data.containsKey('delivered_to_json')) {
+      context.handle(
+        _deliveredToJsonMeta,
+        deliveredToJson.isAcceptableOrUnknown(
+          data['delivered_to_json']!,
+          _deliveredToJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('read_by_json')) {
+      context.handle(
+        _readByJsonMeta,
+        readByJson.isAcceptableOrUnknown(
+          data['read_by_json']!,
+          _readByJsonMeta,
+        ),
       );
     }
     if (data.containsKey('sync_status')) {
@@ -2198,10 +2262,6 @@ class $MessagesTable extends Messages
         DriftSqlType.string,
         data['${effectivePrefix}sender_id'],
       )!,
-      senderName: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}sender_name'],
-      )!,
       timestamp: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}timestamp'],
@@ -2234,9 +2294,25 @@ class $MessagesTable extends Messages
         DriftSqlType.string,
         data['${effectivePrefix}ai_analysis'],
       ),
+      culturalHint: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cultural_hint'],
+      ),
+      contextDetails: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}context_details'],
+      ),
       embedding: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}embedding'],
+      ),
+      deliveredToJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}delivered_to_json'],
+      ),
+      readByJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}read_by_json'],
       ),
       syncStatus: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -2274,10 +2350,8 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
   final String messageText;
 
   /// Sender user ID
+  /// Display name is looked up dynamically via UserLookupProvider
   final String senderId;
-
-  /// Sender display name (cached for quick display)
-  final String senderName;
 
   /// Message timestamp
   final DateTime timestamp;
@@ -2303,8 +2377,20 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
   /// AI analysis results as JSON
   final String? aiAnalysis;
 
+  /// Cultural context hint explaining nuances, idioms, or formality (brief)
+  final String? culturalHint;
+
+  /// Detailed context analysis with formality, cultural notes, and idioms (JSON)
+  final String? contextDetails;
+
   /// Embedding vector for RAG (stored as JSON array)
   final String? embedding;
+
+  /// Per-user delivery tracking (JSON: {userId: timestamp})
+  final String? deliveredToJson;
+
+  /// Per-user read tracking (JSON: {userId: timestamp})
+  final String? readByJson;
 
   /// Sync status: 'pending', 'synced', 'failed'
   final String syncStatus;
@@ -2322,7 +2408,6 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
     required this.conversationId,
     required this.messageText,
     required this.senderId,
-    required this.senderName,
     required this.timestamp,
     required this.messageType,
     required this.status,
@@ -2331,7 +2416,11 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
     this.replyTo,
     this.metadata,
     this.aiAnalysis,
+    this.culturalHint,
+    this.contextDetails,
     this.embedding,
+    this.deliveredToJson,
+    this.readByJson,
     required this.syncStatus,
     required this.retryCount,
     this.tempId,
@@ -2344,7 +2433,6 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
     map['conversation_id'] = Variable<String>(conversationId);
     map['message_text'] = Variable<String>(messageText);
     map['sender_id'] = Variable<String>(senderId);
-    map['sender_name'] = Variable<String>(senderName);
     map['timestamp'] = Variable<DateTime>(timestamp);
     map['message_type'] = Variable<String>(messageType);
     map['status'] = Variable<String>(status);
@@ -2363,8 +2451,20 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
     if (!nullToAbsent || aiAnalysis != null) {
       map['ai_analysis'] = Variable<String>(aiAnalysis);
     }
+    if (!nullToAbsent || culturalHint != null) {
+      map['cultural_hint'] = Variable<String>(culturalHint);
+    }
+    if (!nullToAbsent || contextDetails != null) {
+      map['context_details'] = Variable<String>(contextDetails);
+    }
     if (!nullToAbsent || embedding != null) {
       map['embedding'] = Variable<String>(embedding);
+    }
+    if (!nullToAbsent || deliveredToJson != null) {
+      map['delivered_to_json'] = Variable<String>(deliveredToJson);
+    }
+    if (!nullToAbsent || readByJson != null) {
+      map['read_by_json'] = Variable<String>(readByJson);
     }
     map['sync_status'] = Variable<String>(syncStatus);
     map['retry_count'] = Variable<int>(retryCount);
@@ -2383,7 +2483,6 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
       conversationId: Value(conversationId),
       messageText: Value(messageText),
       senderId: Value(senderId),
-      senderName: Value(senderName),
       timestamp: Value(timestamp),
       messageType: Value(messageType),
       status: Value(status),
@@ -2402,9 +2501,21 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
       aiAnalysis: aiAnalysis == null && nullToAbsent
           ? const Value.absent()
           : Value(aiAnalysis),
+      culturalHint: culturalHint == null && nullToAbsent
+          ? const Value.absent()
+          : Value(culturalHint),
+      contextDetails: contextDetails == null && nullToAbsent
+          ? const Value.absent()
+          : Value(contextDetails),
       embedding: embedding == null && nullToAbsent
           ? const Value.absent()
           : Value(embedding),
+      deliveredToJson: deliveredToJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deliveredToJson),
+      readByJson: readByJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(readByJson),
       syncStatus: Value(syncStatus),
       retryCount: Value(retryCount),
       tempId: tempId == null && nullToAbsent
@@ -2426,7 +2537,6 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
       conversationId: serializer.fromJson<String>(json['conversationId']),
       messageText: serializer.fromJson<String>(json['messageText']),
       senderId: serializer.fromJson<String>(json['senderId']),
-      senderName: serializer.fromJson<String>(json['senderName']),
       timestamp: serializer.fromJson<DateTime>(json['timestamp']),
       messageType: serializer.fromJson<String>(json['messageType']),
       status: serializer.fromJson<String>(json['status']),
@@ -2435,7 +2545,11 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
       replyTo: serializer.fromJson<String?>(json['replyTo']),
       metadata: serializer.fromJson<String?>(json['metadata']),
       aiAnalysis: serializer.fromJson<String?>(json['aiAnalysis']),
+      culturalHint: serializer.fromJson<String?>(json['culturalHint']),
+      contextDetails: serializer.fromJson<String?>(json['contextDetails']),
       embedding: serializer.fromJson<String?>(json['embedding']),
+      deliveredToJson: serializer.fromJson<String?>(json['deliveredToJson']),
+      readByJson: serializer.fromJson<String?>(json['readByJson']),
       syncStatus: serializer.fromJson<String>(json['syncStatus']),
       retryCount: serializer.fromJson<int>(json['retryCount']),
       tempId: serializer.fromJson<String?>(json['tempId']),
@@ -2450,7 +2564,6 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
       'conversationId': serializer.toJson<String>(conversationId),
       'messageText': serializer.toJson<String>(messageText),
       'senderId': serializer.toJson<String>(senderId),
-      'senderName': serializer.toJson<String>(senderName),
       'timestamp': serializer.toJson<DateTime>(timestamp),
       'messageType': serializer.toJson<String>(messageType),
       'status': serializer.toJson<String>(status),
@@ -2459,7 +2572,11 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
       'replyTo': serializer.toJson<String?>(replyTo),
       'metadata': serializer.toJson<String?>(metadata),
       'aiAnalysis': serializer.toJson<String?>(aiAnalysis),
+      'culturalHint': serializer.toJson<String?>(culturalHint),
+      'contextDetails': serializer.toJson<String?>(contextDetails),
       'embedding': serializer.toJson<String?>(embedding),
+      'deliveredToJson': serializer.toJson<String?>(deliveredToJson),
+      'readByJson': serializer.toJson<String?>(readByJson),
       'syncStatus': serializer.toJson<String>(syncStatus),
       'retryCount': serializer.toJson<int>(retryCount),
       'tempId': serializer.toJson<String?>(tempId),
@@ -2472,7 +2589,6 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
     String? conversationId,
     String? messageText,
     String? senderId,
-    String? senderName,
     DateTime? timestamp,
     String? messageType,
     String? status,
@@ -2481,7 +2597,11 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
     Value<String?> replyTo = const Value.absent(),
     Value<String?> metadata = const Value.absent(),
     Value<String?> aiAnalysis = const Value.absent(),
+    Value<String?> culturalHint = const Value.absent(),
+    Value<String?> contextDetails = const Value.absent(),
     Value<String?> embedding = const Value.absent(),
+    Value<String?> deliveredToJson = const Value.absent(),
+    Value<String?> readByJson = const Value.absent(),
     String? syncStatus,
     int? retryCount,
     Value<String?> tempId = const Value.absent(),
@@ -2491,7 +2611,6 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
     conversationId: conversationId ?? this.conversationId,
     messageText: messageText ?? this.messageText,
     senderId: senderId ?? this.senderId,
-    senderName: senderName ?? this.senderName,
     timestamp: timestamp ?? this.timestamp,
     messageType: messageType ?? this.messageType,
     status: status ?? this.status,
@@ -2502,7 +2621,15 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
     replyTo: replyTo.present ? replyTo.value : this.replyTo,
     metadata: metadata.present ? metadata.value : this.metadata,
     aiAnalysis: aiAnalysis.present ? aiAnalysis.value : this.aiAnalysis,
+    culturalHint: culturalHint.present ? culturalHint.value : this.culturalHint,
+    contextDetails: contextDetails.present
+        ? contextDetails.value
+        : this.contextDetails,
     embedding: embedding.present ? embedding.value : this.embedding,
+    deliveredToJson: deliveredToJson.present
+        ? deliveredToJson.value
+        : this.deliveredToJson,
+    readByJson: readByJson.present ? readByJson.value : this.readByJson,
     syncStatus: syncStatus ?? this.syncStatus,
     retryCount: retryCount ?? this.retryCount,
     tempId: tempId.present ? tempId.value : this.tempId,
@@ -2520,9 +2647,6 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
           ? data.messageText.value
           : this.messageText,
       senderId: data.senderId.present ? data.senderId.value : this.senderId,
-      senderName: data.senderName.present
-          ? data.senderName.value
-          : this.senderName,
       timestamp: data.timestamp.present ? data.timestamp.value : this.timestamp,
       messageType: data.messageType.present
           ? data.messageType.value
@@ -2539,7 +2663,19 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
       aiAnalysis: data.aiAnalysis.present
           ? data.aiAnalysis.value
           : this.aiAnalysis,
+      culturalHint: data.culturalHint.present
+          ? data.culturalHint.value
+          : this.culturalHint,
+      contextDetails: data.contextDetails.present
+          ? data.contextDetails.value
+          : this.contextDetails,
       embedding: data.embedding.present ? data.embedding.value : this.embedding,
+      deliveredToJson: data.deliveredToJson.present
+          ? data.deliveredToJson.value
+          : this.deliveredToJson,
+      readByJson: data.readByJson.present
+          ? data.readByJson.value
+          : this.readByJson,
       syncStatus: data.syncStatus.present
           ? data.syncStatus.value
           : this.syncStatus,
@@ -2560,7 +2696,6 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
           ..write('conversationId: $conversationId, ')
           ..write('messageText: $messageText, ')
           ..write('senderId: $senderId, ')
-          ..write('senderName: $senderName, ')
           ..write('timestamp: $timestamp, ')
           ..write('messageType: $messageType, ')
           ..write('status: $status, ')
@@ -2569,7 +2704,11 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
           ..write('replyTo: $replyTo, ')
           ..write('metadata: $metadata, ')
           ..write('aiAnalysis: $aiAnalysis, ')
+          ..write('culturalHint: $culturalHint, ')
+          ..write('contextDetails: $contextDetails, ')
           ..write('embedding: $embedding, ')
+          ..write('deliveredToJson: $deliveredToJson, ')
+          ..write('readByJson: $readByJson, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('retryCount: $retryCount, ')
           ..write('tempId: $tempId, ')
@@ -2579,12 +2718,11 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     conversationId,
     messageText,
     senderId,
-    senderName,
     timestamp,
     messageType,
     status,
@@ -2593,12 +2731,16 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
     replyTo,
     metadata,
     aiAnalysis,
+    culturalHint,
+    contextDetails,
     embedding,
+    deliveredToJson,
+    readByJson,
     syncStatus,
     retryCount,
     tempId,
     lastSyncAttempt,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2607,7 +2749,6 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
           other.conversationId == this.conversationId &&
           other.messageText == this.messageText &&
           other.senderId == this.senderId &&
-          other.senderName == this.senderName &&
           other.timestamp == this.timestamp &&
           other.messageType == this.messageType &&
           other.status == this.status &&
@@ -2616,7 +2757,11 @@ class MessageEntity extends DataClass implements Insertable<MessageEntity> {
           other.replyTo == this.replyTo &&
           other.metadata == this.metadata &&
           other.aiAnalysis == this.aiAnalysis &&
+          other.culturalHint == this.culturalHint &&
+          other.contextDetails == this.contextDetails &&
           other.embedding == this.embedding &&
+          other.deliveredToJson == this.deliveredToJson &&
+          other.readByJson == this.readByJson &&
           other.syncStatus == this.syncStatus &&
           other.retryCount == this.retryCount &&
           other.tempId == this.tempId &&
@@ -2628,7 +2773,6 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
   final Value<String> conversationId;
   final Value<String> messageText;
   final Value<String> senderId;
-  final Value<String> senderName;
   final Value<DateTime> timestamp;
   final Value<String> messageType;
   final Value<String> status;
@@ -2637,7 +2781,11 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
   final Value<String?> replyTo;
   final Value<String?> metadata;
   final Value<String?> aiAnalysis;
+  final Value<String?> culturalHint;
+  final Value<String?> contextDetails;
   final Value<String?> embedding;
+  final Value<String?> deliveredToJson;
+  final Value<String?> readByJson;
   final Value<String> syncStatus;
   final Value<int> retryCount;
   final Value<String?> tempId;
@@ -2648,7 +2796,6 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
     this.conversationId = const Value.absent(),
     this.messageText = const Value.absent(),
     this.senderId = const Value.absent(),
-    this.senderName = const Value.absent(),
     this.timestamp = const Value.absent(),
     this.messageType = const Value.absent(),
     this.status = const Value.absent(),
@@ -2657,7 +2804,11 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
     this.replyTo = const Value.absent(),
     this.metadata = const Value.absent(),
     this.aiAnalysis = const Value.absent(),
+    this.culturalHint = const Value.absent(),
+    this.contextDetails = const Value.absent(),
     this.embedding = const Value.absent(),
+    this.deliveredToJson = const Value.absent(),
+    this.readByJson = const Value.absent(),
     this.syncStatus = const Value.absent(),
     this.retryCount = const Value.absent(),
     this.tempId = const Value.absent(),
@@ -2669,7 +2820,6 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
     required String conversationId,
     required String messageText,
     required String senderId,
-    required String senderName,
     required DateTime timestamp,
     this.messageType = const Value.absent(),
     this.status = const Value.absent(),
@@ -2678,7 +2828,11 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
     this.replyTo = const Value.absent(),
     this.metadata = const Value.absent(),
     this.aiAnalysis = const Value.absent(),
+    this.culturalHint = const Value.absent(),
+    this.contextDetails = const Value.absent(),
     this.embedding = const Value.absent(),
+    this.deliveredToJson = const Value.absent(),
+    this.readByJson = const Value.absent(),
     this.syncStatus = const Value.absent(),
     this.retryCount = const Value.absent(),
     this.tempId = const Value.absent(),
@@ -2688,14 +2842,12 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
        conversationId = Value(conversationId),
        messageText = Value(messageText),
        senderId = Value(senderId),
-       senderName = Value(senderName),
        timestamp = Value(timestamp);
   static Insertable<MessageEntity> custom({
     Expression<String>? id,
     Expression<String>? conversationId,
     Expression<String>? messageText,
     Expression<String>? senderId,
-    Expression<String>? senderName,
     Expression<DateTime>? timestamp,
     Expression<String>? messageType,
     Expression<String>? status,
@@ -2704,7 +2856,11 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
     Expression<String>? replyTo,
     Expression<String>? metadata,
     Expression<String>? aiAnalysis,
+    Expression<String>? culturalHint,
+    Expression<String>? contextDetails,
     Expression<String>? embedding,
+    Expression<String>? deliveredToJson,
+    Expression<String>? readByJson,
     Expression<String>? syncStatus,
     Expression<int>? retryCount,
     Expression<String>? tempId,
@@ -2716,7 +2872,6 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
       if (conversationId != null) 'conversation_id': conversationId,
       if (messageText != null) 'message_text': messageText,
       if (senderId != null) 'sender_id': senderId,
-      if (senderName != null) 'sender_name': senderName,
       if (timestamp != null) 'timestamp': timestamp,
       if (messageType != null) 'message_type': messageType,
       if (status != null) 'status': status,
@@ -2725,7 +2880,11 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
       if (replyTo != null) 'reply_to': replyTo,
       if (metadata != null) 'metadata': metadata,
       if (aiAnalysis != null) 'ai_analysis': aiAnalysis,
+      if (culturalHint != null) 'cultural_hint': culturalHint,
+      if (contextDetails != null) 'context_details': contextDetails,
       if (embedding != null) 'embedding': embedding,
+      if (deliveredToJson != null) 'delivered_to_json': deliveredToJson,
+      if (readByJson != null) 'read_by_json': readByJson,
       if (syncStatus != null) 'sync_status': syncStatus,
       if (retryCount != null) 'retry_count': retryCount,
       if (tempId != null) 'temp_id': tempId,
@@ -2739,7 +2898,6 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
     Value<String>? conversationId,
     Value<String>? messageText,
     Value<String>? senderId,
-    Value<String>? senderName,
     Value<DateTime>? timestamp,
     Value<String>? messageType,
     Value<String>? status,
@@ -2748,7 +2906,11 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
     Value<String?>? replyTo,
     Value<String?>? metadata,
     Value<String?>? aiAnalysis,
+    Value<String?>? culturalHint,
+    Value<String?>? contextDetails,
     Value<String?>? embedding,
+    Value<String?>? deliveredToJson,
+    Value<String?>? readByJson,
     Value<String>? syncStatus,
     Value<int>? retryCount,
     Value<String?>? tempId,
@@ -2760,7 +2922,6 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
       conversationId: conversationId ?? this.conversationId,
       messageText: messageText ?? this.messageText,
       senderId: senderId ?? this.senderId,
-      senderName: senderName ?? this.senderName,
       timestamp: timestamp ?? this.timestamp,
       messageType: messageType ?? this.messageType,
       status: status ?? this.status,
@@ -2769,7 +2930,11 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
       replyTo: replyTo ?? this.replyTo,
       metadata: metadata ?? this.metadata,
       aiAnalysis: aiAnalysis ?? this.aiAnalysis,
+      culturalHint: culturalHint ?? this.culturalHint,
+      contextDetails: contextDetails ?? this.contextDetails,
       embedding: embedding ?? this.embedding,
+      deliveredToJson: deliveredToJson ?? this.deliveredToJson,
+      readByJson: readByJson ?? this.readByJson,
       syncStatus: syncStatus ?? this.syncStatus,
       retryCount: retryCount ?? this.retryCount,
       tempId: tempId ?? this.tempId,
@@ -2792,9 +2957,6 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
     }
     if (senderId.present) {
       map['sender_id'] = Variable<String>(senderId.value);
-    }
-    if (senderName.present) {
-      map['sender_name'] = Variable<String>(senderName.value);
     }
     if (timestamp.present) {
       map['timestamp'] = Variable<DateTime>(timestamp.value);
@@ -2820,8 +2982,20 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
     if (aiAnalysis.present) {
       map['ai_analysis'] = Variable<String>(aiAnalysis.value);
     }
+    if (culturalHint.present) {
+      map['cultural_hint'] = Variable<String>(culturalHint.value);
+    }
+    if (contextDetails.present) {
+      map['context_details'] = Variable<String>(contextDetails.value);
+    }
     if (embedding.present) {
       map['embedding'] = Variable<String>(embedding.value);
+    }
+    if (deliveredToJson.present) {
+      map['delivered_to_json'] = Variable<String>(deliveredToJson.value);
+    }
+    if (readByJson.present) {
+      map['read_by_json'] = Variable<String>(readByJson.value);
     }
     if (syncStatus.present) {
       map['sync_status'] = Variable<String>(syncStatus.value);
@@ -2848,7 +3022,6 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
           ..write('conversationId: $conversationId, ')
           ..write('messageText: $messageText, ')
           ..write('senderId: $senderId, ')
-          ..write('senderName: $senderName, ')
           ..write('timestamp: $timestamp, ')
           ..write('messageType: $messageType, ')
           ..write('status: $status, ')
@@ -2857,7 +3030,11 @@ class MessagesCompanion extends UpdateCompanion<MessageEntity> {
           ..write('replyTo: $replyTo, ')
           ..write('metadata: $metadata, ')
           ..write('aiAnalysis: $aiAnalysis, ')
+          ..write('culturalHint: $culturalHint, ')
+          ..write('contextDetails: $contextDetails, ')
           ..write('embedding: $embedding, ')
+          ..write('deliveredToJson: $deliveredToJson, ')
+          ..write('readByJson: $readByJson, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('retryCount: $retryCount, ')
           ..write('tempId: $tempId, ')
@@ -3671,7 +3848,6 @@ typedef $$MessagesTableCreateCompanionBuilder =
       required String conversationId,
       required String messageText,
       required String senderId,
-      required String senderName,
       required DateTime timestamp,
       Value<String> messageType,
       Value<String> status,
@@ -3680,7 +3856,11 @@ typedef $$MessagesTableCreateCompanionBuilder =
       Value<String?> replyTo,
       Value<String?> metadata,
       Value<String?> aiAnalysis,
+      Value<String?> culturalHint,
+      Value<String?> contextDetails,
       Value<String?> embedding,
+      Value<String?> deliveredToJson,
+      Value<String?> readByJson,
       Value<String> syncStatus,
       Value<int> retryCount,
       Value<String?> tempId,
@@ -3693,7 +3873,6 @@ typedef $$MessagesTableUpdateCompanionBuilder =
       Value<String> conversationId,
       Value<String> messageText,
       Value<String> senderId,
-      Value<String> senderName,
       Value<DateTime> timestamp,
       Value<String> messageType,
       Value<String> status,
@@ -3702,7 +3881,11 @@ typedef $$MessagesTableUpdateCompanionBuilder =
       Value<String?> replyTo,
       Value<String?> metadata,
       Value<String?> aiAnalysis,
+      Value<String?> culturalHint,
+      Value<String?> contextDetails,
       Value<String?> embedding,
+      Value<String?> deliveredToJson,
+      Value<String?> readByJson,
       Value<String> syncStatus,
       Value<int> retryCount,
       Value<String?> tempId,
@@ -3736,11 +3919,6 @@ class $$MessagesTableFilterComposer
 
   ColumnFilters<String> get senderId => $composableBuilder(
     column: $table.senderId,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get senderName => $composableBuilder(
-    column: $table.senderName,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3784,8 +3962,28 @@ class $$MessagesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get culturalHint => $composableBuilder(
+    column: $table.culturalHint,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contextDetails => $composableBuilder(
+    column: $table.contextDetails,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get embedding => $composableBuilder(
     column: $table.embedding,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deliveredToJson => $composableBuilder(
+    column: $table.deliveredToJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get readByJson => $composableBuilder(
+    column: $table.readByJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3839,11 +4037,6 @@ class $$MessagesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get senderName => $composableBuilder(
-    column: $table.senderName,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<DateTime> get timestamp => $composableBuilder(
     column: $table.timestamp,
     builder: (column) => ColumnOrderings(column),
@@ -3884,8 +4077,28 @@ class $$MessagesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get culturalHint => $composableBuilder(
+    column: $table.culturalHint,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get contextDetails => $composableBuilder(
+    column: $table.contextDetails,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get embedding => $composableBuilder(
     column: $table.embedding,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deliveredToJson => $composableBuilder(
+    column: $table.deliveredToJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get readByJson => $composableBuilder(
+    column: $table.readByJson,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -3935,11 +4148,6 @@ class $$MessagesTableAnnotationComposer
   GeneratedColumn<String> get senderId =>
       $composableBuilder(column: $table.senderId, builder: (column) => column);
 
-  GeneratedColumn<String> get senderName => $composableBuilder(
-    column: $table.senderName,
-    builder: (column) => column,
-  );
-
   GeneratedColumn<DateTime> get timestamp =>
       $composableBuilder(column: $table.timestamp, builder: (column) => column);
 
@@ -3972,8 +4180,28 @@ class $$MessagesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get culturalHint => $composableBuilder(
+    column: $table.culturalHint,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get contextDetails => $composableBuilder(
+    column: $table.contextDetails,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get embedding =>
       $composableBuilder(column: $table.embedding, builder: (column) => column);
+
+  GeneratedColumn<String> get deliveredToJson => $composableBuilder(
+    column: $table.deliveredToJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get readByJson => $composableBuilder(
+    column: $table.readByJson,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get syncStatus => $composableBuilder(
     column: $table.syncStatus,
@@ -4029,7 +4257,6 @@ class $$MessagesTableTableManager
                 Value<String> conversationId = const Value.absent(),
                 Value<String> messageText = const Value.absent(),
                 Value<String> senderId = const Value.absent(),
-                Value<String> senderName = const Value.absent(),
                 Value<DateTime> timestamp = const Value.absent(),
                 Value<String> messageType = const Value.absent(),
                 Value<String> status = const Value.absent(),
@@ -4038,7 +4265,11 @@ class $$MessagesTableTableManager
                 Value<String?> replyTo = const Value.absent(),
                 Value<String?> metadata = const Value.absent(),
                 Value<String?> aiAnalysis = const Value.absent(),
+                Value<String?> culturalHint = const Value.absent(),
+                Value<String?> contextDetails = const Value.absent(),
                 Value<String?> embedding = const Value.absent(),
+                Value<String?> deliveredToJson = const Value.absent(),
+                Value<String?> readByJson = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
                 Value<int> retryCount = const Value.absent(),
                 Value<String?> tempId = const Value.absent(),
@@ -4049,7 +4280,6 @@ class $$MessagesTableTableManager
                 conversationId: conversationId,
                 messageText: messageText,
                 senderId: senderId,
-                senderName: senderName,
                 timestamp: timestamp,
                 messageType: messageType,
                 status: status,
@@ -4058,7 +4288,11 @@ class $$MessagesTableTableManager
                 replyTo: replyTo,
                 metadata: metadata,
                 aiAnalysis: aiAnalysis,
+                culturalHint: culturalHint,
+                contextDetails: contextDetails,
                 embedding: embedding,
+                deliveredToJson: deliveredToJson,
+                readByJson: readByJson,
                 syncStatus: syncStatus,
                 retryCount: retryCount,
                 tempId: tempId,
@@ -4071,7 +4305,6 @@ class $$MessagesTableTableManager
                 required String conversationId,
                 required String messageText,
                 required String senderId,
-                required String senderName,
                 required DateTime timestamp,
                 Value<String> messageType = const Value.absent(),
                 Value<String> status = const Value.absent(),
@@ -4080,7 +4313,11 @@ class $$MessagesTableTableManager
                 Value<String?> replyTo = const Value.absent(),
                 Value<String?> metadata = const Value.absent(),
                 Value<String?> aiAnalysis = const Value.absent(),
+                Value<String?> culturalHint = const Value.absent(),
+                Value<String?> contextDetails = const Value.absent(),
                 Value<String?> embedding = const Value.absent(),
+                Value<String?> deliveredToJson = const Value.absent(),
+                Value<String?> readByJson = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
                 Value<int> retryCount = const Value.absent(),
                 Value<String?> tempId = const Value.absent(),
@@ -4091,7 +4328,6 @@ class $$MessagesTableTableManager
                 conversationId: conversationId,
                 messageText: messageText,
                 senderId: senderId,
-                senderName: senderName,
                 timestamp: timestamp,
                 messageType: messageType,
                 status: status,
@@ -4100,7 +4336,11 @@ class $$MessagesTableTableManager
                 replyTo: replyTo,
                 metadata: metadata,
                 aiAnalysis: aiAnalysis,
+                culturalHint: culturalHint,
+                contextDetails: contextDetails,
                 embedding: embedding,
+                deliveredToJson: deliveredToJson,
+                readByJson: readByJson,
                 syncStatus: syncStatus,
                 retryCount: retryCount,
                 tempId: tempId,

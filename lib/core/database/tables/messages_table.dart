@@ -16,10 +16,8 @@ class Messages extends Table {
   TextColumn get messageText => text()();
 
   /// Sender user ID
+  /// Display name is looked up dynamically via UserLookupProvider
   TextColumn get senderId => text()();
-
-  /// Sender display name (cached for quick display)
-  TextColumn get senderName => text()();
 
   /// Message timestamp
   DateTimeColumn get timestamp => dateTime()();
@@ -45,8 +43,20 @@ class Messages extends Table {
   /// AI analysis results as JSON
   TextColumn get aiAnalysis => text().nullable()();
 
+  /// Cultural context hint explaining nuances, idioms, or formality (brief)
+  TextColumn get culturalHint => text().nullable()();
+
+  /// Detailed context analysis with formality, cultural notes, and idioms (JSON)
+  TextColumn get contextDetails => text().nullable()();
+
   /// Embedding vector for RAG (stored as JSON array)
   TextColumn get embedding => text().nullable()();
+
+  /// Per-user delivery tracking (JSON: {userId: timestamp})
+  TextColumn get deliveredToJson => text().nullable()();
+
+  /// Per-user read tracking (JSON: {userId: timestamp})
+  TextColumn get readByJson => text().nullable()();
 
   /// Sync status: 'pending', 'synced', 'failed'
   TextColumn get syncStatus => text().withDefault(const Constant('pending'))();

@@ -12,9 +12,9 @@ import 'package:message_ai/features/authentication/domain/repositories/user_repo
 /// documents (e.g., for existing Firebase Auth users migrating to Firestore),
 /// but don't want to perform unnecessary updates.
 class EnsureUserExistsInFirestore {
-  final UserRepository _userRepository;
 
   EnsureUserExistsInFirestore(this._userRepository);
+  final UserRepository _userRepository;
 
   /// Ensures user exists in Firestore.
   ///
@@ -25,7 +25,7 @@ class EnsureUserExistsInFirestore {
   Future<Either<Failure, User?>> call(User user) async {
     final existsResult = await _userRepository.userExists(user.uid);
 
-    return existsResult.fold((failure) => Left(failure), (exists) async {
+    return existsResult.fold(Left.new, (exists) async {
       if (exists) {
         // User already exists, no action needed
         return const Right(null);
@@ -33,8 +33,8 @@ class EnsureUserExistsInFirestore {
         // Create new user document
         final createResult = await _userRepository.createUser(user);
         return createResult.fold(
-          (failure) => Left(failure),
-          (createdUser) => Right(createdUser),
+          Left.new,
+          Right.new,
         );
       }
     });

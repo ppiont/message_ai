@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth hide User;
+import 'package:flutter/foundation.dart';
 import 'package:message_ai/features/authentication/data/datasources/auth_remote_datasource.dart';
 import 'package:message_ai/features/authentication/data/repositories/auth_repository_impl.dart';
 import 'package:message_ai/features/authentication/domain/entities/user.dart';
@@ -22,9 +23,7 @@ part 'auth_providers.g.dart';
 
 /// Provider for Firebase Auth instance
 @riverpod
-firebase_auth.FirebaseAuth firebaseAuth(Ref ref) {
-  return firebase_auth.FirebaseAuth.instance;
-}
+firebase_auth.FirebaseAuth firebaseAuth(Ref ref) => firebase_auth.FirebaseAuth.instance;
 
 /// Provider for authentication remote data source
 @riverpod
@@ -117,7 +116,10 @@ Stream<User?> authState(Ref ref) {
   return watchAuthStateUseCase();
 }
 
-/// Provider for current user (synchronous)
+/// Provider for current user (synchronous) from Firebase Auth
+///
+/// ⚠️ WARNING: This only returns basic Firebase Auth data with hardcoded preferredLanguage: 'en'
+/// For full user data including preferredLanguage from Firestore, use currentUserWithFirestoreProvider
 ///
 /// Returns [User?] - the current user if signed in, null otherwise
 /// This provides immediate access to the current user without waiting for a stream
@@ -128,6 +130,38 @@ User? currentUser(Ref ref) {
     (failure) => null, // Return null on failure
     (user) => user,
   );
+}
+
+/// Provider for current user WITH full Firestore data (including preferredLanguage)
+///
+/// This is the RECOMMENDED provider for getting current user data
+/// Returns [User?] with actual preferredLanguage from Firestore, not hardcoded 'en'
+///
+/// Falls back to Firebase Auth user if Firestore fetch fails
+@riverpod
+Future<User?> currentUserWithFirestore(Ref ref) async {
+  // Get basic user from Firebase Auth first
+  final authUser = ref.watch(currentUserProvider);
+  if (authUser == null) {
+    return null;
+  }
+
+  // Fetch full user data from Firestore with preferredLanguage
+  try {
+    final userRepository = ref.watch(userRepositoryProvider);
+    final result = await userRepository.getUserById(authUser.uid);
+
+    return result.fold(
+      (failure) {
+        debugPrint('⚠️ Failed to fetch Firestore user data, using Auth user: ${failure.message}');
+        return authUser; // Fallback to auth user
+      },
+      (firestoreUser) => firestoreUser,
+    );
+  } catch (e) {
+    debugPrint('⚠️ Error fetching Firestore user data: $e');
+    return authUser; // Fallback to auth user
+  }
 }
 
 /// Provider to check if user is authenticated

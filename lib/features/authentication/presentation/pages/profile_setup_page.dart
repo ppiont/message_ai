@@ -55,7 +55,7 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
   }
 
   void _showImageSourceDialog() {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       builder: (context) => SafeArea(
         child: Column(
@@ -110,16 +110,17 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
 
     final result = await updateProfileUseCase(
       displayName: _nameController.text.trim(),
-      photoURL: null, // Will be implemented with Firebase Storage
     );
 
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
 
     setState(() {
       _isLoading = false;
     });
 
-    result.fold(
+    await result.fold(
       (failure) {
         setState(() {
           _errorMessage = failure.message;
@@ -136,7 +137,9 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
         // Profile updated successfully - invalidate auth state to trigger re-route
         ref.invalidate(authStateProvider);
 
-        if (!mounted) return;
+        if (!mounted) {
+          return;
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Welcome, ${user.displayName}!'),
@@ -148,153 +151,147 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Complete Your Profile')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 32),
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Complete Your Profile')),
+    body: SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: 32),
 
-              // Profile Picture
-              Center(
-                child: Stack(
-                  children: [
-                    CircleAvatar(
-                      radius: 60,
-                      backgroundColor: Colors.grey[300],
-                      backgroundImage: _selectedImage != null
-                          ? FileImage(_selectedImage!)
-                          : null,
-                      child: _selectedImage == null
-                          ? Icon(
-                              Icons.person,
-                              size: 60,
-                              color: Colors.grey[600],
-                            )
-                          : null,
-                    ),
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: CircleAvatar(
-                        backgroundColor: Theme.of(context).primaryColor,
-                        radius: 20,
-                        child: IconButton(
-                          icon: const Icon(
-                            Icons.camera_alt,
-                            size: 20,
-                            color: Colors.white,
-                          ),
-                          onPressed: _isLoading ? null : _showImageSourceDialog,
+            // Profile Picture
+            Center(
+              child: Stack(
+                children: [
+                  CircleAvatar(
+                    radius: 60,
+                    backgroundColor: Colors.grey[300],
+                    backgroundImage: _selectedImage != null
+                        ? FileImage(_selectedImage!)
+                        : null,
+                    child: _selectedImage == null
+                        ? Icon(Icons.person, size: 60, color: Colors.grey[600])
+                        : null,
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: CircleAvatar(
+                      backgroundColor: Theme.of(context).primaryColor,
+                      radius: 20,
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.camera_alt,
+                          size: 20,
+                          color: Colors.white,
                         ),
+                        onPressed: _isLoading ? null : _showImageSourceDialog,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Add a profile photo',
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 48),
+
+            // Name Field
+            TextFormField(
+              controller: _nameController,
+              textInputAction: TextInputAction.done,
+              onFieldSubmitted: (_) => _completeProfile(),
+              decoration: const InputDecoration(
+                labelText: 'Display Name',
+                prefixIcon: Icon(Icons.person_outline),
+                border: OutlineInputBorder(),
+                helperText: 'This is how others will see you',
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Please enter your name';
+                }
+                if (value.trim().length < 2) {
+                  return 'Name must be at least 2 characters';
+                }
+                if (value.length > 50) {
+                  return 'Name must be 50 characters or less';
+                }
+                return null;
+              },
+              enabled: !_isLoading,
+            ),
+            const SizedBox(height: 24),
+
+            // Error Message
+            if (_errorMessage != null)
+              Container(
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.red[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red[300]!),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.error, color: Colors.red[700]),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _errorMessage!,
+                        style: TextStyle(color: Colors.red[700]),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
-              Text(
-                'Add a profile photo',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 48),
 
-              // Name Field
-              TextFormField(
-                controller: _nameController,
-                textInputAction: TextInputAction.done,
-                onFieldSubmitted: (_) => _completeProfile(),
-                decoration: const InputDecoration(
-                  labelText: 'Display Name',
-                  prefixIcon: Icon(Icons.person_outline),
-                  border: OutlineInputBorder(),
-                  helperText: 'This is how others will see you',
+            // Complete Button
+            ElevatedButton(
+              onPressed: _isLoading ? null : _completeProfile,
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter your name';
-                  }
-                  if (value.trim().length < 2) {
-                    return 'Name must be at least 2 characters';
-                  }
-                  if (value.length > 50) {
-                    return 'Name must be 50 characters or less';
-                  }
-                  return null;
-                },
-                enabled: !_isLoading,
               ),
-              const SizedBox(height: 24),
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text(
+                      'Complete Profile',
+                      style: TextStyle(fontSize: 16),
+                    ),
+            ),
+            const SizedBox(height: 16),
 
-              // Error Message
-              if (_errorMessage != null)
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.red[50],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.red[300]!),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.error, color: Colors.red[700]),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _errorMessage!,
-                          style: TextStyle(color: Colors.red[700]),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-              // Complete Button
-              ElevatedButton(
-                onPressed: _isLoading ? null : _completeProfile,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text(
-                        'Complete Profile',
-                        style: TextStyle(fontSize: 16),
-                      ),
-              ),
-              const SizedBox(height: 16),
-
-              // Skip Button
-              TextButton(
-                onPressed: _isLoading
-                    ? null
-                    : () {
-                        // Set a default display name
-                        _nameController.text = 'User';
-                        _completeProfile();
-                      },
-                child: const Text('Skip for now'),
-              ),
-            ],
-          ),
+            // Skip Button
+            TextButton(
+              onPressed: _isLoading
+                  ? null
+                  : () {
+                      // Set a default display name
+                      _nameController.text = 'User';
+                      _completeProfile();
+                    },
+              child: const Text('Skip for now'),
+            ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
 }

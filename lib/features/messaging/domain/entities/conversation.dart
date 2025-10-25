@@ -5,6 +5,17 @@ import 'package:equatable/equatable.dart';
 /// This entity follows the clean architecture pattern and represents
 /// the core business logic for conversations.
 class Conversation extends Equatable {
+
+  const Conversation({
+    required this.documentId,
+    required this.type,
+    required this.participantIds,
+    required this.participants,
+    required this.lastUpdatedAt, required this.initiatedAt, required this.unreadCount, required this.translationEnabled, required this.autoDetectLanguage, this.lastMessage,
+    this.groupName,
+    this.groupImage,
+    this.adminIds,
+  });
   /// Unique identifier for the conversation
   final String documentId;
 
@@ -44,22 +55,6 @@ class Conversation extends Equatable {
   /// List of admin user IDs (only for group conversations)
   final List<String>? adminIds;
 
-  const Conversation({
-    required this.documentId,
-    required this.type,
-    required this.participantIds,
-    required this.participants,
-    this.lastMessage,
-    required this.lastUpdatedAt,
-    required this.initiatedAt,
-    required this.unreadCount,
-    required this.translationEnabled,
-    required this.autoDetectLanguage,
-    this.groupName,
-    this.groupImage,
-    this.adminIds,
-  });
-
   /// Creates a copy of this conversation with the given fields replaced
   Conversation copyWith({
     String? documentId,
@@ -75,8 +70,7 @@ class Conversation extends Equatable {
     String? groupName,
     String? groupImage,
     List<String>? adminIds,
-  }) {
-    return Conversation(
+  }) => Conversation(
       documentId: documentId ?? this.documentId,
       type: type ?? this.type,
       participantIds: participantIds ?? this.participantIds,
@@ -91,7 +85,6 @@ class Conversation extends Equatable {
       groupImage: groupImage ?? this.groupImage,
       adminIds: adminIds ?? this.adminIds,
     );
-  }
 
   /// Returns true if this is a direct (1-to-1) conversation
   bool get isDirect => type == 'direct';
@@ -122,54 +115,53 @@ class Conversation extends Equatable {
 
 /// Participant details in a conversation
 class Participant extends Equatable {
-  /// User ID
-  final String uid;
 
-  /// Display name
-  final String name;
+  const Participant({
+    required this.uid,
+    required this.preferredLanguage,
+    this.imageUrl,
+  });
+  /// User ID
+  /// Display name is looked up dynamically via UserLookupProvider
+  final String uid;
 
   /// Profile image URL
   final String? imageUrl;
 
-  /// Preferred language code
+  /// Preferred language code (needed for translation logic)
   final String preferredLanguage;
-
-  const Participant({
-    required this.uid,
-    required this.name,
-    this.imageUrl,
-    required this.preferredLanguage,
-  });
 
   /// Creates a copy of this participant with the given fields replaced
   Participant copyWith({
     String? uid,
-    String? name,
     String? imageUrl,
     String? preferredLanguage,
-  }) {
-    return Participant(
+  }) => Participant(
       uid: uid ?? this.uid,
-      name: name ?? this.name,
       imageUrl: imageUrl ?? this.imageUrl,
       preferredLanguage: preferredLanguage ?? this.preferredLanguage,
     );
-  }
 
   @override
-  List<Object?> get props => [uid, name, imageUrl, preferredLanguage];
+  List<Object?> get props => [uid, imageUrl, preferredLanguage];
 }
 
 /// Details of the last message in a conversation
 class LastMessage extends Equatable {
+
+  const LastMessage({
+    required this.text,
+    required this.senderId,
+    required this.timestamp,
+    required this.type,
+    this.translations,
+  });
   /// Message text content
   final String text;
 
   /// Sender's user ID
+  /// Display name is looked up dynamically via UserLookupProvider
   final String senderId;
-
-  /// Sender's display name
-  final String senderName;
 
   /// Message timestamp
   final DateTime timestamp;
@@ -180,39 +172,25 @@ class LastMessage extends Equatable {
   /// Map of language codes to translated text
   final Map<String, String>? translations;
 
-  const LastMessage({
-    required this.text,
-    required this.senderId,
-    required this.senderName,
-    required this.timestamp,
-    required this.type,
-    this.translations,
-  });
-
   /// Creates a copy of this last message with the given fields replaced
   LastMessage copyWith({
     String? text,
     String? senderId,
-    String? senderName,
     DateTime? timestamp,
     String? type,
     Map<String, String>? translations,
-  }) {
-    return LastMessage(
+  }) => LastMessage(
       text: text ?? this.text,
       senderId: senderId ?? this.senderId,
-      senderName: senderName ?? this.senderName,
       timestamp: timestamp ?? this.timestamp,
       type: type ?? this.type,
       translations: translations ?? this.translations,
     );
-  }
 
   @override
   List<Object?> get props => [
         text,
         senderId,
-        senderName,
         timestamp,
         type,
         translations,

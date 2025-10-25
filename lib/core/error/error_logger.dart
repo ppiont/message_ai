@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 
-import 'exceptions.dart';
-import 'failures.dart';
+import 'package:message_ai/core/error/exceptions.dart';
+import 'package:message_ai/core/error/failures.dart';
 
 /// Centralized error logging service
 ///
@@ -30,7 +30,9 @@ class ErrorLogger {
   /// Should be called at app startup.
   /// In debug mode, Crashlytics collection is disabled.
   static Future<void> initialize() async {
-    if (_isInitialized) return;
+    if (_isInitialized) {
+      return;
+    }
 
     try {
       _crashlytics = FirebaseCrashlytics.instance;
@@ -226,12 +228,14 @@ class ErrorLogger {
         await _crashlytics!.setUserIdentifier(userId);
 
         if (email != null) {
-          _crashlytics!.setCustomKey('user_email', email);
+          unawaited(_crashlytics!.setCustomKey('user_email', email));
         }
 
         if (additionalInfo != null) {
           additionalInfo.forEach((key, value) {
-            _crashlytics!.setCustomKey('user_$key', value.toString());
+            unawaited(
+              _crashlytics!.setCustomKey('user_$key', value.toString()),
+            );
           });
         }
       } catch (e) {
@@ -249,7 +253,7 @@ class ErrorLogger {
     if (_crashlytics != null) {
       try {
         await _crashlytics!.setUserIdentifier('');
-        _crashlytics!.setCustomKey('user_email', '');
+        unawaited(_crashlytics!.setCustomKey('user_email', ''));
       } catch (e) {
         debugPrint('Failed to clear user in Crashlytics: $e');
       }

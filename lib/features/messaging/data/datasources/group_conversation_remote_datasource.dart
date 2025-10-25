@@ -61,7 +61,6 @@ abstract class GroupConversationRemoteDataSource {
     String groupId,
     String messageText,
     String senderId,
-    String senderName,
     DateTime timestamp,
   );
 
@@ -72,10 +71,9 @@ abstract class GroupConversationRemoteDataSource {
 /// Implementation of [GroupConversationRemoteDataSource] using Firebase Firestore.
 class GroupConversationRemoteDataSourceImpl
     implements GroupConversationRemoteDataSource {
-  final FirebaseFirestore _firestore;
-
   GroupConversationRemoteDataSourceImpl({required FirebaseFirestore firestore})
     : _firestore = firestore;
+  final FirebaseFirestore _firestore;
 
   static const String _groupsCollection = 'group-conversations';
 
@@ -98,21 +96,23 @@ class GroupConversationRemoteDataSourceImpl
 
       // Validate group fields
       if (group.type != 'group') {
-        throw ValidationException(message: 'Conversation type must be "group"');
+        throw const ValidationException(
+          message: 'Conversation type must be "group"',
+        );
       }
 
       if (group.participantIds.length < 2) {
-        throw ValidationException(
+        throw const ValidationException(
           message: 'Group must have at least 2 participants',
         );
       }
 
       if (group.groupName == null || group.groupName!.isEmpty) {
-        throw ValidationException(message: 'Group name is required');
+        throw const ValidationException(message: 'Group name is required');
       }
 
       if (group.adminIds == null || group.adminIds!.isEmpty) {
-        throw ValidationException(
+        throw const ValidationException(
           message: 'Group must have at least one admin',
         );
       }
@@ -125,7 +125,9 @@ class GroupConversationRemoteDataSourceImpl
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw UnknownException(
         message: 'Failed to create group',
         originalError: e,
@@ -157,7 +159,9 @@ class GroupConversationRemoteDataSourceImpl
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw UnknownException(
         message: 'Failed to retrieve group',
         originalError: e,
@@ -172,7 +176,7 @@ class GroupConversationRemoteDataSourceImpl
     DateTime? before,
   }) async {
     try {
-      Query<Map<String, dynamic>> query = _groupsRef
+      var query = _groupsRef
           .where('participantIds', arrayContains: userId)
           .orderBy('lastUpdatedAt', descending: true)
           .limit(limit);
@@ -192,7 +196,9 @@ class GroupConversationRemoteDataSourceImpl
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw UnknownException(
         message: 'Failed to retrieve groups for user',
         originalError: e,
@@ -222,7 +228,9 @@ class GroupConversationRemoteDataSourceImpl
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw UnknownException(
         message: 'Failed to update group',
         originalError: e,
@@ -249,7 +257,9 @@ class GroupConversationRemoteDataSourceImpl
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw UnknownException(
         message: 'Failed to delete group',
         originalError: e,
@@ -268,15 +278,17 @@ class GroupConversationRemoteDataSourceImpl
           .orderBy('lastUpdatedAt', descending: true)
           .limit(limit)
           .snapshots()
-          .map((snapshot) {
-            return snapshot.docs
+          .map(
+            (snapshot) => snapshot.docs
                 .map((doc) => ConversationModel.fromJson(doc.data()))
-                .toList();
-          });
+                .toList(),
+          );
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw UnknownException(
         message: 'Failed to watch groups for user',
         originalError: e,
@@ -318,7 +330,9 @@ class GroupConversationRemoteDataSourceImpl
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw UnknownException(
         message: 'Failed to add member to group',
         originalError: e,
@@ -351,22 +365,26 @@ class GroupConversationRemoteDataSourceImpl
       // Get current participants
       final participants = data['participants'] as List<dynamic>? ?? [];
       final updatedParticipants = participants
+          .cast<Map<String, dynamic>>()
           .where((p) => p['uid'] != userId)
           .toList();
 
-      // Remove member from participants array
+      // Remove member from participants array and their unread count
       await docRef.update({
         'participantIds': FieldValue.arrayRemove([userId]),
         'participants': updatedParticipants,
         'adminIds': FieldValue.arrayRemove([
           userId,
         ]), // Also remove from admins if present
+        'unreadCount.$userId': FieldValue.delete(), // Remove their unread count
         'lastUpdatedAt': FieldValue.serverTimestamp(),
       });
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw UnknownException(
         message: 'Failed to remove member from group',
         originalError: e,
@@ -410,7 +428,9 @@ class GroupConversationRemoteDataSourceImpl
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw UnknownException(
         message: 'Failed to update group info',
         originalError: e,
@@ -440,7 +460,9 @@ class GroupConversationRemoteDataSourceImpl
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw UnknownException(
         message: 'Failed to promote member to admin',
         originalError: e,
@@ -470,7 +492,9 @@ class GroupConversationRemoteDataSourceImpl
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw UnknownException(
         message: 'Failed to demote admin',
         originalError: e,
@@ -483,7 +507,6 @@ class GroupConversationRemoteDataSourceImpl
     String groupId,
     String messageText,
     String senderId,
-    String senderName,
     DateTime timestamp,
   ) async {
     try {
@@ -503,7 +526,6 @@ class GroupConversationRemoteDataSourceImpl
         'lastMessage': {
           'text': messageText,
           'senderId': senderId,
-          'senderName': senderName,
           'timestamp': Timestamp.fromDate(timestamp),
           'type': 'text',
         },
@@ -512,7 +534,9 @@ class GroupConversationRemoteDataSourceImpl
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw UnknownException(
         message: 'Failed to update last message',
         originalError: e,
@@ -543,7 +567,9 @@ class GroupConversationRemoteDataSourceImpl
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw UnknownException(
         message: 'Failed to update unread count',
         originalError: e,
@@ -559,9 +585,11 @@ class GroupConversationRemoteDataSourceImpl
           message: 'Permission denied to access group conversation',
         );
       case 'not-found':
-        return RecordNotFoundException(recordType: 'GroupConversation');
+        return const RecordNotFoundException(recordType: 'GroupConversation');
       case 'already-exists':
-        return RecordAlreadyExistsException(recordType: 'GroupConversation');
+        return const RecordAlreadyExistsException(
+          recordType: 'GroupConversation',
+        );
       case 'unavailable':
         return ServerException(
           message: 'Network unavailable: ${exception.message}',

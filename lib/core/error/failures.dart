@@ -6,10 +6,10 @@ import 'package:equatable/equatable.dart';
 /// They are returned by repositories and use cases instead of throwing exceptions.
 /// This allows for functional error handling and better testability.
 abstract class Failure extends Equatable {
-  final String message;
-  final String? code;
 
   const Failure({required this.message, this.code});
+  final String message;
+  final String? code;
 
   @override
   List<Object?> get props => [message, code];
@@ -43,13 +43,13 @@ class NetworkTimeoutFailure extends Failure {
 
 /// Failure when server returns an error
 class ServerFailure extends Failure {
-  final int? statusCode;
 
   const ServerFailure({
     super.message = 'Server error occurred. Please try again later.',
     super.code,
     this.statusCode,
   });
+  final int? statusCode;
 
   @override
   List<Object?> get props => [message, code, statusCode];
@@ -125,13 +125,13 @@ class DatabaseFailure extends Failure {
 
 /// Failure when a record is not found
 class RecordNotFoundFailure extends Failure {
-  final String recordType;
 
   const RecordNotFoundFailure({required this.recordType, String? message})
     : super(
         message: message ?? 'The requested $recordType was not found.',
         code: 'RECORD_NOT_FOUND',
       );
+  final String recordType;
 
   @override
   List<Object?> get props => [message, code, recordType];
@@ -150,12 +150,12 @@ class ConstraintViolationFailure extends Failure {
 
 /// Failure when input validation fails
 class ValidationFailure extends Failure {
-  final Map<String, String>? fieldErrors;
 
   const ValidationFailure({
     super.message = 'Please correct the errors and try again.',
     this.fieldErrors,
   }) : super(code: 'VALIDATION_ERROR');
+  final Map<String, String>? fieldErrors;
 
   @override
   List<Object?> get props => [message, code, fieldErrors];
@@ -170,13 +170,13 @@ class ValidationFailure extends Failure {
 
 /// Failure when input format is invalid
 class InvalidFormatFailure extends Failure {
-  final String fieldName;
 
   const InvalidFormatFailure({required this.fieldName, String? message})
     : super(
         message: message ?? 'Invalid format for $fieldName.',
         code: 'INVALID_FORMAT',
       );
+  final String fieldName;
 
   @override
   List<Object?> get props => [message, code, fieldName];
@@ -257,13 +257,13 @@ class TranslationFailure extends Failure {
 
 /// Failure when rate limit is exceeded
 class RateLimitExceededFailure extends Failure {
-  final DateTime? retryAfter;
 
   const RateLimitExceededFailure({this.retryAfter})
     : super(
         message: 'Too many requests. Please try again in a few moments.',
         code: 'RATE_LIMIT_EXCEEDED',
       );
+  final DateTime? retryAfter;
 
   @override
   List<Object?> get props => [message, code, retryAfter];

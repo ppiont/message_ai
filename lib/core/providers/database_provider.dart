@@ -1,8 +1,9 @@
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:message_ai/core/database/app_database.dart';
-import 'package:message_ai/core/database/daos/message_dao.dart';
 import 'package:message_ai/core/database/daos/conversation_dao.dart';
+import 'package:message_ai/core/database/daos/message_dao.dart';
 import 'package:message_ai/core/database/daos/user_dao.dart';
+import 'package:message_ai/core/database/services/drift_write_queue.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'database_provider.g.dart';
 
@@ -20,9 +21,7 @@ AppDatabase database(Ref ref) {
   final db = AppDatabase();
 
   // Clean up database when provider is disposed
-  ref.onDispose(() {
-    db.close();
-  });
+  ref.onDispose(db.close);
 
   return db;
 }
@@ -70,4 +69,29 @@ ConversationDao conversationDao(Ref ref) {
 UserDao userDao(Ref ref) {
   final db = ref.watch(databaseProvider);
   return db.userDao;
+}
+
+/// Provides the centralized write queue for all Drift operations.
+///
+/// This queue ensures that all database writes are serialized, preventing
+/// SQLite's "database is locked" errors that occur with concurrent writes.
+///
+/// **Always use this queue for write operations:**
+/// ```dart
+/// final queue = ref.read(driftWriteQueueProvider);
+/// await queue.enqueue(() => db.userDao.updateUser(uid, companion));
+/// ```
+///
+/// **Read operations can bypass the queue:**
+/// ```dart
+/// final user = await db.userDao.getUserByUid(uid); // No queue needed
+/// ```
+@Riverpod(keepAlive: true)
+DriftWriteQueue driftWriteQueue(Ref ref) {
+  final queue = DriftWriteQueue();
+
+  // Clean up queue when provider is disposed
+  ref.onDispose(queue.dispose);
+
+  return queue;
 }

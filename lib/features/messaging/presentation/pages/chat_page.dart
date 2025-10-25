@@ -3,12 +3,18 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:message_ai/features/authentication/domain/entities/user.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
+import 'package:message_ai/features/authentication/presentation/providers/user_lookup_provider.dart';
+import 'package:message_ai/features/messaging/data/services/typing_indicator_service.dart';
+import 'package:message_ai/features/messaging/domain/entities/message.dart';
 import 'package:message_ai/features/messaging/presentation/pages/group_management_page.dart';
 import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:message_ai/features/messaging/presentation/widgets/message_bubble.dart';
 import 'package:message_ai/features/messaging/presentation/widgets/message_input.dart';
 import 'package:message_ai/features/messaging/presentation/widgets/typing_indicator.dart';
+import 'package:message_ai/features/smart_replies/presentation/widgets/smart_reply_bar.dart';
+import 'package:message_ai/features/translation/presentation/providers/translation_providers.dart';
 
 /// Main chat screen for displaying and sending messages.
 ///
@@ -37,22 +43,51 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   final ScrollController _scrollController = ScrollController();
   final Set<String> _markedAsRead =
       {}; // Track which messages we've marked as read
+  final TextEditingController _messageInputController = TextEditingController();
+
+  /// Latest incoming message (for smart reply generation)
+  Message? _latestIncomingMessage;
+
+  /// Track previous message count to detect new messages vs updates
+  int _previousMessageCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Start auto-translation service when entering conversation
+    // This will automatically translate incoming messages based on user preference
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final currentUser = ref.read(currentUserWithFirestoreProvider).value;
+      if (currentUser != null) {
+        ref.read(autoTranslationServiceProvider).start(
+          conversationId: widget.conversationId,
+          currentUserId: currentUser.uid,
+          userPreferredLanguage: currentUser.preferredLanguage,
+        );
+      }
+    });
+  }
 
   @override
   void dispose() {
+    // Stop auto-translation service when leaving conversation
+    ref.read(autoTranslationServiceProvider).stop();
+
     _scrollController.dispose();
+    _messageInputController.dispose();
     super.dispose();
   }
 
-  /// Marks a message as read (when user actually sees it)
+  /// Marks a message as read for the current user (when user actually sees it)
   /// Note: Messages are automatically marked as delivered in the repository
-  void _markMessageAsRead(String messageId) {
+  void _markMessageAsRead(String messageId, String userId) {
     // Add to set immediately to prevent duplicate calls
     _markedAsRead.add(messageId);
 
-    // Call use case asynchronously
+    // Call use case asynchronously with userId for per-user tracking
     final markAsReadUseCase = ref.read(markMessageAsReadUseCaseProvider);
-    markAsReadUseCase(widget.conversationId, messageId).then((result) {
+    markAsReadUseCase(widget.conversationId, messageId, userId).then((result) {
       result.fold(
         (failure) {
           // Silently fail - read receipts are not critical
@@ -68,77 +103,142 @@ class _ChatPageState extends ConsumerState<ChatPage> {
 
   @override
   Widget build(BuildContext context) {
-    final currentUser = ref.watch(currentUserProvider);
+    // Use currentUserWithFirestoreProvider to get actual preferredLanguage from Firestore
+    final currentUserAsync = ref.watch(currentUserWithFirestoreProvider);
 
-    if (currentUser == null) {
-      return Scaffold(
+    return currentUserAsync.when(
+      data: (currentUser) {
+        if (currentUser == null) {
+          return Scaffold(
+            appBar: AppBar(title: Text(widget.otherParticipantName)),
+            body: const Center(child: Text('Please sign in to view messages')),
+          );
+        }
+
+        return _buildChatScaffold(context, currentUser);
+      },
+      loading: () => Scaffold(
         appBar: AppBar(title: Text(widget.otherParticipantName)),
-        body: const Center(child: Text('Please sign in to view messages')),
-      );
-    }
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [Text(widget.otherParticipantName), _buildPresenceStatus()],
-        ),
-        actions: [
-          if (widget.isGroup)
-            IconButton(
-              icon: const Icon(Icons.info_outline),
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => GroupManagementPage(
-                      conversationId: widget.conversationId,
-                    ),
-                  ),
-                );
-              },
-            ),
-        ],
+        body: const Center(child: CircularProgressIndicator()),
       ),
-      body: Column(
-        children: [
-          Expanded(child: _buildMessageList(currentUser.uid)),
-          _buildTypingIndicator(currentUser.uid),
-          MessageInput(
-            conversationId: widget.conversationId,
-            currentUserId: currentUser.uid,
-            currentUserName: currentUser.displayName,
-            onMessageSent: _scrollToBottom,
-          ),
-        ],
+      error: (error, stack) => Scaffold(
+        appBar: AppBar(title: Text(widget.otherParticipantName)),
+        body: Center(child: Text('Error loading user data: $error')),
       ),
     );
   }
 
+  Widget _buildChatScaffold(BuildContext context, User currentUser) => Scaffold(
+    appBar: AppBar(
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // For direct conversations, dynamically look up the name
+          // For groups, use the static group name
+          if (widget.isGroup)
+            Text(widget.otherParticipantName)
+          else
+            Consumer(
+              builder: (context, ref, _) {
+                final displayNameAsync = ref.watch(
+                  userDisplayNameProvider(widget.otherParticipantId),
+                );
+                return displayNameAsync.when(
+                  data: Text.new,
+                  loading: () => Text(widget.otherParticipantName), // Fallback
+                  error: (error, stackTrace) =>
+                      Text(widget.otherParticipantName), // Fallback
+                );
+              },
+            ),
+          _buildPresenceStatus(),
+        ],
+      ),
+      actions: [
+        if (widget.isGroup)
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (context) => GroupManagementPage(
+                    conversationId: widget.conversationId,
+                  ),
+                ),
+              );
+            },
+          ),
+      ],
+    ),
+    body: Column(
+      children: [
+        Expanded(child: _buildMessageList(currentUser)),
+        _buildTypingIndicator(currentUser.uid),
+        SmartReplyBar(
+          conversationId: widget.conversationId,
+          currentUserId: currentUser.uid,
+          onReplySelected: (replyText) {
+            _messageInputController.text = replyText;
+            // Move cursor to end
+            _messageInputController.selection = TextSelection.fromPosition(
+              TextPosition(offset: replyText.length),
+            );
+          },
+          incomingMessage: _latestIncomingMessage,
+        ),
+        MessageInput(
+          conversationId: widget.conversationId,
+          currentUserId: currentUser.uid,
+          currentUserName: currentUser.displayName,
+          onMessageSent: _scrollToBottom,
+          controller: _messageInputController,
+        ),
+      ],
+    ),
+  );
+
   Widget _buildPresenceStatus() {
     if (widget.isGroup) {
-      // Show group presence status
-      final groupPresenceAsync = ref.watch(
-        groupPresenceStatusProvider(widget.conversationId),
+      // Get conversation to extract participant IDs
+      final conversationAsync = ref.watch(
+        getConversationByIdProvider(widget.conversationId),
       );
 
-      return groupPresenceAsync.when(
-        data: (presence) {
-          final displayText = presence['displayText'] as String? ?? '';
-          final onlineCount = presence['onlineCount'] as int? ?? 0;
+      return conversationAsync.when(
+        data: (conversation) {
+          final participantIds = conversation.participants
+              .map((p) => p.uid)
+              .toList();
+          final groupPresenceAsync = ref.watch(
+            groupPresenceStatusProvider(participantIds),
+          );
 
-          if (displayText.isEmpty) return const SizedBox.shrink();
+          return groupPresenceAsync.when(
+            data: (Map<String, dynamic> presence) {
+              final displayText = presence['displayText'] as String? ?? '';
+              final onlineCount = presence['onlineCount'] as int? ?? 0;
 
-          return Text(
-            displayText,
-            style: TextStyle(
-              fontSize: 12,
-              color: onlineCount > 0 ? Colors.green : Colors.grey,
-              fontWeight: onlineCount > 0 ? FontWeight.w500 : FontWeight.normal,
-            ),
+              if (displayText.isEmpty) {
+                return const SizedBox.shrink();
+              }
+
+              return Text(
+                displayText,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: onlineCount > 0 ? Colors.green : Colors.grey,
+                  fontWeight: onlineCount > 0
+                      ? FontWeight.w500
+                      : FontWeight.normal,
+                ),
+              );
+            },
+            loading: () => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
           );
         },
         loading: () => const SizedBox.shrink(),
-        error: (_, __) => const SizedBox.shrink(),
+        error: (_, _) => const SizedBox.shrink(),
       );
     } else {
       // Show individual user presence status
@@ -147,7 +247,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       );
 
       return presenceAsync.when(
-        data: (presence) {
+        data: (Map<String, dynamic>? presence) {
           if (presence == null) {
             return const SizedBox.shrink();
           }
@@ -204,18 +304,23 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     );
 
     return typingUsersAsync.when(
-      data: (typingUsers) {
-        final typingNames = typingUsers.map((u) => u.userName).toList();
+      data: (List<TypingUser> typingUsers) {
+        final typingNames = typingUsers
+            .map<String>((TypingUser u) => u.userName)
+            .toList();
         return TypingIndicator(typingUserNames: typingNames);
       },
       loading: () => const SizedBox.shrink(),
-      error: (_, _) => const SizedBox.shrink(),
+      error: (Object _, StackTrace _) => const SizedBox.shrink(),
     );
   }
 
-  Widget _buildMessageList(String currentUserId) {
+  Widget _buildMessageList(User currentUser) {
     final messagesStream = ref.watch(
-      conversationMessagesStreamProvider(widget.conversationId, currentUserId),
+      conversationMessagesStreamProvider(
+        widget.conversationId,
+        currentUser.uid,
+      ),
     );
 
     return messagesStream.when(
@@ -224,20 +329,66 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           return _buildEmptyState();
         }
 
-        // Scroll to bottom when messages first load
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (_scrollController.hasClients) {
-            _scrollToBottom();
+        // Track latest incoming message for smart replies
+        // Get the most recent message that's not from current user
+        for (final msg in messages.reversed) {
+          final senderId = msg['senderId'] as String;
+          if (senderId != currentUser.uid) {
+            final messageId = msg['id'] as String;
+            // Only update if it's a new message
+            if (_latestIncomingMessage?.id != messageId) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  setState(() {
+                    _latestIncomingMessage = Message(
+                      id: messageId,
+                      text: msg['text'] as String,
+                      senderId: senderId,
+                      timestamp: msg['timestamp'] as DateTime,
+                      type: msg['type'] as String? ?? 'text',
+                      status: msg['status'] as String? ?? 'sent',
+                      metadata: MessageMetadata.defaultMetadata(),
+                      detectedLanguage: msg['detectedLanguage'] as String?,
+                      translations: msg['translations'] != null
+                          ? Map<String, String>.from(
+                              msg['translations'] as Map<String, dynamic>,
+                            )
+                          : null,
+                      embedding: msg['embedding'] != null
+                          ? List<double>.from(
+                              (msg['embedding'] as List<dynamic>)
+                                  .map((e) => (e as num).toDouble()),
+                            )
+                          : null,
+                    );
+                  });
+                }
+              });
+            }
+            break;
           }
-        });
+        }
+
+        // Only scroll to bottom when NEW messages arrive (not on updates like translations)
+        final currentMessageCount = messages.length;
+        final isNewMessage = currentMessageCount > _previousMessageCount;
+
+        if (isNewMessage) {
+          _previousMessageCount = currentMessageCount;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (_scrollController.hasClients) {
+              _scrollToBottom();
+            }
+          });
+        }
 
         return ListView.builder(
           controller: _scrollController,
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
           itemCount: messages.length,
-          itemBuilder: (context, index) {
+          itemBuilder: (BuildContext context, int index) {
             final message = messages[index];
-            final isMe = message['senderId'] == currentUserId;
+            final isMe = message['senderId'] == currentUser.uid;
             final messageId = message['id'] as String;
             final status = message['status'] as String? ?? 'sent';
 
@@ -247,19 +398,30 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             if (!isMe &&
                 status == 'delivered' &&
                 !_markedAsRead.contains(messageId)) {
-              _markMessageAsRead(messageId);
+              _markMessageAsRead(messageId, currentUser.uid);
             }
 
             // Check if we should show timestamp
             final showTimestamp = _shouldShowTimestamp(messages, index);
 
+            // currentUser is now passed from _buildChatScaffold with Firestore data
             return MessageBubble(
+              conversationId: widget.conversationId,
+              messageId: messageId,
               message: message['text'] as String,
+              senderId: message['senderId'] as String,
               isMe: isMe,
-              senderName: message['senderName'] as String? ?? 'Unknown',
               timestamp: message['timestamp'] as DateTime,
               showTimestamp: showTimestamp,
               status: status,
+              detectedLanguage: message['detectedLanguage'] as String?,
+              translations: message['translations'] != null
+                  ? Map<String, String>.from(
+                      message['translations'] as Map<String, dynamic>,
+                    )
+                  : null,
+              userPreferredLanguage: currentUser.preferredLanguage,
+              culturalHint: message['culturalHint'] as String?,
             );
           },
         );
@@ -277,7 +439,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
               onPressed: () => ref.invalidate(
                 conversationMessagesStreamProvider(
                   widget.conversationId,
-                  currentUserId,
+                  currentUser.uid,
                 ),
               ),
               child: const Text('Retry'),
@@ -288,33 +450,36 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.chat_bubble_outline, size: 80, color: Colors.grey[400]),
-          const SizedBox(height: 24),
-          Text(
-            'No messages yet',
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(color: Colors.grey[600]),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Send a message to start the conversation',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[500]),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _buildEmptyState() => Center(
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.chat_bubble_outline, size: 80, color: Colors.grey[400]),
+        const SizedBox(height: 24),
+        Text(
+          'No messages yet',
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(color: Colors.grey[600]),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Send a message to start the conversation',
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: Colors.grey[500]),
+        ),
+      ],
+    ),
+  );
 
-  bool _shouldShowTimestamp(List<Map<String, dynamic>> messages, int index) {
-    if (index == 0) return true; // Always show for first message
+  bool _shouldShowTimestamp(
+    List<Map<String, dynamic>> messages,
+    int index,
+  ) {
+    if (index == 0) {
+      return true; // Always show for first message
+    }
 
     final currentMessage = messages[index];
     final previousMessage = messages[index - 1];

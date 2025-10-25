@@ -12,10 +12,10 @@ import 'package:message_ai/features/authentication/domain/repositories/user_repo
 
 /// Implementation of UserRepository
 class UserRepositoryImpl implements UserRepository {
-  final UserRemoteDataSource _remoteDataSource;
 
   UserRepositoryImpl({required UserRemoteDataSource remoteDataSource})
     : _remoteDataSource = remoteDataSource;
+  final UserRemoteDataSource _remoteDataSource;
 
   @override
   Future<Either<Failure, User>> createUser(User user) async {
@@ -73,11 +73,11 @@ class UserRepositoryImpl implements UserRepository {
 
   @override
   Future<Either<Failure, void>> updateUserOnlineStatus(
-    String userId,
-    bool isOnline,
-  ) async {
+    String userId, {
+    required bool isOnline,
+  }) async {
     try {
-      await _remoteDataSource.updateUserOnlineStatus(userId, isOnline);
+      await _remoteDataSource.updateUserOnlineStatus(userId, isOnline: isOnline);
       return const Right(null);
     } on AppException catch (e) {
       return Left(ErrorMapper.mapExceptionToFailure(e));

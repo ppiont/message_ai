@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:message_ai/app.dart';
+import 'package:message_ai/config/env_config.dart';
 import 'package:message_ai/features/messaging/data/services/fcm_service.dart';
-import 'app.dart';
-import 'config/env_config.dart';
 
 /// Production environment entry point
 ///
@@ -26,9 +26,5 @@ void main() async {
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   // Run the app with Riverpod's ProviderScope
-  runApp(
-    const ProviderScope(
-      child: App(),
-    ),
-  );
+  runApp(const ProviderScope(child: App()));
 }

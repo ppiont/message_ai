@@ -3,12 +3,13 @@ library;
 
 import 'dart:convert';
 
-import 'package:drift/drift.dart' hide isNull, isNotNull;
+import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:message_ai/core/database/app_database.dart';
 import 'package:message_ai/core/database/daos/message_dao.dart';
 import 'package:message_ai/core/error/exceptions.dart';
 import 'package:message_ai/features/messaging/data/models/message_model.dart';
 import 'package:message_ai/features/messaging/domain/entities/message.dart';
+import 'package:message_ai/features/messaging/domain/entities/message_context_details.dart';
 
 /// Abstract interface for message local data source operations.
 ///
@@ -216,10 +217,9 @@ abstract class MessageLocalDataSource {
 /// Handles all local database operations for messages, including CRUD operations,
 /// sync status tracking, and reactive streams for real-time UI updates.
 class MessageLocalDataSourceImpl implements MessageLocalDataSource {
-  final MessageDao _messageDao;
-
   MessageLocalDataSourceImpl({required MessageDao messageDao})
     : _messageDao = messageDao;
+  final MessageDao _messageDao;
 
   // ============================================================================
   // Helper Methods
@@ -229,79 +229,101 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
   MessagesCompanion _messageToCompanion(
     String conversationId,
     Message message,
-  ) {
-    return MessagesCompanion.insert(
-      id: message.id,
-      conversationId: conversationId,
-      messageText: message.text,
-      senderId: message.senderId,
-      senderName: message.senderName,
-      timestamp: message.timestamp,
-      messageType: Value(message.type),
-      status: Value(message.status),
-      detectedLanguage: Value(message.detectedLanguage),
-      translations: Value(
-        message.translations != null
-            ? _serializeTranslations(message.translations!)
-            : null,
-      ),
-      replyTo: Value(message.replyTo),
-      metadata: Value(_serializeMetadata(message.metadata)),
-      aiAnalysis: Value(
-        message.aiAnalysis != null
-            ? _serializeAIAnalysis(message.aiAnalysis!)
-            : null,
-      ),
-      embedding: const Value.absent(),
-      syncStatus: const Value('pending'),
-      retryCount: const Value(0),
-      tempId: const Value.absent(),
-      lastSyncAttempt: const Value.absent(),
-    );
-  }
+  ) => MessagesCompanion.insert(
+    id: message.id,
+    conversationId: conversationId,
+    messageText: message.text,
+    senderId: message.senderId,
+    timestamp: message.timestamp,
+    messageType: Value(message.type),
+    status: Value(message.status),
+    detectedLanguage: Value(message.detectedLanguage),
+    translations: Value(
+      message.translations != null
+          ? _serializeTranslations(message.translations!)
+          : null,
+    ),
+    replyTo: Value(message.replyTo),
+    metadata: Value(_serializeMetadata(message.metadata)),
+    aiAnalysis: Value(
+      message.aiAnalysis != null
+          ? _serializeAIAnalysis(message.aiAnalysis!)
+          : null,
+    ),
+    embedding: Value(
+      message.embedding != null
+          ? _serializeEmbedding(message.embedding!)
+          : null,
+    ),
+    culturalHint: Value(message.culturalHint),
+    contextDetails: Value(
+      message.contextDetails != null
+          ? jsonEncode(message.contextDetails!.toJson())
+          : null,
+    ),
+    deliveredToJson: Value(
+      message.deliveredTo != null
+          ? _serializeTimestampMap(message.deliveredTo!)
+          : null,
+    ),
+    readByJson: Value(
+      message.readBy != null
+          ? _serializeTimestampMap(message.readBy!)
+          : null,
+    ),
+    syncStatus: const Value('pending'),
+    retryCount: const Value(0),
+  );
 
   /// Converts a Drift MessageEntity to a domain Message entity.
-  Message _entityToMessage(MessageEntity entity) {
-    return MessageModel(
-      id: entity.id,
-      text: entity.messageText,
-      senderId: entity.senderId,
-      senderName: entity.senderName,
-      timestamp: entity.timestamp,
-      type: entity.messageType,
-      status: entity.status,
-      detectedLanguage: entity.detectedLanguage,
-      translations: entity.translations != null
-          ? _deserializeTranslations(entity.translations!)
-          : null,
-      replyTo: entity.replyTo,
-      metadata: entity.metadata != null
-          ? _deserializeMetadata(entity.metadata!)
-          : MessageMetadata.defaultMetadata(),
-      aiAnalysis: entity.aiAnalysis != null
-          ? _deserializeAIAnalysis(entity.aiAnalysis!)
-          : null,
-    );
-  }
+  Message _entityToMessage(MessageEntity entity) => MessageModel(
+    id: entity.id,
+    text: entity.messageText,
+    senderId: entity.senderId,
+    timestamp: entity.timestamp,
+    type: entity.messageType,
+    status: entity.status,
+    detectedLanguage: entity.detectedLanguage,
+    translations: entity.translations != null
+        ? _deserializeTranslations(entity.translations!)
+        : null,
+    replyTo: entity.replyTo,
+    metadata: entity.metadata != null
+        ? _deserializeMetadata(entity.metadata!)
+        : MessageMetadata.defaultMetadata(),
+    embedding: entity.embedding != null
+        ? _deserializeEmbedding(entity.embedding!)
+        : null,
+    aiAnalysis: entity.aiAnalysis != null
+        ? _deserializeAIAnalysis(entity.aiAnalysis!)
+        : null,
+    culturalHint: entity.culturalHint,
+    contextDetails: entity.contextDetails != null
+        ? _deserializeContextDetails(entity.contextDetails!)
+        : null,
+    deliveredTo: entity.deliveredToJson != null
+        ? _deserializeTimestampMap(entity.deliveredToJson!)
+        : null,
+    readBy: entity.readByJson != null
+        ? _deserializeTimestampMap(entity.readByJson!)
+        : null,
+  );
 
   // JSON serialization methods
-  String _serializeTranslations(Map<String, String> translations) {
-    return jsonEncode(translations);
-  }
+  String _serializeTranslations(Map<String, String> translations) =>
+      jsonEncode(translations);
 
   Map<String, String> _deserializeTranslations(String json) {
     final decoded = jsonDecode(json) as Map<String, dynamic>;
     return decoded.map((key, value) => MapEntry(key, value.toString()));
   }
 
-  String _serializeMetadata(MessageMetadata metadata) {
-    return jsonEncode({
-      'edited': metadata.edited,
-      'deleted': metadata.deleted,
-      'priority': metadata.priority,
-      'hasIdioms': metadata.hasIdioms,
-    });
-  }
+  String _serializeMetadata(MessageMetadata metadata) => jsonEncode({
+    'edited': metadata.edited,
+    'deleted': metadata.deleted,
+    'priority': metadata.priority,
+    'hasIdioms': metadata.hasIdioms,
+  });
 
   MessageMetadata _deserializeMetadata(String json) {
     final decoded = jsonDecode(json) as Map<String, dynamic>;
@@ -313,13 +335,11 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
     );
   }
 
-  String _serializeAIAnalysis(MessageAIAnalysis analysis) {
-    return jsonEncode({
-      'priority': analysis.priority,
-      'actionItems': analysis.actionItems,
-      'sentiment': analysis.sentiment,
-    });
-  }
+  String _serializeAIAnalysis(MessageAIAnalysis analysis) => jsonEncode({
+    'priority': analysis.priority,
+    'actionItems': analysis.actionItems,
+    'sentiment': analysis.sentiment,
+  });
 
   MessageAIAnalysis? _deserializeAIAnalysis(String json) {
     try {
@@ -333,6 +353,55 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
             [],
         sentiment: decoded['sentiment'] as String? ?? 'neutral',
       );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  String _serializeEmbedding(List<double> embedding) => jsonEncode(embedding);
+
+  List<double>? _deserializeEmbedding(String json) {
+    try {
+      final decoded = jsonDecode(json) as List<dynamic>;
+      return decoded.map((e) => (e as num).toDouble()).toList();
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Serializes a timestamp map to JSON for Drift storage.
+  ///
+  /// Converts `Map<String, DateTime>` to JSON string with ISO 8601 timestamps.
+  String _serializeTimestampMap(Map<String, DateTime> map) {
+    final serialized = map.map((userId, timestamp) =>
+      MapEntry(userId, timestamp.toIso8601String()),
+    );
+    return jsonEncode(serialized);
+  }
+
+  /// Deserializes a timestamp map from JSON stored in Drift.
+  ///
+  /// Converts JSON string back to `Map<String, DateTime>`.
+  Map<String, DateTime>? _deserializeTimestampMap(String json) {
+    try {
+      final decoded = jsonDecode(json) as Map<String, dynamic>;
+      final result = <String, DateTime>{};
+      decoded.forEach((userId, timestamp) {
+        if (timestamp != null) {
+          result[userId] = DateTime.parse(timestamp as String);
+        }
+      });
+      return result;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Deserializes context details from JSON stored in Drift.
+  MessageContextDetails? _deserializeContextDetails(String json) {
+    try {
+      final decoded = jsonDecode(json) as Map<String, dynamic>;
+      return MessageContextDetails.fromJson(decoded);
     } catch (e) {
       return null;
     }
@@ -393,7 +462,9 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
 
       return message;
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw DatabaseException(
         message: 'Failed to update message',
         originalError: e,
@@ -804,12 +875,10 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
       case 'server-wins':
         // Remote version takes precedence (default for most sync scenarios)
         resolvedMessage = remoteMessage;
-        break;
 
       case 'client-wins':
         // Local version takes precedence (used for user edits that haven't synced yet)
         resolvedMessage = localMessage;
-        break;
 
       case 'merge':
         // Merge both versions intelligently
@@ -817,7 +886,6 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
           localMessage: localMessage,
           remoteMessage: remoteMessage,
         );
-        break;
 
       default:
         throw ValidationException(
@@ -893,7 +961,6 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
       id: remoteMessage.id,
       text: remoteMessage.text, // Server text is source of truth
       senderId: remoteMessage.senderId,
-      senderName: remoteMessage.senderName,
       timestamp: remoteMessage.timestamp, // Server timestamp wins
       type: remoteMessage.type,
       status: mergedStatus,

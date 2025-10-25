@@ -1,110 +1,273 @@
 /// Message bubble widget
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:message_ai/features/authentication/presentation/providers/user_lookup_provider.dart';
+import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
+import 'package:message_ai/features/messaging/presentation/widgets/message_context_dialog.dart';
+import 'package:message_ai/features/translation/data/services/language_detection_service.dart';
+import 'package:message_ai/features/translation/presentation/providers/translation_providers.dart';
 
 /// Widget displaying a single message bubble in the chat.
 ///
 /// Shows different styling for sent vs received messages,
-/// includes sender name, timestamp, and delivery status.
-class MessageBubble extends StatelessWidget {
+/// includes sender name (looked up dynamically), timestamp, delivery status, and translation functionality.
+class MessageBubble extends ConsumerStatefulWidget {
   const MessageBubble({
+    required this.conversationId,
+    required this.messageId,
     required this.message,
+    required this.senderId,
     required this.isMe,
-    required this.senderName,
     required this.timestamp,
     this.showTimestamp = false,
     this.status = 'sent',
+    this.detectedLanguage,
+    this.translations,
+    this.userPreferredLanguage,
+    this.culturalHint,
     super.key,
   });
 
+  final String conversationId;
+  final String messageId;
   final String message;
+  final String senderId;
   final bool isMe;
-  final String senderName;
   final DateTime timestamp;
   final bool showTimestamp;
   final String status;
+  final String? detectedLanguage;
+  final Map<String, String>? translations;
+  final String? userPreferredLanguage;
+  final String? culturalHint;
+
+  @override
+  ConsumerState<MessageBubble> createState() => _MessageBubbleState();
+}
+
+class _MessageBubbleState extends ConsumerState<MessageBubble> {
+  String? _fallbackDetectedLanguage;
+  bool _isDetectingLanguage = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // If message doesn't have detectedLanguage, try to detect it on-the-fly
+    if (widget.detectedLanguage == null && !widget.isMe) {
+      _detectLanguageFallback();
+    }
+  }
+
+  /// Fallback language detection for messages without detectedLanguage
+  Future<void> _detectLanguageFallback() async {
+    if (_isDetectingLanguage) {
+      return;
+    }
+
+    setState(() {
+      _isDetectingLanguage = true;
+    });
+
+    try {
+      final languageDetectionService = LanguageDetectionService();
+      final detected = await languageDetectionService.detectLanguage(widget.message);
+
+      if (mounted && detected != null) {
+        setState(() {
+          _fallbackDetectedLanguage = detected;
+        });
+
+        debugPrint('✅ Fallback language detection: ${widget.message.substring(0, widget.message.length.clamp(0, 30))}... -> $detected');
+
+        // Update the message in Firestore with detected language for future
+        final messageRepository = ref.read(messageRepositoryProvider);
+        final messageResult = await messageRepository.getMessageById(
+          widget.conversationId,
+          widget.messageId,
+        );
+
+        await messageResult.fold(
+          (failure) async {
+            debugPrint('Failed to get message for language update: ${failure.message}');
+          },
+          (messageEntity) async {
+            final updatedMessage = messageEntity.copyWith(
+              detectedLanguage: detected,
+            );
+            await messageRepository.updateMessage(
+              widget.conversationId,
+              updatedMessage,
+            );
+          },
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ Fallback language detection failed: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isDetectingLanguage = false;
+        });
+      }
+    }
+  }
+
+  /// Get effective detected language (use fallback if original is null)
+  String? get effectiveDetectedLanguage =>
+      widget.detectedLanguage ?? _fallbackDetectedLanguage;
 
   @override
   Widget build(BuildContext context) {
+    final translationState =
+        ref.watch<Map<String, MessageTranslationState>>(
+          translationControllerProvider,
+        )[widget.messageId] ??
+        const MessageTranslationState();
+    final translationController = ref.read(
+      translationControllerProvider.notifier,
+    );
+
+    // Look up sender name dynamically (cached for performance)
+    final senderNameAsync = ref.watch(userDisplayNameProvider(widget.senderId));
+
+    // Determine what text to show
+    final displayText = _getDisplayText(translationState);
+    final canTranslate = _canTranslate();
+
     return Column(
-      crossAxisAlignment: isMe
+      crossAxisAlignment: widget.isMe
           ? CrossAxisAlignment.end
           : CrossAxisAlignment.start,
       children: [
-        if (showTimestamp) _buildTimestampDivider(context),
+        if (widget.showTimestamp) _buildTimestampDivider(context),
         Padding(
           padding: EdgeInsets.only(
-            left: isMe ? 64 : 8,
-            right: isMe ? 8 : 64,
+            left: widget.isMe ? 64 : 8,
+            right: widget.isMe ? 8 : 64,
             top: 4,
             bottom: 4,
           ),
           child: Column(
-            crossAxisAlignment: isMe
+            crossAxisAlignment: widget.isMe
                 ? CrossAxisAlignment.end
                 : CrossAxisAlignment.start,
             children: [
-              if (!isMe)
+              if (!widget.isMe)
                 Padding(
                   padding: const EdgeInsets.only(left: 12, bottom: 4),
-                  child: Text(
-                    senderName,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              Container(
-                decoration: BoxDecoration(
-                  color: isMe
-                      ? Theme.of(context).colorScheme.primary
-                      : Colors.grey[200],
-                  borderRadius: BorderRadius.only(
-                    topLeft: const Radius.circular(16),
-                    topRight: const Radius.circular(16),
-                    bottomLeft: Radius.circular(isMe ? 16 : 4),
-                    bottomRight: Radius.circular(isMe ? 4 : 16),
-                  ),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      message,
+                  child: senderNameAsync.when(
+                    data: (senderName) => Text(
+                      senderName,
                       style: TextStyle(
-                        fontSize: 15,
-                        color: isMe ? Colors.white : Colors.black87,
-                        height: 1.4,
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          DateFormat.jm().format(timestamp),
+                    loading: () => Text(
+                      'Loading...',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[400],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    error: (error, stackTrace) => Text(
+                      'Unknown',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              GestureDetector(
+                onLongPressStart: (details) => _showContextMenu(context, details, ref),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: widget.isMe
+                        ? Theme.of(context).colorScheme.primary
+                        : Colors.grey[200],
+                    borderRadius: BorderRadius.only(
+                      topLeft: const Radius.circular(16),
+                      topRight: const Radius.circular(16),
+                      bottomLeft: Radius.circular(widget.isMe ? 16 : 4),
+                      bottomRight: Radius.circular(widget.isMe ? 4 : 16),
+                    ),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Message text with animation
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                        transitionBuilder:
+                            (Widget child, Animation<double> animation) =>
+                                FadeTransition(opacity: animation, child: child),
+                        child: Text(
+                          displayText,
+                          key: ValueKey(translationState.isTranslated),
                           style: TextStyle(
-                            fontSize: 11,
-                            color: isMe ? Colors.white70 : Colors.grey[600],
+                            fontSize: 15,
+                            color: widget.isMe ? Colors.white : Colors.black87,
+                            height: 1.4,
                           ),
                         ),
-                        if (isMe) ...[
-                          const SizedBox(width: 4),
-                          _buildStatusIcon(context),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            DateFormat.jm().format(widget.timestamp),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: widget.isMe ? Colors.white70 : Colors.grey[600],
+                            ),
+                          ),
+                          // Cultural context badge (only for received messages with hints)
+                          if (!widget.isMe && widget.culturalHint != null) ...[
+                            const SizedBox(width: 6),
+                            GestureDetector(
+                              onTap: () => _showCulturalContextDialog(context),
+                              child: Icon(
+                                Icons.public,
+                                size: 14,
+                                color: widget.isMe ? Colors.white70 : Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                          if (widget.isMe) ...[
+                            const SizedBox(width: 4),
+                            _buildStatusIcon(context),
+                          ],
                         ],
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
+              // Translation button (only for received messages with translation available)
+              if (canTranslate)
+                Padding(
+                  padding: const EdgeInsets.only(left: 12, top: 4),
+                  child: _buildTranslationButton(
+                    context,
+                    ref,
+                    translationState,
+                    translationController,
+                  ),
+                ),
             ],
           ),
         ),
@@ -112,45 +275,146 @@ class MessageBubble extends StatelessWidget {
     );
   }
 
-  Widget _buildTimestampDivider(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      child: Row(
+  /// Get the text to display based on translation state
+  String _getDisplayText(MessageTranslationState translationState) {
+    if (!translationState.isTranslated) {
+      return widget.message;
+    }
+
+    // Get translated text from translations map
+    final targetLanguage = widget.userPreferredLanguage ?? 'en';
+    return widget.translations?[targetLanguage] ?? widget.message;
+  }
+
+  /// Check if translation should be offered for this message
+  bool _canTranslate() {
+    // Use effective detected language (includes fallback)
+    final detectedLang = effectiveDetectedLanguage;
+
+    // Only show translate button for received messages
+    if (widget.isMe) {
+      return false;
+    }
+
+    // Need user preferred language and detected language
+    if (widget.userPreferredLanguage == null || detectedLang == null) {
+      return false;
+    }
+
+    // Don't show translate button if message is already in user's language
+    final isAlreadyInUserLanguage = detectedLang == widget.userPreferredLanguage;
+
+    // Show translate button if languages differ
+    return !isAlreadyInUserLanguage;
+  }
+
+  /// Build the translation button widget
+  Widget _buildTranslationButton(
+    BuildContext context,
+    WidgetRef ref,
+    MessageTranslationState translationState,
+    TranslationController translationController,
+  ) {
+    if (translationState.isLoading) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(child: Divider(color: Colors.grey[300])),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              _formatTimestampDivider(timestamp),
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
-              ),
+          SizedBox(
+            width: 12,
+            height: 12,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.grey[600]!),
             ),
           ),
-          Expanded(child: Divider(color: Colors.grey[300])),
+          const SizedBox(width: 6),
+          Text(
+            'Translating...',
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+          ),
+        ],
+      );
+    }
+
+    if (translationState.error != null) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.error_outline, size: 14, color: Colors.red[400]),
+          const SizedBox(width: 4),
+          Text(
+            'Translation unavailable',
+            style: TextStyle(fontSize: 12, color: Colors.red[400]),
+          ),
+        ],
+      );
+    }
+
+    return TextButton(
+      onPressed: () => _handleTranslationTap(ref, translationController),
+      style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            translationState.isTranslated ? Icons.language : Icons.translate,
+            size: 14,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            translationState.isTranslated ? 'Show original' : 'Translate',
+            style: TextStyle(
+              fontSize: 12,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
         ],
       ),
     );
   }
 
+  Widget _buildTimestampDivider(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 16),
+    child: Row(
+      children: [
+        Expanded(child: Divider(color: Colors.grey[300])),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            _formatTimestampDivider(widget.timestamp),
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        Expanded(child: Divider(color: Colors.grey[300])),
+      ],
+    ),
+  );
+
   Widget _buildStatusIcon(BuildContext context) {
-    switch (status) {
+    switch (widget.status) {
       case 'sent':
-        return Icon(
+        return const Icon(
           Icons.check,
           size: 16, // Increased from 14
           color: Colors.white, // Changed from white70 to full white
         );
       case 'delivered':
-        return Icon(
+        return const Icon(
           Icons.done_all,
           size: 16, // Increased from 14
           color: Colors.white, // Changed from white70 to full white
         );
       case 'read':
-        return Icon(
+        return const Icon(
           Icons.done_all,
           size: 16, // Increased from 14
           color: Colors.lightBlueAccent, // More visible color for read status
@@ -160,18 +424,259 @@ class MessageBubble extends StatelessWidget {
     }
   }
 
-  String _formatTimestampDivider(DateTime timestamp) {
+  String _formatTimestampDivider(DateTime ts) {
     final now = DateTime.now();
-    final difference = now.difference(timestamp);
+    final difference = now.difference(ts);
 
     if (difference.inDays == 0) {
       return 'Today';
     } else if (difference.inDays == 1) {
       return 'Yesterday';
     } else if (difference.inDays < 7) {
-      return DateFormat.EEEE().format(timestamp); // e.g., "Monday"
+      return DateFormat.EEEE().format(ts); // e.g., "Monday"
     } else {
-      return DateFormat.yMMMd().format(timestamp); // e.g., "Jan 15, 2024"
+      return DateFormat.yMMMd().format(ts); // e.g., "Jan 15, 2024"
     }
+  }
+
+  /// Show context menu on long press
+  Future<void> _showContextMenu(
+    BuildContext context,
+    LongPressStartDetails details,
+    WidgetRef ref,
+  ) async {
+    final overlay =
+        Overlay.of(context).context.findRenderObject() as RenderBox?;
+
+    if (overlay == null) {
+      return;
+    }
+
+    final result = await showMenu<String>(
+      context: context,
+      position: RelativeRect.fromRect(
+        details.globalPosition & const Size(1, 1),
+        Offset.zero & overlay.size,
+      ),
+      items: [
+        const PopupMenuItem<String>(
+          value: 'show_context',
+          child: Row(
+            children: [
+              Icon(Icons.translate, size: 20, color: Colors.blue),
+              SizedBox(width: 12),
+              Text('Show Context'),
+            ],
+          ),
+        ),
+      ],
+    );
+
+    if (result == 'show_context' && context.mounted) {
+      await _handleShowContext(context, ref);
+    }
+  }
+
+  /// Handle show context action (unified cultural context + idioms)
+  Future<void> _handleShowContext(BuildContext context, WidgetRef ref) async {
+    // Show loading indicator
+    unawaited(
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      ),
+    );
+
+    try {
+      final messageContextService = ref.read(messageContextServiceProvider);
+
+      // Get detected language
+      final language = effectiveDetectedLanguage ?? 'en';
+
+      final result = await messageContextService.analyzeMessageContext(
+        text: widget.message,
+        language: language,
+      );
+
+      if (!context.mounted) {
+        return;
+      }
+
+      // Close loading dialog
+      Navigator.of(context).pop();
+
+      result.fold(
+        (failure) {
+          // Show error
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to analyze context: ${failure.message}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        },
+        (contextDetails) {
+          if (contextDetails == null || !contextDetails.hasContent) {
+            // Show "no context" message
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('No cultural context needed for this message'),
+              ),
+            );
+          } else {
+            // Show dialog with context details
+            MessageContextDialog.show(context, contextDetails);
+          }
+        },
+      );
+    } catch (e) {
+      if (!context.mounted) {
+        return;
+      }
+
+      // Close loading dialog if still open
+      Navigator.of(context).pop();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  /// Show cultural context dialog
+  void _showCulturalContextDialog(BuildContext context) {
+    if (widget.culturalHint == null) {
+      return;
+    }
+
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.public, color: Colors.blue),
+            SizedBox(width: 8),
+            Text('Cultural Context'),
+          ],
+        ),
+        content: Text(
+          widget.culturalHint!,
+          style: const TextStyle(fontSize: 15, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Handle translation button tap
+  Future<void> _handleTranslationTap(
+    WidgetRef ref,
+    TranslationController translationController,
+  ) async {
+    final translationState =
+        ref.read<Map<String, MessageTranslationState>>(
+          translationControllerProvider,
+        )[widget.messageId] ??
+        const MessageTranslationState();
+
+    // If already translated, just toggle back to original
+    if (translationState.isTranslated) {
+      translationController.toggleTranslation(widget.messageId);
+      return;
+    }
+
+    // Check if translation already exists
+    final targetLanguage = widget.userPreferredLanguage!;
+    if (widget.translations != null && widget.translations!.containsKey(targetLanguage)) {
+      // Translation exists, just toggle display
+      translationController.toggleTranslation(widget.messageId);
+      return;
+    }
+
+    // Need to fetch translation - use effective detected language
+    final sourceLang = effectiveDetectedLanguage;
+    if (sourceLang == null) {
+      translationController.setError(widget.messageId, 'Cannot detect message language');
+      return;
+    }
+
+    translationController.setLoading(widget.messageId, isLoading: true);
+
+    final translateUseCase = ref.read(translateMessageProvider);
+    final messageRepository = ref.read(messageRepositoryProvider);
+
+    final result = await translateUseCase(
+      messageId: widget.messageId,
+      text: widget.message,
+      sourceLanguage: sourceLang,
+      targetLanguage: targetLanguage,
+    );
+
+    unawaited(
+      result.fold(
+        (failure) async {
+          translationController.setError(widget.messageId, failure.message);
+        },
+        (translatedText) async {
+          // Update message with new translation
+          final updatedTranslations = {
+            ...?widget.translations,
+            targetLanguage: translatedText,
+          };
+
+          // Get the full message entity to update it
+          final messageResult = await messageRepository.getMessageById(
+            widget.conversationId,
+            widget.messageId,
+          );
+
+          await messageResult.fold(
+            (failure) async {
+              translationController.setError(
+                widget.messageId,
+                'Failed to save translation',
+              );
+            },
+            (messageEntity) async {
+              // Update the message with new translation
+              final updatedMessage = messageEntity.copyWith(
+                translations: Map<String, String>.from(updatedTranslations),
+              );
+
+              final updateResult = await messageRepository.updateMessage(
+                widget.conversationId,
+                updatedMessage,
+              );
+
+              updateResult.fold(
+                (failure) {
+                  translationController.setError(
+                    widget.messageId,
+                    'Failed to save translation',
+                  );
+                },
+                (_) {
+                  // Success! Toggle to show translation
+                  translationController
+                    ..setLoading(widget.messageId, isLoading: false)
+                    ..toggleTranslation(widget.messageId);
+                },
+              );
+            },
+          );
+        },
+      ),
+    );
   }
 }

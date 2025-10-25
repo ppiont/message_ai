@@ -11,9 +11,9 @@ import 'package:message_ai/features/messaging/domain/repositories/conversation_r
 /// Returns a stream of conversations that updates whenever conversations
 /// are created, modified, or deleted.
 class WatchConversations {
-  final ConversationRepository _conversationRepository;
 
   WatchConversations(this._conversationRepository);
+  final ConversationRepository _conversationRepository;
 
   /// Watches conversations for a user.
   ///

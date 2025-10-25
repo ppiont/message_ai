@@ -4,12 +4,11 @@ import 'package:flutter/material.dart';
 ///
 /// Shows when other users are typing in the conversation.
 class TypingIndicator extends StatefulWidget {
-  final List<String> typingUserNames;
 
   const TypingIndicator({
-    super.key,
-    required this.typingUserNames,
+    required this.typingUserNames, super.key,
   });
+  final List<String> typingUserNames;
 
   @override
   State<TypingIndicator> createState() => _TypingIndicatorState();
@@ -62,14 +61,12 @@ class _TypingIndicatorState extends State<TypingIndicator>
   }
 
   /// Builds the animated dots indicator.
-  Widget _buildAnimatedDots() {
-    return SizedBox(
+  Widget _buildAnimatedDots() => SizedBox(
       width: 40,
       height: 20,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: List.generate(3, (index) {
-          return AnimatedBuilder(
+        children: List.generate(3, (index) => AnimatedBuilder(
             animation: _controller,
             builder: (context, child) {
               final delay = index * 0.2;
@@ -89,11 +86,9 @@ class _TypingIndicatorState extends State<TypingIndicator>
                 ),
               );
             },
-          );
-        }),
+          )),
       ),
     );
-  }
 
   /// Builds the typing text based on number of users.
   String _buildTypingText() {

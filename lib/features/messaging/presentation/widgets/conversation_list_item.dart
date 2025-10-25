@@ -4,6 +4,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:message_ai/features/authentication/presentation/providers/user_lookup_provider.dart';
 import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
 
 /// Widget displaying a single conversation in the conversation list.
@@ -41,8 +42,11 @@ class ConversationListItem extends ConsumerWidget {
     if (isGroup) {
       // Group conversation
       final name = groupName ?? 'Unknown Group';
+      final participantIds = participants
+          .map((p) => p['uid'] as String)
+          .toList();
       final groupPresenceAsync = ref.watch(
-        groupPresenceStatusProvider(conversationId),
+        groupPresenceStatusProvider(participantIds),
       );
 
       return ListTile(
@@ -151,70 +155,103 @@ class ConversationListItem extends ConsumerWidget {
         // Fallback to first participant if not found
         otherParticipant = participants.isNotEmpty
             ? participants.first
-            : {'name': 'Unknown', 'uid': '', 'imageUrl': null};
+            : {'uid': '', 'imageUrl': null};
       }
 
-      final name = otherParticipant['name'] as String? ?? 'Unknown';
       final imageUrl = otherParticipant['imageUrl'] as String?;
       final otherUserId = otherParticipant['uid'] as String? ?? '';
 
       // Watch presence for the other user
       final presenceAsync = ref.watch(userPresenceProvider(otherUserId));
 
-      return ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: _buildAvatarWithPresence(name, imageUrl, presenceAsync),
-        title: Row(
-          children: [
-            Expanded(
-              child: Text(
-                name,
-                style: TextStyle(
-                  fontWeight: unreadCount > 0
-                      ? FontWeight.bold
-                      : FontWeight.w500,
-                  fontSize: 16,
+      // Dynamically look up display name
+      final displayNameAsync = ref.watch(userDisplayNameProvider(otherUserId));
+
+      return displayNameAsync.when(
+        data: (displayName) => ListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
+          leading: _buildAvatarWithPresence(
+            displayName,
+            imageUrl,
+            presenceAsync,
+          ),
+          title: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  displayName,
+                  style: TextStyle(
+                    fontWeight: unreadCount > 0
+                        ? FontWeight.bold
+                        : FontWeight.w500,
+                    fontSize: 16,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-                overflow: TextOverflow.ellipsis,
               ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              _formatTimestamp(lastUpdatedAt),
-              style: TextStyle(
-                fontSize: 12,
-                color: unreadCount > 0
-                    ? Theme.of(context).colorScheme.primary
-                    : Colors.grey[600],
-                fontWeight: unreadCount > 0
-                    ? FontWeight.w600
-                    : FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
-        subtitle: Row(
-          children: [
-            Expanded(
-              child: Text(
-                lastMessage ?? 'No messages yet',
+              const SizedBox(width: 8),
+              Text(
+                _formatTimestamp(lastUpdatedAt),
                 style: TextStyle(
-                  color: lastMessage == null ? Colors.grey : Colors.grey[700],
+                  fontSize: 12,
+                  color: unreadCount > 0
+                      ? Theme.of(context).colorScheme.primary
+                      : Colors.grey[600],
                   fontWeight: unreadCount > 0
-                      ? FontWeight.w500
+                      ? FontWeight.w600
                       : FontWeight.normal,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
-            ),
-            if (unreadCount > 0) ...[
-              const SizedBox(width: 8),
-              _buildUnreadBadge(context),
             ],
-          ],
+          ),
+          subtitle: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  lastMessage ?? 'No messages yet',
+                  style: TextStyle(
+                    color: lastMessage == null ? Colors.grey : Colors.grey[700],
+                    fontWeight: unreadCount > 0
+                        ? FontWeight.w500
+                        : FontWeight.normal,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (unreadCount > 0) ...[
+                const SizedBox(width: 8),
+                _buildUnreadBadge(context),
+              ],
+            ],
+          ),
+          onTap: onTap,
         ),
-        onTap: onTap,
+        loading: () => ListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
+          leading: _buildAvatarWithPresence(
+            'Loading...',
+            imageUrl,
+            presenceAsync,
+          ),
+          title: const Text('Loading...'),
+          onTap: onTap,
+        ),
+        error: (_, _) => ListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
+          leading: _buildAvatarWithPresence('Unknown', imageUrl, presenceAsync),
+          title: const Text('Unknown'),
+          onTap: onTap,
+        ),
       );
     }
   }
@@ -222,71 +259,71 @@ class ConversationListItem extends ConsumerWidget {
   Widget _buildGroupAvatarWithPresence(
     String name,
     AsyncValue<Map<String, dynamic>> groupPresenceAsync,
-  ) {
-    return Stack(
-      children: [
-        _buildGroupAvatar(name),
-        // Online indicator (bottom-right of avatar)
-        groupPresenceAsync.when(
-          data: (presence) {
-            final onlineCount = presence['onlineCount'] as int? ?? 0;
-            if (onlineCount == 0) return const SizedBox.shrink();
+  ) => Stack(
+    children: [
+      _buildGroupAvatar(name),
+      // Online indicator (bottom-right of avatar)
+      groupPresenceAsync.when(
+        data: (presence) {
+          final onlineCount = presence['onlineCount'] as int? ?? 0;
+          if (onlineCount == 0) {
+            return const SizedBox.shrink();
+          }
 
-            return Positioned(
-              right: 0,
-              bottom: 0,
-              child: Container(
-                width: 14,
-                height: 14,
-                decoration: BoxDecoration(
-                  color: Colors.green,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
-                ),
+          return Positioned(
+            right: 0,
+            bottom: 0,
+            child: Container(
+              width: 14,
+              height: 14,
+              decoration: BoxDecoration(
+                color: Colors.green,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
               ),
-            );
-          },
-          loading: () => const SizedBox.shrink(),
-          error: (_, _) => const SizedBox.shrink(),
-        ),
-      ],
-    );
-  }
+            ),
+          );
+        },
+        loading: () => const SizedBox.shrink(),
+        error: (_, _) => const SizedBox.shrink(),
+      ),
+    ],
+  );
 
   Widget _buildAvatarWithPresence(
     String name,
     String? imageUrl,
     AsyncValue<Map<String, dynamic>?> presenceAsync,
-  ) {
-    return Stack(
-      children: [
-        _buildAvatar(name, imageUrl),
-        // Presence indicator (bottom-right of avatar)
-        presenceAsync.when(
-          data: (presence) {
-            if (presence == null) return const SizedBox.shrink();
+  ) => Stack(
+    children: [
+      _buildAvatar(name, imageUrl),
+      // Presence indicator (bottom-right of avatar)
+      presenceAsync.when(
+        data: (presence) {
+          if (presence == null) {
+            return const SizedBox.shrink();
+          }
 
-            final isOnline = presence['isOnline'] as bool? ?? false;
-            return Positioned(
-              right: 0,
-              bottom: 0,
-              child: Container(
-                width: 14,
-                height: 14,
-                decoration: BoxDecoration(
-                  color: isOnline ? Colors.green : Colors.grey,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
-                ),
+          final isOnline = presence['isOnline'] as bool? ?? false;
+          return Positioned(
+            right: 0,
+            bottom: 0,
+            child: Container(
+              width: 14,
+              height: 14,
+              decoration: BoxDecoration(
+                color: isOnline ? Colors.green : Colors.grey,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
               ),
-            );
-          },
-          loading: () => const SizedBox.shrink(),
-          error: (_, _) => const SizedBox.shrink(),
-        ),
-      ],
-    );
-  }
+            ),
+          );
+        },
+        loading: () => const SizedBox.shrink(),
+        error: (_, _) => const SizedBox.shrink(),
+      ),
+    ],
+  );
 
   Widget _buildGroupAvatar(String name) {
     // Generate color from name for consistent avatar colors
@@ -380,8 +417,8 @@ class ConversationListItem extends ConsumerWidget {
 
   Color _generateColorFromString(String str) {
     // Generate consistent color from string hash
-    int hash = 0;
-    for (int i = 0; i < str.length; i++) {
+    var hash = 0;
+    for (var i = 0; i < str.length; i++) {
       hash = str.codeUnitAt(i) + ((hash << 5) - hash);
     }
 

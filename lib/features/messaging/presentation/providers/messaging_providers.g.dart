@@ -59,7 +59,7 @@ final class MessagingFirestoreProvider
 }
 
 String _$messagingFirestoreHash() =>
-    r'075f59e78a7b16cab126cf43dfd452c86998e781';
+    r'4ff31a34ec4cb93c8424dba92ae379f9738a20a2';
 
 /// Provides the [MessageRemoteDataSource] implementation.
 
@@ -112,7 +112,7 @@ final class MessageRemoteDataSourceProvider
 }
 
 String _$messageRemoteDataSourceHash() =>
-    r'3bf4eecac4b81321a843d236e9c2fa7abc9e0655';
+    r'378a4681c47ad445b50e9bb2fbc58dd36fcc76c5';
 
 /// Provides the [MessageLocalDataSource] implementation.
 
@@ -219,7 +219,7 @@ final class ConversationRemoteDataSourceProvider
 }
 
 String _$conversationRemoteDataSourceHash() =>
-    r'56b43642c6ec61a3d0fc58f25afa73afe00fb395';
+    r'06d5ff0827d5087461a4c7119653be7caa07571b';
 
 /// Provides the [ConversationLocalDataSource] implementation.
 
@@ -325,7 +325,7 @@ final class MessageRepositoryProvider
   }
 }
 
-String _$messageRepositoryHash() => r'91f5830f711fdf5b0ed17302f62f4f88ba83b792';
+String _$messageRepositoryHash() => r'291bcb3f4687aa1af4400e2ec9c4e0ffb4778295';
 
 /// Provides the [ConversationRepository] implementation (offline-first).
 
@@ -378,19 +378,125 @@ final class ConversationRepositoryProvider
 }
 
 String _$conversationRepositoryHash() =>
-    r'8980f472f4ad7a535e5d9eeed7a15f96ef8e703c';
+    r'd2156b8fbd2bc2788083f7a39cbaeb4404020224';
 
-/// Provides the [SendMessage] use case.
+/// Provides Firebase Functions instance for message context analysis
+
+@ProviderFor(messageContextFunctions)
+const messageContextFunctionsProvider = MessageContextFunctionsProvider._();
+
+/// Provides Firebase Functions instance for message context analysis
+
+final class MessageContextFunctionsProvider
+    extends
+        $FunctionalProvider<
+          FirebaseFunctions,
+          FirebaseFunctions,
+          FirebaseFunctions
+        >
+    with $Provider<FirebaseFunctions> {
+  /// Provides Firebase Functions instance for message context analysis
+  const MessageContextFunctionsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'messageContextFunctionsProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$messageContextFunctionsHash();
+
+  @$internal
+  @override
+  $ProviderElement<FirebaseFunctions> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  FirebaseFunctions create(Ref ref) {
+    return messageContextFunctions(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(FirebaseFunctions value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<FirebaseFunctions>(value),
+    );
+  }
+}
+
+String _$messageContextFunctionsHash() =>
+    r'ab7ffaf1990d0a9902e31897a7bbbcf0605ed4bd';
+
+/// Provides the [MessageContextService] for analyzing message cultural context, formality, and idioms
+
+@ProviderFor(messageContextService)
+const messageContextServiceProvider = MessageContextServiceProvider._();
+
+/// Provides the [MessageContextService] for analyzing message cultural context, formality, and idioms
+
+final class MessageContextServiceProvider
+    extends
+        $FunctionalProvider<
+          MessageContextService,
+          MessageContextService,
+          MessageContextService
+        >
+    with $Provider<MessageContextService> {
+  /// Provides the [MessageContextService] for analyzing message cultural context, formality, and idioms
+  const MessageContextServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'messageContextServiceProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$messageContextServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<MessageContextService> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  MessageContextService create(Ref ref) {
+    return messageContextService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(MessageContextService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<MessageContextService>(value),
+    );
+  }
+}
+
+String _$messageContextServiceHash() =>
+    r'114aed6960eab3ef822125bef7440c05cb675eeb';
+
+/// Provides the [SendMessage] use case with language detection.
 
 @ProviderFor(sendMessageUseCase)
 const sendMessageUseCaseProvider = SendMessageUseCaseProvider._();
 
-/// Provides the [SendMessage] use case.
+/// Provides the [SendMessage] use case with language detection.
 
 final class SendMessageUseCaseProvider
     extends $FunctionalProvider<SendMessage, SendMessage, SendMessage>
     with $Provider<SendMessage> {
-  /// Provides the [SendMessage] use case.
+  /// Provides the [SendMessage] use case with language detection.
   const SendMessageUseCaseProvider._()
     : super(
         from: null,
@@ -425,7 +531,7 @@ final class SendMessageUseCaseProvider
 }
 
 String _$sendMessageUseCaseHash() =>
-    r'2b6b870b83db4a8595417b1fc34aac82e028946f';
+    r'2a140209617e601ce7d9328ed6a17a6b151b21a3';
 
 /// Provides the [WatchMessages] use case.
 
@@ -472,7 +578,7 @@ final class WatchMessagesUseCaseProvider
 }
 
 String _$watchMessagesUseCaseHash() =>
-    r'4a3ab70629345d8b337ae861ecd52bdc3f27abb9';
+    r'08f7a2c8b077e97a1cd91d95f256880fc0499977';
 
 /// Provides the [MarkMessageAsRead] use case.
 
@@ -525,7 +631,7 @@ final class MarkMessageAsReadUseCaseProvider
 }
 
 String _$markMessageAsReadUseCaseHash() =>
-    r'd240148f0e42fc9777e039ef4f83e9ed6f06d9cc';
+    r'40a03533ebecc618d57ae6bdff8606ca24659090';
 
 /// Provides the [MarkMessageAsDelivered] use case.
 
@@ -579,7 +685,7 @@ final class MarkMessageAsDeliveredUseCaseProvider
 }
 
 String _$markMessageAsDeliveredUseCaseHash() =>
-    r'82dcb904b6791f58649e8ce689a66c66c1dd18f4';
+    r'd26b20788d054c599348614af10ef12cb06ea2b4';
 
 /// Provides the [FindOrCreateDirectConversation] use case.
 
@@ -636,7 +742,7 @@ final class FindOrCreateDirectConversationUseCaseProvider
 }
 
 String _$findOrCreateDirectConversationUseCaseHash() =>
-    r'a30ca6add9625f26f6b792fff080718470667749';
+    r'8f744e9e5ec488d0f79a5df6794bd0186911ca72';
 
 /// Provides the [WatchConversations] use case.
 
@@ -689,7 +795,7 @@ final class WatchConversationsUseCaseProvider
 }
 
 String _$watchConversationsUseCaseHash() =>
-    r'9e9b08916aac20170c0d723d96105e1b3e8d432a';
+    r'08ca32dd807ecf413e4c65a86def58979009ca71';
 
 /// Provides the [GetConversationById] use case.
 
@@ -743,7 +849,7 @@ final class GetConversationByIdUseCaseProvider
 }
 
 String _$getConversationByIdUseCaseHash() =>
-    r'85ddece595f8263280c1342b052f762599c2334f';
+    r'8a0f31798d243e977b2b928bee5cf0ad2a79dbce';
 
 /// Stream provider for watching user's conversations in real-time.
 ///
@@ -815,7 +921,7 @@ final class UserConversationsStreamProvider
 }
 
 String _$userConversationsStreamHash() =>
-    r'f08df48edec293a86a3b8c7f38a68ee527f2f634';
+    r'e6d24bd008f733f914d8a14362edb96172c9953a';
 
 /// Stream provider for watching user's conversations in real-time.
 ///
@@ -847,6 +953,7 @@ final class UserConversationsStreamFamily extends $Family
 ///
 /// Automatically updates when messages change in Firestore.
 /// Automatically marks incoming messages as delivered.
+/// Computes aggregate read receipt status for group messages.
 
 @ProviderFor(conversationMessagesStream)
 const conversationMessagesStreamProvider = ConversationMessagesStreamFamily._();
@@ -855,6 +962,7 @@ const conversationMessagesStreamProvider = ConversationMessagesStreamFamily._();
 ///
 /// Automatically updates when messages change in Firestore.
 /// Automatically marks incoming messages as delivered.
+/// Computes aggregate read receipt status for group messages.
 
 final class ConversationMessagesStreamProvider
     extends
@@ -870,6 +978,7 @@ final class ConversationMessagesStreamProvider
   ///
   /// Automatically updates when messages change in Firestore.
   /// Automatically marks incoming messages as delivered.
+  /// Computes aggregate read receipt status for group messages.
   const ConversationMessagesStreamProvider._({
     required ConversationMessagesStreamFamily super.from,
     required (String, String) super.argument,
@@ -916,12 +1025,13 @@ final class ConversationMessagesStreamProvider
 }
 
 String _$conversationMessagesStreamHash() =>
-    r'0cf19c78d2447e2dea9254085df6d4981b03e96e';
+    r'f6119358b591bc856369cab2c62990c1781988a6';
 
 /// Stream provider for watching messages in a conversation in real-time.
 ///
 /// Automatically updates when messages change in Firestore.
 /// Automatically marks incoming messages as delivered.
+/// Computes aggregate read receipt status for group messages.
 
 final class ConversationMessagesStreamFamily extends $Family
     with
@@ -942,6 +1052,7 @@ final class ConversationMessagesStreamFamily extends $Family
   ///
   /// Automatically updates when messages change in Firestore.
   /// Automatically marks incoming messages as delivered.
+  /// Computes aggregate read receipt status for group messages.
 
   ConversationMessagesStreamProvider call(
     String conversationId,
@@ -1006,7 +1117,7 @@ final class TypingIndicatorServiceProvider
 }
 
 String _$typingIndicatorServiceHash() =>
-    r'45cdd079e3cb4d9c74a2b184b234a6d7aa384aec';
+    r'56460f0728d1454e91436c0da25ac4890892c9d3';
 
 /// Watches typing users for a specific conversation.
 
@@ -1101,14 +1212,16 @@ final class ConversationTypingUsersFamily extends $Family
 
 /// Provides the [AutoDeliveryMarker] service.
 ///
-/// Automatically marks incoming messages as delivered for all conversations.
+/// Automatically marks incoming messages as delivered for all conversations
+/// (both direct and group conversations).
 
 @ProviderFor(autoDeliveryMarker)
 const autoDeliveryMarkerProvider = AutoDeliveryMarkerProvider._();
 
 /// Provides the [AutoDeliveryMarker] service.
 ///
-/// Automatically marks incoming messages as delivered for all conversations.
+/// Automatically marks incoming messages as delivered for all conversations
+/// (both direct and group conversations).
 
 final class AutoDeliveryMarkerProvider
     extends
@@ -1120,7 +1233,8 @@ final class AutoDeliveryMarkerProvider
     with $Provider<AutoDeliveryMarker?> {
   /// Provides the [AutoDeliveryMarker] service.
   ///
-  /// Automatically marks incoming messages as delivered for all conversations.
+  /// Automatically marks incoming messages as delivered for all conversations
+  /// (both direct and group conversations).
   const AutoDeliveryMarkerProvider._()
     : super(
         from: null,
@@ -1156,7 +1270,7 @@ final class AutoDeliveryMarkerProvider
 }
 
 String _$autoDeliveryMarkerHash() =>
-    r'8573126e962b960ce9d565b3fff4611badaf747b';
+    r'711a95d9b7e6a0cb0c27884afc4262f4738d7f9d';
 
 /// Provides the [PresenceService] instance.
 
@@ -1203,7 +1317,7 @@ final class PresenceServiceProvider
   }
 }
 
-String _$presenceServiceHash() => r'dc32f854480383c033d4c735e4ba8284bd1cef22';
+String _$presenceServiceHash() => r'63a0b7d276c7c1c17d885601a307c2b4335c2669';
 
 /// Provides the [FCMService] instance for push notifications.
 
@@ -1249,7 +1363,7 @@ final class FcmServiceProvider
   }
 }
 
-String _$fcmServiceHash() => r'd896e197769a8ff50cfbbe8d88377394fbdbcf76';
+String _$fcmServiceHash() => r'f44dd3cee344080597815373251c1d1017a61507';
 
 /// Watches presence status for a specific user.
 ///
@@ -1328,7 +1442,7 @@ final class UserPresenceProvider
   }
 }
 
-String _$userPresenceHash() => r'9f951929604a78b91a32e2cd74b6d5e6ef5f38f5';
+String _$userPresenceHash() => r'b49e76812a23aaac3acf6a1a3ad87634fc5c3584';
 
 /// Watches presence status for a specific user.
 ///
@@ -1419,7 +1533,7 @@ final class MessageSyncServiceProvider
 }
 
 String _$messageSyncServiceHash() =>
-    r'b106c9e58b489f174052c88b24060e1743e49637';
+    r'ecc8f2ff52e4fa5e1fae9c8e385c5a6558ce8e7b';
 
 /// Provides the [MessageQueue] instance.
 ///
@@ -1471,7 +1585,7 @@ final class MessageQueueProvider
   }
 }
 
-String _$messageQueueHash() => r'9b2185063af10745cd105b6528f0ead3e2b8d842';
+String _$messageQueueHash() => r'58a6d1448bd786b5e80aea7a47a72991717725bb';
 
 /// Provides the [GroupConversationRemoteDataSource] implementation.
 
@@ -1528,7 +1642,7 @@ final class GroupConversationRemoteDataSourceProvider
 }
 
 String _$groupConversationRemoteDataSourceHash() =>
-    r'd40cc05fa53616cfa6447031049606dc4020757a';
+    r'17aeea5d630aac4a061b77e85b841638e3449736';
 
 /// Provides the [GroupConversationRepository] implementation (offline-first).
 
@@ -1582,7 +1696,7 @@ final class GroupConversationRepositoryProvider
 }
 
 String _$groupConversationRepositoryHash() =>
-    r'9cb65164ce628d86b06dd89c3dee4bfdb37e205f';
+    r'e9589ce9e0a50eb85e14cf0f557c822b7b5fb59a';
 
 /// Provides the [CreateGroup] use case.
 
@@ -1629,7 +1743,7 @@ final class CreateGroupUseCaseProvider
 }
 
 String _$createGroupUseCaseHash() =>
-    r'f3a1abc4df90c9382a0092d46fa6663ebffa13f8';
+    r'b2b5b97340c34aacea0f41d89b3a7c0d5800ba10';
 
 /// Provides the [AddGroupMember] use case.
 
@@ -1676,7 +1790,7 @@ final class AddGroupMemberUseCaseProvider
 }
 
 String _$addGroupMemberUseCaseHash() =>
-    r'f62e417e5489e1c126fa01dc96b01b16c3761ddf';
+    r'58f8c6f035467d040dac1e88b2e992dfdda83209';
 
 /// Provides the [RemoveGroupMember] use case.
 
@@ -1729,7 +1843,7 @@ final class RemoveGroupMemberUseCaseProvider
 }
 
 String _$removeGroupMemberUseCaseHash() =>
-    r'59e3417a4cc28f35336be694aaf99e6f0c9b1dc9';
+    r'07d6016e8d978e238a69046461f279e8bcb74eda';
 
 /// Provides the [LeaveGroup] use case.
 
@@ -1775,7 +1889,7 @@ final class LeaveGroupUseCaseProvider
   }
 }
 
-String _$leaveGroupUseCaseHash() => r'8be254f5f8a794806b2ed938f315b0326226f8d9';
+String _$leaveGroupUseCaseHash() => r'883a6f832bed4999799ce990ad7a72a496796ce3';
 
 /// Provides the [UpdateGroupInfo] use case.
 
@@ -1823,7 +1937,7 @@ final class UpdateGroupInfoUseCaseProvider
 }
 
 String _$updateGroupInfoUseCaseHash() =>
-    r'3d0ac2d1b201c7ffb5a2263752053af33d767b86';
+    r'b7867d6930abbc42f6b4d7cba76d85e13c0e825f';
 
 /// Stream provider for watching all conversations (both direct and groups) in real-time.
 ///
@@ -1898,7 +2012,7 @@ final class AllConversationsStreamProvider
 }
 
 String _$allConversationsStreamHash() =>
-    r'626a7b788b65ab4651a0504c207c310376af0c0b';
+    r'45fe048a7a04907d45b7ef1c2832c34207ecd517';
 
 /// Stream provider for watching all conversations (both direct and groups) in real-time.
 ///
@@ -1979,7 +2093,7 @@ final class ConversationUsersStreamProvider
 }
 
 String _$conversationUsersStreamHash() =>
-    r'dfa9741c3d075c9b40ff64c68971ebe1ebcc1d7a';
+    r'13eee3b4a8ebc508b3cb643220cb5a2af6deab1a';
 
 /// Provides aggregated online status for a group conversation.
 ///
@@ -2019,7 +2133,7 @@ final class GroupPresenceStatusProvider
   /// - 'displayText': Human-readable status (e.g., "3/5 online")
   const GroupPresenceStatusProvider._({
     required GroupPresenceStatusFamily super.from,
-    required String super.argument,
+    required List<String> super.argument,
   }) : super(
          retry: null,
          name: r'groupPresenceStatusProvider',
@@ -2046,7 +2160,7 @@ final class GroupPresenceStatusProvider
 
   @override
   Stream<Map<String, dynamic>> create(Ref ref) {
-    final argument = this.argument as String;
+    final argument = this.argument as List<String>;
     return groupPresenceStatus(ref, argument);
   }
 
@@ -2062,7 +2176,7 @@ final class GroupPresenceStatusProvider
 }
 
 String _$groupPresenceStatusHash() =>
-    r'ad13934708b1c46db0dc8637af614747a498afdb';
+    r'1548d5c934a736b4300a8bd4413af5418fafc4f6';
 
 /// Provides aggregated online status for a group conversation.
 ///
@@ -2073,7 +2187,7 @@ String _$groupPresenceStatusHash() =>
 /// - 'displayText': Human-readable status (e.g., "3/5 online")
 
 final class GroupPresenceStatusFamily extends $Family
-    with $FunctionalFamilyOverride<Stream<Map<String, dynamic>>, String> {
+    with $FunctionalFamilyOverride<Stream<Map<String, dynamic>>, List<String>> {
   const GroupPresenceStatusFamily._()
     : super(
         retry: null,
@@ -2091,8 +2205,8 @@ final class GroupPresenceStatusFamily extends $Family
   /// - 'onlineMembers': List of online member IDs
   /// - 'displayText': Human-readable status (e.g., "3/5 online")
 
-  GroupPresenceStatusProvider call(String groupId) =>
-      GroupPresenceStatusProvider._(argument: groupId, from: this);
+  GroupPresenceStatusProvider call(List<String> participantIds) =>
+      GroupPresenceStatusProvider._(argument: participantIds, from: this);
 
   @override
   String toString() => r'groupPresenceStatusProvider';

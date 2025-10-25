@@ -5,9 +5,9 @@ import 'package:message_ai/features/authentication/domain/repositories/auth_repo
 
 /// Use case for signing up a new user with email and password
 class SignUpWithEmail {
-  final AuthRepository _repository;
 
   SignUpWithEmail(this._repository);
+  final AuthRepository _repository;
 
   /// Signs up a new user
   ///

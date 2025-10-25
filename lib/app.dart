@@ -5,6 +5,7 @@ import 'package:message_ai/config/env_config.dart';
 import 'package:message_ai/features/authentication/presentation/pages/auth_page.dart';
 import 'package:message_ai/features/authentication/presentation/pages/profile_setup_page.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
+import 'package:message_ai/features/authentication/presentation/providers/user_providers.dart';
 import 'package:message_ai/features/messaging/presentation/pages/chat_page.dart';
 import 'package:message_ai/features/messaging/presentation/pages/conversation_list_page.dart';
 import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
@@ -26,11 +27,13 @@ Future<void> _handleNotificationNavigation({
     final collection = isGroup ? 'group-conversations' : 'conversations';
 
     // Fetch conversation to get participant details
-    final conversationDoc =
-        await firestore.collection(collection).doc(conversationId).get();
+    final conversationDoc = await firestore
+        .collection(collection)
+        .doc(conversationId)
+        .get();
 
     if (!conversationDoc.exists) {
-      print('Conversation $conversationId not found');
+      debugPrint('Conversation $conversationId not found');
       return;
     }
 
@@ -39,8 +42,8 @@ Future<void> _handleNotificationNavigation({
     if (isGroup) {
       // For groups, navigate with group name
       final groupName = conversationData['name'] as String? ?? 'Group Chat';
-      navigator.push(
-        MaterialPageRoute(
+      await navigator.push(
+        MaterialPageRoute<void>(
           builder: (context) => ChatPage(
             conversationId: conversationId,
             otherParticipantId: conversationId,
@@ -53,23 +56,23 @@ Future<void> _handleNotificationNavigation({
       // For direct chats, fetch sender's name
       final senderDoc = await firestore.collection('users').doc(senderId).get();
 
-      final senderName = senderDoc.data()?['displayName'] as String? ??
+      final senderName =
+          senderDoc.data()?['displayName'] as String? ??
           senderDoc.data()?['email'] as String? ??
           'Unknown User';
 
-      navigator.push(
-        MaterialPageRoute(
+      await navigator.push(
+        MaterialPageRoute<void>(
           builder: (context) => ChatPage(
             conversationId: conversationId,
             otherParticipantId: senderId,
             otherParticipantName: senderName,
-            isGroup: false,
           ),
         ),
       );
     }
   } catch (e) {
-    print('Failed to navigate from notification: $e');
+    debugPrint('Failed to navigate from notification: $e');
   }
 }
 
@@ -97,12 +100,16 @@ class App extends ConsumerWidget {
     if (user != null) {
       // Initialize offline-first services
       // These are keepAlive providers, so watching them ensures they start
-      ref.watch(messageSyncServiceProvider);
-      ref.watch(messageQueueProvider);
+      ref
+        ..watch(messageSyncServiceProvider)
+        ..watch(messageQueueProvider)
+        // Initialize presence controller
+        // Automatically manages online/offline status based on auth
+        ..watch(presenceControllerProvider);
 
-      // Initialize presence controller
-      // Automatically manages online/offline status based on auth
-      ref.watch(presenceControllerProvider);
+      // Initialize user sync service
+      // Automatically syncs user profiles from Firestore to Drift
+      ref.watch(userSyncServiceProvider).startBackgroundSync();
 
       // Initialize auto delivery marker
       // Automatically marks incoming messages as delivered across all conversations
@@ -115,28 +122,27 @@ class App extends ConsumerWidget {
       // Initialize FCM for push notifications
       // This is done here (not in sign-in/sign-up pages) to avoid unmounted widget issues
       try {
-        final fcmService = ref.read(fcmServiceProvider);
-        fcmService.initialize(
-          userId: user.uid,
-          onNotificationTap: ({
-            required String conversationId,
-            required String senderId,
-          }) {
-            // Navigate to chat page when notification is tapped
-            // Using global navigator key to handle navigation from any app state
-            final navigator = navigatorKey.currentState;
-            if (navigator != null) {
-              _handleNotificationNavigation(
-                conversationId: conversationId,
-                senderId: senderId,
-                navigator: navigator,
-              );
-            }
-          },
-        );
+        ref
+            .read(fcmServiceProvider)
+            .initialize(
+              userId: user.uid,
+              onNotificationTap:
+                  ({required String conversationId, required String senderId}) {
+                    // Navigate to chat page when notification is tapped
+                    // Using global navigator key to handle navigation from any app state
+                    final navigator = navigatorKey.currentState;
+                    if (navigator != null) {
+                      _handleNotificationNavigation(
+                        conversationId: conversationId,
+                        senderId: senderId,
+                        navigator: navigator,
+                      );
+                    }
+                  },
+            );
       } catch (e) {
         // Silently fail if FCM can't be initialized
-        print('FCM initialization failed: $e');
+        debugPrint('FCM initialization failed: $e');
       }
     }
 
@@ -148,9 +154,7 @@ class App extends ConsumerWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
         inputDecorationTheme: InputDecorationTheme(
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
             vertical: 16,
@@ -177,21 +181,14 @@ class App extends ConsumerWidget {
             return const AuthPage();
           }
         },
-        loading: () => const Scaffold(
-          body: Center(
-            child: CircularProgressIndicator(),
-          ),
-        ),
+        loading: () =>
+            const Scaffold(body: Center(child: CircularProgressIndicator())),
         error: (error, stack) => Scaffold(
           body: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
-                  Icons.error,
-                  color: Colors.red,
-                  size: 48,
-                ),
+                const Icon(Icons.error, color: Colors.red, size: 48),
                 const SizedBox(height: 16),
                 Text(
                   'Error: $error',

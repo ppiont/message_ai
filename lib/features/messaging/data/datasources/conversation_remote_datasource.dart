@@ -43,7 +43,6 @@ abstract class ConversationRemoteDataSource {
     String conversationId,
     String messageText,
     String senderId,
-    String senderName,
     DateTime timestamp,
   );
 
@@ -57,13 +56,12 @@ abstract class ConversationRemoteDataSource {
 
 /// Implementation of [ConversationRemoteDataSource] using Firebase Firestore.
 class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
+  ConversationRemoteDataSourceImpl({required FirebaseFirestore firestore})
+    : _firestore = firestore;
   final FirebaseFirestore _firestore;
 
   // Cache to track which collection each conversation belongs to
   final Map<String, String> _conversationTypeCache = {};
-
-  ConversationRemoteDataSourceImpl({required FirebaseFirestore firestore})
-      : _firestore = firestore;
 
   static const String _conversationsCollection = 'conversations';
   static const String _groupConversationsCollection = 'group-conversations';
@@ -124,7 +122,9 @@ class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw UnknownException(
         message: 'Failed to create conversation',
         originalError: e,
@@ -148,7 +148,9 @@ class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw UnknownException(
         message: 'Failed to get conversation',
         originalError: e,
@@ -163,7 +165,7 @@ class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
     DateTime? before,
   }) async {
     try {
-      Query<Map<String, dynamic>> query = _conversationsRef
+      var query = _conversationsRef
           .where('participantIds', arrayContains: userId)
           .orderBy('lastUpdatedAt', descending: true)
           .limit(limit);
@@ -181,7 +183,9 @@ class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw UnknownException(
         message: 'Failed to get conversations',
         originalError: e,
@@ -213,7 +217,9 @@ class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw UnknownException(
         message: 'Failed to update conversation',
         originalError: e,
@@ -230,7 +236,9 @@ class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw UnknownException(
         message: 'Failed to delete conversation',
         originalError: e,
@@ -249,15 +257,17 @@ class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
           .orderBy('lastUpdatedAt', descending: true)
           .limit(limit)
           .snapshots()
-          .map((snapshot) {
-        return snapshot.docs
-            .map((doc) => ConversationModel.fromJson(doc.data()))
-            .toList();
-      });
+          .map(
+            (snapshot) => snapshot.docs
+                .map((doc) => ConversationModel.fromJson(doc.data()))
+                .toList(),
+          );
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw UnknownException(
         message: 'Failed to watch conversations',
         originalError: e,
@@ -280,7 +290,9 @@ class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
       // Filter results to find conversation with exactly these two users
       for (final doc in querySnapshot.docs) {
         final data = doc.data();
-        final participantIds = List<String>.from(data['participantIds'] as List);
+        final participantIds = List<String>.from(
+          data['participantIds'] as List,
+        );
 
         if (participantIds.length == 2 &&
             participantIds.contains(userId1) &&
@@ -293,7 +305,9 @@ class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw UnknownException(
         message: 'Failed to find direct conversation',
         originalError: e,
@@ -306,7 +320,6 @@ class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
     String conversationId,
     String messageText,
     String senderId,
-    String senderName,
     DateTime timestamp,
   ) async {
     try {
@@ -315,7 +328,6 @@ class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
         'lastMessage': {
           'text': messageText,
           'senderId': senderId,
-          'senderName': senderName,
           'timestamp': Timestamp.fromDate(timestamp),
           'type': 'text', // Required field for LastMessageModel.fromJson()
         },
@@ -324,7 +336,9 @@ class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw UnknownException(
         message: 'Failed to update last message',
         originalError: e,
@@ -340,13 +354,13 @@ class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
   ) async {
     try {
       final conversationDoc = await _conversationDoc(conversationId);
-      await conversationDoc.update({
-        'unreadCount.$userId': count,
-      });
+      await conversationDoc.update({'unreadCount.$userId': count});
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw UnknownException(
         message: 'Failed to update unread count',
         originalError: e,

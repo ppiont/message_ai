@@ -12,9 +12,8 @@ import 'package:message_ai/features/authentication/domain/repositories/auth_repo
 /// Handles authentication operations and converts data source responses
 /// to domain entities, mapping exceptions to failures.
 class AuthRepositoryImpl implements AuthRepository {
-  final AuthRemoteDataSource _remoteDataSource;
-
   AuthRepositoryImpl(this._remoteDataSource);
+  final AuthRemoteDataSource _remoteDataSource;
 
   // ========== Email Authentication ==========
 
@@ -262,28 +261,27 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Stream<User?> authStateChanges() {
-    return _remoteDataSource.authStateChanges().map((firebaseUser) {
-      if (firebaseUser == null) return null;
-      return _mapFirebaseUserToEntity(firebaseUser);
-    });
-  }
+  Stream<User?> authStateChanges() =>
+      _remoteDataSource.authStateChanges().map((firebaseUser) {
+        if (firebaseUser == null) {
+          return null;
+        }
+        return _mapFirebaseUserToEntity(firebaseUser);
+      });
 
   // ========== Helper Methods ==========
 
   /// Maps a Firebase User to our domain User entity
-  User _mapFirebaseUserToEntity(firebase_auth.User firebaseUser) {
-    return User(
-      uid: firebaseUser.uid,
-      email: firebaseUser.email,
-      phoneNumber: firebaseUser.phoneNumber,
-      displayName: firebaseUser.displayName ?? '',
-      photoURL: firebaseUser.photoURL,
-      preferredLanguage: 'en', // Default, will be updated from Firestore
-      createdAt: firebaseUser.metadata.creationTime ?? DateTime.now(),
-      lastSeen: DateTime.now(),
-      isOnline: true,
-      fcmTokens: [], // Will be populated from Firestore
-    );
-  }
+  User _mapFirebaseUserToEntity(firebase_auth.User firebaseUser) => User(
+    uid: firebaseUser.uid,
+    email: firebaseUser.email,
+    phoneNumber: firebaseUser.phoneNumber,
+    displayName: firebaseUser.displayName ?? '',
+    photoURL: firebaseUser.photoURL,
+    preferredLanguage: 'en', // Default, will be updated from Firestore
+    createdAt: firebaseUser.metadata.creationTime ?? DateTime.now(),
+    lastSeen: DateTime.now(),
+    isOnline: true,
+    fcmTokens: const [], // Will be populated from Firestore
+  );
 }

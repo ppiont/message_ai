@@ -9,6 +9,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 /// - Last seen timestamps
 /// - Heartbeat mechanism for active sessions
 class PresenceService {
+  PresenceService({FirebaseFirestore? firestore})
+    : _firestore = firestore ?? FirebaseFirestore.instance;
   final FirebaseFirestore _firestore;
 
   // Configuration
@@ -16,9 +18,6 @@ class PresenceService {
 
   // State
   Timer? _heartbeatTimer;
-
-  PresenceService({FirebaseFirestore? firestore})
-    : _firestore = firestore ?? FirebaseFirestore.instance;
 
   // ============================================================================
   // Public API
@@ -55,14 +54,13 @@ class PresenceService {
   /// Watches presence status for a specific user.
   ///
   /// Returns a stream of presence updates.
-  Stream<UserPresence?> watchUserPresence({required String userId}) {
-    return _firestore.collection('presence').doc(userId).snapshots().map((
-      snapshot,
-    ) {
-      if (!snapshot.exists) return null;
-      return UserPresence.fromFirestore(snapshot);
-    });
-  }
+  Stream<UserPresence?> watchUserPresence({required String userId}) =>
+      _firestore.collection('presence').doc(userId).snapshots().map((snapshot) {
+        if (!snapshot.exists) {
+          return null;
+        }
+        return UserPresence.fromFirestore(snapshot);
+      });
 
   /// Watches presence status for multiple users.
   ///
@@ -153,11 +151,6 @@ class PresenceService {
 
 /// Represents a user's presence status.
 class UserPresence {
-  final String userId;
-  final String userName;
-  final bool isOnline;
-  final DateTime lastSeen;
-
   UserPresence({
     required this.userId,
     required this.userName,
@@ -166,7 +159,7 @@ class UserPresence {
   });
 
   factory UserPresence.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+    final data = doc.data()! as Map<String, dynamic>;
     return UserPresence(
       userId: data['userId'] as String,
       userName: data['userName'] as String,
@@ -174,6 +167,10 @@ class UserPresence {
       lastSeen: (data['lastSeen'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
+  final String userId;
+  final String userName;
+  final bool isOnline;
+  final DateTime lastSeen;
 
   /// Returns a human-readable status string.
   ///
@@ -207,7 +204,9 @@ class UserPresence {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other)) return true;
+    if (identical(this, other)) {
+      return true;
+    }
 
     return other is UserPresence &&
         other.userId == userId &&

@@ -23,7 +23,7 @@ abstract class UserRemoteDataSource {
   Future<UserModel> updateUser(UserModel user);
 
   /// Update user's online status
-  Future<void> updateUserOnlineStatus(String userId, bool isOnline);
+  Future<void> updateUserOnlineStatus(String userId, {required bool isOnline});
 
   /// Update user's last seen timestamp
   Future<void> updateUserLastSeen(String userId, DateTime lastSeen);
@@ -43,10 +43,9 @@ abstract class UserRemoteDataSource {
 
 /// Implementation of UserRemoteDataSource using Cloud Firestore
 class UserRemoteDataSourceImpl implements UserRemoteDataSource {
-  final FirebaseFirestore _firestore;
-
   UserRemoteDataSourceImpl({required FirebaseFirestore firestore})
     : _firestore = firestore;
+  final FirebaseFirestore _firestore;
 
   static const String _usersCollection = 'users';
 
@@ -76,7 +75,9 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw UnknownException(
         message: 'Failed to create user',
         originalError: e,
@@ -97,7 +98,9 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw UnknownException(message: 'Failed to get user', originalError: e);
     }
   }
@@ -167,7 +170,9 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
-      if (e is AppException) rethrow;
+      if (e is AppException) {
+        rethrow;
+      }
       throw UnknownException(
         message: 'Failed to update user',
         originalError: e,
@@ -176,7 +181,10 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
   }
 
   @override
-  Future<void> updateUserOnlineStatus(String userId, bool isOnline) async {
+  Future<void> updateUserOnlineStatus(
+    String userId, {
+    required bool isOnline,
+  }) async {
     try {
       await _usersRef.doc(userId).update({
         'isOnline': isOnline,

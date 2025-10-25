@@ -5,8 +5,8 @@ import 'package:dartz/dartz.dart';
 import 'package:message_ai/core/error/error_mapper.dart';
 import 'package:message_ai/core/error/exceptions.dart';
 import 'package:message_ai/core/error/failures.dart';
-import 'package:message_ai/features/messaging/data/datasources/group_conversation_remote_datasource.dart';
 import 'package:message_ai/features/messaging/data/datasources/conversation_local_datasource.dart';
+import 'package:message_ai/features/messaging/data/datasources/group_conversation_remote_datasource.dart';
 import 'package:message_ai/features/messaging/data/models/conversation_model.dart';
 import 'package:message_ai/features/messaging/domain/entities/conversation.dart';
 import 'package:message_ai/features/messaging/domain/repositories/group_conversation_repository.dart';
@@ -18,38 +18,38 @@ import 'package:message_ai/features/messaging/domain/repositories/group_conversa
 /// - Reads: Local first (instant), sync from remote in background
 /// - Writes: Local immediate, queue for remote sync
 class GroupConversationRepositoryImpl implements GroupConversationRepository {
-  final GroupConversationRemoteDataSource _remoteDataSource;
-  final ConversationLocalDataSource
-  _localDataSource; // Reuse existing local data source
+  // Reuse existing local data source
 
   GroupConversationRepositoryImpl({
     required GroupConversationRemoteDataSource remoteDataSource,
     required ConversationLocalDataSource localDataSource,
   }) : _remoteDataSource = remoteDataSource,
        _localDataSource = localDataSource;
+  final GroupConversationRemoteDataSource _remoteDataSource;
+  final ConversationLocalDataSource _localDataSource;
 
   @override
   Future<Either<Failure, Conversation>> createGroup(Conversation group) async {
     try {
       // Validate group fields
       if (group.type != 'group') {
-        return Left(
+        return const Left(
           ValidationFailure(message: 'Conversation type must be "group"'),
         );
       }
 
       if (group.participantIds.length < 2) {
-        return Left(
+        return const Left(
           ValidationFailure(message: 'Group must have at least 2 participants'),
         );
       }
 
       if (group.groupName == null || group.groupName!.isEmpty) {
-        return Left(ValidationFailure(message: 'Group name is required'));
+        return const Left(ValidationFailure(message: 'Group name is required'));
       }
 
       if (group.adminIds == null || group.adminIds!.isEmpty) {
-        return Left(
+        return const Left(
           ValidationFailure(message: 'Group must have at least one admin'),
         );
       }
@@ -58,7 +58,7 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository {
       final localGroup = await _localDataSource.createConversation(group);
 
       // Background sync to remote (don't wait for it)
-      _syncToRemote(localGroup);
+      await _syncToRemote(localGroup);
 
       return Right(localGroup);
     } on AppException catch (e) {
@@ -123,7 +123,7 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository {
 
       if (filteredGroups.isNotEmpty) {
         // Background sync from remote
-        _syncGroupsFromRemote(userId, limit, before);
+        await _syncGroupsFromRemote(userId, limit, before);
         return Right(filteredGroups);
       }
 
@@ -174,7 +174,7 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository {
       final localGroup = await _localDataSource.updateConversation(group);
 
       // Background sync to remote
-      _updateRemote(localGroup);
+      await _updateRemote(localGroup);
 
       return Right(localGroup);
     } on AppException catch (e) {
@@ -201,7 +201,7 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository {
       await _localDataSource.deleteConversation(groupId);
 
       // Background sync to remote
-      _deleteRemote(groupId);
+      await _deleteRemote(groupId);
 
       return const Right(null);
     } on AppException catch (e) {
@@ -270,15 +270,11 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository {
       // Get current group
       final groupResult = await getGroupById(groupId);
 
-      return groupResult.fold((failure) => Left(failure), (group) async {
+      return groupResult.fold(Left.new, (group) async {
         // Add member to participants list
         final updatedParticipants = [
           ...group.participants,
-          Participant(
-            uid: userId,
-            name: userName,
-            preferredLanguage: preferredLanguage,
-          ),
+          Participant(uid: userId, preferredLanguage: preferredLanguage),
         ];
 
         final updatedGroup = group.copyWith(
@@ -291,7 +287,7 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository {
         await _localDataSource.updateConversation(updatedGroup);
 
         // Sync to remote in background
-        _remoteDataSource.addMember(
+        await _remoteDataSource.addMember(
           groupId,
           userId,
           userName,
@@ -316,7 +312,7 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository {
       // Get current group
       final groupResult = await getGroupById(groupId);
 
-      return groupResult.fold((failure) => Left(failure), (group) async {
+      return groupResult.fold(Left.new, (group) async {
         // Remove member from participants list
         final updatedParticipants = group.participants
             .where((p) => p.uid != userId)
@@ -326,12 +322,17 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository {
             ?.where((id) => id != userId)
             .toList();
 
+        // Remove user from unreadCount map
+        final updatedUnreadCount = Map<String, int>.from(group.unreadCount)
+          ..remove(userId);
+
         final updatedGroup = group.copyWith(
           participantIds: group.participantIds
               .where((id) => id != userId)
               .toList(),
           participants: updatedParticipants,
           adminIds: updatedAdminIds,
+          unreadCount: updatedUnreadCount,
           lastUpdatedAt: DateTime.now(),
         );
 
@@ -339,7 +340,7 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository {
         await _localDataSource.updateConversation(updatedGroup);
 
         // Sync to remote in background
-        _remoteDataSource.removeMember(groupId, userId);
+        await _remoteDataSource.removeMember(groupId, userId);
 
         return const Right(null);
       });
@@ -360,7 +361,7 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository {
       // Get current group
       final groupResult = await getGroupById(groupId);
 
-      return groupResult.fold((failure) => Left(failure), (group) async {
+      return groupResult.fold(Left.new, (group) async {
         // Update group info
         final updatedGroup = group.copyWith(
           groupName: groupName ?? group.groupName,
@@ -372,7 +373,7 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository {
         await _localDataSource.updateConversation(updatedGroup);
 
         // Sync to remote in background
-        _remoteDataSource.updateGroupInfo(
+        await _remoteDataSource.updateGroupInfo(
           groupId: groupId,
           groupName: groupName,
           groupImage: groupImage,
@@ -396,7 +397,7 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository {
       // Get current group
       final groupResult = await getGroupById(groupId);
 
-      return groupResult.fold((failure) => Left(failure), (group) async {
+      return groupResult.fold(Left.new, (group) async {
         // Add user to admins list
         final updatedAdminIds = [
           ...?group.adminIds,
@@ -412,7 +413,7 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository {
         await _localDataSource.updateConversation(updatedGroup);
 
         // Sync to remote in background
-        _remoteDataSource.promoteToAdmin(groupId, userId);
+        await _remoteDataSource.promoteToAdmin(groupId, userId);
 
         return const Right(null);
       });
@@ -432,7 +433,7 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository {
       // Get current group
       final groupResult = await getGroupById(groupId);
 
-      return groupResult.fold((failure) => Left(failure), (group) async {
+      return groupResult.fold(Left.new, (group) async {
         // Remove user from admins list
         final updatedAdminIds = group.adminIds
             ?.where((id) => id != userId)
@@ -447,7 +448,7 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository {
         await _localDataSource.updateConversation(updatedGroup);
 
         // Sync to remote in background
-        _remoteDataSource.demoteFromAdmin(groupId, userId);
+        await _remoteDataSource.demoteFromAdmin(groupId, userId);
 
         return const Right(null);
       });
@@ -463,7 +464,6 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository {
     String groupId,
     String messageText,
     String senderId,
-    String senderName,
     DateTime timestamp,
   ) async {
     try {
@@ -471,7 +471,6 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository {
       final lastMessage = LastMessage(
         text: messageText,
         senderId: senderId,
-        senderName: senderName,
         timestamp: timestamp,
         type: 'text',
       );
@@ -482,11 +481,10 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository {
       );
 
       // Background sync to remote
-      _remoteDataSource.updateLastMessage(
+      await _remoteDataSource.updateLastMessage(
         groupId,
         messageText,
         senderId,
-        senderName,
         timestamp,
       );
 
@@ -508,7 +506,7 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository {
       // Get current group
       final groupResult = await getGroupById(groupId);
 
-      return groupResult.fold((failure) => Left(failure), (group) async {
+      return groupResult.fold(Left.new, (group) async {
         // Update unread count for user
         final updatedUnreadCount = {...group.unreadCount, userId: count};
 
@@ -518,7 +516,7 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository {
         await _localDataSource.updateConversation(updatedGroup);
 
         // Sync to remote in background
-        _remoteDataSource.updateUnreadCount(groupId, userId, count);
+        await _remoteDataSource.updateUnreadCount(groupId, userId, count);
 
         return const Right(null);
       });

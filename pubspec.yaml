@@ -18,6 +18,7 @@ dependencies:
   firebase_messaging: ^16.0.3
   firebase_crashlytics: ^5.0.3
   cloud_functions: ^6.0.3
+  flutter_local_notifications: ^19.5.0
 
   # State Management (Riverpod)
   flutter_riverpod: ^3.0.3
@@ -25,10 +26,14 @@ dependencies:
 
   # Utilities
   equatable: ^2.0.7
-  connectivity_plus: ^6.1.2
+  connectivity_plus: ^7.0.0
   dartz: ^0.10.1
   uuid: ^4.5.1
   rxdart: ^0.28.0
+
+  # ML Kit for language detection
+  google_mlkit_commons: ^0.11.0
+  google_mlkit_language_id: ^0.13.0
 
   # Local Storage (drift)
   drift: ^2.29.0
@@ -37,24 +42,17 @@ dependencies:
   path: ^1.9.0
   image_picker: ^1.2.0
   intl: ^0.20.2
+  workmanager: ^0.9.0
 
+  riverpod: any
 dev_dependencies:
-  flutter_test:
-    sdk: flutter
   flutter_lints: ^6.0.0
-
-  # Testing
-  mocktail: ^1.0.4
-
-  # Firebase testing (updated to latest versions)
-  fake_cloud_firestore: ^4.0.0
-  firebase_auth_mocks: ^0.15.1
 
   # Code generation
   drift_dev: ^2.29.0
   riverpod_generator: ^3.0.3
   riverpod_lint: ^3.0.3
-  build_runner: ^2.4.13
+  build_runner: ^2.7.1
 
 flutter:
   uses-material-design: true

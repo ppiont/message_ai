@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:message_ai/features/authentication/presentation/pages/settings_page.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
 import 'package:message_ai/features/messaging/presentation/pages/chat_page.dart';
 import 'package:message_ai/features/messaging/presentation/pages/create_group_page.dart';
@@ -54,11 +55,14 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
             onSelected: (value) {
-              if (value == 'logout') {
+              if (value == 'settings') {
+                _navigateToSettings();
+              } else if (value == 'logout') {
                 _handleLogout();
               }
             },
             itemBuilder: (context) => [
+              const PopupMenuItem(value: 'settings', child: Text('Settings')),
               const PopupMenuItem(value: 'logout', child: Text('Sign Out')),
             ],
           ),
@@ -77,7 +81,7 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
   }
 
   void _showNewConversationMenu(BuildContext context) {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       builder: (context) => SafeArea(
         child: Column(
@@ -90,7 +94,7 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
               onTap: () {
                 Navigator.pop(context);
                 Navigator.of(context).push(
-                  MaterialPageRoute(
+                  MaterialPageRoute<void>(
                     builder: (context) => const UserSelectionPage(),
                   ),
                 );
@@ -103,7 +107,7 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
               onTap: () {
                 Navigator.pop(context);
                 Navigator.of(context).push(
-                  MaterialPageRoute(
+                  MaterialPageRoute<void>(
                     builder: (context) => const CreateGroupPage(),
                   ),
                 );
@@ -157,7 +161,7 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
             // Invalidate the stream to trigger a refresh
             ref.invalidate(allConversationsStreamProvider(userId));
             // Wait a bit for the refresh
-            await Future.delayed(const Duration(milliseconds: 500));
+            await Future<void>.delayed(const Duration(milliseconds: 500));
           },
           child: ListView.separated(
             itemCount: filteredConversations.length,
@@ -189,7 +193,7 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
                   participantCount: participantCount,
                   onTap: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(
+                      MaterialPageRoute<void>(
                         builder: (context) => ChatPage(
                           conversationId: conversationId,
                           otherParticipantName: groupName,
@@ -225,15 +229,13 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
                   lastUpdatedAt: conversation['lastUpdatedAt'] as DateTime,
                   unreadCount: conversation['unreadCount'] as int,
                   currentUserId: userId,
-                  isGroup: false,
                   onTap: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(
+                      MaterialPageRoute<void>(
                         builder: (context) => ChatPage(
                           conversationId: conversationId,
                           otherParticipantName: otherParticipantName,
                           otherParticipantId: otherParticipantId,
-                          isGroup: false,
                         ),
                       ),
                     );
@@ -264,37 +266,35 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.chat_bubble_outline, size: 80, color: Colors.grey[400]),
-          const SizedBox(height: 24),
-          Text(
-            _searchQuery.isEmpty
-                ? 'No conversations yet'
-                : 'No conversations found',
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(color: Colors.grey[600]),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _searchQuery.isEmpty
-                ? 'Start a new conversation to get started'
-                : 'Try a different search term',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[500]),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _buildEmptyState() => Center(
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.chat_bubble_outline, size: 80, color: Colors.grey[400]),
+        const SizedBox(height: 24),
+        Text(
+          _searchQuery.isEmpty
+              ? 'No conversations yet'
+              : 'No conversations found',
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(color: Colors.grey[600]),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          _searchQuery.isEmpty
+              ? 'Start a new conversation to get started'
+              : 'Try a different search term',
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: Colors.grey[500]),
+        ),
+      ],
+    ),
+  );
 
   void _showSearchDialog() {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Search Conversations'),
@@ -331,13 +331,21 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
     );
   }
 
+  void _navigateToSettings() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (context) => const SettingsPage()));
+  }
+
   Future<void> _handleLogout() async {
     final signOutUseCase = ref.read(signOutUseCaseProvider);
     final result = await signOutUseCase();
 
     result.fold(
       (failure) {
-        if (!mounted) return;
+        if (!mounted) {
+          return;
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Sign out failed: ${failure.message}'),
@@ -347,7 +355,9 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
       },
       (_) {
         // Navigation handled by auth state listener in app.dart
-        if (!mounted) return;
+        if (!mounted) {
+          return;
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Signed out successfully'),

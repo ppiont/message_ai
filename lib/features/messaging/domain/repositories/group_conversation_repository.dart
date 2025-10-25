@@ -64,7 +64,6 @@ abstract class GroupConversationRepository {
     String groupId,
     String messageText,
     String senderId,
-    String senderName,
     DateTime timestamp,
   );
 

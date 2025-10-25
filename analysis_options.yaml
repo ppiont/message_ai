@@ -1,1 +1,192 @@
 include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+
+  errors:
+    # Treat certain warnings as errors for stricter enforcement
+    invalid_annotation_target: ignore
+    missing_required_param: error
+    missing_return: error
+    dead_code: info
+    deprecated_member_use: warning
+    deprecated_member_use_from_same_package: warning
+
+  plugins:
+    - dart_code_metrics
+
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+
+# Quick fix support - many rules automatically provide fixes
+linter:
+  rules:
+    # Error rules with quick fixes
+    - always_use_package_imports  # Quick fix: converts relative to package imports
+    - avoid_dynamic_calls
+    - avoid_empty_else  # Quick fix: removes empty else
+    - avoid_relative_lib_imports  # Quick fix: converts to package imports
+    - avoid_slow_async_io
+    - avoid_type_to_string
+    - avoid_types_as_parameter_names
+    - cancel_subscriptions
+    - close_sinks
+    - comment_references
+    - literal_only_boolean_expressions
+    - no_adjacent_strings_in_list
+    - no_duplicate_case_values
+    - test_types_in_equals
+    - throw_in_finally
+    - unnecessary_statements  # Quick fix: removes unnecessary statements
+    - unsafe_html
+
+    # Style rules with quick fixes
+    - always_declare_return_types  # Quick fix: adds return type
+    - always_put_control_body_on_new_line
+    - always_put_required_named_parameters_first  # Quick fix: reorders parameters
+    - always_require_non_null_named_parameters
+    - annotate_overrides  # Quick fix: adds @override
+    - avoid_bool_literals_in_conditional_expressions  # Quick fix: simplifies
+    - avoid_catching_errors
+    - avoid_double_and_int_checks
+    - avoid_field_initializers_in_const_classes
+    - avoid_function_literals_in_foreach_calls
+    - avoid_init_to_null  # Quick fix: removes = null
+    - avoid_null_checks_in_equality_operators
+    - avoid_positional_boolean_parameters
+    - avoid_print  # Quick fix: can convert to logging
+    - avoid_redundant_argument_values  # Quick fix: removes redundant args
+    - avoid_renaming_method_parameters
+    - avoid_return_types_on_setters  # Quick fix: removes return type
+    - avoid_returning_null_for_void
+    - avoid_setters_without_getters
+    - avoid_shadowing_type_parameters
+    - avoid_single_cascade_in_expression_statements
+    - avoid_unnecessary_containers  # Quick fix: removes unnecessary Container
+    - avoid_unused_constructor_parameters
+    - avoid_void_async
+    - await_only_futures
+    - camel_case_extensions
+    - camel_case_types
+    - cascade_invocations  # Quick fix: converts to cascades
+    - cast_nullable_to_non_nullable
+    - constant_identifier_names
+    - curly_braces_in_flow_control_structures  # Quick fix: adds braces
+    - directives_ordering  # Quick fix: sorts imports
+    - empty_catches
+    - empty_constructor_bodies  # Quick fix: converts to ;
+    - exhaustive_cases
+    - file_names
+    - implementation_imports
+    - join_return_with_assignment  # Quick fix: joins return
+    - leading_newlines_in_multiline_strings
+    - library_names
+    - library_prefixes
+    - missing_whitespace_between_adjacent_strings
+    - no_leading_underscores_for_library_prefixes
+    - no_leading_underscores_for_local_identifiers
+    - null_check_on_nullable_type_parameter
+    - null_closures
+    - omit_local_variable_types  # Quick fix: removes type annotation
+    - one_member_abstracts
+    - only_throw_errors
+    - overridden_fields
+    - package_api_docs
+    - package_prefixed_library_names
+    - parameter_assignments
+    - prefer_adjacent_string_concatenation  # Quick fix: combines strings
+    - prefer_asserts_in_initializer_lists
+    - prefer_collection_literals  # Quick fix: converts to literal
+    - prefer_conditional_assignment  # Quick fix: uses ??=
+    - prefer_const_constructors  # Quick fix: adds const
+    - prefer_const_constructors_in_immutables  # Quick fix: adds const
+    - prefer_const_declarations  # Quick fix: converts final to const
+    - prefer_const_literals_to_create_immutables  # Quick fix: adds const
+    - prefer_constructors_over_static_methods
+    - prefer_contains  # Quick fix: converts indexOf to contains
+    - prefer_equal_for_default_values  # Quick fix: uses = instead of :
+    - prefer_expression_function_bodies  # Quick fix: converts to =>
+    - prefer_final_fields  # Quick fix: converts to final
+    - prefer_final_in_for_each  # Quick fix: adds final
+    - prefer_final_locals  # Quick fix: adds final
+    - prefer_for_elements_to_map_fromIterable  # Quick fix: converts to for
+    - prefer_foreach
+    - prefer_function_declarations_over_variables
+    - prefer_generic_function_type_aliases
+    - prefer_if_elements_to_conditional_expressions  # Quick fix: uses if
+    - prefer_if_null_operators  # Quick fix: uses ??
+    - prefer_initializing_formals  # Quick fix: uses this.param
+    - prefer_inlined_adds  # Quick fix: inlines add calls
+    - prefer_int_literals  # Quick fix: converts to int
+    - prefer_interpolation_to_compose_strings  # Quick fix: uses ${}
+    - prefer_is_empty  # Quick fix: converts length == 0
+    - prefer_is_not_empty  # Quick fix: converts length != 0
+    - prefer_is_not_operator  # Quick fix: uses is!
+    - prefer_iterable_whereType  # Quick fix: uses whereType
+    - prefer_null_aware_operators  # Quick fix: uses ?. or ??
+    - prefer_single_quotes  # Quick fix: converts to single quotes
+    - prefer_spread_collections  # Quick fix: uses ...
+    - prefer_typing_uninitialized_variables
+    - provide_deprecation_message
+    - recursive_getters
+    - require_trailing_commas  # Quick fix: adds trailing commas
+    - slash_for_doc_comments  # Quick fix: converts /** to ///
+    - sort_child_properties_last  # Quick fix: moves child to end
+    - sort_constructors_first  # Quick fix: reorders members
+    - sort_unnamed_constructors_first
+    - type_annotate_public_apis
+    - type_init_formals
+    - unawaited_futures  # Quick fix: adds unawaited()
+    - unnecessary_await_in_return  # Quick fix: removes await
+    - unnecessary_brace_in_string_interps  # Quick fix: removes braces
+    - unnecessary_const  # Quick fix: removes const
+    - unnecessary_constructor_name  # Quick fix: removes .new
+    - unnecessary_getters_setters  # Quick fix: converts to field
+    - unnecessary_lambdas  # Quick fix: uses tear-off
+    - unnecessary_late  # Quick fix: removes late
+    - unnecessary_new  # Quick fix: removes new
+    - unnecessary_null_aware_assignments  # Quick fix: removes ??=
+    - unnecessary_null_checks  # Quick fix: removes !
+    - unnecessary_null_in_if_null_operators  # Quick fix: simplifies
+    - unnecessary_nullable_for_final_variable_declarations
+    - unnecessary_overrides  # Quick fix: removes override
+    - unnecessary_parenthesis  # Quick fix: removes parentheses
+    - unnecessary_raw_strings  # Quick fix: removes r prefix
+    - unnecessary_string_escapes  # Quick fix: removes escapes
+    - unnecessary_string_interpolations  # Quick fix: removes ${}
+    - unnecessary_this  # Quick fix: removes this
+    - unnecessary_to_list_in_spreads  # Quick fix: removes .toList()
+    - use_enums  # Quick fix: suggests enum conversion
+    - use_full_hex_values_for_flutter_colors  # Quick fix: expands hex
+    - use_function_type_syntax_for_parameters
+    - use_if_null_to_convert_nulls_to_bools
+    - use_is_even_rather_than_modulo  # Quick fix: uses isEven
+    - use_key_in_widget_constructors  # Quick fix: adds Key parameter
+    - use_late_for_private_fields_and_variables
+    - use_named_constants  # Quick fix: extracts to const
+    - use_raw_strings  # Quick fix: converts to raw string
+    - use_rethrow_when_possible  # Quick fix: converts throw to rethrow
+    - use_setters_to_change_properties
+    - use_string_buffers  # Quick fix: converts to StringBuffer
+    - use_super_parameters  # Quick fix: uses super.param
+    - use_test_throws_matchers
+    - use_to_and_as_if_applicable
+    - valid_regexps
+    - void_checks
+
+    # Additional quick-fix-friendly rules
+    - combinators_ordering  # Quick fix: sorts combinators
+    - dangling_library_doc_comments  # Quick fix: moves comment
+    - implicit_call_tearoffs  # Quick fix: adds .call
+    - library_annotations  # Quick fix: moves annotation
+    - noop_primitive_operations  # Quick fix: removes no-op
+    - prefer_void_to_null  # Quick fix: uses void
+    - sized_box_shrink_expand  # Quick fix: uses SizedBox.shrink()
+    - unnecessary_breaks  # Quick fix: removes break
+    - unreachable_from_main  # Quick fix: marks as unused
+    - use_colored_box  # Quick fix: converts Container to ColoredBox
+    - use_decorated_box  # Quick fix: converts Container to DecoratedBox

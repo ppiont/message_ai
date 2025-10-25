@@ -1,0 +1,174 @@
+---
+description: Mandatory code quality checks after making changes
+globs: lib/**/*.dart, test/**/*.dart
+alwaysApply: true
+---
+
+# Code Quality Workflow - MANDATORY
+
+## **CRITICAL: Always Run Analysis After Code Changes**
+
+After ANY code changes to Dart/Flutter files, you MUST run code quality checks in this order:
+
+### Step 1: Run Dart Analysis (MANDATORY)
+```
+Use mcp__dart__analyze_files immediately after code changes
+```
+
+**When to run:**
+- After editing any .dart file
+- After creating new files
+- Before committing changes
+- Before hot reload/restart
+
+**What to do with results:**
+- If analysis shows errors: FIX THEM IMMEDIATELY
+- If analysis shows warnings: Evaluate if they need fixing
+- Deprecation warnings for `status` field: EXPECTED and OK (per CLAUDE.md)
+
+### Step 2: Use Type Enforcer Agent (for significant changes)
+
+After making significant code changes (new features, refactors, bug fixes), proactively launch the `dart-flutter-type-enforcer` agent:
+
+```
+Use Task tool with subagent_type=dart-flutter-type-enforcer
+```
+
+**When to use:**
+- New feature implementation
+- Bug fixes involving logic changes
+- Refactoring existing code
+- Adding/modifying Riverpod providers
+- Adding/modifying Drift tables or DAOs
+- After making changes suggested by user
+
+**What the agent will do:**
+- Review code for type safety issues
+- Check for null safety problems
+- Verify modern Dart/Flutter patterns
+- Run `dart fix --apply` for auto-fixable issues
+- Report remaining issues requiring manual intervention
+
+### Step 3: Format Code (if needed)
+```
+Use mcp__dart__dart_format for touched files
+```
+
+## Workflow Example
+
+```markdown
+1. Make code changes to lib/features/messaging/data/services/my_service.dart
+
+2. IMMEDIATELY run:
+   mcp__dart__analyze_files
+
+3. Check analysis results:
+   - 0 errors, 2 deprecation warnings (status field) → OK, proceed
+   - 3 type errors → FIX THEM NOW before continuing
+
+4. If significant changes (new feature, refactor):
+   Task(subagent_type=dart-flutter-type-enforcer, prompt="Review my_service.dart for type safety")
+
+5. Commit changes with proper message
+```
+
+## Common Scenarios
+
+### Scenario 1: Small Edit (single file, minor change)
+```
+1. Edit file
+2. mcp__dart__analyze_files
+3. If clean: commit
+4. If errors: fix and repeat step 2
+```
+
+### Scenario 2: Feature Implementation (multiple files, significant logic)
+```
+1. Implement feature across multiple files
+2. mcp__dart__analyze_files
+3. Fix any errors
+4. Task(subagent_type=dart-flutter-type-enforcer)
+5. Apply agent's fixes
+6. mcp__dart__analyze_files (verify clean)
+7. Commit
+```
+
+### Scenario 3: User Requests "Fix all issues"
+```
+1. mcp__dart__analyze_files (see what issues exist)
+2. Task(subagent_type=dart-flutter-type-enforcer, prompt="Fix all analysis issues")
+3. Review and commit agent's changes
+```
+
+## Analysis Output Interpretation
+
+### ✅ Expected/OK Warnings
+```json
+{
+  "code": "deprecated_member_use_from_same_package",
+  "message": "'status' is deprecated...",
+  "severity": 2
+}
+```
+These are **intentional** - the `status` field is being phased out per CLAUDE.md architecture.
+
+### ❌ Must Fix Immediately
+```json
+{
+  "code": "argument_type_not_assignable",
+  "severity": 3
+}
+```
+Errors (severity 3+) MUST be fixed before proceeding.
+
+### ⚠️ Should Fix
+```json
+{
+  "code": "unused_import",
+  "severity": 2
+}
+```
+Warnings (severity 2) should generally be fixed unless intentional.
+
+## Pre-Commit Checklist
+
+Before every commit:
+- [ ] Run `mcp__dart__analyze_files`
+- [ ] Address all errors (severity 3+)
+- [ ] For significant changes: ran `dart-flutter-type-enforcer` agent
+- [ ] Code follows patterns in CLAUDE.md
+- [ ] Commit message describes what and why
+
+## Integration with Git Workflow
+
+```bash
+# After code changes
+mcp__dart__analyze_files → Fix issues → git add → git commit
+
+# NOT this:
+git add → git commit (without analysis) ❌
+```
+
+## Why This Matters
+
+1. **Type Safety**: Catches type errors before runtime
+2. **Null Safety**: Prevents null reference errors
+3. **Code Quality**: Maintains high standards across codebase
+4. **Developer Experience**: Fewer bugs, easier debugging
+5. **Team Consistency**: Everyone follows same patterns
+
+## Exception Cases
+
+The ONLY acceptable reasons to skip analysis:
+
+1. **Documentation-only changes** (*.md, comments)
+2. **Configuration files** (pubspec.yaml, analysis_options.yaml)
+3. **Emergency hotfixes** (must run analysis immediately after)
+
+**Code changes ALWAYS require analysis. No exceptions.**
+
+## References
+
+- [Dart MCP Usage](mdc:.cursor/rules/dart_mcp_usage.mdc)
+- [Project Guidelines](mdc:CLAUDE.md)
+- [Testing Policy](mdc:.cursor/rules/testing.mdc)

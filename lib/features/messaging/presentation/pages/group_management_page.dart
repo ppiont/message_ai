@@ -4,6 +4,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
+import 'package:message_ai/features/authentication/presentation/providers/user_lookup_provider.dart';
 import 'package:message_ai/features/messaging/domain/entities/conversation.dart';
 import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -83,13 +84,20 @@ class _GroupManagementPageState extends ConsumerState<GroupManagementPage> {
 
   Future<void> _addMember(String currentUserId) async {
     // Show user selection dialog
-    await showDialog(
+    final success = await showDialog<bool>(
       context: context,
       builder: (context) => _AddMemberDialog(
         conversationId: widget.conversationId,
         currentUserId: currentUserId,
       ),
     );
+
+    // Invalidate provider to refresh UI if member was added
+    if (success ?? false) {
+      if (mounted) {
+        ref.invalidate(getConversationByIdProvider(widget.conversationId));
+      }
+    }
   }
 
   Future<void> _removeMember(
@@ -116,7 +124,9 @@ class _GroupManagementPageState extends ConsumerState<GroupManagementPage> {
       ),
     );
 
-    if (confirmed != true) return;
+    if (confirmed != true) {
+      return;
+    }
 
     setState(() => _isLoading = true);
 
@@ -142,6 +152,8 @@ class _GroupManagementPageState extends ConsumerState<GroupManagementPage> {
       },
       (_) {
         if (mounted) {
+          // Invalidate provider to refresh UI with updated member list
+          ref.invalidate(getConversationByIdProvider(widget.conversationId));
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(const SnackBar(content: Text('Member removed')));
@@ -172,7 +184,9 @@ class _GroupManagementPageState extends ConsumerState<GroupManagementPage> {
       ),
     );
 
-    if (confirmed != true) return;
+    if (confirmed != true) {
+      return;
+    }
 
     setState(() => _isLoading = true);
 
@@ -229,7 +243,7 @@ class _GroupManagementPageState extends ConsumerState<GroupManagementPage> {
               if (_isLoading)
                 const Center(
                   child: Padding(
-                    padding: EdgeInsets.all(16.0),
+                    padding: EdgeInsets.all(16),
                     child: SizedBox(
                       width: 20,
                       height: 20,
@@ -268,212 +282,219 @@ class _GroupManagementPageState extends ConsumerState<GroupManagementPage> {
     Conversation group,
     String currentUserId,
     bool isAdmin,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Group Info',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+  ) => Padding(
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Group Info',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        // Group avatar
+        Center(
+          child: CircleAvatar(
+            radius: 50,
+            backgroundColor: Colors.blue[700],
+            child: const Icon(Icons.group, color: Colors.white, size: 50),
           ),
-          const SizedBox(height: 16),
-          // Group avatar
-          Center(
-            child: CircleAvatar(
-              radius: 50,
-              backgroundColor: Colors.blue[700],
-              child: const Icon(Icons.group, color: Colors.white, size: 50),
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Group name
-          if (_isEditingName && isAdmin)
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _groupNameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Group Name',
-                      border: OutlineInputBorder(),
-                    ),
-                    enabled: !_isLoading,
+        ),
+        const SizedBox(height: 16),
+        // Group name
+        if (_isEditingName && isAdmin)
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _groupNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Group Name',
+                    border: OutlineInputBorder(),
+                  ),
+                  enabled: !_isLoading,
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: const Icon(Icons.check, color: Colors.green),
+                onPressed: _isLoading
+                    ? null
+                    : () => _updateGroupName(group, currentUserId),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close, color: Colors.red),
+                onPressed: _isLoading
+                    ? null
+                    : () => setState(() => _isEditingName = false),
+              ),
+            ],
+          )
+        else
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  group.groupName ?? 'Unknown Group',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(width: 8),
+              ),
+              if (isAdmin)
                 IconButton(
-                  icon: const Icon(Icons.check, color: Colors.green),
-                  onPressed: _isLoading
-                      ? null
-                      : () => _updateGroupName(group, currentUserId),
+                  icon: const Icon(Icons.edit),
+                  onPressed: () {
+                    _groupNameController.text = group.groupName ?? '';
+                    setState(() => _isEditingName = true);
+                  },
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close, color: Colors.red),
-                  onPressed: _isLoading
-                      ? null
-                      : () => setState(() => _isEditingName = false),
-                ),
-              ],
-            )
-          else
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    group.groupName ?? 'Unknown Group',
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                if (isAdmin)
-                  IconButton(
-                    icon: const Icon(Icons.edit),
-                    onPressed: () {
-                      _groupNameController.text = group.groupName ?? '';
-                      setState(() => _isEditingName = true);
-                    },
-                  ),
-              ],
-            ),
-          const SizedBox(height: 8),
-          Text(
-            '${group.participantIds.length} members',
-            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            ],
           ),
-        ],
-      ),
-    );
-  }
+        const SizedBox(height: 8),
+        Text(
+          '${group.participantIds.length} members',
+          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+        ),
+      ],
+    ),
+  );
 
   Widget _buildMembersSection(
     Conversation group,
     String currentUserId,
     bool isAdmin,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Text(
-                'Members',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+  ) => Padding(
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Text(
+              'Members',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const Spacer(),
+            if (isAdmin)
+              TextButton.icon(
+                onPressed: _isLoading ? null : () => _addMember(currentUserId),
+                icon: const Icon(Icons.person_add),
+                label: const Text('Add'),
               ),
-              const Spacer(),
-              if (isAdmin)
-                TextButton.icon(
-                  onPressed: _isLoading
-                      ? null
-                      : () => _addMember(currentUserId),
-                  icon: const Icon(Icons.person_add),
-                  label: const Text('Add'),
-                ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          ...group.participants.map((participant) {
-            final isCurrentUser = participant.uid == currentUserId;
-            final isMemberAdmin =
-                group.adminIds?.contains(participant.uid) ?? false;
+          ],
+        ),
+        const SizedBox(height: 8),
+        ...group.participants.map((participant) {
+          final isCurrentUser = participant.uid == currentUserId;
+          final isMemberAdmin =
+              group.adminIds?.contains(participant.uid) ?? false;
 
-            return ListTile(
-              leading: CircleAvatar(
-                child: Text(
-                  participant.name.isNotEmpty
-                      ? participant.name[0].toUpperCase()
-                      : '?',
-                ),
-              ),
-              title: Row(
-                children: [
-                  Expanded(
+          return Consumer(
+            builder: (context, ref, _) {
+              final displayNameAsync = ref.watch(
+                userDisplayNameProvider(participant.uid),
+              );
+
+              return displayNameAsync.when(
+                data: (displayName) => ListTile(
+                  leading: CircleAvatar(
                     child: Text(
-                      isCurrentUser ? 'You' : participant.name,
-                      style: const TextStyle(fontWeight: FontWeight.w500),
+                      displayName.isNotEmpty
+                          ? displayName[0].toUpperCase()
+                          : '?',
                     ),
                   ),
-                  if (isMemberAdmin)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.blue[100],
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        'Admin',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.blue[900],
-                          fontWeight: FontWeight.w600,
+                  title: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          isCurrentUser ? 'You' : displayName,
+                          style: const TextStyle(fontWeight: FontWeight.w500),
                         ),
                       ),
-                    ),
-                ],
-              ),
-              trailing: isAdmin && !isCurrentUser
-                  ? PopupMenuButton<String>(
-                      onSelected: (value) {
-                        if (value == 'remove') {
-                          _removeMember(
-                            participant.uid,
-                            participant.name,
-                            currentUserId,
-                          );
-                        }
-                      },
-                      itemBuilder: (context) => [
-                        const PopupMenuItem(
-                          value: 'remove',
+                      if (isMemberAdmin)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.blue[100],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           child: Text(
-                            'Remove from group',
-                            style: TextStyle(color: Colors.red),
+                            'Admin',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.blue[900],
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
-                      ],
-                    )
-                  : null,
-            );
-          }),
-        ],
-      ),
-    );
-  }
+                    ],
+                  ),
+                  trailing: isAdmin && !isCurrentUser
+                      ? PopupMenuButton<String>(
+                          onSelected: (value) {
+                            if (value == 'remove') {
+                              _removeMember(
+                                participant.uid,
+                                displayName,
+                                currentUserId,
+                              );
+                            }
+                          },
+                          itemBuilder: (context) => [
+                            const PopupMenuItem(
+                              value: 'remove',
+                              child: Text(
+                                'Remove from group',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ),
+                          ],
+                        )
+                      : null,
+                ),
+                loading: () => const ListTile(
+                  leading: CircleAvatar(child: Text('?')),
+                  title: Text('Loading...'),
+                ),
+                error: (error, stackTrace) => const ListTile(
+                  leading: CircleAvatar(child: Text('?')),
+                  title: Text('Unknown'),
+                ),
+              );
+            },
+          );
+        }),
+      ],
+    ),
+  );
 
-  Widget _buildActionsSection(String currentUserId, bool isAdmin) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Text(
-            'Actions',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+  Widget _buildActionsSection(String currentUserId, bool isAdmin) => Padding(
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Text(
+          'Actions',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+          onPressed: _isLoading ? null : () => _leaveGroup(currentUserId),
+          icon: const Icon(Icons.exit_to_app, color: Colors.red),
+          label: const Text('Leave Group', style: TextStyle(color: Colors.red)),
+          style: OutlinedButton.styleFrom(
+            side: const BorderSide(color: Colors.red),
           ),
-          const SizedBox(height: 8),
-          OutlinedButton.icon(
-            onPressed: _isLoading ? null : () => _leaveGroup(currentUserId),
-            icon: const Icon(Icons.exit_to_app, color: Colors.red),
-            label: const Text(
-              'Leave Group',
-              style: TextStyle(color: Colors.red),
-            ),
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Colors.red),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
 }
 
 /// Dialog for adding a member to the group.
@@ -497,7 +518,9 @@ class _AddMemberDialogState extends ConsumerState<_AddMemberDialog> {
   bool _isLoading = false;
 
   Future<void> _addMember() async {
-    if (_selectedUserId == null) return;
+    if (_selectedUserId == null) {
+      return;
+    }
 
     setState(() => _isLoading = true);
 
@@ -525,7 +548,7 @@ class _AddMemberDialogState extends ConsumerState<_AddMemberDialog> {
       },
       (_) {
         if (mounted) {
-          Navigator.pop(context);
+          Navigator.pop(context, true); // Return true on success
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(const SnackBar(content: Text('Member added')));

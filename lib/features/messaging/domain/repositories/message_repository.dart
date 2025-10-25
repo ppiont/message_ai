@@ -49,15 +49,17 @@ abstract class MessageRepository {
     int limit = 50,
   });
 
-  /// Marks a message as delivered.
+  /// Marks a message as delivered for a specific user.
   Future<Either<Failure, void>> markAsDelivered(
     String conversationId,
     String messageId,
+    String userId,
   );
 
-  /// Marks a message as read.
+  /// Marks a message as read for a specific user.
   Future<Either<Failure, void>> markAsRead(
     String conversationId,
     String messageId,
+    String userId,
   );
 }

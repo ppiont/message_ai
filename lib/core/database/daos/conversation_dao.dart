@@ -22,33 +22,29 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
   // ============================================================================
 
   /// Get a single conversation by document ID
-  Future<ConversationEntity?> getConversationById(String documentId) {
-    return (select(
-      conversations,
-    )..where((c) => c.documentId.equals(documentId))).getSingleOrNull();
-  }
+  Future<ConversationEntity?> getConversationById(String documentId) => (select(
+    conversations,
+  )..where((c) => c.documentId.equals(documentId))).getSingleOrNull();
 
   /// Get all conversations ordered by last update (newest first)
   Future<List<ConversationEntity>> getAllConversations({
     int limit = 50,
     int offset = 0,
-  }) {
-    return (select(conversations)
-          ..orderBy([(c) => OrderingTerm.desc(c.lastUpdatedAt)])
-          ..limit(limit, offset: offset))
-        .get();
-  }
+  }) =>
+      (select(conversations)
+            ..orderBy([(c) => OrderingTerm.desc(c.lastUpdatedAt)])
+            ..limit(limit, offset: offset))
+          .get();
 
   /// Watch all conversations (reactive stream)
   ///
   /// Returns a stream that emits new values whenever conversations change
   /// Perfect for the conversation list UI
-  Stream<List<ConversationEntity>> watchAllConversations({int limit = 50}) {
-    return (select(conversations)
-          ..orderBy([(c) => OrderingTerm.desc(c.lastUpdatedAt)])
-          ..limit(limit))
-        .watch();
-  }
+  Stream<List<ConversationEntity>> watchAllConversations({int limit = 50}) =>
+      (select(conversations)
+            ..orderBy([(c) => OrderingTerm.desc(c.lastUpdatedAt)])
+            ..limit(limit))
+          .watch();
 
   /// Get conversations where a specific user is a participant
   ///
@@ -56,37 +52,34 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
   Future<List<ConversationEntity>> getConversationsByParticipant(
     String userId, {
     int limit = 50,
-  }) {
-    return (select(conversations)
-          ..where((c) => c.participantIds.like('%"$userId"%'))
-          ..orderBy([(c) => OrderingTerm.desc(c.lastUpdatedAt)])
-          ..limit(limit))
-        .get();
-  }
+  }) =>
+      (select(conversations)
+            ..where((c) => c.participantIds.like('%"$userId"%'))
+            ..orderBy([(c) => OrderingTerm.desc(c.lastUpdatedAt)])
+            ..limit(limit))
+          .get();
 
   /// Watch conversations for a specific participant (reactive)
   Stream<List<ConversationEntity>> watchConversationsByParticipant(
     String userId, {
     int limit = 50,
-  }) {
-    return (select(conversations)
-          ..where((c) => c.participantIds.like('%"$userId"%'))
-          ..orderBy([(c) => OrderingTerm.desc(c.lastUpdatedAt)])
-          ..limit(limit))
-        .watch();
-  }
+  }) =>
+      (select(conversations)
+            ..where((c) => c.participantIds.like('%"$userId"%'))
+            ..orderBy([(c) => OrderingTerm.desc(c.lastUpdatedAt)])
+            ..limit(limit))
+          .watch();
 
   /// Get conversations by type (direct or group)
   Future<List<ConversationEntity>> getConversationsByType(
     String type, {
     int limit = 50,
-  }) {
-    return (select(conversations)
-          ..where((c) => c.conversationType.equals(type))
-          ..orderBy([(c) => OrderingTerm.desc(c.lastUpdatedAt)])
-          ..limit(limit))
-        .get();
-  }
+  }) =>
+      (select(conversations)
+            ..where((c) => c.conversationType.equals(type))
+            ..orderBy([(c) => OrderingTerm.desc(c.lastUpdatedAt)])
+            ..limit(limit))
+          .get();
 
   /// Get direct conversation between two users
   ///
@@ -120,7 +113,7 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
   /// Counts conversations where the user has unread messages
   Future<int> countUnreadConversations(String userId) async {
     final allConversations = await getAllConversations();
-    int unreadCount = 0;
+    var unreadCount = 0;
 
     for (final conv in allConversations) {
       // Parse unreadCount JSON to check if user has unread messages
@@ -145,14 +138,12 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
   // ============================================================================
 
   /// Insert a new conversation
-  Future<int> insertConversation(ConversationsCompanion conversation) {
-    return into(conversations).insert(conversation);
-  }
+  Future<int> insertConversation(ConversationsCompanion conversation) =>
+      into(conversations).insert(conversation);
 
   /// Insert or update a conversation
-  Future<int> upsertConversation(ConversationsCompanion conversation) {
-    return into(conversations).insertOnConflictUpdate(conversation);
-  }
+  Future<int> upsertConversation(ConversationsCompanion conversation) =>
+      into(conversations).insertOnConflictUpdate(conversation);
 
   /// Batch insert conversations (efficient for initial sync)
   Future<void> insertConversations(
@@ -162,7 +153,8 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
       batch.insertAll(
         conversations,
         conversationList,
-        mode: InsertMode.insertOrReplace, // Upsert: insert new or update existing
+        mode:
+            InsertMode.insertOrReplace, // Upsert: insert new or update existing
       );
     });
   }
@@ -171,38 +163,31 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
   Future<bool> updateConversation(
     String documentId,
     ConversationsCompanion conversation,
-  ) {
-    return (update(conversations)
-          ..where((c) => c.documentId.equals(documentId)))
-        .write(conversation)
-        .then((count) => count > 0);
-  }
+  ) => (update(conversations)..where((c) => c.documentId.equals(documentId)))
+      .write(conversation)
+      .then((count) => count > 0);
 
   /// Update last message information
   Future<bool> updateLastMessage({
     required String documentId,
     required String messageText,
     required String senderId,
-    required String senderName,
     required DateTime timestamp,
     required String messageType,
     Map<String, String>? translations,
-  }) {
-    return updateConversation(
-      documentId,
-      ConversationsCompanion(
-        lastMessageText: Value(messageText),
-        lastMessageSenderId: Value(senderId),
-        lastMessageSenderName: Value(senderName),
-        lastMessageTimestamp: Value(timestamp),
-        lastMessageType: Value(messageType),
-        lastMessageTranslations: Value(
-          translations?.entries.map((e) => '"${e.key}":"${e.value}"').join(','),
-        ),
-        lastUpdatedAt: Value(timestamp),
+  }) => updateConversation(
+    documentId,
+    ConversationsCompanion(
+      lastMessageText: Value(messageText),
+      lastMessageSenderId: Value(senderId),
+      lastMessageTimestamp: Value(timestamp),
+      lastMessageType: Value(messageType),
+      lastMessageTranslations: Value(
+        translations?.entries.map((e) => '"${e.key}":"${e.value}"').join(','),
       ),
-    );
-  }
+      lastUpdatedAt: Value(timestamp),
+    ),
+  );
 
   /// Update unread count for specific users
   ///
@@ -213,7 +198,9 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
     required List<String> participantIds,
   }) async {
     final conversation = await getConversationById(documentId);
-    if (conversation == null) return false;
+    if (conversation == null) {
+      return false;
+    }
 
     // Parse existing unread counts
     final unreadMap = <String, int>{};
@@ -247,7 +234,9 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
     required String userId,
   }) async {
     final conversation = await getConversationById(documentId);
-    if (conversation == null) return false;
+    if (conversation == null) {
+      return false;
+    }
 
     // Parse and update unread counts
     final unreadMap = <String, int>{};
@@ -279,16 +268,12 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
   }
 
   /// Delete a conversation
-  Future<int> deleteConversation(String documentId) {
-    return (delete(
-      conversations,
-    )..where((c) => c.documentId.equals(documentId))).go();
-  }
+  Future<int> deleteConversation(String documentId) => (delete(
+    conversations,
+  )..where((c) => c.documentId.equals(documentId))).go();
 
   /// Delete all conversations (use with caution!)
-  Future<int> deleteAllConversations() {
-    return delete(conversations).go();
-  }
+  Future<int> deleteAllConversations() => delete(conversations).go();
 
   // ============================================================================
   // Batch Operations
@@ -326,36 +311,33 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
   // ============================================================================
 
   /// Search conversations by group name
-  Future<List<ConversationEntity>> searchConversationsByName(String query) {
-    return (select(conversations)
-          ..where((c) => c.groupName.like('%$query%'))
-          ..orderBy([(c) => OrderingTerm.desc(c.lastUpdatedAt)]))
-        .get();
-  }
+  Future<List<ConversationEntity>> searchConversationsByName(String query) =>
+      (select(conversations)
+            ..where((c) => c.groupName.like('%$query%'))
+            ..orderBy([(c) => OrderingTerm.desc(c.lastUpdatedAt)]))
+          .get();
 
   /// Get conversations updated after a specific time
   ///
   /// Useful for sync operations
   Future<List<ConversationEntity>> getConversationsUpdatedAfter(
     DateTime timestamp,
-  ) {
-    return (select(conversations)
-          ..where((c) => c.lastUpdatedAt.isBiggerThanValue(timestamp))
-          ..orderBy([(c) => OrderingTerm.desc(c.lastUpdatedAt)]))
-        .get();
-  }
+  ) =>
+      (select(conversations)
+            ..where((c) => c.lastUpdatedAt.isBiggerThanValue(timestamp))
+            ..orderBy([(c) => OrderingTerm.desc(c.lastUpdatedAt)]))
+          .get();
 
   /// Get group conversations where user is admin
-  Future<List<ConversationEntity>> getGroupsWhereUserIsAdmin(String userId) {
-    return (select(conversations)
-          ..where(
-            (c) =>
-                c.conversationType.equals('group') &
-                c.adminIds.like('%"$userId"%'),
-          )
-          ..orderBy([(c) => OrderingTerm.desc(c.lastUpdatedAt)]))
-        .get();
-  }
+  Future<List<ConversationEntity>> getGroupsWhereUserIsAdmin(String userId) =>
+      (select(conversations)
+            ..where(
+              (c) =>
+                  c.conversationType.equals('group') &
+                  c.adminIds.like('%"$userId"%'),
+            )
+            ..orderBy([(c) => OrderingTerm.desc(c.lastUpdatedAt)]))
+          .get();
 
   /// Get active conversations (with recent activity)
   ///
@@ -373,10 +355,23 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
   }
 
   /// Get conversations with translation enabled
-  Future<List<ConversationEntity>> getConversationsWithTranslation() {
-    return (select(conversations)
-          ..where((c) => c.translationEnabled.equals(true))
-          ..orderBy([(c) => OrderingTerm.desc(c.lastUpdatedAt)]))
-        .get();
-  }
+  Future<List<ConversationEntity>> getConversationsWithTranslation() =>
+      (select(conversations)
+            ..where((c) => c.translationEnabled.equals(true))
+            ..orderBy([(c) => OrderingTerm.desc(c.lastUpdatedAt)]))
+          .get();
+
+  /// Update last message sender name for all conversations where this user was the last sender
+  ///
+  /// Used when a user changes their display name to propagate
+  /// the change to conversation preview text for real-time UI updates
+  Future<void> updateLastMessageSenderNameForUser({
+    required String userId,
+    required String newSenderName,
+  }) =>
+      (update(
+        conversations,
+      )..where((c) => c.lastMessageSenderId.equals(userId))).write(
+        ConversationsCompanion(lastMessageSenderName: Value(newSenderName)),
+      );
 }

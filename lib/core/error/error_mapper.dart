@@ -1,12 +1,11 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:drift/drift.dart';
-
-import 'exceptions.dart';
-import 'failures.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:message_ai/core/error/exceptions.dart';
+import 'package:message_ai/core/error/failures.dart';
 
 /// Maps exceptions to failures
 ///
@@ -291,8 +290,8 @@ class ErrorMapper {
     if (message.contains('unique') ||
         message.contains('constraint') ||
         message.contains('foreign key')) {
-      return ConstraintViolationFailure(
-        message: 'This operation violates a database constraint.',
+      return const ConstraintViolationFailure(
+
       );
     }
 
@@ -333,17 +332,13 @@ class ErrorMapper {
   }
 
   /// Helper method to check if an error is retryable
-  static bool isRetryable(Failure failure) {
-    return failure is NoInternetFailure ||
+  static bool isRetryable(Failure failure) => failure is NoInternetFailure ||
         failure is NetworkTimeoutFailure ||
         failure is ServerFailure ||
         failure is RateLimitExceededFailure;
-  }
 
   /// Helper method to check if an error requires authentication
-  static bool requiresAuthentication(Failure failure) {
-    return failure is UnauthenticatedFailure ||
+  static bool requiresAuthentication(Failure failure) => failure is UnauthenticatedFailure ||
         (failure is UnauthorizedFailure &&
             failure.code == 'requires-recent-login');
-  }
 }

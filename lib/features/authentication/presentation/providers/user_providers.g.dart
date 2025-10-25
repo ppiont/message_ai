@@ -58,7 +58,7 @@ final class FirebaseFirestoreProvider
   }
 }
 
-String _$firebaseFirestoreHash() => r'963402713bf9b7cc1fb259d619d9b0184d4dcec1';
+String _$firebaseFirestoreHash() => r'eca974fdc891fcd3f9586742678f47582b20adec';
 
 /// Provider for UserRemoteDataSource
 
@@ -158,3 +158,101 @@ final class UserRepositoryProvider
 }
 
 String _$userRepositoryHash() => r'1eb8cb73007185b68f0a29688a0d7b50de81219d';
+
+/// Provider for UserCacheService
+
+@ProviderFor(userCacheService)
+const userCacheServiceProvider = UserCacheServiceProvider._();
+
+/// Provider for UserCacheService
+
+final class UserCacheServiceProvider
+    extends
+        $FunctionalProvider<
+          UserCacheService,
+          UserCacheService,
+          UserCacheService
+        >
+    with $Provider<UserCacheService> {
+  /// Provider for UserCacheService
+  const UserCacheServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'userCacheServiceProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$userCacheServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<UserCacheService> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  UserCacheService create(Ref ref) {
+    return userCacheService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(UserCacheService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<UserCacheService>(value),
+    );
+  }
+}
+
+String _$userCacheServiceHash() => r'aeb87fc3aa77e33e1d061746cc70fbc83e983886';
+
+/// Provider for UserSyncService
+
+@ProviderFor(userSyncService)
+const userSyncServiceProvider = UserSyncServiceProvider._();
+
+/// Provider for UserSyncService
+
+final class UserSyncServiceProvider
+    extends
+        $FunctionalProvider<UserSyncService, UserSyncService, UserSyncService>
+    with $Provider<UserSyncService> {
+  /// Provider for UserSyncService
+  const UserSyncServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'userSyncServiceProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$userSyncServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<UserSyncService> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  UserSyncService create(Ref ref) {
+    return userSyncService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(UserSyncService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<UserSyncService>(value),
+    );
+  }
+}
+
+String _$userSyncServiceHash() => r'62597f96b25e9b1dfc1b89998a44633ffd03ca0a';

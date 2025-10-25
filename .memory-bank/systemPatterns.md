@@ -163,6 +163,66 @@ Check Cache → Translate Missing → Store All Versions
 }
 ```
 
+### 8. Push Notification Architecture (FCM)
+
+#### Token Management
+```
+App Start → Request Permissions → Get FCM Token →
+Save to Firestore (user.fcmTokens array) →
+Listen for Token Refresh → Update Firestore
+```
+
+#### Notification Flow
+```
+New Message → Firestore Trigger → Cloud Function →
+Fetch Recipients' FCM Tokens → Send Notifications →
+Device Receives → Handler Processes
+```
+
+#### Handler States
+1. **Foreground**: App is open and visible
+   - `FirebaseMessaging.onMessage` listener
+   - Display local notification banner (flutter_local_notifications)
+   - Update UI in real-time via streams
+
+2. **Background**: App is running but not visible
+   - `firebaseMessagingBackgroundHandler` (top-level function)
+   - Runs in separate isolate (requires Firebase.initializeApp())
+   - Mark message as delivered in Firestore
+   - System displays notification
+
+3. **Terminated**: App is completely closed
+   - Same as background handler
+   - System wakes app to process notification
+
+#### Notification Tap Navigation
+```
+User Taps Notification → onMessageOpenedApp →
+Extract conversationId from payload →
+Fetch conversation details (group name or sender) →
+Navigate to ChatPage with context
+```
+
+#### Android Notification Channels
+Required for Android 8+ (API 26+):
+```dart
+const channel = AndroidNotificationChannel(
+  'messages',  // channel ID
+  'Messages',  // channel name
+  importance: Importance.high,  // banner display
+  playSound: true,
+  enableVibration: true,
+  showBadge: true,
+);
+```
+
+#### Critical Implementation Details
+1. **Background Isolate**: Must call `Firebase.initializeApp()` in background handler
+2. **Document IDs**: Pass Firestore document IDs (not FCM message IDs) in notification payload
+3. **Provider Lifecycle**: Initialize FCM service conditionally based on auth state
+4. **Core Library Desugaring**: Required for flutter_local_notifications on Android
+5. **iOS Setup**: Requires APNs configuration, entitlements, and capabilities in Xcode
+
 ## Component Relationships
 
 ### Feature Dependencies

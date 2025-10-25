@@ -58,7 +58,7 @@ final class FirebaseAuthProvider
   }
 }
 
-String _$firebaseAuthHash() => r'e323ea70909ff25727135fa5deddbce7cd1e9c07';
+String _$firebaseAuthHash() => r'073d2de7c8941748647f37dbb00de1c08ef8758b';
 
 /// Provider for authentication remote data source
 
@@ -658,7 +658,10 @@ final class AuthStateProvider
 
 String _$authStateHash() => r'89b1b3ab6a1d599da3cec3b546172497b9bd5ace';
 
-/// Provider for current user (synchronous)
+/// Provider for current user (synchronous) from Firebase Auth
+///
+/// ⚠️ WARNING: This only returns basic Firebase Auth data with hardcoded preferredLanguage: 'en'
+/// For full user data including preferredLanguage from Firestore, use currentUserWithFirestoreProvider
 ///
 /// Returns [User?] - the current user if signed in, null otherwise
 /// This provides immediate access to the current user without waiting for a stream
@@ -666,14 +669,20 @@ String _$authStateHash() => r'89b1b3ab6a1d599da3cec3b546172497b9bd5ace';
 @ProviderFor(currentUser)
 const currentUserProvider = CurrentUserProvider._();
 
-/// Provider for current user (synchronous)
+/// Provider for current user (synchronous) from Firebase Auth
+///
+/// ⚠️ WARNING: This only returns basic Firebase Auth data with hardcoded preferredLanguage: 'en'
+/// For full user data including preferredLanguage from Firestore, use currentUserWithFirestoreProvider
 ///
 /// Returns [User?] - the current user if signed in, null otherwise
 /// This provides immediate access to the current user without waiting for a stream
 
 final class CurrentUserProvider extends $FunctionalProvider<User?, User?, User?>
     with $Provider<User?> {
-  /// Provider for current user (synchronous)
+  /// Provider for current user (synchronous) from Firebase Auth
+  ///
+  /// ⚠️ WARNING: This only returns basic Firebase Auth data with hardcoded preferredLanguage: 'en'
+  /// For full user data including preferredLanguage from Firestore, use currentUserWithFirestoreProvider
   ///
   /// Returns [User?] - the current user if signed in, null otherwise
   /// This provides immediate access to the current user without waiting for a stream
@@ -711,6 +720,60 @@ final class CurrentUserProvider extends $FunctionalProvider<User?, User?, User?>
 }
 
 String _$currentUserHash() => r'0a9484b64a908e46ac7d5d011ab5da4c487e5cce';
+
+/// Provider for current user WITH full Firestore data (including preferredLanguage)
+///
+/// This is the RECOMMENDED provider for getting current user data
+/// Returns [User?] with actual preferredLanguage from Firestore, not hardcoded 'en'
+///
+/// Falls back to Firebase Auth user if Firestore fetch fails
+
+@ProviderFor(currentUserWithFirestore)
+const currentUserWithFirestoreProvider = CurrentUserWithFirestoreProvider._();
+
+/// Provider for current user WITH full Firestore data (including preferredLanguage)
+///
+/// This is the RECOMMENDED provider for getting current user data
+/// Returns [User?] with actual preferredLanguage from Firestore, not hardcoded 'en'
+///
+/// Falls back to Firebase Auth user if Firestore fetch fails
+
+final class CurrentUserWithFirestoreProvider
+    extends $FunctionalProvider<AsyncValue<User?>, User?, FutureOr<User?>>
+    with $FutureModifier<User?>, $FutureProvider<User?> {
+  /// Provider for current user WITH full Firestore data (including preferredLanguage)
+  ///
+  /// This is the RECOMMENDED provider for getting current user data
+  /// Returns [User?] with actual preferredLanguage from Firestore, not hardcoded 'en'
+  ///
+  /// Falls back to Firebase Auth user if Firestore fetch fails
+  const CurrentUserWithFirestoreProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'currentUserWithFirestoreProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$currentUserWithFirestoreHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<User?> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<User?> create(Ref ref) {
+    return currentUserWithFirestore(ref);
+  }
+}
+
+String _$currentUserWithFirestoreHash() =>
+    r'aa8c6d41d7e0172ad2df4ba8ce15f8446c94860e';
 
 /// Provider to check if user is authenticated
 

@@ -24,9 +24,9 @@ abstract class UserRepository {
 
   /// Update user's online status
   Future<Either<Failure, void>> updateUserOnlineStatus(
-    String userId,
-    bool isOnline,
-  );
+    String userId, {
+    required bool isOnline,
+  });
 
   /// Update user's last seen timestamp
   Future<Either<Failure, void>> updateUserLastSeen(

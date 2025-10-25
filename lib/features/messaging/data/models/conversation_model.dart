@@ -11,20 +11,14 @@ class ConversationModel extends Conversation {
     required super.type,
     required super.participantIds,
     required super.participants,
-    super.lastMessage,
-    required super.lastUpdatedAt,
-    required super.initiatedAt,
-    required super.unreadCount,
-    required super.translationEnabled,
-    required super.autoDetectLanguage,
+    required super.lastUpdatedAt, required super.initiatedAt, required super.unreadCount, required super.translationEnabled, required super.autoDetectLanguage, super.lastMessage,
     super.groupName,
     super.groupImage,
     super.adminIds,
   });
 
   /// Creates a ConversationModel from a domain Conversation entity
-  factory ConversationModel.fromEntity(Conversation conversation) {
-    return ConversationModel(
+  factory ConversationModel.fromEntity(Conversation conversation) => ConversationModel(
       documentId: conversation.documentId,
       type: conversation.type,
       participantIds: conversation.participantIds,
@@ -39,11 +33,9 @@ class ConversationModel extends Conversation {
       groupImage: conversation.groupImage,
       adminIds: conversation.adminIds,
     );
-  }
 
   /// Creates a ConversationModel from JSON (Firestore document)
-  factory ConversationModel.fromJson(Map<String, dynamic> json) {
-    return ConversationModel(
+  factory ConversationModel.fromJson(Map<String, dynamic> json) => ConversationModel(
       documentId: json['documentId'] as String,
       type: json['type'] as String,
       participantIds: List<String>.from(json['participantIds'] as List),
@@ -66,7 +58,6 @@ class ConversationModel extends Conversation {
           ? List<String>.from(json['adminIds'] as List)
           : null,
     );
-  }
 
   /// Helper method to parse DateTime from either Timestamp or String
   static DateTime _parseDateTime(dynamic value) {
@@ -80,8 +71,7 @@ class ConversationModel extends Conversation {
   }
 
   /// Converts this ConversationModel to JSON for Firestore
-  Map<String, dynamic> toJson() {
-    return {
+  Map<String, dynamic> toJson() => {
       'documentId': documentId,
       'type': type,
       'participantIds': participantIds,
@@ -99,11 +89,9 @@ class ConversationModel extends Conversation {
       if (groupImage != null) 'groupImage': groupImage,
       if (adminIds != null) 'adminIds': adminIds,
     };
-  }
 
   /// Converts this model to a domain entity
-  Conversation toEntity() {
-    return Conversation(
+  Conversation toEntity() => Conversation(
       documentId: documentId,
       type: type,
       participantIds: participantIds,
@@ -118,7 +106,6 @@ class ConversationModel extends Conversation {
       groupImage: groupImage,
       adminIds: adminIds,
     );
-  }
 
   /// Creates a copy of this model with the given fields replaced
   @override
@@ -136,8 +123,7 @@ class ConversationModel extends Conversation {
     String? groupName,
     String? groupImage,
     List<String>? adminIds,
-  }) {
-    return ConversationModel(
+  }) => ConversationModel(
       documentId: documentId ?? this.documentId,
       type: type ?? this.type,
       participantIds: participantIds ?? this.participantIds,
@@ -152,57 +138,43 @@ class ConversationModel extends Conversation {
       groupImage: groupImage ?? this.groupImage,
       adminIds: adminIds ?? this.adminIds,
     );
-  }
 }
 
 /// Data model for Participant with serialization
 class ParticipantModel extends Participant {
   const ParticipantModel({
     required super.uid,
-    required super.name,
-    super.imageUrl,
     required super.preferredLanguage,
+    super.imageUrl,
   });
 
   /// Creates a ParticipantModel from a domain Participant entity
-  factory ParticipantModel.fromEntity(Participant participant) {
-    return ParticipantModel(
+  factory ParticipantModel.fromEntity(Participant participant) => ParticipantModel(
       uid: participant.uid,
-      name: participant.name,
       imageUrl: participant.imageUrl,
       preferredLanguage: participant.preferredLanguage,
     );
-  }
 
   /// Creates a ParticipantModel from JSON
-  factory ParticipantModel.fromJson(Map<String, dynamic> json) {
-    return ParticipantModel(
+  factory ParticipantModel.fromJson(Map<String, dynamic> json) => ParticipantModel(
       uid: json['uid'] as String,
-      name: json['name'] as String,
       imageUrl: json['imageUrl'] as String?,
       preferredLanguage: json['preferredLanguage'] as String,
     );
-  }
 
   /// Converts this model to JSON
-  Map<String, dynamic> toJson() {
-    return {
+  Map<String, dynamic> toJson() => {
       'uid': uid,
-      'name': name,
       if (imageUrl != null) 'imageUrl': imageUrl,
       'preferredLanguage': preferredLanguage,
     };
-  }
 
   /// Converts this model to a domain entity
-  Participant toEntity() {
-    return Participant(
+  Participant toEntity() => Participant(
       uid: uid,
-      name: name,
       imageUrl: imageUrl,
       preferredLanguage: preferredLanguage,
     );
-  }
 }
 
 /// Data model for LastMessage with serialization
@@ -210,59 +182,46 @@ class LastMessageModel extends LastMessage {
   const LastMessageModel({
     required super.text,
     required super.senderId,
-    required super.senderName,
     required super.timestamp,
     required super.type,
     super.translations,
   });
 
   /// Creates a LastMessageModel from a domain LastMessage entity
-  factory LastMessageModel.fromEntity(LastMessage lastMessage) {
-    return LastMessageModel(
+  factory LastMessageModel.fromEntity(LastMessage lastMessage) => LastMessageModel(
       text: lastMessage.text,
       senderId: lastMessage.senderId,
-      senderName: lastMessage.senderName,
       timestamp: lastMessage.timestamp,
       type: lastMessage.type,
       translations: lastMessage.translations,
     );
-  }
 
   /// Creates a LastMessageModel from JSON
-  factory LastMessageModel.fromJson(Map<String, dynamic> json) {
-    return LastMessageModel(
+  factory LastMessageModel.fromJson(Map<String, dynamic> json) => LastMessageModel(
       text: json['text'] as String,
       senderId: json['senderId'] as String,
-      senderName: json['senderName'] as String,
       timestamp: ConversationModel._parseDateTime(json['timestamp']),
       type: json['type'] as String,
       translations: json['translations'] != null
           ? Map<String, String>.from(json['translations'] as Map)
           : null,
     );
-  }
 
   /// Converts this model to JSON
-  Map<String, dynamic> toJson() {
-    return {
+  Map<String, dynamic> toJson() => {
       'text': text,
       'senderId': senderId,
-      'senderName': senderName,
       'timestamp': timestamp.toIso8601String(),
       'type': type,
       if (translations != null) 'translations': translations,
     };
-  }
 
   /// Converts this model to a domain entity
-  LastMessage toEntity() {
-    return LastMessage(
+  LastMessage toEntity() => LastMessage(
       text: text,
       senderId: senderId,
-      senderName: senderName,
       timestamp: timestamp,
       type: type,
       translations: translations,
     );
-  }
 }

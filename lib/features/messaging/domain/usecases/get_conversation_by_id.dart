@@ -8,9 +8,9 @@ import 'package:message_ai/features/messaging/domain/repositories/conversation_r
 
 /// Use case for retrieving a specific conversation by its ID.
 class GetConversationById {
-  final ConversationRepository _conversationRepository;
 
   GetConversationById(this._conversationRepository);
+  final ConversationRepository _conversationRepository;
 
   /// Gets a conversation by ID.
   ///

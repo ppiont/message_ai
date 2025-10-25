@@ -12,10 +12,10 @@ import 'package:uuid/uuid.dart';
 /// This validates group requirements and creates a new group
 /// with the specified participants and admin(s).
 class CreateGroup {
-  final GroupConversationRepository _groupRepository;
-  final Uuid _uuid;
 
   CreateGroup(this._groupRepository) : _uuid = const Uuid();
+  final GroupConversationRepository _groupRepository;
+  final Uuid _uuid;
 
   /// Creates a new group conversation.
   ///
