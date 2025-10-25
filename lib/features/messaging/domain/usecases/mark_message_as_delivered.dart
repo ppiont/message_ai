@@ -8,7 +8,7 @@ import 'package:message_ai/features/messaging/domain/repositories/message_reposi
 /// Use case for marking a message as delivered to a specific user.
 ///
 /// Called when a message arrives at the recipient's device but before
-/// they've opened the chat to read it. Updates the message's [deliveredTo]
+/// they've opened the chat to read it. Updates the message's `deliveredTo`
 /// map, enabling per-user delivery tracking in group chats.
 ///
 /// This is typically triggered by:

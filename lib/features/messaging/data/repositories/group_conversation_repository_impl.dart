@@ -323,8 +323,8 @@ class GroupConversationRepositoryImpl implements GroupConversationRepository {
             .toList();
 
         // Remove user from unreadCount map
-        final updatedUnreadCount = Map<String, int>.from(group.unreadCount);
-        updatedUnreadCount.remove(userId);
+        final updatedUnreadCount = Map<String, int>.from(group.unreadCount)
+          ..remove(userId);
 
         final updatedGroup = group.copyWith(
           participantIds: group.participantIds

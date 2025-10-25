@@ -5,7 +5,7 @@
 /// user opens the chat.
 library;
 
-import 'dart:async' show StreamSubscription, unawaited;
+import 'dart:async' show StreamSubscription;
 
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:message_ai/features/messaging/domain/repositories/conversation_repository.dart';
@@ -22,7 +22,7 @@ import 'package:message_ai/features/messaging/domain/repositories/message_reposi
 /// The service:
 /// 1. Watches all direct conversations AND group conversations for the current user
 /// 2. For each conversation, watches the message stream
-/// 3. Automatically calls [markAsDelivered] for each new incoming message
+/// 3. Automatically calls [MessageRepository.markAsDelivered] for each new incoming message
 /// 4. Prevents duplicate delivery marking with internal deduplication
 ///
 /// Should be started when the app initializes and stopped when cleaning up.

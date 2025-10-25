@@ -7,7 +7,7 @@ import 'package:message_ai/features/messaging/domain/repositories/message_reposi
 
 /// Use case for marking a message as read for a specific user.
 ///
-/// Updates the message's [readBy] map with the user's timestamp,
+/// Updates the message's `readBy` map with the user's timestamp,
 /// enabling per-user read receipt tracking in group chats.
 ///
 /// When a user opens a chat and scrolls past a message, this use case

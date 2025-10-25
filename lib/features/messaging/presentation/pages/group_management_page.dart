@@ -93,8 +93,10 @@ class _GroupManagementPageState extends ConsumerState<GroupManagementPage> {
     );
 
     // Invalidate provider to refresh UI if member was added
-    if (success == true && mounted) {
-      ref.invalidate(getConversationByIdProvider(widget.conversationId));
+    if (success ?? false) {
+      if (mounted) {
+        ref.invalidate(getConversationByIdProvider(widget.conversationId));
+      }
     }
   }
 

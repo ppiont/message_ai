@@ -6,7 +6,6 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
-import 'package:rxdart/rxdart.dart';
 import 'package:message_ai/core/error/failures.dart';
 import 'package:message_ai/core/providers/database_provider.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
@@ -48,6 +47,7 @@ import 'package:message_ai/features/messaging/domain/usecases/watch_messages.dar
 import 'package:message_ai/features/smart_replies/presentation/providers/embedding_providers.dart';
 import 'package:message_ai/features/translation/presentation/providers/language_detection_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:rxdart/rxdart.dart';
 
 part 'messaging_providers.g.dart';
 

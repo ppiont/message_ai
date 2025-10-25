@@ -1,4 +1,3 @@
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:message_ai/features/messaging/domain/entities/message.dart';
 import 'package:message_ai/features/messaging/domain/repositories/message_repository.dart';
@@ -23,16 +22,12 @@ import 'package:message_ai/features/messaging/domain/repositories/message_reposi
 class SemanticSearchService {
   SemanticSearchService({
     required MessageRepository messageRepository,
-    FirebaseFunctions? functions,
-  })  : _messageRepository = messageRepository,
-        _functions = functions ?? FirebaseFunctions.instance;
+  }) : _messageRepository = messageRepository;
 
   final MessageRepository _messageRepository;
-  final FirebaseFunctions _functions;
 
   // Configuration
   static const int _defaultLimit = 50; // Sufficient context for smart replies
-  static const int _fallbackLimit = 50; // For fallback when no embedding
 
   /// Gets recent conversation context for smart reply generation.
   ///
