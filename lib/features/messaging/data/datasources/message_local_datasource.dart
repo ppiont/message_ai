@@ -9,6 +9,7 @@ import 'package:message_ai/core/database/daos/message_dao.dart';
 import 'package:message_ai/core/error/exceptions.dart';
 import 'package:message_ai/features/messaging/data/models/message_model.dart';
 import 'package:message_ai/features/messaging/domain/entities/message.dart';
+import 'package:message_ai/features/messaging/domain/entities/message_context_details.dart';
 
 /// Abstract interface for message local data source operations.
 ///
@@ -255,6 +256,21 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
           : null,
     ),
     culturalHint: Value(message.culturalHint),
+    contextDetails: Value(
+      message.contextDetails != null
+          ? jsonEncode(message.contextDetails!.toJson())
+          : null,
+    ),
+    deliveredToJson: Value(
+      message.deliveredTo != null
+          ? _serializeTimestampMap(message.deliveredTo!)
+          : null,
+    ),
+    readByJson: Value(
+      message.readBy != null
+          ? _serializeTimestampMap(message.readBy!)
+          : null,
+    ),
     syncStatus: const Value('pending'),
     retryCount: const Value(0),
   );
@@ -282,6 +298,15 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
         ? _deserializeAIAnalysis(entity.aiAnalysis!)
         : null,
     culturalHint: entity.culturalHint,
+    contextDetails: entity.contextDetails != null
+        ? _deserializeContextDetails(entity.contextDetails!)
+        : null,
+    deliveredTo: entity.deliveredToJson != null
+        ? _deserializeTimestampMap(entity.deliveredToJson!)
+        : null,
+    readBy: entity.readByJson != null
+        ? _deserializeTimestampMap(entity.readByJson!)
+        : null,
   );
 
   // JSON serialization methods
@@ -339,6 +364,44 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
     try {
       final decoded = jsonDecode(json) as List<dynamic>;
       return decoded.map((e) => (e as num).toDouble()).toList();
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Serializes a timestamp map to JSON for Drift storage.
+  ///
+  /// Converts Map<String, DateTime> to JSON string with ISO 8601 timestamps.
+  String _serializeTimestampMap(Map<String, DateTime> map) {
+    final serialized = map.map((userId, timestamp) =>
+      MapEntry(userId, timestamp.toIso8601String()),
+    );
+    return jsonEncode(serialized);
+  }
+
+  /// Deserializes a timestamp map from JSON stored in Drift.
+  ///
+  /// Converts JSON string back to Map<String, DateTime>.
+  Map<String, DateTime>? _deserializeTimestampMap(String json) {
+    try {
+      final decoded = jsonDecode(json) as Map<String, dynamic>;
+      final result = <String, DateTime>{};
+      decoded.forEach((userId, timestamp) {
+        if (timestamp != null) {
+          result[userId] = DateTime.parse(timestamp as String);
+        }
+      });
+      return result;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Deserializes context details from JSON stored in Drift.
+  MessageContextDetails? _deserializeContextDetails(String json) {
+    try {
+      final decoded = jsonDecode(json) as Map<String, dynamic>;
+      return MessageContextDetails.fromJson(decoded);
     } catch (e) {
       return null;
     }
