@@ -1207,14 +1207,16 @@ final class ConversationTypingUsersFamily extends $Family
 
 /// Provides the [AutoDeliveryMarker] service.
 ///
-/// Automatically marks incoming messages as delivered for all conversations.
+/// Automatically marks incoming messages as delivered for all conversations
+/// (both direct and group conversations).
 
 @ProviderFor(autoDeliveryMarker)
 const autoDeliveryMarkerProvider = AutoDeliveryMarkerProvider._();
 
 /// Provides the [AutoDeliveryMarker] service.
 ///
-/// Automatically marks incoming messages as delivered for all conversations.
+/// Automatically marks incoming messages as delivered for all conversations
+/// (both direct and group conversations).
 
 final class AutoDeliveryMarkerProvider
     extends
@@ -1226,7 +1228,8 @@ final class AutoDeliveryMarkerProvider
     with $Provider<AutoDeliveryMarker?> {
   /// Provides the [AutoDeliveryMarker] service.
   ///
-  /// Automatically marks incoming messages as delivered for all conversations.
+  /// Automatically marks incoming messages as delivered for all conversations
+  /// (both direct and group conversations).
   const AutoDeliveryMarkerProvider._()
     : super(
         from: null,
@@ -1262,7 +1265,7 @@ final class AutoDeliveryMarkerProvider
 }
 
 String _$autoDeliveryMarkerHash() =>
-    r'df83ba6c61fcf8a41585782cd90d68ee8cea85cb';
+    r'711a95d9b7e6a0cb0c27884afc4262f4738d7f9d';
 
 /// Provides the [PresenceService] instance.
 

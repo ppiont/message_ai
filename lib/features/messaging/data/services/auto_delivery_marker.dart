@@ -8,16 +8,18 @@ library;
 import 'dart:async' show StreamSubscription, unawaited;
 
 import 'package:message_ai/features/messaging/domain/repositories/conversation_repository.dart';
+import 'package:message_ai/features/messaging/domain/repositories/group_conversation_repository.dart';
 import 'package:message_ai/features/messaging/domain/repositories/message_repository.dart';
 
 /// Automatically marks incoming messages as delivered.
 ///
-/// Monitors all active conversations and marks incoming (not sent by the
-/// current user) messages as delivered when they first appear in the stream.
-/// This enables per-user delivery tracking in the message system.
+/// Monitors all active conversations (both direct and group) and marks
+/// incoming (not sent by the current user) messages as delivered when
+/// they first appear in the stream. This enables per-user delivery
+/// tracking in the message system.
 ///
 /// The service:
-/// 1. Watches all conversations for the current user
+/// 1. Watches all direct conversations AND group conversations for the current user
 /// 2. For each conversation, watches the message stream
 /// 3. Automatically calls [markAsDelivered] for each new incoming message
 /// 4. Prevents duplicate delivery marking with internal deduplication
@@ -27,14 +29,19 @@ class AutoDeliveryMarker {
   /// Creates a new auto delivery marker instance.
   AutoDeliveryMarker({
     required final ConversationRepository conversationRepository,
+    required final GroupConversationRepository groupConversationRepository,
     required final MessageRepository messageRepository,
     required final String currentUserId,
   })  : _conversationRepository = conversationRepository,
+        _groupConversationRepository = groupConversationRepository,
         _messageRepository = messageRepository,
         _currentUserId = currentUserId;
 
-  /// Repository for accessing conversation data
+  /// Repository for accessing direct conversation data
   final ConversationRepository _conversationRepository;
+
+  /// Repository for accessing group conversation data
+  final GroupConversationRepository _groupConversationRepository;
 
   /// Repository for marking messages and getting message streams
   final MessageRepository _messageRepository;
@@ -45,8 +52,11 @@ class AutoDeliveryMarker {
   /// Deduplication set to prevent marking the same message twice
   final Set<String> _markedMessages = <String>{};
 
-  /// Subscription to conversation changes
+  /// Subscription to direct conversation changes
   StreamSubscription<dynamic>? _conversationsSub;
+
+  /// Subscription to group conversation changes
+  StreamSubscription<dynamic>? _groupConversationsSub;
 
   /// Subscriptions to individual conversation message streams
   final Map<String, StreamSubscription<dynamic>> _messageSubs =
@@ -54,11 +64,11 @@ class AutoDeliveryMarker {
 
   /// Starts watching conversations and marking new messages as delivered.
   ///
-  /// Begins monitoring all conversations for the current user and
-  /// automatically marks incoming messages as delivered.
+  /// Begins monitoring all conversations (direct AND group) for the current
+  /// user and automatically marks incoming messages as delivered.
   void start() {
-    // Watch all conversations for current user
-    _conversationRepository
+    // Watch all DIRECT conversations for current user
+    _conversationsSub = _conversationRepository
         .watchConversationsForUser(_currentUserId)
         .listen((final result) {
       result.fold(
@@ -67,6 +77,21 @@ class AutoDeliveryMarker {
           // For each conversation, watch its messages
           for (final conversation in conversations) {
             _watchConversationMessages(conversation.documentId);
+          }
+        },
+      );
+    });
+
+    // Watch all GROUP conversations for current user
+    _groupConversationsSub = _groupConversationRepository
+        .watchGroupsForUser(_currentUserId)
+        .listen((final result) {
+      result.fold(
+        (_) {}, // Silently ignore errors
+        (final groups) {
+          // For each group, watch its messages
+          for (final group in groups) {
+            _watchConversationMessages(group.documentId);
           }
         },
       );
@@ -120,6 +145,9 @@ class AutoDeliveryMarker {
   void stop() {
     _conversationsSub?.cancel();
     _conversationsSub = null;
+
+    _groupConversationsSub?.cancel();
+    _groupConversationsSub = null;
 
     for (final sub in _messageSubs.values) {
       sub.cancel();

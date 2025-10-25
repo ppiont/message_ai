@@ -280,7 +280,8 @@ Stream<List<TypingUser>> conversationTypingUsers(
 
 /// Provides the [AutoDeliveryMarker] service.
 ///
-/// Automatically marks incoming messages as delivered for all conversations.
+/// Automatically marks incoming messages as delivered for all conversations
+/// (both direct and group conversations).
 @Riverpod(keepAlive: true)
 AutoDeliveryMarker? autoDeliveryMarker(Ref ref) {
   final currentUser = ref.watch(authStateProvider).value;
@@ -293,6 +294,7 @@ AutoDeliveryMarker? autoDeliveryMarker(Ref ref) {
   final marker =
       AutoDeliveryMarker(
           conversationRepository: ref.watch(conversationRepositoryProvider),
+          groupConversationRepository: ref.watch(groupConversationRepositoryProvider),
           messageRepository: ref.watch(messageRepositoryProvider),
           currentUserId: currentUser.uid,
         )
