@@ -1025,7 +1025,7 @@ final class ConversationMessagesStreamProvider
 }
 
 String _$conversationMessagesStreamHash() =>
-    r'86bd8395481159ff6b95ace34f0c8f71b5f2f9d9';
+    r'84e830f87f19b9f59cfb5b18e7d9e269a3b5af33';
 
 /// Stream provider for watching messages in a conversation in real-time.
 ///

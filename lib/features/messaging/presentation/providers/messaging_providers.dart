@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dartz/dartz.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:rxdart/rxdart.dart';
 import 'package:message_ai/core/error/failures.dart';
 import 'package:message_ai/core/providers/database_provider.dart';
@@ -213,14 +214,26 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
   final watchUseCase = ref.watch(watchMessagesUseCaseProvider);
   final userSyncService = ref.watch(userSyncServiceProvider);
   final getConversationUseCase = ref.watch(getConversationByIdUseCaseProvider);
+  final groupConversationRepository = ref.watch(groupConversationRepositoryProvider);
 
   // Get conversation to extract participant IDs for aggregate status computation
+  // Try direct conversation first, then group conversation
   var participantIds = <String>[];
-  final conversationResult = await getConversationUseCase(conversationId);
+  var conversationResult = await getConversationUseCase(conversationId);
+
+  // If direct conversation fetch failed, try group conversation
+  if (conversationResult.isLeft()) {
+    debugPrint('📨 conversationMessagesStream: Not a direct conversation, trying group...');
+    conversationResult = await groupConversationRepository.getGroupById(conversationId);
+  }
+
   conversationResult.fold(
-    (_) {}, // Ignore failure, will use fallback status
+    (failure) {
+      debugPrint('❌ conversationMessagesStream: Failed to get conversation $conversationId: ${failure.message}');
+    },
     (conversation) {
       participantIds = conversation.participants.map((p) => p.uid).toList();
+      debugPrint('✅ conversationMessagesStream: Got ${participantIds.length} participants for status computation: $participantIds');
     },
   );
 
@@ -246,6 +259,8 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
           // Compute aggregate status using per-user tracking
           // getAggregateStatus handles empty participant lists by returning 'sent'
           final status = msg.getAggregateStatus(participantIds);
+
+          debugPrint('📊 Message ${msg.id.substring(0, 8)}: computed status=$status (participantIds=$participantIds, deliveredTo=${msg.deliveredTo?.keys.toList()}, readBy=${msg.readBy?.keys.toList()})');
 
           return <String, dynamic>{
             'id': msg.id,
