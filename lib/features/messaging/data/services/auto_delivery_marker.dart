@@ -7,6 +7,7 @@ library;
 
 import 'dart:async' show StreamSubscription, unawaited;
 
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:message_ai/features/messaging/domain/repositories/conversation_repository.dart';
 import 'package:message_ai/features/messaging/domain/repositories/group_conversation_repository.dart';
 import 'package:message_ai/features/messaging/domain/repositories/message_repository.dart';
@@ -67,13 +68,16 @@ class AutoDeliveryMarker {
   /// Begins monitoring all conversations (direct AND group) for the current
   /// user and automatically marks incoming messages as delivered.
   void start() {
+    debugPrint('📨 AutoDeliveryMarker: Starting for user $_currentUserId');
+
     // Watch all DIRECT conversations for current user
     _conversationsSub = _conversationRepository
         .watchConversationsForUser(_currentUserId)
         .listen((final result) {
       result.fold(
-        (_) {}, // Silently ignore errors
+        (failure) => debugPrint('❌ AutoDeliveryMarker: Failed to watch direct conversations: ${failure.message}'),
         (final conversations) {
+          debugPrint('📨 AutoDeliveryMarker: Watching ${conversations.length} direct conversations');
           // For each conversation, watch its messages
           for (final conversation in conversations) {
             _watchConversationMessages(conversation.documentId);
@@ -87,8 +91,9 @@ class AutoDeliveryMarker {
         .watchGroupsForUser(_currentUserId)
         .listen((final result) {
       result.fold(
-        (_) {}, // Silently ignore errors
+        (failure) => debugPrint('❌ AutoDeliveryMarker: Failed to watch group conversations: ${failure.message}'),
         (final groups) {
+          debugPrint('📨 AutoDeliveryMarker: Watching ${groups.length} group conversations');
           // For each group, watch its messages
           for (final group in groups) {
             _watchConversationMessages(group.documentId);
@@ -106,6 +111,8 @@ class AutoDeliveryMarker {
     // Cancel existing subscription if any
     _messageSubs[conversationId]?.cancel();
 
+    debugPrint('📨 AutoDeliveryMarker: Watching messages in conversation $conversationId');
+
     // Watch messages for this conversation
     _messageSubs[conversationId] = _messageRepository
         .watchMessages(
@@ -114,15 +121,19 @@ class AutoDeliveryMarker {
         )
         .listen((final result) {
           result.fold(
-            (_) {}, // Silently ignore errors
+            (failure) => debugPrint('❌ AutoDeliveryMarker: Failed to watch messages in $conversationId: ${failure.message}'),
             (final messages) {
+              debugPrint('📨 AutoDeliveryMarker: Processing ${messages.length} messages in $conversationId');
               // Mark incoming messages as delivered
               for (final message in messages) {
                 final isIncoming = message.senderId != _currentUserId;
                 final isNotYetDelivered = !message.isDeliveredTo(_currentUserId);
                 final notYetMarked = !_markedMessages.contains(message.id);
 
+                debugPrint('📨 AutoDeliveryMarker: Message ${message.id.substring(0, 8)}: isIncoming=$isIncoming, isNotYetDelivered=$isNotYetDelivered, notYetMarked=$notYetMarked');
+
                 if (isIncoming && isNotYetDelivered && notYetMarked) {
+                  debugPrint('✅ AutoDeliveryMarker: Marking message ${message.id} as delivered to $_currentUserId');
                   _markedMessages.add(message.id);
                   unawaited(
                     _messageRepository.markAsDelivered(
@@ -143,6 +154,7 @@ class AutoDeliveryMarker {
   /// Cancels all active subscriptions and clears internal state.
   /// Should be called when the app shuts down or the user logs out.
   void stop() {
+    debugPrint('📨 AutoDeliveryMarker: Stopping for user $_currentUserId');
     _conversationsSub?.cancel();
     _conversationsSub = null;
 
