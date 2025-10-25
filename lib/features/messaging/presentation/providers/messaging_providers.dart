@@ -373,6 +373,10 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
               'culturalHint': msg.culturalHint,
               'readCount': messageWithStatus.readCount,
               'deliveredCount': messageWithStatus.deliveredCount,
+              // Total recipients (excluding sender) for group chat status display
+              'totalRecipients': participantIds.isNotEmpty
+                  ? participantIds.where((id) => id != msg.senderId).length
+                  : 0,
             };
           }),
         );

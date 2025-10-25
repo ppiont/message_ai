@@ -397,6 +397,11 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                   : null,
               userPreferredLanguage: currentUser.preferredLanguage,
               culturalHint: message['culturalHint'] as String?,
+              readCount: message['readCount'] as int?,
+              deliveredCount: message['deliveredCount'] as int?,
+              // For group chats, totalRecipients should exclude sender
+              // For now, we'll add it to the message map in the stream provider
+              totalRecipients: message['totalRecipients'] as int?,
             );
           },
         );

@@ -30,6 +30,9 @@ class MessageBubble extends ConsumerStatefulWidget {
     this.translations,
     this.userPreferredLanguage,
     this.culturalHint,
+    this.readCount,
+    this.deliveredCount,
+    this.totalRecipients,
     super.key,
   });
 
@@ -45,6 +48,9 @@ class MessageBubble extends ConsumerStatefulWidget {
   final Map<String, String>? translations;
   final String? userPreferredLanguage;
   final String? culturalHint;
+  final int? readCount;
+  final int? deliveredCount;
+  final int? totalRecipients;
 
   @override
   ConsumerState<MessageBubble> createState() => _MessageBubbleState();
@@ -415,28 +421,128 @@ class _MessageBubbleState extends ConsumerState<MessageBubble> {
   );
 
   Widget _buildStatusIcon(BuildContext context) {
+    // For group messages, show detailed counts
+    final isGroupMessage = (widget.totalRecipients ?? 0) > 1;
+
+    Widget statusIcon;
     switch (widget.status) {
       case 'sent':
-        return const Icon(
+        statusIcon = const Icon(
           Icons.check,
-          size: 16, // Increased from 14
-          color: Colors.white, // Changed from white70 to full white
+          size: 16,
+          color: Colors.white,
         );
       case 'delivered':
-        return const Icon(
+        statusIcon = const Icon(
           Icons.done_all,
-          size: 16, // Increased from 14
-          color: Colors.white, // Changed from white70 to full white
+          size: 16,
+          color: Colors.white,
         );
       case 'read':
-        return const Icon(
+        statusIcon = const Icon(
           Icons.done_all,
-          size: 16, // Increased from 14
-          color: Colors.lightBlueAccent, // More visible color for read status
+          size: 16,
+          color: Colors.lightBlueAccent,
         );
       default:
         return const SizedBox.shrink();
     }
+
+    // For group messages, add count text
+    if (isGroupMessage && widget.status != 'sent') {
+      final count = widget.status == 'read'
+          ? widget.readCount ?? 0
+          : widget.deliveredCount ?? 0;
+      final total = widget.totalRecipients ?? 0;
+
+      return GestureDetector(
+        onTap: () => _showReadReceiptDetails(context),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            statusIcon,
+            const SizedBox(width: 2),
+            Text(
+              '$count/$total',
+              style: TextStyle(
+                fontSize: 11,
+                color: widget.status == 'read'
+                    ? Colors.lightBlueAccent
+                    : Colors.white,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return statusIcon;
+  }
+
+  /// Show detailed read receipt dialog
+  void _showReadReceiptDetails(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Message Status'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (widget.readCount != null && widget.readCount! > 0)
+              _buildStatusRow(
+                icon: Icons.done_all,
+                color: Colors.blue,
+                label: 'Read by',
+                count: widget.readCount!,
+              ),
+            if (widget.deliveredCount != null && widget.deliveredCount! > 0)
+              _buildStatusRow(
+                icon: Icons.done_all,
+                color: Colors.grey,
+                label: 'Delivered to',
+                count: widget.deliveredCount!,
+              ),
+            const SizedBox(height: 8),
+            Text(
+              'Total recipients: ${widget.totalRecipients ?? 0}',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusRow({
+    required IconData icon,
+    required Color color,
+    required String label,
+    required int count,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 8),
+          Text(
+            '$label $count',
+            style: const TextStyle(fontSize: 14),
+          ),
+        ],
+      ),
+    );
   }
 
   String _formatTimestampDivider(DateTime ts) {
