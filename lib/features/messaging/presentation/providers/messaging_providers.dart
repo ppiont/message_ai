@@ -19,6 +19,7 @@ import 'package:message_ai/features/messaging/data/datasources/message_remote_da
 import 'package:message_ai/features/messaging/data/repositories/conversation_repository_impl.dart';
 import 'package:message_ai/features/messaging/data/repositories/group_conversation_repository_impl.dart';
 import 'package:message_ai/features/messaging/data/repositories/message_repository_impl.dart';
+import 'package:message_ai/features/messaging/data/services/auto_delivery_marker.dart';
 import 'package:message_ai/features/messaging/data/services/fcm_service.dart';
 import 'package:message_ai/features/messaging/data/services/message_context_service.dart';
 import 'package:message_ai/features/messaging/data/services/presence_service.dart'
@@ -47,7 +48,6 @@ import 'package:message_ai/features/smart_replies/presentation/providers/embeddi
 import 'package:message_ai/features/translation/presentation/providers/language_detection_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:rxdart/rxdart.dart';
-import 'package:workmanager/workmanager.dart';
 
 part 'messaging_providers.g.dart';
 
@@ -221,7 +221,6 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
   final groupConversationRepository = ref.watch(
     groupConversationRepositoryProvider,
   );
-  final database = ref.watch(databaseProvider);
   final firestore = ref.watch(messagingFirestoreProvider);
 
   // Track which messages we've already marked as read to prevent infinite loop
@@ -295,16 +294,20 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
           allSenderIds.forEach(userSyncService.syncMessageSender);
         }
 
-        // WhatsApp-style: When chat is OPEN, mark messages as DELIVERED (not read)
-        // "Read" status will be set later by scroll-based visibility detection
+        // WhatsApp-style: When chat is OPEN, mark messages as READ
+        // Note: Delivery marking is handled automatically by AutoDeliveryMarker service
         final messageRemoteDataSource = ref.read(messageRemoteDataSourceProvider);
 
         for (final msg in messages) {
-          if (msg.senderId != currentUserId && !markedAsRead.contains(msg.id)) {
+          // Only mark as READ if:
+          // 1. Not sent by me
+          // 2. Not already marked by us (deduplication)
+          // Note: We mark as read when chat is open, AutoDeliveryMarker handles "delivered"
+          if (msg.senderId != currentUserId &&
+              !markedAsRead.contains(msg.id)) {
             try {
-              // Chat is open = message reached the device and is visible = mark as DELIVERED
-              // This ensures messages show "delivered" when chat is open
-              await messageRemoteDataSource.markAsDelivered(
+              // Chat is open = mark as READ
+              await messageRemoteDataSource.markAsRead(
                 conversationId,
                 msg.id,
                 currentUserId,
@@ -409,45 +412,34 @@ Stream<List<TypingUser>> conversationTypingUsers(
   );
 }
 
-// ========== Background Delivery Status Marker ==========
+// ========== Auto Delivery Marker ==========
 
-/// Background provider that marks ALL incoming messages as "delivered"
-/// WhatsApp-style: Message reached device = 2 checkmarks
+/// Provides the [AutoDeliveryMarker] service.
 ///
-/// Runs in background, marks messages as delivered when they arrive,
-/// even if chat is not open.
-@riverpod
-Stream<void> autoDeliveryMarker(Ref ref, String userId) async* {
-  final database = ref.watch(databaseProvider);
-  final messageRemoteDataSource = ref.watch(messageRemoteDataSourceProvider);
-  final firestore = ref.watch(messagingFirestoreProvider);
+/// Automatically marks incoming messages as delivered for all conversations.
+@Riverpod(keepAlive: true)
+AutoDeliveryMarker autoDeliveryMarker(Ref ref) {
+  final currentUser = ref.watch(authStateProvider).value;
 
-  debugPrint('[autoDeliveryMarker] Starting for user $userId');
-
-  // Track which messages we've already marked as delivered
-  final markedAsDelivered = <String>{};
-
-  // Watch local DB for new messages (they get synced from Firestore automatically)
-  // When a message appears in local DB, it means it "arrived" → mark as delivered
-  await for (final messages in database.messageDao.watchAllMessages()) {
-    for (final msg in messages) {
-      if (msg.senderId != userId && !markedAsDelivered.contains(msg.id)) {
-        // This is a received message - mark as delivered
-        try {
-          await messageRemoteDataSource.markAsDelivered(
-            msg.conversationId,
-            msg.id,
-            userId,
-          );
-          markedAsDelivered.add(msg.id); // Track that we marked this
-        } catch (e) {
-          // Silently fail - will retry on next iteration
-        }
-      }
-    }
-
-    yield null; // Keep stream alive
+  if (currentUser == null) {
+    throw Exception('User must be authenticated');
   }
+
+  final marker = AutoDeliveryMarker(
+    conversationRepository: ref.watch(conversationRepositoryProvider),
+    messageRepository: ref.watch(messageRepositoryProvider),
+    currentUserId: currentUser.uid,
+  );
+
+  // Start watching
+  marker.start();
+
+  // Dispose when provider is disposed
+  ref.onDispose(() {
+    marker.stop();
+  });
+
+  return marker;
 }
 
 // ========== Message Status Delivery Marker ==========

@@ -1037,7 +1037,7 @@ final class ConversationMessagesStreamProvider
 }
 
 String _$conversationMessagesStreamHash() =>
-    r'a09d77c3f8b1dc93a53c8ee31df48d353504e4a2';
+    r'eed23893a72e65df844577c599463517e07b4a30';
 
 /// Stream provider for watching messages in a conversation in real-time.
 ///
@@ -1226,104 +1226,64 @@ final class ConversationTypingUsersFamily extends $Family
   String toString() => r'conversationTypingUsersProvider';
 }
 
-/// Background provider that marks ALL incoming messages as "delivered"
-/// WhatsApp-style: Message reached device = 2 checkmarks
+/// Provides the [AutoDeliveryMarker] service.
 ///
-/// Runs in background, marks messages as delivered when they arrive,
-/// even if chat is not open.
+/// Automatically marks incoming messages as delivered for all conversations.
 
 @ProviderFor(autoDeliveryMarker)
-const autoDeliveryMarkerProvider = AutoDeliveryMarkerFamily._();
+const autoDeliveryMarkerProvider = AutoDeliveryMarkerProvider._();
 
-/// Background provider that marks ALL incoming messages as "delivered"
-/// WhatsApp-style: Message reached device = 2 checkmarks
+/// Provides the [AutoDeliveryMarker] service.
 ///
-/// Runs in background, marks messages as delivered when they arrive,
-/// even if chat is not open.
+/// Automatically marks incoming messages as delivered for all conversations.
 
 final class AutoDeliveryMarkerProvider
-    extends $FunctionalProvider<AsyncValue<void>, void, Stream<void>>
-    with $FutureModifier<void>, $StreamProvider<void> {
-  /// Background provider that marks ALL incoming messages as "delivered"
-  /// WhatsApp-style: Message reached device = 2 checkmarks
+    extends
+        $FunctionalProvider<
+          AutoDeliveryMarker,
+          AutoDeliveryMarker,
+          AutoDeliveryMarker
+        >
+    with $Provider<AutoDeliveryMarker> {
+  /// Provides the [AutoDeliveryMarker] service.
   ///
-  /// Runs in background, marks messages as delivered when they arrive,
-  /// even if chat is not open.
-  const AutoDeliveryMarkerProvider._({
-    required AutoDeliveryMarkerFamily super.from,
-    required String super.argument,
-  }) : super(
-         retry: null,
-         name: r'autoDeliveryMarkerProvider',
-         isAutoDispose: true,
-         dependencies: null,
-         $allTransitiveDependencies: null,
-       );
+  /// Automatically marks incoming messages as delivered for all conversations.
+  const AutoDeliveryMarkerProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'autoDeliveryMarkerProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
 
   @override
   String debugGetCreateSourceHash() => _$autoDeliveryMarkerHash();
 
-  @override
-  String toString() {
-    return r'autoDeliveryMarkerProvider'
-        ''
-        '($argument)';
-  }
-
   @$internal
   @override
-  $StreamProviderElement<void> $createElement($ProviderPointer pointer) =>
-      $StreamProviderElement(pointer);
+  $ProviderElement<AutoDeliveryMarker> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
 
   @override
-  Stream<void> create(Ref ref) {
-    final argument = this.argument as String;
-    return autoDeliveryMarker(ref, argument);
+  AutoDeliveryMarker create(Ref ref) {
+    return autoDeliveryMarker(ref);
   }
 
-  @override
-  bool operator ==(Object other) {
-    return other is AutoDeliveryMarkerProvider && other.argument == argument;
-  }
-
-  @override
-  int get hashCode {
-    return argument.hashCode;
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(AutoDeliveryMarker value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<AutoDeliveryMarker>(value),
+    );
   }
 }
 
 String _$autoDeliveryMarkerHash() =>
-    r'b2b2ddeaf2fda97d8d0bbba284503286893145b3';
-
-/// Background provider that marks ALL incoming messages as "delivered"
-/// WhatsApp-style: Message reached device = 2 checkmarks
-///
-/// Runs in background, marks messages as delivered when they arrive,
-/// even if chat is not open.
-
-final class AutoDeliveryMarkerFamily extends $Family
-    with $FunctionalFamilyOverride<Stream<void>, String> {
-  const AutoDeliveryMarkerFamily._()
-    : super(
-        retry: null,
-        name: r'autoDeliveryMarkerProvider',
-        dependencies: null,
-        $allTransitiveDependencies: null,
-        isAutoDispose: true,
-      );
-
-  /// Background provider that marks ALL incoming messages as "delivered"
-  /// WhatsApp-style: Message reached device = 2 checkmarks
-  ///
-  /// Runs in background, marks messages as delivered when they arrive,
-  /// even if chat is not open.
-
-  AutoDeliveryMarkerProvider call(String userId) =>
-      AutoDeliveryMarkerProvider._(argument: userId, from: this);
-
-  @override
-  String toString() => r'autoDeliveryMarkerProvider';
-}
+    r'ee637f8df3b6a7ee3c858845fb81a6b25be5a88a';
 
 /// Marks all messages in a conversation as delivered for the current user.
 ///

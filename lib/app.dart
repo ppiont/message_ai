@@ -109,9 +109,14 @@ class App extends ConsumerWidget {
       // Automatically syncs user profiles from Firestore to Drift
       ref.watch(userSyncServiceProvider).startBackgroundSync();
 
-      // Initialize background delivery marker
-      // Marks incoming messages as "delivered" across all conversations
-      ref.watch(autoDeliveryMarkerProvider(user.uid));
+      // Initialize auto delivery marker
+      // Automatically marks incoming messages as delivered across all conversations
+      try {
+        ref.watch(autoDeliveryMarkerProvider);
+      } catch (e) {
+        // Silently fail if marker can't be initialized
+        debugPrint('Auto delivery marker initialization failed: $e');
+      }
 
       // Initialize FCM for push notifications
       // This is done here (not in sign-in/sign-up pages) to avoid unmounted widget issues
