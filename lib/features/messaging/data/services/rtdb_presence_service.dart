@@ -115,11 +115,13 @@ class RtdbPresenceService {
     }
 
     // Create a stream for each user
-    final streams = userIds.map((userId) {
-      return watchUserPresence(userId: userId).map((presence) {
-        return MapEntry(userId, presence);
-      });
-    }).toList();
+    final streams = userIds
+        .map(
+          (userId) => watchUserPresence(
+            userId: userId,
+          ).map((presence) => MapEntry(userId, presence)),
+        )
+        .toList();
 
     // Combine all streams into a single stream
     // This uses RxDart's combineLatest or manual stream merging
@@ -130,9 +132,12 @@ class RtdbPresenceService {
   Stream<Map<String, UserPresence>> _combinePresenceStreams(
     List<Stream<MapEntry<String, UserPresence?>>> streams,
   ) async* {
-    final controllers = streams.map((stream) {
-      return StreamController<MapEntry<String, UserPresence?>>.broadcast();
-    }).toList();
+    final controllers = streams
+        .map(
+          (stream) =>
+              StreamController<MapEntry<String, UserPresence?>>.broadcast(),
+        )
+        .toList();
 
     // Subscribe to each stream
     final subscriptions =
@@ -141,7 +146,7 @@ class RtdbPresenceService {
       subscriptions.add(
         streams[i].listen(
           (entry) => controllers[i].add(entry),
-          onError: (error) => controllers[i].addError(error),
+          onError: (Object error) => controllers[i].addError(error),
         ),
       );
     }
@@ -149,7 +154,9 @@ class RtdbPresenceService {
     // Combine latest values from all streams
     final latestValues = <String, UserPresence?>{};
 
-    await for (final _ in Stream.periodic(const Duration(milliseconds: 100))) {
+    await for (final _ in Stream<void>.periodic(
+      const Duration(milliseconds: 100),
+    )) {
       // Collect latest values from each controller
       for (var i = 0; i < controllers.length; i++) {
         if (controllers[i].hasListener && !controllers[i].isClosed) {

@@ -287,7 +287,9 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
       })
       .distinct((prev, next) {
         // Deep equality check: only emit if status actually changed
-        if (prev.length != next.length) return false;
+        if (prev.length != next.length) {
+          return false;
+        }
 
         for (final entry in prev.entries) {
           final prevRecords = entry.value;
@@ -315,65 +317,65 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
         Either<Failure, List<Message>>,
         Map<String, List<MessageStatusEntity>>,
         List<Map<String, dynamic>>
-      >(messagesEitherStream, statusStream.startWith({}), (
-        messagesEither,
-        statusByMessage,
-      ) {
-        // Use fold to extract messages or handle failure
-        return messagesEither.fold(
-          (failure) {
-            debugPrint('❌ messagesEitherStream error: ${failure.message}');
-            return <Map<String, dynamic>>[];
-          },
-          (List<Message> messages) {
-            // Sync all message senders to Drift for offline access (fire-and-forget)
-            final allSenderIds = messages
-                .map((Message msg) => msg.senderId)
-                .toSet()
-                .toList();
-            if (allSenderIds.isNotEmpty) {
-              allSenderIds.forEach(userSyncService.syncMessageSender);
-            }
+      >(
+        messagesEitherStream,
+        statusStream.startWith({}),
+        (messagesEither, statusByMessage) =>
+            // Use fold to extract messages or handle failure
+            messagesEither.fold(
+              (failure) {
+                debugPrint('❌ messagesEitherStream error: ${failure.message}');
+                return <Map<String, dynamic>>[];
+              },
+              (List<Message> messages) {
+                // Sync all message senders to Drift for offline access (fire-and-forget)
+                final allSenderIds = messages
+                    .map((Message msg) => msg.senderId)
+                    .toSet()
+                    .toList();
+                if (allSenderIds.isNotEmpty) {
+                  allSenderIds.forEach(userSyncService.syncMessageSender);
+                }
 
-            // Build MessageWithStatus objects using real-time status data
-            return messages.map((Message msg) {
-              // Get status records from real-time stream (not one-time fetch)
-              final statusRecords = msg.senderId == currentUserId
-                  ? (statusByMessage[msg.id] ?? <MessageStatusEntity>[])
-                  : <MessageStatusEntity>[];
+                // Build MessageWithStatus objects using real-time status data
+                return messages.map((Message msg) {
+                  // Get status records from real-time stream (not one-time fetch)
+                  final statusRecords = msg.senderId == currentUserId
+                      ? (statusByMessage[msg.id] ?? <MessageStatusEntity>[])
+                      : <MessageStatusEntity>[];
 
-              // Build MessageWithStatus using factory
-              final messageWithStatus = MessageWithStatus.fromStatusRecords(
-                message: msg,
-                statusRecords: statusRecords,
-                currentUserId: currentUserId,
-                allParticipantIds: participantIds,
-              );
+                  // Build MessageWithStatus using factory
+                  final messageWithStatus = MessageWithStatus.fromStatusRecords(
+                    message: msg,
+                    statusRecords: statusRecords,
+                    currentUserId: currentUserId,
+                    allParticipantIds: participantIds,
+                  );
 
-              // Return as Map for backward compatibility with UI
-              return <String, dynamic>{
-                'id': msg.id,
-                'text': msg.text,
-                'senderId': msg.senderId,
-                'timestamp': msg.timestamp,
-                'status': messageWithStatus.status,
-                'type': msg.type,
-                'detectedLanguage': msg.detectedLanguage,
-                'translations': msg.translations,
-                'culturalHint': msg.culturalHint,
-                'readCount': messageWithStatus.readCount,
-                'deliveredCount': messageWithStatus.deliveredCount,
-                // Total recipients (excluding sender) for group chat status display
-                'totalRecipients': participantIds.isNotEmpty
-                    ? participantIds
-                          .where((String id) => id != msg.senderId)
-                          .length
-                    : 0,
-              };
-            }).toList();
-          },
-        );
-      });
+                  // Return as Map for backward compatibility with UI
+                  return <String, dynamic>{
+                    'id': msg.id,
+                    'text': msg.text,
+                    'senderId': msg.senderId,
+                    'timestamp': msg.timestamp,
+                    'status': messageWithStatus.status,
+                    'type': msg.type,
+                    'detectedLanguage': msg.detectedLanguage,
+                    'translations': msg.translations,
+                    'culturalHint': msg.culturalHint,
+                    'readCount': messageWithStatus.readCount,
+                    'deliveredCount': messageWithStatus.deliveredCount,
+                    // Total recipients (excluding sender) for group chat status display
+                    'totalRecipients': participantIds.isNotEmpty
+                        ? participantIds
+                              .where((String id) => id != msg.senderId)
+                              .length
+                        : 0,
+                  };
+                }).toList();
+              },
+            ),
+      );
 
   // Emit combined stream results
   await for (final messages in combinedStream) {
@@ -603,9 +605,8 @@ Future<void> markMessagesDelivered(
 /// Uses Firebase Realtime Database with automatic offline detection via
 /// onDisconnect() callbacks. No heartbeat mechanism needed.
 @Riverpod(keepAlive: true)
-RtdbPresenceService presenceService(Ref ref) {
-  return RtdbPresenceService(database: FirebaseDatabase.instance);
-}
+RtdbPresenceService presenceService(Ref ref) =>
+    RtdbPresenceService(database: FirebaseDatabase.instance);
 
 /// Provides the [FCMService] instance for push notifications.
 @Riverpod(keepAlive: true)

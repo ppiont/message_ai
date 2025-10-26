@@ -97,7 +97,7 @@ class RtdbTypingService {
       final typingUsers = <TypingUser>[];
 
       for (final entry in data.entries) {
-        final userId = entry.key as String;
+        final userId = entry.key! as String;
 
         // Exclude current user
         if (userId == currentUserId) {
