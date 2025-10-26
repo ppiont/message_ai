@@ -38,7 +38,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -129,6 +129,32 @@ class AppDatabase extends _$AppDatabase {
         // Create new MessageStatus table for efficient per-user status tracking
         await m.createTable(messageStatus);
         debugPrint('✅ Migration v4→v5: Created MessageStatus table');
+      }
+
+      // Migration from v5 to v6: Add composite indexes to Messages table
+      if (from <= 5 && to >= 6) {
+        // Create composite indexes for optimized queries
+        // Index 1: (conversation_id, timestamp) - Most frequent query pattern
+        await customStatement('''
+          CREATE INDEX IF NOT EXISTS messages_conversation_id_timestamp
+          ON messages (conversation_id, timestamp);
+        ''');
+
+        // Index 2: (sync_status) - Sync worker queries
+        await customStatement('''
+          CREATE INDEX IF NOT EXISTS messages_sync_status
+          ON messages (sync_status);
+        ''');
+
+        // Index 3: (sender_id, timestamp) - User-specific queries
+        await customStatement('''
+          CREATE INDEX IF NOT EXISTS messages_sender_id_timestamp
+          ON messages (sender_id, timestamp);
+        ''');
+
+        debugPrint(
+          '✅ Migration v5→v6: Created composite indexes on messages table',
+        );
       }
     },
     beforeOpen: (details) async {

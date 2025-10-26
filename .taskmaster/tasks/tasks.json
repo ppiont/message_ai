@@ -174,7 +174,7 @@
               3
             ],
             "details": "Modify lib/core/database/app_database.dart to increment schemaVersion to 6. Implement the migration in the onUpgrade callback using MigrationStrategy. The migration should check if upgrading from version 5 to 6, then execute CREATE INDEX statements for the composite indexes if they don't already exist. Use Drift's customStatement to run raw SQL for index creation. Ensure migration is idempotent and handles partial migrations gracefully. Test rollback scenarios and verify data integrity is maintained.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test migration from version 5 database with existing data. Verify all indexes are created correctly using PRAGMA index_list. Ensure no data loss occurs during migration. Test with databases containing 10,000+ messages."
           },
           {
@@ -946,7 +946,7 @@
     ],
     "metadata": {
       "created": "2025-10-26T09:30:12.493Z",
-      "updated": "2025-10-26T10:29:42.495Z",
+      "updated": "2025-10-26T10:31:36.277Z",
       "description": "Tasks for master context"
     }
   }
