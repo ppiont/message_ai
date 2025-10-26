@@ -1026,7 +1026,7 @@ final class ConversationParticipantIdsProvider
 }
 
 String _$conversationParticipantIdsHash() =>
-    r'8fd2eb7a0c73f74e301d6939480a6ec9c96bb594';
+    r'fa804986da868a3a86888732f03eab0dad4e12e1';
 
 /// Cached provider for conversation participant IDs.
 ///
@@ -1139,7 +1139,7 @@ final class ConversationMessagesStreamProvider
 }
 
 String _$conversationMessagesStreamHash() =>
-    r'd6b9bc00275f4dd1541d058090f359448482edde';
+    r'16bc322ca3d8a6bbb88df5d58f8829b5e0b0ba28';
 
 /// Stream provider for watching messages in a conversation in real-time.
 ///
@@ -1324,22 +1324,31 @@ abstract class _$ConversationReadMarker extends $Notifier<void> {
   }
 }
 
-/// Provides the [TypingIndicatorService] instance.
+/// Provides the [RtdbTypingService] instance for typing indicators.
+///
+/// Uses Firebase Realtime Database with automatic cleanup via onDisconnect()
+/// callbacks when user disconnects or app is closed.
 
 @ProviderFor(typingIndicatorService)
 const typingIndicatorServiceProvider = TypingIndicatorServiceProvider._();
 
-/// Provides the [TypingIndicatorService] instance.
+/// Provides the [RtdbTypingService] instance for typing indicators.
+///
+/// Uses Firebase Realtime Database with automatic cleanup via onDisconnect()
+/// callbacks when user disconnects or app is closed.
 
 final class TypingIndicatorServiceProvider
     extends
         $FunctionalProvider<
-          TypingIndicatorService,
-          TypingIndicatorService,
-          TypingIndicatorService
+          RtdbTypingService,
+          RtdbTypingService,
+          RtdbTypingService
         >
-    with $Provider<TypingIndicatorService> {
-  /// Provides the [TypingIndicatorService] instance.
+    with $Provider<RtdbTypingService> {
+  /// Provides the [RtdbTypingService] instance for typing indicators.
+  ///
+  /// Uses Firebase Realtime Database with automatic cleanup via onDisconnect()
+  /// callbacks when user disconnects or app is closed.
   const TypingIndicatorServiceProvider._()
     : super(
         from: null,
@@ -1356,26 +1365,26 @@ final class TypingIndicatorServiceProvider
 
   @$internal
   @override
-  $ProviderElement<TypingIndicatorService> $createElement(
+  $ProviderElement<RtdbTypingService> $createElement(
     $ProviderPointer pointer,
   ) => $ProviderElement(pointer);
 
   @override
-  TypingIndicatorService create(Ref ref) {
+  RtdbTypingService create(Ref ref) {
     return typingIndicatorService(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(TypingIndicatorService value) {
+  Override overrideWithValue(RtdbTypingService value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<TypingIndicatorService>(value),
+      providerOverride: $SyncValueProvider<RtdbTypingService>(value),
     );
   }
 }
 
 String _$typingIndicatorServiceHash() =>
-    r'56460f0728d1454e91436c0da25ac4890892c9d3';
+    r'dd411505bc3f881c8b040e02e0c558f92396bc62';
 
 /// Watches typing users for a specific conversation.
 
@@ -1649,18 +1658,31 @@ final class MarkMessagesDeliveredFamily extends $Family
   String toString() => r'markMessagesDeliveredProvider';
 }
 
-/// Provides the [PresenceService] instance.
+/// Provides the [RtdbPresenceService] instance for presence tracking.
+///
+/// Uses Firebase Realtime Database with automatic offline detection via
+/// onDisconnect() callbacks. No heartbeat mechanism needed.
 
 @ProviderFor(presenceService)
 const presenceServiceProvider = PresenceServiceProvider._();
 
-/// Provides the [PresenceService] instance.
+/// Provides the [RtdbPresenceService] instance for presence tracking.
+///
+/// Uses Firebase Realtime Database with automatic offline detection via
+/// onDisconnect() callbacks. No heartbeat mechanism needed.
 
 final class PresenceServiceProvider
     extends
-        $FunctionalProvider<PresenceService, PresenceService, PresenceService>
-    with $Provider<PresenceService> {
-  /// Provides the [PresenceService] instance.
+        $FunctionalProvider<
+          RtdbPresenceService,
+          RtdbPresenceService,
+          RtdbPresenceService
+        >
+    with $Provider<RtdbPresenceService> {
+  /// Provides the [RtdbPresenceService] instance for presence tracking.
+  ///
+  /// Uses Firebase Realtime Database with automatic offline detection via
+  /// onDisconnect() callbacks. No heartbeat mechanism needed.
   const PresenceServiceProvider._()
     : super(
         from: null,
@@ -1677,24 +1699,25 @@ final class PresenceServiceProvider
 
   @$internal
   @override
-  $ProviderElement<PresenceService> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
+  $ProviderElement<RtdbPresenceService> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
 
   @override
-  PresenceService create(Ref ref) {
+  RtdbPresenceService create(Ref ref) {
     return presenceService(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(PresenceService value) {
+  Override overrideWithValue(RtdbPresenceService value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<PresenceService>(value),
+      providerOverride: $SyncValueProvider<RtdbPresenceService>(value),
     );
   }
 }
 
-String _$presenceServiceHash() => r'63a0b7d276c7c1c17d885601a307c2b4335c2669';
+String _$presenceServiceHash() => r'9a06d1006188d687a63a3537a3d844417984a137';
 
 /// Provides the [FCMService] instance for push notifications.
 

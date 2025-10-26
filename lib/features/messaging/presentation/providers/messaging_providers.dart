@@ -4,6 +4,7 @@ library;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:dartz/dartz.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:message_ai/core/database/app_database.dart'
     show MessageStatusEntity;
@@ -20,9 +21,10 @@ import 'package:message_ai/features/messaging/data/repositories/message_reposito
 import 'package:message_ai/features/messaging/data/services/auto_delivery_marker.dart';
 import 'package:message_ai/features/messaging/data/services/fcm_service.dart';
 import 'package:message_ai/features/messaging/data/services/message_context_service.dart';
-import 'package:message_ai/features/messaging/data/services/presence_service.dart'
-    show PresenceService, UserPresence;
-import 'package:message_ai/features/messaging/data/services/typing_indicator_service.dart';
+import 'package:message_ai/features/messaging/data/services/rtdb_presence_service.dart'
+    show RtdbPresenceService, UserPresence;
+import 'package:message_ai/features/messaging/data/services/rtdb_typing_service.dart'
+    show RtdbTypingService, TypingUser;
 import 'package:message_ai/features/messaging/domain/entities/conversation.dart'
     show Conversation, Participant;
 import 'package:message_ai/features/messaging/domain/entities/message.dart';
@@ -473,12 +475,13 @@ class ConversationReadMarker extends _$ConversationReadMarker {
 
 // ========== Typing Indicator Providers ==========
 
-/// Provides the [TypingIndicatorService] instance.
+/// Provides the [RtdbTypingService] instance for typing indicators.
+///
+/// Uses Firebase Realtime Database with automatic cleanup via onDisconnect()
+/// callbacks when user disconnects or app is closed.
 @riverpod
-TypingIndicatorService typingIndicatorService(Ref ref) {
-  final service = TypingIndicatorService(
-    firestore: ref.watch(messagingFirestoreProvider),
-  );
+RtdbTypingService typingIndicatorService(Ref ref) {
+  final service = RtdbTypingService(database: FirebaseDatabase.instance);
 
   // Dispose when provider is disposed
   ref.onDispose(service.dispose);
@@ -595,17 +598,13 @@ Future<void> markMessagesDelivered(
 
 // ========== Presence Providers ==========
 
-/// Provides the [PresenceService] instance.
+/// Provides the [RtdbPresenceService] instance for presence tracking.
+///
+/// Uses Firebase Realtime Database with automatic offline detection via
+/// onDisconnect() callbacks. No heartbeat mechanism needed.
 @Riverpod(keepAlive: true)
-PresenceService presenceService(Ref ref) {
-  final service = PresenceService(
-    firestore: ref.watch(messagingFirestoreProvider),
-  );
-
-  // Dispose when provider is disposed
-  ref.onDispose(service.dispose);
-
-  return service;
+RtdbPresenceService presenceService(Ref ref) {
+  return RtdbPresenceService(database: FirebaseDatabase.instance);
 }
 
 /// Provides the [FCMService] instance for push notifications.

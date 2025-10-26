@@ -86,11 +86,80 @@ Future<void> _handleNotificationNavigation({
 /// - Authentication state handling
 /// - Offline-first sync services
 /// - Push notification handling with navigation
-class App extends ConsumerWidget {
+/// - App lifecycle management for presence tracking
+class App extends ConsumerStatefulWidget {
   const App({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<App> createState() => _AppState();
+}
+
+class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    // Register lifecycle observer to handle app backgrounding/foregrounding
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    // Unregister lifecycle observer
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    // Get current user for presence updates
+    final authState = ref.read(authStateProvider);
+    final user = authState.value;
+
+    if (user == null) {
+      return; // Not authenticated, skip presence updates
+    }
+
+    // Get presence service
+    final presenceService = ref.read(presenceServiceProvider);
+
+    switch (state) {
+      case AppLifecycleState.resumed:
+        // App came to foreground - set online and configure onDisconnect
+        debugPrint('🟢 App resumed - setting user online');
+        presenceService.setOnline(userId: user.uid, userName: user.displayName);
+
+      case AppLifecycleState.paused:
+      case AppLifecycleState.inactive:
+        // App went to background - set offline as backup
+        // (onDisconnect will also trigger if connection is lost)
+        debugPrint('🟡 App paused/inactive - setting user offline');
+        presenceService.setOffline(
+          userId: user.uid,
+          userName: user.displayName,
+        );
+
+      case AppLifecycleState.detached:
+        // App is about to be killed - set offline
+        debugPrint('🔴 App detached - setting user offline');
+        presenceService.setOffline(
+          userId: user.uid,
+          userName: user.displayName,
+        );
+
+      case AppLifecycleState.hidden:
+        // App is hidden (similar to paused)
+        debugPrint('⚫ App hidden - setting user offline');
+        presenceService.setOffline(
+          userId: user.uid,
+          userName: user.displayName,
+        );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     // Watch authentication state FIRST
     final authState = ref.watch(authStateProvider);
 
