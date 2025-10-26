@@ -53,6 +53,9 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   /// Auto-translation service instance (saved to avoid using ref in dispose)
   AutoTranslationService? _autoTranslationService;
 
+  /// Track disposal state to prevent starting service after dispose
+  bool _isDisposed = false;
+
   @override
   void initState() {
     super.initState();
@@ -60,6 +63,11 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     // Start auto-translation service when entering conversation
     // This will automatically translate incoming messages based on user preference
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Guard against race condition: don't start if already disposed
+      if (_isDisposed || !mounted) {
+        return;
+      }
+
       final currentUser = ref.read(currentUserWithFirestoreProvider).value;
       if (currentUser != null) {
         _autoTranslationService = ref.read(autoTranslationServiceProvider);
@@ -74,8 +82,12 @@ class _ChatPageState extends ConsumerState<ChatPage> {
 
   @override
   void dispose() {
+    // Mark as disposed to prevent post-frame callback from starting service
+    _isDisposed = true;
+
     // Stop auto-translation service when leaving conversation
     // Safe: using saved instance instead of ref.read() during dispose
+    // This handles both normal disposal and edge cases where callback runs after dispose
     _autoTranslationService?.stop();
 
     _scrollController.dispose();
