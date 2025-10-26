@@ -1,85 +1,83 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:dartz/dartz.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:message_ai/core/error/failures.dart';
-import 'package:message_ai/features/messaging/domain/entities/message.dart';
 import 'package:message_ai/features/smart_replies/domain/entities/smart_reply.dart';
-import 'package:message_ai/features/smart_replies/domain/entities/user_communication_style.dart';
 
 /// Service for generating smart reply suggestions using Cloud Functions.
 ///
-/// This service calls the Firebase Cloud Function to generate AI-powered
-/// reply suggestions that match the user's communication style and are
-/// contextually relevant to the incoming message.
+/// This service calls the unified Firebase Cloud Function that handles
+/// the complete RAG pipeline server-side:
+/// 1. Generates embedding with Vertex AI
+/// 2. Performs vector search using Firestore find_nearest()
+/// 3. Fetches user communication style
+/// 4. Generates AI-powered reply suggestions with GPT-4o-mini
 ///
 /// Architecture:
 /// - Data layer service (handles Cloud Function communication)
 /// - Returns `Either<Failure, List<SmartReply>>` for error handling
+/// - All RAG orchestration happens server-side
 /// - Caching and rate limiting handled by Cloud Function
 ///
 /// Performance: Target <2 seconds response time
 class SmartReplyService {
   SmartReplyService({FirebaseFunctions? functions})
-    : _functions = functions ?? FirebaseFunctions.instance;
+    : _functions = functions ?? FirebaseFunctions.instanceFor(region: 'us-central1');
 
   final FirebaseFunctions _functions;
 
   /// Generates smart reply suggestions for an incoming message.
   ///
+  /// This simplified method only requires the incoming message text and
+  /// conversation context. All other operations (embedding generation,
+  /// vector search, style analysis) happen server-side.
+  ///
   /// Parameters:
   /// - [conversationId]: The conversation context
-  /// - [incomingMessage]: The message to generate replies for
-  /// - [userStyle]: The user's learned communication style
-  /// - [relevantContext]: Semantically relevant messages from history
+  /// - [incomingMessageText]: The message text to generate replies for
+  /// - [userId]: The current user's ID for fetching their communication style
   ///
   /// Returns:
   /// - `Right(List<SmartReply>)`: Generated suggestions on success
   /// - `Left(Failure)`: Error details on failure
   Future<Either<Failure, List<SmartReply>>> generateSmartReplies({
     required String conversationId,
-    required Message incomingMessage,
-    required UserCommunicationStyle userStyle,
-    required List<Message> relevantContext,
+    required String incomingMessageText,
+    required String userId,
   }) async {
     try {
       // Validate input
-      if (incomingMessage.text.trim().isEmpty) {
+      if (incomingMessageText.trim().isEmpty) {
         return const Left(
           ValidationFailure(message: 'Incoming message text cannot be empty'),
         );
       }
 
-      if (incomingMessage.embedding == null ||
-          incomingMessage.embedding!.isEmpty) {
+      debugPrint(
+        'SmartReplyService: Generating smart replies for message "${incomingMessageText.substring(0, incomingMessageText.length > 50 ? 50 : incomingMessageText.length)}..."',
+      );
+
+      // DEBUG: Check auth state
+      final currentUser = FirebaseAuth.instance.currentUser;
+      debugPrint('SmartReplyService: Current user: ${currentUser?.uid}');
+      debugPrint('SmartReplyService: Current user email: ${currentUser?.email}');
+      debugPrint('SmartReplyService: Is anonymous: ${currentUser?.isAnonymous}');
+
+      if (currentUser == null) {
+        debugPrint('SmartReplyService: ERROR - User is not signed in!');
         return const Left(
-          ValidationFailure(message: 'Incoming message must have an embedding'),
+          ServerFailure(message: 'User must be signed in to generate smart replies'),
         );
       }
 
-      debugPrint(
-        'SmartReplyService: Generating smart replies for message "${incomingMessage.text.substring(0, incomingMessage.text.length > 50 ? 50 : incomingMessage.text.length)}..."',
-      );
-
-      // Convert context messages to JSON format
-      final contextJson = relevantContext
-          .map(
-            (msg) => <String, dynamic>{
-              'text': msg.text,
-              'senderId': msg.senderId,
-              'timestamp': msg.timestamp.toIso8601String(),
-            },
-          )
-          .toList();
-
-      // Call Cloud Function
+      // Call unified Cloud Function (handles entire RAG pipeline server-side)
       final result = await _functions
-          .httpsCallable('generate_smart_replies')
+          .httpsCallable('generate_smart_replies_complete')
           .call<Map<String, dynamic>>({
             'conversationId': conversationId,
-            'incomingMessageText': incomingMessage.text,
-            'incomingMessageEmbedding': incomingMessage.embedding,
-            'userStyle': userStyle.toJson(),
-            'relevantContext': contextJson,
+            'incomingMessageText': incomingMessageText,
+            'userId': userId,
           });
 
       final data = result.data;

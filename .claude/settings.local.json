@@ -57,7 +57,13 @@
       "mcp__taskmaster__initialize_project",
       "mcp__taskmaster__parse_prd",
       "mcp__taskmaster__set_task_status",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(python3:*)",
+      "Bash(time pip install:*)",
+      "Bash(./venv/bin/pip:*)",
+      "Bash(time ./venv/bin/pip install:*)",
+      "Bash(./venv/bin/python:*)",
+      "Bash(firebase functions:delete:*)"
     ],
     "deny": [],
     "ask": []

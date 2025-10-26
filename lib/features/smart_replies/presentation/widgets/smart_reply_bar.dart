@@ -142,8 +142,8 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar>
     final smartRepliesAsync = ref.watch(
       generateSmartRepliesProvider(
         conversationId: widget.conversationId,
-        incomingMessage: widget.incomingMessage!,
-        currentUserId: widget.currentUserId,
+        incomingMessageText: widget.incomingMessage!.text,
+        userId: widget.currentUserId,
       ),
     );
 
