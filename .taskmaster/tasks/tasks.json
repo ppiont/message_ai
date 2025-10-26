@@ -228,7 +228,7 @@
               2
             ],
             "details": "Modify translation logic in MessageRepository or TranslationService to batch translation requests. Implement _translateWithTimeout() method with 5-second timeout per translation. Use Future.wait with eagerError: false to handle partial failures. Group messages by target language for efficient batching. Add fallback to sequential processing if batch endpoint fails. Cache successful translations immediately to avoid re-translation.",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": null
           },
           {
@@ -237,7 +237,7 @@
             "description": "Implement transaction batching for Drift database operations to improve write performance when syncing multiple messages",
             "dependencies": [],
             "details": "Modify MessageDao to use database.batch() for bulk operations. Create batchUpsertMessages() method that accepts List<Message> and uses batch.insertAll with mode: InsertMode.insertOrReplace. Implement batch updates for sync status changes. Add transaction wrapper to ensure atomicity. Handle constraint violations gracefully. Optimize batch size based on SQLite limits (999 variables per statement).",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": null
           },
           {
@@ -946,7 +946,7 @@
     ],
     "metadata": {
       "created": "2025-10-26T09:30:12.493Z",
-      "updated": "2025-10-26T10:39:42.517Z",
+      "updated": "2025-10-26T12:38:10.868Z",
       "description": "Tasks for master context"
     }
   }
