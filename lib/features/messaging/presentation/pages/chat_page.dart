@@ -175,6 +175,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             );
           },
           incomingMessage: _latestIncomingMessage,
+          isUserTyping: _messageInputController.text.isNotEmpty,
         ),
         MessageInput(
           conversationId: widget.conversationId,

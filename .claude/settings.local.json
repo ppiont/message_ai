@@ -63,7 +63,9 @@
       "Bash(./venv/bin/pip:*)",
       "Bash(time ./venv/bin/pip install:*)",
       "Bash(./venv/bin/python:*)",
-      "Bash(firebase functions:delete:*)"
+      "Bash(firebase functions:delete:*)",
+      "Bash(npx task-master-ai:*)",
+      "WebFetch(domain:github.com)"
     ],
     "deny": [],
     "ask": []

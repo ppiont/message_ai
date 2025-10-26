@@ -23,6 +23,7 @@ class SmartReplyBar extends ConsumerStatefulWidget {
     required this.currentUserId,
     required this.onReplySelected,
     required this.incomingMessage,
+    this.isUserTyping = false,
     super.key,
   });
 
@@ -30,6 +31,7 @@ class SmartReplyBar extends ConsumerStatefulWidget {
   final String currentUserId;
   final void Function(String) onReplySelected;
   final Message? incomingMessage;
+  final bool isUserTyping;
 
   @override
   ConsumerState<SmartReplyBar> createState() => _SmartReplyBarState();
@@ -135,7 +137,10 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar>
 
   @override
   Widget build(BuildContext context) {
-    if (widget.incomingMessage == null || !_enableSmartReplies) {
+    // Hide if no message, smart replies disabled, OR user is typing
+    if (widget.incomingMessage == null ||
+        !_enableSmartReplies ||
+        widget.isUserTyping) {
       return const SizedBox.shrink();
     }
 

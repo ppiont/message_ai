@@ -3,6 +3,7 @@ library;
 
 /// Represents the formality level of a message
 enum FormalityLevel {
+  original('original', 'Original'),
   casual('casual', 'Casual'),
   neutral('neutral', 'Neutral'),
   formal('formal', 'Formal');
@@ -15,6 +16,8 @@ enum FormalityLevel {
   /// Create FormalityLevel from string value
   static FormalityLevel fromString(String value) {
     switch (value.toLowerCase()) {
+      case 'original':
+        return FormalityLevel.original;
       case 'casual':
         return FormalityLevel.casual;
       case 'neutral':

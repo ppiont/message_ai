@@ -26,9 +26,9 @@ class _AdjustmentResponse {
     }
 
     final detectedFormality = data['detectedFormality'] as String? ?? 'neutral';
-    final rateLimitData = data['rateLimit'] as Map<String, dynamic>?;
+    final rateLimitData = data['rateLimit'];
     final rateLimit = rateLimitData != null
-        ? _RateLimit.fromData(rateLimitData)
+        ? _RateLimit.fromData(Map<String, dynamic>.from(rateLimitData as Map))
         : null;
 
     return _AdjustmentResponse(
@@ -177,7 +177,9 @@ class FormalityAdjustmentService {
               });
 
           // Parse response with type safety
-          final response = _AdjustmentResponse.fromData(result.data);
+          final response = _AdjustmentResponse.fromData(
+            Map<String, dynamic>.from(result.data as Map),
+          );
 
           // Check for rate limit
           if (response.rateLimit != null && response.rateLimit!.isExceeded) {
@@ -352,7 +354,9 @@ class FormalityAdjustmentService {
               });
 
           // Parse response with type safety
-          final response = _AdjustmentResponse.fromData(result.data);
+          final response = _AdjustmentResponse.fromData(
+            Map<String, dynamic>.from(result.data as Map),
+          );
 
           debugPrint(
             'FormalityAdjustmentService: Detection successful - detected: ${response.detectedFormality}',
