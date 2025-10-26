@@ -1139,7 +1139,7 @@ final class ConversationMessagesStreamProvider
 }
 
 String _$conversationMessagesStreamHash() =>
-    r'16bc322ca3d8a6bbb88df5d58f8829b5e0b0ba28';
+    r'a27693bfa6937bb0b9c64b3f938f830bcf287460';
 
 /// Stream provider for watching messages in a conversation in real-time.
 ///
@@ -1717,7 +1717,7 @@ final class PresenceServiceProvider
   }
 }
 
-String _$presenceServiceHash() => r'9a06d1006188d687a63a3537a3d844417984a137';
+String _$presenceServiceHash() => r'bde75b02ef096e975b3fda4b4401b36a43492711';
 
 /// Provides the [FCMService] instance for push notifications.
 
