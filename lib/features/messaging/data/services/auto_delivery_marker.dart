@@ -15,9 +15,9 @@ class AutoDeliveryMarker {
     required ConversationRepository conversationRepository,
     required MessageRepository messageRepository,
     required String currentUserId,
-  })  : _conversationRepository = conversationRepository,
-        _messageRepository = messageRepository,
-        _currentUserId = currentUserId;
+  }) : _conversationRepository = conversationRepository,
+       _messageRepository = messageRepository,
+       _currentUserId = currentUserId;
 
   final ConversationRepository _conversationRepository;
   final MessageRepository _messageRepository;
@@ -34,16 +34,16 @@ class AutoDeliveryMarker {
     _conversationsSub = _conversationRepository
         .watchConversationsForUser(_currentUserId)
         .listen((result) {
-      result.fold(
-        (_) {}, // Ignore errors
-        (conversations) {
-          // For each conversation, watch its messages
-          for (final conversation in conversations) {
-            _watchConversationMessages(conversation.documentId);
-          }
-        },
-      );
-    });
+          result.fold(
+            (_) {}, // Ignore errors
+            (conversations) {
+              // For each conversation, watch its messages
+              for (final conversation in conversations) {
+                _watchConversationMessages(conversation.documentId);
+              }
+            },
+          );
+        });
   }
 
   void _watchConversationMessages(String conversationId) {
@@ -57,27 +57,27 @@ class AutoDeliveryMarker {
           currentUserId: _currentUserId,
         )
         .listen((result) {
-      result.fold(
-        (_) {}, // Ignore errors
-        (messages) {
-          // Mark incoming messages as delivered
-          for (final message in messages) {
-            // Only mark if:
-            // 1. Not sent by me
-            // 2. Not already marked by us (deduplication)
-            if (message.senderId != _currentUserId &&
-                !_markedMessages.contains(message.id)) {
-              _markedMessages.add(message.id);
-              _messageRepository.markAsDelivered(
-                conversationId,
-                message.id,
-                _currentUserId,
-              );
-            }
-          }
-        },
-      );
-    });
+          result.fold(
+            (_) {}, // Ignore errors
+            (messages) {
+              // Mark incoming messages as delivered
+              for (final message in messages) {
+                // Only mark if:
+                // 1. Not sent by me
+                // 2. Not already marked by us (deduplication)
+                if (message.senderId != _currentUserId &&
+                    !_markedMessages.contains(message.id)) {
+                  _markedMessages.add(message.id);
+                  _messageRepository.markAsDelivered(
+                    conversationId,
+                    message.id,
+                    _currentUserId,
+                  );
+                }
+              }
+            },
+          );
+        });
   }
 
   /// Stop watching and clean up

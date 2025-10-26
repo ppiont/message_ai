@@ -345,7 +345,9 @@ class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
     int count,
   ) async {
     try {
-      await _conversationsRef.doc(conversationId).update({'unreadCount.$userId': count});
+      await _conversationsRef.doc(conversationId).update({
+        'unreadCount.$userId': count,
+      });
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
@@ -428,7 +430,9 @@ class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
       await docRef.update({
         'participantIds': FieldValue.arrayRemove([userId]),
         'participants': updatedParticipants,
-        'adminIds': FieldValue.arrayRemove([userId]), // Also remove from admins if present
+        'adminIds': FieldValue.arrayRemove([
+          userId,
+        ]), // Also remove from admins if present
         'unreadCount.$userId': FieldValue.delete(), // Remove their unread count
         'lastUpdatedAt': FieldValue.serverTimestamp(),
       });

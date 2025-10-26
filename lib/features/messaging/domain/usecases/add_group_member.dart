@@ -57,7 +57,9 @@ class AddGroupMember {
     }
 
     // Get the group to validate requester is admin
-    final groupResult = await _conversationRepository.getConversationById(groupId);
+    final groupResult = await _conversationRepository.getConversationById(
+      groupId,
+    );
 
     return groupResult.fold(Left.new, (group) async {
       // Check if requester is admin

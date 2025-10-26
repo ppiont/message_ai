@@ -23,7 +23,8 @@ import 'package:message_ai/features/smart_replies/domain/entities/smart_reply.da
 /// Performance: Target <2 seconds response time
 class SmartReplyService {
   SmartReplyService({FirebaseFunctions? functions})
-    : _functions = functions ?? FirebaseFunctions.instanceFor(region: 'us-central1');
+    : _functions =
+          functions ?? FirebaseFunctions.instanceFor(region: 'us-central1');
 
   final FirebaseFunctions _functions;
 
@@ -61,13 +62,19 @@ class SmartReplyService {
       // DEBUG: Check auth state
       final currentUser = FirebaseAuth.instance.currentUser;
       debugPrint('SmartReplyService: Current user: ${currentUser?.uid}');
-      debugPrint('SmartReplyService: Current user email: ${currentUser?.email}');
-      debugPrint('SmartReplyService: Is anonymous: ${currentUser?.isAnonymous}');
+      debugPrint(
+        'SmartReplyService: Current user email: ${currentUser?.email}',
+      );
+      debugPrint(
+        'SmartReplyService: Is anonymous: ${currentUser?.isAnonymous}',
+      );
 
       if (currentUser == null) {
         debugPrint('SmartReplyService: ERROR - User is not signed in!');
         return const Left(
-          ServerFailure(message: 'User must be signed in to generate smart replies'),
+          ServerFailure(
+            message: 'User must be signed in to generate smart replies',
+          ),
         );
       }
 
