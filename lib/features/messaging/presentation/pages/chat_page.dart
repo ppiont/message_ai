@@ -15,6 +15,7 @@ import 'package:message_ai/features/messaging/presentation/widgets/message_input
 import 'package:message_ai/features/messaging/presentation/widgets/typing_indicator.dart';
 import 'package:message_ai/features/smart_replies/presentation/widgets/smart_reply_bar.dart';
 import 'package:message_ai/features/translation/data/services/auto_translation_service.dart';
+import 'package:message_ai/features/translation/presentation/providers/language_detection_provider.dart';
 import 'package:message_ai/features/translation/presentation/providers/translation_providers.dart';
 
 /// Main chat screen for displaying and sending messages.
@@ -342,6 +343,15 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         if (messages.isEmpty) {
           return _buildEmptyState();
         }
+
+        // Trigger batch language detection for messages without detected language
+        // This runs in background isolate and caches results for MessageBubbles
+        ref.watch(
+          batchLanguageDetectionListenerProvider(
+            conversationId: widget.conversationId,
+            messages: messages,
+          ),
+        );
 
         // Track latest incoming message for smart replies
         // Get the most recent message that's not from current user

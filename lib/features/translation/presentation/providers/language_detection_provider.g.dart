@@ -76,6 +76,198 @@ final class LanguageDetectionServiceProvider
 String _$languageDetectionServiceHash() =>
     r'2fe82b441799e952f349ad61edc633291bbbd173';
 
+/// Batch language detection listener for message lists.
+///
+/// **Problem:**
+/// When loading conversations with many old messages without detected
+/// languages, individual MessageBubbles trigger sequential detection,
+/// blocking the UI and causing jank.
+///
+/// **Solution:**
+/// Watch message lists and proactively trigger batch detection in background
+/// isolate when 10+ messages need detection. Cache results for MessageBubbles.
+///
+/// **Integration:**
+/// Call this provider in ChatPage's build method to activate batch detection:
+/// ```dart
+/// // Trigger batch detection for messages without detected language
+/// ref.watch(batchLanguageDetectionListenerProvider((
+///   conversationId: widget.conversationId,
+///   messages: messages, // from conversationMessagesStreamProvider
+/// )));
+/// ```
+
+@ProviderFor(batchLanguageDetectionListener)
+const batchLanguageDetectionListenerProvider =
+    BatchLanguageDetectionListenerFamily._();
+
+/// Batch language detection listener for message lists.
+///
+/// **Problem:**
+/// When loading conversations with many old messages without detected
+/// languages, individual MessageBubbles trigger sequential detection,
+/// blocking the UI and causing jank.
+///
+/// **Solution:**
+/// Watch message lists and proactively trigger batch detection in background
+/// isolate when 10+ messages need detection. Cache results for MessageBubbles.
+///
+/// **Integration:**
+/// Call this provider in ChatPage's build method to activate batch detection:
+/// ```dart
+/// // Trigger batch detection for messages without detected language
+/// ref.watch(batchLanguageDetectionListenerProvider((
+///   conversationId: widget.conversationId,
+///   messages: messages, // from conversationMessagesStreamProvider
+/// )));
+/// ```
+
+final class BatchLanguageDetectionListenerProvider
+    extends $FunctionalProvider<AsyncValue<void>, void, FutureOr<void>>
+    with $FutureModifier<void>, $FutureProvider<void> {
+  /// Batch language detection listener for message lists.
+  ///
+  /// **Problem:**
+  /// When loading conversations with many old messages without detected
+  /// languages, individual MessageBubbles trigger sequential detection,
+  /// blocking the UI and causing jank.
+  ///
+  /// **Solution:**
+  /// Watch message lists and proactively trigger batch detection in background
+  /// isolate when 10+ messages need detection. Cache results for MessageBubbles.
+  ///
+  /// **Integration:**
+  /// Call this provider in ChatPage's build method to activate batch detection:
+  /// ```dart
+  /// // Trigger batch detection for messages without detected language
+  /// ref.watch(batchLanguageDetectionListenerProvider((
+  ///   conversationId: widget.conversationId,
+  ///   messages: messages, // from conversationMessagesStreamProvider
+  /// )));
+  /// ```
+  const BatchLanguageDetectionListenerProvider._({
+    required BatchLanguageDetectionListenerFamily super.from,
+    required ({String conversationId, List<Map<String, dynamic>> messages})
+    super.argument,
+  }) : super(
+         retry: null,
+         name: r'batchLanguageDetectionListenerProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$batchLanguageDetectionListenerHash();
+
+  @override
+  String toString() {
+    return r'batchLanguageDetectionListenerProvider'
+        ''
+        '$argument';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<void> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<void> create(Ref ref) {
+    final argument =
+        this.argument
+            as ({String conversationId, List<Map<String, dynamic>> messages});
+    return batchLanguageDetectionListener(
+      ref,
+      conversationId: argument.conversationId,
+      messages: argument.messages,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is BatchLanguageDetectionListenerProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$batchLanguageDetectionListenerHash() =>
+    r'edbdbe6288b3f4427d7886e5f8d48ebf7e82b6fe';
+
+/// Batch language detection listener for message lists.
+///
+/// **Problem:**
+/// When loading conversations with many old messages without detected
+/// languages, individual MessageBubbles trigger sequential detection,
+/// blocking the UI and causing jank.
+///
+/// **Solution:**
+/// Watch message lists and proactively trigger batch detection in background
+/// isolate when 10+ messages need detection. Cache results for MessageBubbles.
+///
+/// **Integration:**
+/// Call this provider in ChatPage's build method to activate batch detection:
+/// ```dart
+/// // Trigger batch detection for messages without detected language
+/// ref.watch(batchLanguageDetectionListenerProvider((
+///   conversationId: widget.conversationId,
+///   messages: messages, // from conversationMessagesStreamProvider
+/// )));
+/// ```
+
+final class BatchLanguageDetectionListenerFamily extends $Family
+    with
+        $FunctionalFamilyOverride<
+          FutureOr<void>,
+          ({String conversationId, List<Map<String, dynamic>> messages})
+        > {
+  const BatchLanguageDetectionListenerFamily._()
+    : super(
+        retry: null,
+        name: r'batchLanguageDetectionListenerProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Batch language detection listener for message lists.
+  ///
+  /// **Problem:**
+  /// When loading conversations with many old messages without detected
+  /// languages, individual MessageBubbles trigger sequential detection,
+  /// blocking the UI and causing jank.
+  ///
+  /// **Solution:**
+  /// Watch message lists and proactively trigger batch detection in background
+  /// isolate when 10+ messages need detection. Cache results for MessageBubbles.
+  ///
+  /// **Integration:**
+  /// Call this provider in ChatPage's build method to activate batch detection:
+  /// ```dart
+  /// // Trigger batch detection for messages without detected language
+  /// ref.watch(batchLanguageDetectionListenerProvider((
+  ///   conversationId: widget.conversationId,
+  ///   messages: messages, // from conversationMessagesStreamProvider
+  /// )));
+  /// ```
+
+  BatchLanguageDetectionListenerProvider call({
+    required String conversationId,
+    required List<Map<String, dynamic>> messages,
+  }) => BatchLanguageDetectionListenerProvider._(
+    argument: (conversationId: conversationId, messages: messages),
+    from: this,
+  );
+
+  @override
+  String toString() => r'batchLanguageDetectionListenerProvider';
+}
+
 /// Provider-level language detection cache.
 ///
 /// **Problem:**

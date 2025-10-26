@@ -22,6 +22,80 @@ LanguageDetectionService languageDetectionService(
   return service;
 }
 
+/// Batch language detection listener for message lists.
+///
+/// **Problem:**
+/// When loading conversations with many old messages without detected
+/// languages, individual MessageBubbles trigger sequential detection,
+/// blocking the UI and causing jank.
+///
+/// **Solution:**
+/// Watch message lists and proactively trigger batch detection in background
+/// isolate when 10+ messages need detection. Cache results for MessageBubbles.
+///
+/// **Integration:**
+/// Call this provider in ChatPage's build method to activate batch detection:
+/// ```dart
+/// // Trigger batch detection for messages without detected language
+/// ref.watch(batchLanguageDetectionListenerProvider((
+///   conversationId: widget.conversationId,
+///   messages: messages, // from conversationMessagesStreamProvider
+/// )));
+/// ```
+@riverpod
+Future<void> batchLanguageDetectionListener(
+  Ref ref, {
+  required String conversationId,
+  required List<Map<String, dynamic>> messages,
+}) async {
+  // Find messages without detected language
+  final messagesNeedingDetection = messages
+      .where((msg) => msg['detectedLanguage'] == null)
+      .toList();
+
+  // Only trigger batch detection for 10+ messages
+  if (messagesNeedingDetection.length < 10) {
+    debugPrint(
+      '[BatchLanguageDetection] Only ${messagesNeedingDetection.length} messages need detection, skipping batch',
+    );
+    return;
+  }
+
+  debugPrint(
+    '[BatchLanguageDetection] Triggering batch detection for ${messagesNeedingDetection.length} messages',
+  );
+
+  // Prepare message pairs for batch detection
+  final messageTextPairs = messagesNeedingDetection
+      .map((msg) => MapEntry(
+            msg['id'] as String,
+            msg['text'] as String,
+          ))
+      .toList();
+
+  // Get language detection service and cache
+  final languageDetectionService = ref.read(languageDetectionServiceProvider);
+  final cache = ref.read(languageDetectionCacheProvider.notifier);
+
+  try {
+    // Run batch detection in background isolate
+    final results = await languageDetectionService.detectLanguagesBatch(
+      messageTextPairs,
+    );
+
+    // Cache all results
+    for (final entry in results.entries) {
+      cache.cache(entry.key, entry.value);
+    }
+
+    debugPrint(
+      '[BatchLanguageDetection] Cached ${results.length} language detection results',
+    );
+  } catch (e) {
+    debugPrint('[BatchLanguageDetection] Batch detection failed: $e');
+  }
+}
+
 /// Provider-level language detection cache.
 ///
 /// **Problem:**
