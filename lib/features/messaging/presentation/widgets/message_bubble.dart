@@ -221,24 +221,38 @@ class _MessageBubbleState extends ConsumerState<MessageBubble> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Message text with animation
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 300),
-                        transitionBuilder:
-                            (Widget child, Animation<double> animation) =>
-                                FadeTransition(
-                                  opacity: animation,
-                                  child: child,
-                                ),
-                        child: Text(
-                          displayText,
-                          key: ValueKey(translationState.isTranslated),
-                          style: TextStyle(
-                            fontSize: 15,
-                            color: widget.isMe ? Colors.white : Colors.black87,
-                            height: 1.4,
+                      // Message text with animation using AnimatedOpacity + Stack
+                      // This avoids expensive saveLayer operations from AnimatedSwitcher
+                      // Both texts are in the tree for smooth fade animation between them
+                      Stack(
+                        children: [
+                          // Translated text (bottom layer when visible)
+                          AnimatedOpacity(
+                            opacity: translationState.isTranslated ? 1.0 : 0.0,
+                            duration: const Duration(milliseconds: 300),
+                            child: Text(
+                              displayText,
+                              style: TextStyle(
+                                fontSize: 15,
+                                color: widget.isMe ? Colors.white : Colors.black87,
+                                height: 1.4,
+                              ),
+                            ),
                           ),
-                        ),
+                          // Original text (top layer when visible)
+                          AnimatedOpacity(
+                            opacity: translationState.isTranslated ? 0.0 : 1.0,
+                            duration: const Duration(milliseconds: 300),
+                            child: Text(
+                              widget.message,
+                              style: TextStyle(
+                                fontSize: 15,
+                                color: widget.isMe ? Colors.white : Colors.black87,
+                                height: 1.4,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 4),
                       Row(
