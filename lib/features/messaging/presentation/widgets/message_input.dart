@@ -1,12 +1,15 @@
 /// Message input widget
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:message_ai/features/formality_adjustment/presentation/controllers/formality_controller.dart';
 import 'package:message_ai/features/formality_adjustment/presentation/widgets/formality_adjuster.dart';
 import 'package:message_ai/features/messaging/domain/entities/message.dart';
 import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
+import 'package:message_ai/features/translation/presentation/providers/language_detection_provider.dart';
 import 'package:uuid/uuid.dart';
 
 /// Widget for composing and sending messages.
@@ -38,6 +41,12 @@ class _MessageInputState extends ConsumerState<MessageInput> {
   bool _isSending = false;
   String _currentText = '';
 
+  /// Timer for debouncing language detection during typing
+  Timer? _detectionTimer;
+
+  /// Detected language of the message being composed
+  String? _composingLanguage;
+
   @override
   void initState() {
     super.initState();
@@ -50,6 +59,7 @@ class _MessageInputState extends ConsumerState<MessageInput> {
   @override
   void dispose() {
     _controller.removeListener(_onTextChanged);
+    _detectionTimer?.cancel();
     // Only dispose if we created it locally
     if (widget.controller == null) {
       _controller.dispose();
@@ -63,6 +73,8 @@ class _MessageInputState extends ConsumerState<MessageInput> {
     setState(() {
       _currentText = text;
     });
+
+    // Update typing indicator
     final typingService = ref.read(typingIndicatorServiceProvider);
     // ignore: cascade_invocations
     typingService.setTyping(
@@ -71,6 +83,45 @@ class _MessageInputState extends ConsumerState<MessageInput> {
       userName: widget.currentUserName,
       isTyping: text.isNotEmpty,
     );
+
+    // Trigger debounced language detection for messages longer than 10 characters
+    // This pre-detects the language so we can cache it before sending
+    _detectionTimer?.cancel();
+
+    if (text.trim().length > 10) {
+      _detectionTimer = Timer(const Duration(seconds: 1), () async {
+        if (!mounted) {
+          return;
+        }
+
+        try {
+          final languageDetectionService = ref.read(
+            languageDetectionServiceProvider,
+          );
+          final detectedLanguage = await languageDetectionService.detectLanguage(
+            text,
+          );
+
+          if (mounted && detectedLanguage != null) {
+            setState(() {
+              _composingLanguage = detectedLanguage;
+            });
+            debugPrint(
+              '[MessageInput] Pre-detected language: $detectedLanguage',
+            );
+          }
+        } catch (e) {
+          debugPrint('[MessageInput] Language detection failed: $e');
+        }
+      });
+    } else {
+      // Clear language indicator for short text
+      if (_composingLanguage != null) {
+        setState(() {
+          _composingLanguage = null;
+        });
+      }
+    }
   }
 
   void _clearTypingStatus() {
@@ -143,6 +194,24 @@ class _MessageInputState extends ConsumerState<MessageInput> {
                     horizontal: 20,
                     vertical: 12,
                   ),
+                  // Show detected language indicator
+                  suffixIcon: _composingLanguage != null
+                      ? Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: Chip(
+                            label: Text(
+                              _composingLanguage!.toUpperCase(),
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            backgroundColor: Colors.blue[100],
+                            padding: EdgeInsets.zero,
+                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                        )
+                      : null,
                 ),
                 maxLines: null,
                 textCapitalization: TextCapitalization.sentences,
@@ -189,8 +258,9 @@ class _MessageInputState extends ConsumerState<MessageInput> {
 
     try {
       // Create message entity
+      final messageId = _uuid.v4();
       final message = Message(
-        id: _uuid.v4(),
+        id: messageId,
         senderId: widget.currentUserId,
         text: text,
         timestamp: DateTime.now(),
@@ -198,6 +268,18 @@ class _MessageInputState extends ConsumerState<MessageInput> {
         metadata: MessageMetadata.defaultMetadata(),
         // Note: Status tracking done separately via MessageStatus table
       );
+
+      // Pre-cache detected language if available
+      // This allows MessageBubble to instantly show translation button
+      if (_composingLanguage != null) {
+        ref.read(languageDetectionCacheProvider.notifier).cache(
+              messageId,
+              _composingLanguage!,
+            );
+        debugPrint(
+          '[MessageInput] Pre-cached language for message $messageId: $_composingLanguage',
+        );
+      }
 
       // Send message via use case
       final sendMessageUseCase = ref.read(sendMessageUseCaseProvider);
@@ -223,6 +305,11 @@ class _MessageInputState extends ConsumerState<MessageInput> {
 
           // Clear formality cache
           ref.read(formalityControllerProvider.notifier).clear();
+
+          // Clear composing language
+          setState(() {
+            _composingLanguage = null;
+          });
 
           widget.onMessageSent?.call();
         },
