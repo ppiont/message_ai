@@ -161,7 +161,7 @@
               2
             ],
             "details": "Create a new MessageQueryCache class in lib/core/database/cache/ directory. Use LRU cache with maximum 50 cached queries. Implement cache key generation based on conversationId and pagination cursor. Add 5-minute TTL using DateTime timestamps. Integrate cache checks in MessageDao before executing queries. Implement cache invalidation when new messages arrive or messages are updated. Consider using the existing drift_cache package or implement custom solution with Map and Timer for TTL management.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Monitor cache hit/miss rates using debug logging. Verify that cached results are returned within 10ms. Test cache invalidation when new messages arrive. Ensure memory usage stays under 10MB for cache storage."
           },
           {
@@ -946,7 +946,7 @@
     ],
     "metadata": {
       "created": "2025-10-26T09:30:12.493Z",
-      "updated": "2025-10-26T10:25:21.368Z",
+      "updated": "2025-10-26T10:29:42.495Z",
       "description": "Tasks for master context"
     }
   }
