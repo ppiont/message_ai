@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_list_view/flutter_list_view.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:message_ai/features/authentication/domain/entities/user.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
@@ -42,14 +43,10 @@ class ChatPage extends ConsumerStatefulWidget {
 }
 
 class _ChatPageState extends ConsumerState<ChatPage> {
-  final ScrollController _scrollController = ScrollController();
   final TextEditingController _messageInputController = TextEditingController();
 
   /// Latest incoming message (for smart reply generation)
   Message? _latestIncomingMessage;
-
-  /// Track previous message count to detect new messages vs updates
-  int _previousMessageCount = 0;
 
   /// Auto-translation service instance (saved to avoid using ref in dispose)
   AutoTranslationService? _autoTranslationService;
@@ -91,7 +88,6 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     // This handles both normal disposal and edge cases where callback runs after dispose
     _autoTranslationService?.stop();
 
-    _scrollController.dispose();
     _messageInputController.dispose();
     super.dispose();
   }
@@ -194,7 +190,6 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           conversationId: widget.conversationId,
           currentUserId: currentUser.uid,
           currentUserName: currentUser.displayName,
-          onMessageSent: _scrollToBottom,
           controller: _messageInputController,
         ),
       ],
@@ -394,65 +389,63 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           }
         }
 
-        // Only scroll to bottom when NEW messages arrive (not on updates like translations)
-        final currentMessageCount = messages.length;
-        final isNewMessage = currentMessageCount > _previousMessageCount;
+        // Virtual scrolling with FlutterListView for optimal performance
+        // Handles conversations with thousands of messages efficiently
+        // by only rendering visible items plus a buffer
+        return FlutterListView(
+          delegate: FlutterListViewDelegate(
+            (BuildContext context, int index) {
+              final message = messages[index];
+              final isMe = message['senderId'] == currentUser.uid;
+              final messageId = message['id'] as String;
+              final status = message['status'] as String? ?? 'sent';
 
-        if (isNewMessage) {
-          _previousMessageCount = currentMessageCount;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (_scrollController.hasClients) {
-              _scrollToBottom();
-            }
-          });
-        }
+              // Mark incoming messages as read when user sees them (only once)
+              // Only mark as read if already delivered (not sent)
+              // Note: Messages are automatically marked as delivered when conversation opens
+              // Read receipts are handled separately by markMessageAsReadUseCase if needed
 
-        return ListView.builder(
-          controller: _scrollController,
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-          itemCount: messages.length,
-          itemBuilder: (BuildContext context, int index) {
-            final message = messages[index];
-            final isMe = message['senderId'] == currentUser.uid;
-            final messageId = message['id'] as String;
-            final status = message['status'] as String? ?? 'sent';
+              // Check if we should show timestamp
+              final showTimestamp = _shouldShowTimestamp(messages, index);
 
-            // Mark incoming messages as read when user sees them (only once)
-            // Only mark as read if already delivered (not sent)
-            // Note: Messages are automatically marked as delivered when conversation opens
-            // Read receipts are handled separately by markMessageAsReadUseCase if needed
-
-            // Check if we should show timestamp
-            final showTimestamp = _shouldShowTimestamp(messages, index);
-
-            // currentUser is now passed from _buildChatScaffold with Firestore data
-            // Wrap with RepaintBoundary to isolate message bubble repaints (e.g., translation toggle)
-            return RepaintBoundary(
-              child: MessageBubble(
-                conversationId: widget.conversationId,
-                messageId: messageId,
-                message: message['text'] as String,
-                senderId: message['senderId'] as String,
-                isMe: isMe,
-                timestamp: message['timestamp'] as DateTime,
-                showTimestamp: showTimestamp,
-                status: status,
-                detectedLanguage: message['detectedLanguage'] as String?,
-                translations: message['translations'] != null
-                    ? Map<String, String>.from(
-                        message['translations'] as Map<String, dynamic>,
-                      )
-                    : null,
-                userPreferredLanguage: currentUser.preferredLanguage,
-                culturalHint: message['culturalHint'] as String?,
-                readCount: message['readCount'] as int?,
-                deliveredCount: message['deliveredCount'] as int?,
-                // For group chats, totalRecipients should exclude sender
-                // For now, we'll add it to the message map in the stream provider
-                totalRecipients: message['totalRecipients'] as int?,
-              ),
-            );
-          },
+              // currentUser is now passed from _buildChatScaffold with Firestore data
+              // Wrap with RepaintBoundary to isolate message bubble repaints (e.g., translation toggle)
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: RepaintBoundary(
+                  child: MessageBubble(
+                    conversationId: widget.conversationId,
+                    messageId: messageId,
+                    message: message['text'] as String,
+                    senderId: message['senderId'] as String,
+                    isMe: isMe,
+                    timestamp: message['timestamp'] as DateTime,
+                    showTimestamp: showTimestamp,
+                    status: status,
+                    detectedLanguage: message['detectedLanguage'] as String?,
+                    translations: message['translations'] != null
+                        ? Map<String, String>.from(
+                            message['translations'] as Map<String, dynamic>,
+                          )
+                        : null,
+                    userPreferredLanguage: currentUser.preferredLanguage,
+                    culturalHint: message['culturalHint'] as String?,
+                    readCount: message['readCount'] as int?,
+                    deliveredCount: message['deliveredCount'] as int?,
+                    // For group chats, totalRecipients should exclude sender
+                    // For now, we'll add it to the message map in the stream provider
+                    totalRecipients: message['totalRecipients'] as int?,
+                  ),
+                ),
+              );
+            },
+            childCount: messages.length,
+            // keepPositionOffset: Viewport offset when scrolling
+            // Maintains scroll position during rebuilds (e.g., new messages)
+            keepPositionOffset: 16,
+            // onItemKey: Stable keys for efficient widget recycling
+            onItemKey: (int index) => messages[index]['id'] as String,
+          ),
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -515,15 +508,5 @@ class _ChatPageState extends ConsumerState<ChatPage> {
 
     // Show timestamp if messages are more than 5 minutes apart
     return currentTime.difference(previousTime).inMinutes > 5;
-  }
-
-  void _scrollToBottom() {
-    if (_scrollController.hasClients) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
-    }
   }
 }
