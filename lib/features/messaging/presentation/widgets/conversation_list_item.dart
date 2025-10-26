@@ -329,34 +329,42 @@ class ConversationListItem extends ConsumerWidget {
     // Generate color from name for consistent avatar colors
     final color = _generateColorFromString(name);
 
-    return CircleAvatar(
-      radius: 28,
-      backgroundColor: color,
-      child: const Icon(Icons.group, color: Colors.white, size: 28),
+    // Wrap with RepaintBoundary to isolate avatar repaints
+    return RepaintBoundary(
+      child: CircleAvatar(
+        radius: 28,
+        backgroundColor: color,
+        child: const Icon(Icons.group, color: Colors.white, size: 28),
+      ),
     );
   }
 
   Widget _buildAvatar(String name, String? imageUrl) {
+    // Wrap with RepaintBoundary to isolate avatar repaints
     if (imageUrl != null && imageUrl.isNotEmpty) {
-      return CircleAvatar(
-        radius: 28,
-        backgroundImage: NetworkImage(imageUrl),
-        backgroundColor: Colors.grey[300],
+      return RepaintBoundary(
+        child: CircleAvatar(
+          radius: 28,
+          backgroundImage: NetworkImage(imageUrl),
+          backgroundColor: Colors.grey[300],
+        ),
       );
     }
 
     // Generate color from name for consistent avatar colors
     final color = _generateColorFromString(name);
 
-    return CircleAvatar(
-      radius: 28,
-      backgroundColor: color,
-      child: Text(
-        _getInitials(name),
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
+    return RepaintBoundary(
+      child: CircleAvatar(
+        radius: 28,
+        backgroundColor: color,
+        child: Text(
+          _getInitials(name),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );

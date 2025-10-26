@@ -225,14 +225,17 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                 return const SizedBox.shrink();
               }
 
-              return Text(
-                displayText,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: onlineCount > 0 ? Colors.green : Colors.grey,
-                  fontWeight: onlineCount > 0
-                      ? FontWeight.w500
-                      : FontWeight.normal,
+              // Wrap with RepaintBoundary to isolate presence status updates
+              return RepaintBoundary(
+                child: Text(
+                  displayText,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: onlineCount > 0 ? Colors.green : Colors.grey,
+                    fontWeight: onlineCount > 0
+                        ? FontWeight.w500
+                        : FontWeight.normal,
+                  ),
                 ),
               );
             },
@@ -258,19 +261,24 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           final isOnline = presence['isOnline'] as bool? ?? false;
           final lastSeen = presence['lastSeen'] as DateTime?;
 
+          // Wrap with RepaintBoundary to isolate presence status updates
           if (isOnline) {
-            return const Text(
-              'Online',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.green,
-                fontWeight: FontWeight.w500,
+            return const RepaintBoundary(
+              child: Text(
+                'Online',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.green,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             );
           } else if (lastSeen != null) {
-            return Text(
-              'Last seen ${_formatLastSeen(lastSeen)}',
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            return RepaintBoundary(
+              child: Text(
+                'Last seen ${_formatLastSeen(lastSeen)}',
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
             );
           }
 
@@ -311,7 +319,10 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         final typingNames = typingUsers
             .map<String>((TypingUser u) => u.userName)
             .toList();
-        return TypingIndicator(typingUserNames: typingNames);
+        // Wrap with RepaintBoundary to isolate typing indicator animations
+        return RepaintBoundary(
+          child: TypingIndicator(typingUserNames: typingNames),
+        );
       },
       loading: () => const SizedBox.shrink(),
       error: (Object _, StackTrace _) => const SizedBox.shrink(),
@@ -405,28 +416,31 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             final showTimestamp = _shouldShowTimestamp(messages, index);
 
             // currentUser is now passed from _buildChatScaffold with Firestore data
-            return MessageBubble(
-              conversationId: widget.conversationId,
-              messageId: messageId,
-              message: message['text'] as String,
-              senderId: message['senderId'] as String,
-              isMe: isMe,
-              timestamp: message['timestamp'] as DateTime,
-              showTimestamp: showTimestamp,
-              status: status,
-              detectedLanguage: message['detectedLanguage'] as String?,
-              translations: message['translations'] != null
-                  ? Map<String, String>.from(
-                      message['translations'] as Map<String, dynamic>,
-                    )
-                  : null,
-              userPreferredLanguage: currentUser.preferredLanguage,
-              culturalHint: message['culturalHint'] as String?,
-              readCount: message['readCount'] as int?,
-              deliveredCount: message['deliveredCount'] as int?,
-              // For group chats, totalRecipients should exclude sender
-              // For now, we'll add it to the message map in the stream provider
-              totalRecipients: message['totalRecipients'] as int?,
+            // Wrap with RepaintBoundary to isolate message bubble repaints (e.g., translation toggle)
+            return RepaintBoundary(
+              child: MessageBubble(
+                conversationId: widget.conversationId,
+                messageId: messageId,
+                message: message['text'] as String,
+                senderId: message['senderId'] as String,
+                isMe: isMe,
+                timestamp: message['timestamp'] as DateTime,
+                showTimestamp: showTimestamp,
+                status: status,
+                detectedLanguage: message['detectedLanguage'] as String?,
+                translations: message['translations'] != null
+                    ? Map<String, String>.from(
+                        message['translations'] as Map<String, dynamic>,
+                      )
+                    : null,
+                userPreferredLanguage: currentUser.preferredLanguage,
+                culturalHint: message['culturalHint'] as String?,
+                readCount: message['readCount'] as int?,
+                deliveredCount: message['deliveredCount'] as int?,
+                // For group chats, totalRecipients should exclude sender
+                // For now, we'll add it to the message map in the stream provider
+                totalRecipients: message['totalRecipients'] as int?,
+              ),
             );
           },
         );
