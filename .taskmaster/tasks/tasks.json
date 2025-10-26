@@ -200,7 +200,7 @@
         "dependencies": [
           1
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -259,7 +259,7 @@
               1
             ],
             "details": "Create RetryPolicy class with exponential backoff: initial delay 1s, max delay 32s, multiplier 2x. Add jitter (±20%) to prevent thundering herd. Implement max retry count of 5 attempts. Store retry metadata in message table (retryCount, lastRetryAt columns). Skip messages exceeding max retries until manual retry. Add NetworkConnectivity check before retry attempts. Log retry attempts for debugging. Expose retry queue size in UI.",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": null
           }
         ]
@@ -274,7 +274,7 @@
         "dependencies": [
           2
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -282,7 +282,7 @@
             "description": "Refactor MessageBubble widget to move language detection from initState (line 68) to addPostFrameCallback to prevent setState during build errors and improve initial render performance",
             "dependencies": [],
             "details": "Replace the current _detectLanguageFallback() call in initState with: WidgetsBinding.instance.addPostFrameCallback((_) { if (mounted) { _detectLanguageFallback(); } }); This ensures detection happens after the frame is rendered, preventing setState during build errors. Add mounted check to prevent calling setState on unmounted widgets.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test with conversations containing 100+ messages. Use debugPrintRebuildDirtyWidgets to verify no unnecessary rebuilds. Monitor with Flutter Performance overlay for frame drops."
           },
           {
@@ -291,7 +291,7 @@
             "description": "Create a Riverpod provider for caching language detection results across the app, preventing redundant ML Kit calls for the same messages",
             "dependencies": [],
             "details": "Extend language_detection_provider.dart with: @riverpod class LanguageDetectionCache extends _$LanguageDetectionCache { final _cache = <String, String>{}; String? getCached(String messageId) => _cache[messageId]; void cache(String messageId, String language) { _cache[messageId] = language; } void clearOldEntries() { if (_cache.length > 1000) _cache.clear(); } } Integrate with MessageBubble to check cache before detection.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Verify cache hit rate >90% when scrolling through previously viewed messages. Monitor memory usage to ensure cache doesn't grow unbounded."
           },
           {
@@ -302,7 +302,7 @@
               2
             ],
             "details": "Create static function for isolate: static Future<Map<String, String>> _detectLanguagesInIsolate(List<MapEntry<String, String>> entries) async { final detector = LanguageDetector(); final results = <String, String>{}; for (final entry in entries) { results[entry.key] = await detector.detect(entry.value); } return results; } Call with compute() for batches of 10+ undetected messages. Store results in cache.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Profile with 50+ messages needing detection. Verify main thread stays responsive during batch detection. Measure time difference vs sequential detection."
           },
           {
@@ -314,7 +314,7 @@
               2
             ],
             "details": "Implement Timer-based debouncing: Timer? _detectionTimer; void _scheduleDetection(String messageId, String text) { _detectionTimer?.cancel(); _detectionTimer = Timer(Duration(milliseconds: 300), () { if (!_cache.containsKey(messageId)) { _detectLanguageWithCache(messageId, text); } }); } Apply in MessageBubble for old messages without detectedLanguage. Batch multiple pending detections.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test rapid scrolling through 200+ messages. Verify detection calls are batched and total detection calls are <20% of message count."
           },
           {
@@ -325,7 +325,7 @@
               2
             ],
             "details": "In MessageInput, add debounced detection: Timer? _typeTimer; void _onTextChanged(String text) { _typeTimer?.cancel(); if (text.length > 10) { _typeTimer = Timer(Duration(seconds: 1), () async { final language = await ref.read(languageDetectionCacheProvider).detectWithCache(text); setState(() => _composingLanguage = language); }); } } Pre-cache result for message ID when sending. Show language indicator in input field.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Type messages in different languages. Verify detection happens within 1-2 seconds of pause. Confirm pre-detected language is used when message is sent."
           }
         ]
@@ -340,7 +340,7 @@
         "dependencies": [
           3
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [
           {
             "id": 1,
@@ -348,7 +348,7 @@
             "description": "Implement ValueKey for all conversation list items in ConversationListPage to enable Flutter's efficient widget recycling and prevent unnecessary rebuilds when list order changes",
             "dependencies": [],
             "details": "Modify lib/features/messaging/presentation/pages/conversation_list_page.dart to add ValueKey to ListView.builder. Update ConversationListItem widget instantiation to include key: ValueKey(conversation.id). Also add keys to any nested list items within conversations. This will help Flutter identify which widgets can be reused when the list updates, significantly improving performance for list operations like sorting and filtering.",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": null
           },
           {
@@ -946,7 +946,7 @@
     ],
     "metadata": {
       "created": "2025-10-26T09:30:12.493Z",
-      "updated": "2025-10-26T16:17:11.375Z",
+      "updated": "2025-10-26T18:52:11.769Z",
       "description": "Tasks for master context"
     }
   }

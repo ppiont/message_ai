@@ -182,6 +182,7 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
                     conversation['participantCount'] as int? ?? 0;
 
                 return ConversationListItem(
+                  key: ValueKey(conversationId),
                   conversationId: conversationId,
                   participants: participants,
                   lastMessage: conversation['lastMessage'] as String?,
@@ -223,6 +224,7 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
                     otherParticipant['uid'] as String? ?? '';
 
                 return ConversationListItem(
+                  key: ValueKey(conversationId),
                   conversationId: conversationId,
                   participants: participants,
                   lastMessage: conversation['lastMessage'] as String?,
