@@ -46,6 +46,7 @@ import 'package:message_ai/features/messaging/domain/usecases/watch_conversation
 import 'package:message_ai/features/messaging/domain/usecases/watch_messages.dart';
 import 'package:message_ai/features/messaging/presentation/models/message_with_status.dart';
 import 'package:message_ai/features/translation/presentation/providers/language_detection_provider.dart';
+import 'package:mutex/mutex.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -393,7 +394,10 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
 @Riverpod(keepAlive: true)
 class ConversationReadMarker extends _$ConversationReadMarker {
   final _markedAsRead = <String>{};
-  bool _isMarking = false; // Guard to prevent overlapping operations
+
+  /// Mutex to prevent race conditions when marking messages as read (Task 8.3)
+  /// Ensures only one markAsRead operation runs at a time
+  final _mutex = Mutex();
 
   @override
   void build(String conversationId, String currentUserId) {
@@ -414,66 +418,59 @@ class ConversationReadMarker extends _$ConversationReadMarker {
     String conversationId,
     String currentUserId,
   ) async {
-    // Prevent overlapping operations
-    if (_isMarking) {
-      debugPrint('⏸️ Already marking messages, skipping...');
-      return;
-    }
+    // Use mutex to ensure sequential execution and prevent race conditions (Task 8.3)
+    await _mutex.protect(() async {
+      final messageRemoteDataSource = ref.read(messageRemoteDataSourceProvider);
 
-    final messageRemoteDataSource = ref.read(messageRemoteDataSourceProvider);
+      // Find messages to mark (incoming messages not yet marked)
+      final messagesToMark = messages
+          .where(
+            (msg) =>
+                msg['senderId'] != currentUserId &&
+                !_markedAsRead.contains(msg['id']),
+          )
+          .toList();
 
-    // Find messages to mark (incoming messages not yet marked)
-    final messagesToMark = messages
-        .where(
-          (msg) =>
-              msg['senderId'] != currentUserId &&
-              !_markedAsRead.contains(msg['id']),
-        )
-        .toList();
-
-    if (messagesToMark.isEmpty) {
-      return;
-    }
-
-    _isMarking = true;
-
-    debugPrint(
-      '📖 Marking ${messagesToMark.length} messages as READ for user ${currentUserId.substring(0, 8)}',
-    );
-
-    // Mark all messages as READ in parallel
-    final results = await Future.wait(
-      messagesToMark.map((msg) async {
-        final messageId = msg['id'] as String;
-        try {
-          await messageRemoteDataSource.markAsRead(
-            conversationId,
-            messageId,
-            currentUserId,
-          );
-          return (messageId, true);
-        } catch (e) {
-          debugPrint(
-            '❌ Failed to mark ${messageId.substring(0, 8)} as READ: $e',
-          );
-          return (messageId, false);
-        }
-      }),
-    );
-
-    // Track successfully marked messages
-    final successCount = results.where((r) => r.$2).length;
-    for (final (messageId, success) in results) {
-      if (success) {
-        _markedAsRead.add(messageId);
+      if (messagesToMark.isEmpty) {
+        return;
       }
-    }
 
-    debugPrint(
-      '✅ Successfully marked $successCount/${messagesToMark.length} messages as READ',
-    );
+      debugPrint(
+        '📖 Marking ${messagesToMark.length} messages as READ for user ${currentUserId.substring(0, 8)}',
+      );
 
-    _isMarking = false;
+      // Mark all messages as READ in parallel
+      final results = await Future.wait(
+        messagesToMark.map((msg) async {
+          final messageId = msg['id'] as String;
+          try {
+            await messageRemoteDataSource.markAsRead(
+              conversationId,
+              messageId,
+              currentUserId,
+            );
+            return (messageId, true);
+          } catch (e) {
+            debugPrint(
+              '❌ Failed to mark ${messageId.substring(0, 8)} as READ: $e',
+            );
+            return (messageId, false);
+          }
+        }),
+      );
+
+      // Track successfully marked messages
+      final successCount = results.where((r) => r.$2).length;
+      for (final (messageId, success) in results) {
+        if (success) {
+          _markedAsRead.add(messageId);
+        }
+      }
+
+      debugPrint(
+        '✅ Successfully marked $successCount/${messagesToMark.length} messages as READ',
+      );
+    });
   }
 }
 
