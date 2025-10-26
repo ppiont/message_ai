@@ -202,178 +202,22 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
               // Wait a bit for the refresh
               await Future<void>.delayed(const Duration(milliseconds: 500));
             },
-            child: ListView.separated(
-              itemCount: filteredConversations.length,
-              separatorBuilder: (context, index) => const Divider(height: 1),
-              itemBuilder: (context, index) {
-                final conversation = filteredConversations[index];
-                final conversationId = conversation['id'] as String;
-                final type = conversation['type'] as String?;
-                final participants =
-                    conversation['participants'] as List<Map<String, dynamic>>;
-
-                // Handle groups vs direct conversations
-                if (type == 'group') {
-                // Group conversation
-                final groupName =
-                    conversation['groupName'] as String? ?? 'Unknown Group';
-                final participantCount =
-                    conversation['participantCount'] as int? ?? 0;
-
-                return ConversationListItem(
-                  key: ValueKey(conversationId),
-                  conversationId: conversationId,
-                  participants: participants,
-                  lastMessage: conversation['lastMessage'] as String?,
-                  lastUpdatedAt: conversation['lastUpdatedAt'] as DateTime,
-                  unreadCount: conversation['unreadCount'] as int,
-                  currentUserId: userId,
-                  isGroup: true,
-                  groupName: groupName,
-                  participantCount: participantCount,
-                  presenceMap: presenceMap, // Pass batch presence data
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (context) => ChatPage(
-                          conversationId: conversationId,
-                          otherParticipantName: groupName,
-                          otherParticipantId: '', // Not used for groups
-                          isGroup: true,
-                        ),
-                      ),
-                    );
-                  },
-                );
-              } else {
-                // Direct conversation
-                Map<String, dynamic> otherParticipant;
-                try {
-                  otherParticipant = participants.firstWhere(
-                    (p) => p['uid'] != userId,
-                  );
-                } catch (e) {
-                  // Fallback to first participant if not found
-                  otherParticipant = participants.isNotEmpty
-                      ? participants.first
-                      : {'name': 'Unknown', 'uid': ''};
-                }
-                final otherParticipantName =
-                    otherParticipant['name'] as String? ?? 'Unknown';
-                final otherParticipantId =
-                    otherParticipant['uid'] as String? ?? '';
-
-                return ConversationListItem(
-                  key: ValueKey(conversationId),
-                  conversationId: conversationId,
-                  participants: participants,
-                  lastMessage: conversation['lastMessage'] as String?,
-                  lastUpdatedAt: conversation['lastUpdatedAt'] as DateTime,
-                  unreadCount: conversation['unreadCount'] as int,
-                  currentUserId: userId,
-                  presenceMap: presenceMap, // Pass batch presence data
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (context) => ChatPage(
-                          conversationId: conversationId,
-                          otherParticipantName: otherParticipantName,
-                          otherParticipantId: otherParticipantId,
-                        ),
-                      ),
-                    );
-                  },
-                );
-              }
-            },
+            child: _buildConversationListView(
+              userId,
+              filteredConversations,
+              presenceMap,
+            ),
           ),
-        ),
         // Presence loading state: show list without presence indicators
         loading: () => RefreshIndicator(
           onRefresh: () async {
             ref.invalidate(allConversationsStreamProvider(userId));
             await Future<void>.delayed(const Duration(milliseconds: 500));
           },
-          child: ListView.separated(
-            itemCount: filteredConversations.length,
-            separatorBuilder: (context, index) => const Divider(height: 1),
-            itemBuilder: (context, index) {
-              final conversation = filteredConversations[index];
-              final conversationId = conversation['id'] as String;
-              final type = conversation['type'] as String?;
-              final participants =
-                  conversation['participants'] as List<Map<String, dynamic>>;
-
-              if (type == 'group') {
-                final groupName =
-                    conversation['groupName'] as String? ?? 'Unknown Group';
-                final participantCount =
-                    conversation['participantCount'] as int? ?? 0;
-
-                return ConversationListItem(
-                  key: ValueKey(conversationId),
-                  conversationId: conversationId,
-                  participants: participants,
-                  lastMessage: conversation['lastMessage'] as String?,
-                  lastUpdatedAt: conversation['lastUpdatedAt'] as DateTime,
-                  unreadCount: conversation['unreadCount'] as int,
-                  currentUserId: userId,
-                  isGroup: true,
-                  groupName: groupName,
-                  participantCount: participantCount,
-                  presenceMap: const {}, // Empty map during loading
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (context) => ChatPage(
-                          conversationId: conversationId,
-                          otherParticipantName: groupName,
-                          otherParticipantId: '',
-                          isGroup: true,
-                        ),
-                      ),
-                    );
-                  },
-                );
-              } else {
-                Map<String, dynamic> otherParticipant;
-                try {
-                  otherParticipant = participants.firstWhere(
-                    (p) => p['uid'] != userId,
-                  );
-                } catch (e) {
-                  otherParticipant = participants.isNotEmpty
-                      ? participants.first
-                      : {'name': 'Unknown', 'uid': ''};
-                }
-                final otherParticipantName =
-                    otherParticipant['name'] as String? ?? 'Unknown';
-                final otherParticipantId =
-                    otherParticipant['uid'] as String? ?? '';
-
-                return ConversationListItem(
-                  key: ValueKey(conversationId),
-                  conversationId: conversationId,
-                  participants: participants,
-                  lastMessage: conversation['lastMessage'] as String?,
-                  lastUpdatedAt: conversation['lastUpdatedAt'] as DateTime,
-                  unreadCount: conversation['unreadCount'] as int,
-                  currentUserId: userId,
-                  presenceMap: const {}, // Empty map during loading
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (context) => ChatPage(
-                          conversationId: conversationId,
-                          otherParticipantName: otherParticipantName,
-                          otherParticipantId: otherParticipantId,
-                        ),
-                      ),
-                    );
-                  },
-                );
-              }
-            },
+          child: _buildConversationListView(
+            userId,
+            filteredConversations,
+            const {}, // Empty map during loading
           ),
         ),
         // Presence error state: show list without presence indicators
@@ -382,89 +226,143 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
             ref.invalidate(allConversationsStreamProvider(userId));
             await Future<void>.delayed(const Duration(milliseconds: 500));
           },
-          child: ListView.separated(
-            itemCount: filteredConversations.length,
-            separatorBuilder: (context, index) => const Divider(height: 1),
-            itemBuilder: (context, index) {
-              final conversation = filteredConversations[index];
-              final conversationId = conversation['id'] as String;
-              final type = conversation['type'] as String?;
-              final participants =
-                  conversation['participants'] as List<Map<String, dynamic>>;
-
-              if (type == 'group') {
-                final groupName =
-                    conversation['groupName'] as String? ?? 'Unknown Group';
-                final participantCount =
-                    conversation['participantCount'] as int? ?? 0;
-
-                return ConversationListItem(
-                  key: ValueKey(conversationId),
-                  conversationId: conversationId,
-                  participants: participants,
-                  lastMessage: conversation['lastMessage'] as String?,
-                  lastUpdatedAt: conversation['lastUpdatedAt'] as DateTime,
-                  unreadCount: conversation['unreadCount'] as int,
-                  currentUserId: userId,
-                  isGroup: true,
-                  groupName: groupName,
-                  participantCount: participantCount,
-                  presenceMap: const {}, // Empty map on error
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (context) => ChatPage(
-                          conversationId: conversationId,
-                          otherParticipantName: groupName,
-                          otherParticipantId: '',
-                          isGroup: true,
-                        ),
-                      ),
-                    );
-                  },
-                );
-              } else {
-                Map<String, dynamic> otherParticipant;
-                try {
-                  otherParticipant = participants.firstWhere(
-                    (p) => p['uid'] != userId,
-                  );
-                } catch (e) {
-                  otherParticipant = participants.isNotEmpty
-                      ? participants.first
-                      : {'name': 'Unknown', 'uid': ''};
-                }
-                final otherParticipantName =
-                    otherParticipant['name'] as String? ?? 'Unknown';
-                final otherParticipantId =
-                    otherParticipant['uid'] as String? ?? '';
-
-                return ConversationListItem(
-                  key: ValueKey(conversationId),
-                  conversationId: conversationId,
-                  participants: participants,
-                  lastMessage: conversation['lastMessage'] as String?,
-                  lastUpdatedAt: conversation['lastUpdatedAt'] as DateTime,
-                  unreadCount: conversation['unreadCount'] as int,
-                  currentUserId: userId,
-                  presenceMap: const {}, // Empty map on error
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (context) => ChatPage(
-                          conversationId: conversationId,
-                          otherParticipantName: otherParticipantName,
-                          otherParticipantId: otherParticipantId,
-                        ),
-                      ),
-                    );
-                  },
-                );
-              }
-            },
+          child: _buildConversationListView(
+            userId,
+            filteredConversations,
+            const {}, // Empty map on error
           ),
         ),
       );
+  }
+
+  /// Build a conversation list view with ListView.custom for optimal performance.
+  ///
+  /// Uses SliverChildBuilderDelegate with findChildIndexCallback to enable
+  /// Flutter to efficiently map between widget positions and data indices.
+  /// This improves scrolling performance, especially for large lists.
+  Widget _buildConversationListView(
+    String userId,
+    List<Map<String, dynamic>> filteredConversations,
+    Map<String, Map<String, dynamic>> presenceMap,
+  ) {
+    // Create a map for O(1) index lookup by conversation ID
+    final conversationIdToIndex = <String, int>{};
+    for (var i = 0; i < filteredConversations.length; i++) {
+      final id = filteredConversations[i]['id'] as String;
+      conversationIdToIndex[id] = i;
+    }
+
+    return ListView.custom(
+      // Fixed height for conversation items (68px content + 8px padding top/bottom + 1px divider)
+      // Using itemExtentBuilder for more accurate per-item height
+      cacheExtent: 400, // Cache ~5 items above/below viewport for smooth scrolling
+      childrenDelegate: SliverChildBuilderDelegate(
+        (context, index) {
+          // Every other index is a divider
+          if (index.isOdd) {
+            return const Divider(height: 1);
+          }
+
+          final itemIndex = index ~/ 2;
+          if (itemIndex >= filteredConversations.length) {
+            return null;
+          }
+
+          final conversation = filteredConversations[itemIndex];
+          final conversationId = conversation['id'] as String;
+          final type = conversation['type'] as String?;
+          final participants =
+              conversation['participants'] as List<Map<String, dynamic>>;
+
+          // Handle groups vs direct conversations
+          if (type == 'group') {
+            // Group conversation
+            final groupName =
+                conversation['groupName'] as String? ?? 'Unknown Group';
+            final participantCount =
+                conversation['participantCount'] as int? ?? 0;
+
+            return ConversationListItem(
+              key: ValueKey(conversationId),
+              conversationId: conversationId,
+              participants: participants,
+              lastMessage: conversation['lastMessage'] as String?,
+              lastUpdatedAt: conversation['lastUpdatedAt'] as DateTime,
+              unreadCount: conversation['unreadCount'] as int,
+              currentUserId: userId,
+              isGroup: true,
+              groupName: groupName,
+              participantCount: participantCount,
+              presenceMap: presenceMap,
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (context) => ChatPage(
+                      conversationId: conversationId,
+                      otherParticipantName: groupName,
+                      otherParticipantId: '',
+                      isGroup: true,
+                    ),
+                  ),
+                );
+              },
+            );
+          } else {
+            // Direct conversation
+            Map<String, dynamic> otherParticipant;
+            try {
+              otherParticipant = participants.firstWhere(
+                (p) => p['uid'] != userId,
+              );
+            } catch (e) {
+              otherParticipant = participants.isNotEmpty
+                  ? participants.first
+                  : {'name': 'Unknown', 'uid': ''};
+            }
+            final otherParticipantName =
+                otherParticipant['name'] as String? ?? 'Unknown';
+            final otherParticipantId =
+                otherParticipant['uid'] as String? ?? '';
+
+            return ConversationListItem(
+              key: ValueKey(conversationId),
+              conversationId: conversationId,
+              participants: participants,
+              lastMessage: conversation['lastMessage'] as String?,
+              lastUpdatedAt: conversation['lastUpdatedAt'] as DateTime,
+              unreadCount: conversation['unreadCount'] as int,
+              currentUserId: userId,
+              presenceMap: presenceMap,
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (context) => ChatPage(
+                      conversationId: conversationId,
+                      otherParticipantName: otherParticipantName,
+                      otherParticipantId: otherParticipantId,
+                    ),
+                  ),
+                );
+              },
+            );
+          }
+        },
+        childCount: filteredConversations.length * 2 - 1, // Items + dividers
+        // findChildIndexCallback enables Flutter to efficiently find widgets
+        // by their key, improving performance when list order changes
+        findChildIndexCallback: (Key key) {
+          if (key is ValueKey<String>) {
+            final conversationId = key.value;
+            final index = conversationIdToIndex[conversationId];
+            if (index != null) {
+              // Return the actual index in the list (accounting for dividers)
+              return index * 2;
+            }
+          }
+          return null;
+        },
+      ),
+    );
   }
 
   Widget _buildEmptyState() => Center(

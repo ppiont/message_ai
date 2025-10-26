@@ -381,7 +381,7 @@
               3
             ],
             "details": "Create _binarySearch method in conversation list controller that finds the correct insertion index based on lastMessageTime. Implement _insertSorted method that uses binary search to find position and inserts conversation at correct index. Modify conversation update logic to remove old position and insert at new position rather than re-sorting entire list. Add debouncing for rapid updates to prevent excessive list modifications. Ensure this works with both new conversations and updates to existing ones.",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": null
           },
           {
@@ -392,7 +392,7 @@
               4
             ],
             "details": "Replace ListView.builder with ListView.custom in both ConversationListPage and MessageList widgets. Implement SliverChildBuilderDelegate with findChildIndexCallback that maps conversation/message IDs to their indices. Add itemExtent parameter for fixed-height items where applicable (like conversation list items). Configure cacheExtent for optimal memory usage. Implement custom keepAlive logic for important items. This allows Flutter to quickly jump to specific positions and improves scrolling performance.",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": null
           }
         ]
@@ -946,7 +946,7 @@
     ],
     "metadata": {
       "created": "2025-10-26T09:30:12.493Z",
-      "updated": "2025-10-26T19:09:57.606Z",
+      "updated": "2025-10-26T22:00:10.702Z",
       "description": "Tasks for master context"
     }
   }
