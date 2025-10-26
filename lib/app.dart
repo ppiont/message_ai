@@ -127,14 +127,12 @@ class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
     switch (state) {
       case AppLifecycleState.resumed:
         // App came to foreground - set online and configure onDisconnect
-        debugPrint('🟢 App resumed - setting user online');
         presenceService.setOnline(userId: user.uid, userName: user.displayName);
 
       case AppLifecycleState.paused:
       case AppLifecycleState.inactive:
         // App went to background - set offline as backup
         // (onDisconnect will also trigger if connection is lost)
-        debugPrint('🟡 App paused/inactive - setting user offline');
         presenceService.setOffline(
           userId: user.uid,
           userName: user.displayName,
@@ -142,7 +140,6 @@ class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
 
       case AppLifecycleState.detached:
         // App is about to be killed - set offline
-        debugPrint('🔴 App detached - setting user offline');
         presenceService.setOffline(
           userId: user.uid,
           userName: user.displayName,
@@ -150,7 +147,6 @@ class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
 
       case AppLifecycleState.hidden:
         // App is hidden (similar to paused)
-        debugPrint('⚫ App hidden - setting user offline');
         presenceService.setOffline(
           userId: user.uid,
           userName: user.displayName,
