@@ -1,11 +1,9 @@
-import 'dart:async';
 import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
 import 'package:message_ai/core/error/failures.dart';
 import 'package:message_ai/features/messaging/domain/entities/message.dart';
 import 'package:message_ai/features/messaging/domain/repositories/conversation_repository.dart';
 import 'package:message_ai/features/messaging/domain/repositories/message_repository.dart';
-import 'package:message_ai/features/smart_replies/domain/services/embedding_generator.dart';
 import 'package:message_ai/features/translation/data/services/language_detection_service.dart';
 
 /// Use case for sending a message in a conversation.
@@ -15,7 +13,9 @@ import 'package:message_ai/features/translation/data/services/language_detection
 /// 2. Detects the language of the message using ML Kit
 /// 3. Creates the message in Firestore with detected language
 /// 4. Updates the conversation's last message
-/// 5. Generates embedding for the message (fire-and-forget)
+///
+/// Note: Embeddings are now generated server-side via Firestore triggers.
+/// No client-side involvement needed.
 ///
 /// Returns the created message or a Failure.
 class SendMessage {
@@ -23,17 +23,14 @@ class SendMessage {
     required MessageRepository messageRepository,
     required ConversationRepository conversationRepository,
     required LanguageDetectionService languageDetectionService,
-    EmbeddingGenerator? embeddingGenerator,
     @Deprecated('MessageQueue removed - WorkManager handles sync')
     Object? messageQueue,
   }) : _messageRepository = messageRepository,
        _conversationRepository = conversationRepository,
-       _languageDetectionService = languageDetectionService,
-       _embeddingGenerator = embeddingGenerator;
+       _languageDetectionService = languageDetectionService;
   final MessageRepository _messageRepository;
   final ConversationRepository _conversationRepository;
   final LanguageDetectionService _languageDetectionService;
-  final EmbeddingGenerator? _embeddingGenerator;
 
   /// Sends a message to a conversation.
   ///
@@ -101,17 +98,9 @@ class SendMessage {
           createdMessage.timestamp,
         );
 
-        // Generate embedding for the message (fire-and-forget)
-        // This doesn't block the send operation - embeddings are generated
-        // in the background for the Smart Replies RAG pipeline
-        if (_embeddingGenerator != null) {
-          unawaited(
-            _embeddingGenerator.generateForMessage(
-              conversationId: conversationId,
-              message: createdMessage,
-            ),
-          );
-        }
+        // Note: Embeddings are now generated server-side via Firestore triggers
+        // No client-side action needed - the trigger automatically generates
+        // embeddings when the message document is created
 
         return Right(createdMessage);
       },

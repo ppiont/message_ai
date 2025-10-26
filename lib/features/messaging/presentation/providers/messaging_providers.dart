@@ -13,11 +13,9 @@ import 'package:message_ai/features/authentication/presentation/providers/auth_p
 import 'package:message_ai/features/authentication/presentation/providers/user_providers.dart';
 import 'package:message_ai/features/messaging/data/datasources/conversation_local_datasource.dart';
 import 'package:message_ai/features/messaging/data/datasources/conversation_remote_datasource.dart';
-import 'package:message_ai/features/messaging/data/datasources/group_conversation_remote_datasource.dart';
 import 'package:message_ai/features/messaging/data/datasources/message_local_datasource.dart';
 import 'package:message_ai/features/messaging/data/datasources/message_remote_datasource.dart';
 import 'package:message_ai/features/messaging/data/repositories/conversation_repository_impl.dart';
-import 'package:message_ai/features/messaging/data/repositories/group_conversation_repository_impl.dart';
 import 'package:message_ai/features/messaging/data/repositories/message_repository_impl.dart';
 import 'package:message_ai/features/messaging/data/services/auto_delivery_marker.dart';
 import 'package:message_ai/features/messaging/data/services/fcm_service.dart';
@@ -29,7 +27,6 @@ import 'package:message_ai/features/messaging/domain/entities/conversation.dart'
     show Conversation, Participant;
 import 'package:message_ai/features/messaging/domain/entities/message.dart';
 import 'package:message_ai/features/messaging/domain/repositories/conversation_repository.dart';
-import 'package:message_ai/features/messaging/domain/repositories/group_conversation_repository.dart';
 import 'package:message_ai/features/messaging/domain/repositories/message_repository.dart';
 import 'package:message_ai/features/messaging/domain/usecases/add_group_member.dart';
 import 'package:message_ai/features/messaging/domain/usecases/create_group.dart';
@@ -44,10 +41,8 @@ import 'package:message_ai/features/messaging/domain/usecases/update_group_info.
 import 'package:message_ai/features/messaging/domain/usecases/watch_conversations.dart';
 import 'package:message_ai/features/messaging/domain/usecases/watch_messages.dart';
 import 'package:message_ai/features/messaging/presentation/models/message_with_status.dart';
-import 'package:message_ai/features/smart_replies/presentation/providers/embedding_providers.dart';
 import 'package:message_ai/features/translation/presentation/providers/language_detection_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:rxdart/rxdart.dart';
 
 part 'messaging_providers.g.dart';
 
@@ -122,12 +117,12 @@ MessageContextService messageContextService(Ref ref) => MessageContextService(
 /// Provides the [SendMessage] use case with language detection.
 ///
 /// Note: messageQueue removed - WorkManager handles background sync now
+/// Note: embeddingGenerator removed - Firestore triggers handle embeddings server-side
 @riverpod
 SendMessage sendMessageUseCase(Ref ref) => SendMessage(
   messageRepository: ref.watch(messageRepositoryProvider),
   conversationRepository: ref.watch(conversationRepositoryProvider),
   languageDetectionService: ref.watch(languageDetectionServiceProvider),
-  embeddingGenerator: ref.watch(embeddingGeneratorProvider),
 );
 
 /// Provides the [WatchMessages] use case.
@@ -217,40 +212,18 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
   final watchUseCase = ref.watch(watchMessagesUseCaseProvider);
   final userSyncService = ref.watch(userSyncServiceProvider);
   final getConversationUseCase = ref.watch(getConversationByIdUseCaseProvider);
-  final groupConversationRepository = ref.watch(
-    groupConversationRepositoryProvider,
-  );
 
   // Track which messages we've already marked as read to prevent infinite loop
   final markedAsRead = <String>{};
 
   // Get conversation to extract participant IDs for aggregate status computation
-  // Try direct conversation first, then group conversation
   var participantIds = <String>[];
-  final directConvResult = await getConversationUseCase(conversationId);
+  final convResult = await getConversationUseCase(conversationId);
 
-  // Check if we got a conversation or need to try group repository
-  await directConvResult.fold(
+  await convResult.fold(
     (failure) async {
-      // Direct conversation fetch failed, try group conversation
       debugPrint(
-        '📨 conversationMessagesStream: Not a direct conversation, trying group...',
-      );
-      final groupResult = await groupConversationRepository.getGroupById(
-        conversationId,
-      );
-      groupResult.fold(
-        (groupFailure) {
-          debugPrint(
-            '❌ conversationMessagesStream: Failed to get conversation $conversationId: ${groupFailure.message}',
-          );
-        },
-        (conversation) {
-          participantIds = conversation.participants.map((p) => p.uid).toList();
-          debugPrint(
-            '✅ conversationMessagesStream: Got ${participantIds.length} participants for status computation: $participantIds',
-          );
-        },
+        '❌ conversationMessagesStream: Failed to get conversation $conversationId: ${failure.message}',
       );
     },
     (conversation) async {
@@ -343,7 +316,9 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
             }
           }
 
-          debugPrint('✅ Successfully marked $successCount/${messagesToMark.length} messages as READ');
+          debugPrint(
+            '✅ Successfully marked $successCount/${messagesToMark.length} messages as READ',
+          );
         }
 
         // Build MessageWithStatus objects by querying Firestore for current status
@@ -461,9 +436,6 @@ AutoDeliveryMarker autoDeliveryMarker(Ref ref) {
   final marker =
       AutoDeliveryMarker(
           conversationRepository: ref.watch(conversationRepositoryProvider),
-          groupConversationRepository: ref.watch(
-            groupConversationRepositoryProvider,
-          ),
           messageRepository: ref.watch(messageRepositoryProvider),
           currentUserId: currentUser.uid,
         )
@@ -594,55 +566,39 @@ Stream<Map<String, dynamic>?> userPresence(Ref ref, String userId) {
 // Background sync is now handled by WorkManager periodic tasks.
 // See lib/workers/ for MessageSyncWorker, DeliveryTrackingWorker, ReadReceiptWorker.
 //
-// ========== Group Conversation Providers ==========
-
-/// Provides the [GroupConversationRemoteDataSource] implementation.
-@riverpod
-GroupConversationRemoteDataSource groupConversationRemoteDataSource(Ref ref) =>
-    GroupConversationRemoteDataSourceImpl(
-      firestore: ref.watch(messagingFirestoreProvider),
-    );
-
-/// Provides the [GroupConversationRepository] implementation (offline-first).
-@riverpod
-GroupConversationRepository groupConversationRepository(Ref ref) =>
-    GroupConversationRepositoryImpl(
-      remoteDataSource: ref.watch(groupConversationRemoteDataSourceProvider),
-      localDataSource: ref.watch(conversationLocalDataSourceProvider),
-    );
-
 // ========== Group Use Case Providers ==========
+// Note: Group conversations now use the unified ConversationRepository
 
 /// Provides the [CreateGroup] use case.
 @riverpod
 CreateGroup createGroupUseCase(Ref ref) =>
-    CreateGroup(ref.watch(groupConversationRepositoryProvider));
+    CreateGroup(ref.watch(conversationRepositoryProvider));
 
 /// Provides the [AddGroupMember] use case.
 @riverpod
 AddGroupMember addGroupMemberUseCase(Ref ref) =>
-    AddGroupMember(ref.watch(groupConversationRepositoryProvider));
+    AddGroupMember(ref.watch(conversationRepositoryProvider));
 
 /// Provides the [RemoveGroupMember] use case.
 @riverpod
 RemoveGroupMember removeGroupMemberUseCase(Ref ref) =>
-    RemoveGroupMember(ref.watch(groupConversationRepositoryProvider));
+    RemoveGroupMember(ref.watch(conversationRepositoryProvider));
 
 /// Provides the [LeaveGroup] use case.
 @riverpod
 LeaveGroup leaveGroupUseCase(Ref ref) =>
-    LeaveGroup(ref.watch(groupConversationRepositoryProvider));
+    LeaveGroup(ref.watch(conversationRepositoryProvider));
 
 /// Provides the [UpdateGroupInfo] use case.
 @riverpod
 UpdateGroupInfo updateGroupInfoUseCase(Ref ref) =>
-    UpdateGroupInfo(ref.watch(groupConversationRepositoryProvider));
+    UpdateGroupInfo(ref.watch(conversationRepositoryProvider));
 
 // ========== Unified Conversation List Provider ==========
 
 /// Stream provider for watching all conversations (both direct and groups) in real-time.
 ///
-/// Merges direct conversations and group conversations into a single unified list,
+/// Returns all conversations from the unified ConversationRepository,
 /// sorted by last update time.
 @riverpod
 Stream<List<Map<String, dynamic>>> allConversationsStream(
@@ -652,42 +608,17 @@ Stream<List<Map<String, dynamic>>> allConversationsStream(
   final watchConversationsUseCase = ref.watch(
     watchConversationsUseCaseProvider,
   );
-  final groupConversationRepository = ref.watch(
-    groupConversationRepositoryProvider,
-  );
   final userSyncService = ref.watch(userSyncServiceProvider);
 
-  // Watch BOTH direct conversations AND group conversations
-  final directConversationsStream = watchConversationsUseCase(userId: userId);
-  final groupConversationsStream = groupConversationRepository
-      .watchGroupsForUser(userId);
+  // Watch all conversations (both direct and group)
+  final conversationsStream = watchConversationsUseCase(userId: userId);
 
-  // Combine the two streams using Rx.combineLatest2
-  return Rx.combineLatest2<
-    Either<Failure, List<Conversation>>,
-    Either<Failure, List<Conversation>>,
-    List<Map<String, dynamic>>
-  >(directConversationsStream, groupConversationsStream, (
-    Either<Failure, List<Conversation>> directResult,
-    Either<Failure, List<Conversation>> groupResult,
-  ) {
-    // Extract direct conversations (or empty list on failure)
-    final directConversations = directResult.fold(
+  return conversationsStream.map((Either<Failure, List<Conversation>> result) {
+    // Extract conversations (or empty list on failure)
+    final allConversations = result.fold(
       (Failure failure) => <Conversation>[],
       (List<Conversation> conversations) => conversations,
     );
-
-    // Extract group conversations (or empty list on failure)
-    final groupConversations = groupResult.fold(
-      (Failure failure) => <Conversation>[],
-      (List<Conversation> conversations) => conversations,
-    );
-
-    // Combine both lists
-    final allConversations = <Conversation>[
-      ...directConversations,
-      ...groupConversations,
-    ];
 
     // Sync all participant users to Drift for offline access (fire-and-forget)
     final allParticipantIds = allConversations

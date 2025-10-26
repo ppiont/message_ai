@@ -7,35 +7,30 @@ library;
 import 'dart:async';
 
 import 'package:message_ai/features/messaging/domain/repositories/conversation_repository.dart';
-import 'package:message_ai/features/messaging/domain/repositories/group_conversation_repository.dart';
 import 'package:message_ai/features/messaging/domain/repositories/message_repository.dart';
 
 /// Automatically marks incoming messages as delivered
 class AutoDeliveryMarker {
   AutoDeliveryMarker({
     required ConversationRepository conversationRepository,
-    required GroupConversationRepository groupConversationRepository,
     required MessageRepository messageRepository,
     required String currentUserId,
   })  : _conversationRepository = conversationRepository,
-        _groupConversationRepository = groupConversationRepository,
         _messageRepository = messageRepository,
         _currentUserId = currentUserId;
 
   final ConversationRepository _conversationRepository;
-  final GroupConversationRepository _groupConversationRepository;
   final MessageRepository _messageRepository;
   final String _currentUserId;
 
   final Set<String> _markedMessages = <String>{};
   StreamSubscription<dynamic>? _conversationsSub;
-  StreamSubscription<dynamic>? _groupConversationsSub;
   final Map<String, StreamSubscription<dynamic>> _messageSubs =
       <String, StreamSubscription<dynamic>>{};
 
   /// Start watching conversations and marking messages
   void start() {
-    // Watch all DIRECT conversations for current user
+    // Watch all conversations (both direct and group) for current user
     _conversationsSub = _conversationRepository
         .watchConversationsForUser(_currentUserId)
         .listen((result) {
@@ -45,21 +40,6 @@ class AutoDeliveryMarker {
           // For each conversation, watch its messages
           for (final conversation in conversations) {
             _watchConversationMessages(conversation.documentId);
-          }
-        },
-      );
-    });
-
-    // Watch all GROUP conversations for current user
-    _groupConversationsSub = _groupConversationRepository
-        .watchGroupsForUser(_currentUserId)
-        .listen((result) {
-      result.fold(
-        (_) {}, // Ignore errors
-        (groups) {
-          // For each group, watch its messages
-          for (final group in groups) {
-            _watchConversationMessages(group.documentId);
           }
         },
       );
@@ -103,7 +83,6 @@ class AutoDeliveryMarker {
   /// Stop watching and clean up
   void stop() {
     _conversationsSub?.cancel();
-    _groupConversationsSub?.cancel();
     for (final sub in _messageSubs.values) {
       sub.cancel();
     }

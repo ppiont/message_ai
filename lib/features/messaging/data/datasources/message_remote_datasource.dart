@@ -77,48 +77,16 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     : _firestore = firestore;
   final FirebaseFirestore _firestore;
 
-  // Cache to track which collection each conversation belongs to
-  final Map<String, String> _conversationTypeCache = {};
-
   static const String _conversationsCollection = 'conversations';
-  static const String _groupConversationsCollection = 'group-conversations';
   static const String _messagesSubcollection = 'messages';
 
   /// Helper to get messages collection reference for a conversation.
-  /// Automatically determines if it's a group or direct conversation.
-  Future<CollectionReference<Map<String, dynamic>>> _messagesRef(
+  CollectionReference<Map<String, dynamic>> _messagesRef(
     String conversationId,
-  ) async {
-    // Check cache first
-    if (_conversationTypeCache.containsKey(conversationId)) {
-      final collection = _conversationTypeCache[conversationId]!;
-      return _firestore
-          .collection(collection)
-          .doc(conversationId)
-          .collection(_messagesSubcollection);
-    }
-
-    // Check group-conversations collection first (most specific)
-    final groupDoc = await _firestore
-        .collection(_groupConversationsCollection)
-        .doc(conversationId)
-        .get();
-
-    if (groupDoc.exists) {
-      _conversationTypeCache[conversationId] = _groupConversationsCollection;
-      return _firestore
-          .collection(_groupConversationsCollection)
-          .doc(conversationId)
-          .collection(_messagesSubcollection);
-    }
-
-    // Fall back to conversations collection
-    _conversationTypeCache[conversationId] = _conversationsCollection;
-    return _firestore
-        .collection(_conversationsCollection)
-        .doc(conversationId)
-        .collection(_messagesSubcollection);
-  }
+  ) => _firestore
+      .collection(_conversationsCollection)
+      .doc(conversationId)
+      .collection(_messagesSubcollection);
 
   @override
   Future<MessageModel> createMessage(
@@ -126,7 +94,7 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     MessageModel message,
   ) async {
     try {
-      final messagesRef = await _messagesRef(conversationId);
+      final messagesRef = _messagesRef(conversationId);
       final docRef = messagesRef.doc(message.id);
 
       // Check if message already exists
@@ -162,7 +130,7 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     String messageId,
   ) async {
     try {
-      final messagesRef = await _messagesRef(conversationId);
+      final messagesRef = _messagesRef(conversationId);
       final docSnapshot = await messagesRef.doc(messageId).get();
 
       if (!docSnapshot.exists) {
@@ -193,7 +161,7 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     DateTime? before,
   }) async {
     try {
-      final messagesRef = await _messagesRef(conversationId);
+      final messagesRef = _messagesRef(conversationId);
       var query = messagesRef
           .orderBy('timestamp', descending: true)
           .limit(limit);
@@ -227,7 +195,7 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     MessageModel message,
   ) async {
     try {
-      final messagesRef = await _messagesRef(conversationId);
+      final messagesRef = _messagesRef(conversationId);
       final docRef = messagesRef.doc(message.id);
 
       // Check if message exists
@@ -262,7 +230,7 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     try {
       // For a chat app, we might prefer soft delete (marking as deleted)
       // For now, we'll do hard delete for simplicity in MVP
-      final messagesRef = await _messagesRef(conversationId);
+      final messagesRef = _messagesRef(conversationId);
       await messagesRef.doc(messageId).delete();
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
@@ -283,21 +251,19 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     int limit = 50,
   }) {
     try {
-      // Convert Future to Stream, then flatten
-      return Stream.fromFuture(_messagesRef(conversationId)).asyncExpand(
-        (messagesRef) => messagesRef
-            .orderBy(
-              'timestamp',
-              descending: false,
-            ) // Oldest first (standard chat order)
-            .limit(limit)
-            .snapshots()
-            .map(
-              (snapshot) => snapshot.docs
-                  .map((doc) => MessageModel.fromJson(doc.data()))
-                  .toList(),
-            ),
-      );
+      final messagesRef = _messagesRef(conversationId);
+      return messagesRef
+          .orderBy(
+            'timestamp',
+            descending: false,
+          ) // Oldest first (standard chat order)
+          .limit(limit)
+          .snapshots()
+          .map(
+            (snapshot) => snapshot.docs
+                .map((doc) => MessageModel.fromJson(doc.data()))
+                .toList(),
+          );
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
@@ -318,7 +284,7 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     String userId,
   ) async {
     try {
-      final messagesRef = await _messagesRef(conversationId);
+      final messagesRef = _messagesRef(conversationId);
 
       // Check current status first - don't downgrade from 'read' to 'delivered'
       final statusDoc = await messagesRef
@@ -361,7 +327,7 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     String userId,
   ) async {
     try {
-      final messagesRef = await _messagesRef(conversationId);
+      final messagesRef = _messagesRef(conversationId);
 
       // Use subcollection structure for efficient status tracking:
       // messages/{messageId}/status/{userId}
@@ -389,7 +355,7 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     String messageId,
   ) async {
     try {
-      final messagesRef = await _messagesRef(conversationId);
+      final messagesRef = _messagesRef(conversationId);
 
       // Query the status subcollection for all users
       final statusSnapshot = await messagesRef
@@ -418,18 +384,12 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     String messageId,
   ) {
     try {
-      // Convert Future to Stream, then flatten
-      return Stream.fromFuture(_messagesRef(conversationId)).asyncExpand(
-        (messagesRef) => messagesRef
-            .doc(messageId)
-            .collection('status')
-            .snapshots()
-            .map(
-              (snapshot) => snapshot.docs
-                  .map((doc) => doc.data())
-                  .toList(),
-            ),
-      );
+      final messagesRef = _messagesRef(conversationId);
+      return messagesRef
+          .doc(messageId)
+          .collection('status')
+          .snapshots()
+          .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {

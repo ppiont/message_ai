@@ -3,14 +3,14 @@ library;
 
 import 'package:dartz/dartz.dart';
 import 'package:message_ai/core/error/failures.dart';
-import 'package:message_ai/features/messaging/domain/repositories/group_conversation_repository.dart';
+import 'package:message_ai/features/messaging/domain/repositories/conversation_repository.dart';
 
 /// Use case for updating group information (name, image).
 ///
 /// Only group admins should be able to update group info.
 class UpdateGroupInfo {
-  UpdateGroupInfo(this._groupRepository);
-  final GroupConversationRepository _groupRepository;
+  UpdateGroupInfo(this._conversationRepository);
+  final ConversationRepository _conversationRepository;
 
   /// Updates group information.
   ///
@@ -55,7 +55,7 @@ class UpdateGroupInfo {
     }
 
     // Get the group to validate requester is admin
-    final groupResult = await _groupRepository.getGroupById(groupId);
+    final groupResult = await _conversationRepository.getConversationById(groupId);
 
     return groupResult.fold(Left.new, (group) async {
       // Check if requester is admin
@@ -68,8 +68,8 @@ class UpdateGroupInfo {
       }
 
       // Update the group info
-      return _groupRepository.updateGroupInfo(
-        groupId: groupId,
+      return _conversationRepository.updateGroupInfo(
+        conversationId: groupId,
         groupName: groupName,
         groupImage: groupImage,
       );

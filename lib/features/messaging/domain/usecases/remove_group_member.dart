@@ -3,14 +3,14 @@ library;
 
 import 'package:dartz/dartz.dart';
 import 'package:message_ai/core/error/failures.dart';
-import 'package:message_ai/features/messaging/domain/repositories/group_conversation_repository.dart';
+import 'package:message_ai/features/messaging/domain/repositories/conversation_repository.dart';
 
 /// Use case for removing a member from an existing group.
 ///
 /// Only group admins should be able to remove members.
 class RemoveGroupMember {
-  RemoveGroupMember(this._groupRepository);
-  final GroupConversationRepository _groupRepository;
+  RemoveGroupMember(this._conversationRepository);
+  final ConversationRepository _conversationRepository;
 
   /// Removes a member from a group.
   ///
@@ -44,7 +44,7 @@ class RemoveGroupMember {
     }
 
     // Get the group to validate requester is admin
-    final groupResult = await _groupRepository.getGroupById(groupId);
+    final groupResult = await _conversationRepository.getConversationById(groupId);
 
     return groupResult.fold(Left.new, (group) async {
       // Check if requester is admin
@@ -78,7 +78,7 @@ class RemoveGroupMember {
       }
 
       // Remove the member
-      return _groupRepository.removeMember(groupId, userId);
+      return _conversationRepository.removeMember(groupId, userId);
     });
   }
 }

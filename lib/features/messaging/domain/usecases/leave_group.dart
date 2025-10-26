@@ -3,15 +3,15 @@ library;
 
 import 'package:dartz/dartz.dart';
 import 'package:message_ai/core/error/failures.dart';
-import 'package:message_ai/features/messaging/domain/repositories/group_conversation_repository.dart';
+import 'package:message_ai/features/messaging/domain/repositories/conversation_repository.dart';
 
 /// Use case for a user to leave a group.
 ///
 /// Any member can leave a group, but the last admin cannot leave
 /// without first promoting another member to admin.
 class LeaveGroup {
-  LeaveGroup(this._groupRepository);
-  final GroupConversationRepository _groupRepository;
+  LeaveGroup(this._conversationRepository);
+  final ConversationRepository _conversationRepository;
 
   /// Leaves a group.
   ///
@@ -43,7 +43,7 @@ class LeaveGroup {
     }
 
     // Get the group to validate
-    final groupResult = await _groupRepository.getGroupById(groupId);
+    final groupResult = await _conversationRepository.getConversationById(groupId);
 
     return groupResult.fold(Left.new, (group) async {
       // Check if user is a member
@@ -71,7 +71,7 @@ class LeaveGroup {
       }
 
       // Leave the group (same as removing member)
-      return _groupRepository.removeMember(groupId, userId);
+      return _conversationRepository.removeMember(groupId, userId);
     });
   }
 }

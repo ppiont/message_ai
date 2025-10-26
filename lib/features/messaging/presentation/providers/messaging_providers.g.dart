@@ -489,6 +489,7 @@ String _$messageContextServiceHash() =>
 /// Provides the [SendMessage] use case with language detection.
 ///
 /// Note: messageQueue removed - WorkManager handles background sync now
+/// Note: embeddingGenerator removed - Firestore triggers handle embeddings server-side
 
 @ProviderFor(sendMessageUseCase)
 const sendMessageUseCaseProvider = SendMessageUseCaseProvider._();
@@ -496,6 +497,7 @@ const sendMessageUseCaseProvider = SendMessageUseCaseProvider._();
 /// Provides the [SendMessage] use case with language detection.
 ///
 /// Note: messageQueue removed - WorkManager handles background sync now
+/// Note: embeddingGenerator removed - Firestore triggers handle embeddings server-side
 
 final class SendMessageUseCaseProvider
     extends $FunctionalProvider<SendMessage, SendMessage, SendMessage>
@@ -503,6 +505,7 @@ final class SendMessageUseCaseProvider
   /// Provides the [SendMessage] use case with language detection.
   ///
   /// Note: messageQueue removed - WorkManager handles background sync now
+  /// Note: embeddingGenerator removed - Firestore triggers handle embeddings server-side
   const SendMessageUseCaseProvider._()
     : super(
         from: null,
@@ -537,7 +540,7 @@ final class SendMessageUseCaseProvider
 }
 
 String _$sendMessageUseCaseHash() =>
-    r'e4bb4f985403f02ef67dee98d62c8fc2f3d8f733';
+    r'd2eff0e069317ba222183fd88cc05f4b3d816f82';
 
 /// Provides the [WatchMessages] use case.
 
@@ -1037,7 +1040,7 @@ final class ConversationMessagesStreamProvider
 }
 
 String _$conversationMessagesStreamHash() =>
-    r'eed23893a72e65df844577c599463517e07b4a30';
+    r'01fcbbe90789c33542873c97f54b7f7cffff3ad0';
 
 /// Stream provider for watching messages in a conversation in real-time.
 ///
@@ -1283,7 +1286,7 @@ final class AutoDeliveryMarkerProvider
 }
 
 String _$autoDeliveryMarkerHash() =>
-    r'ee637f8df3b6a7ee3c858845fb81a6b25be5a88a';
+    r'13ffbba9e7b0a0f169ac826a0aa2d72a643cc8f3';
 
 /// Marks all messages in a conversation as delivered for the current user.
 ///
@@ -1611,117 +1614,6 @@ final class UserPresenceFamily extends $Family
   String toString() => r'userPresenceProvider';
 }
 
-/// Provides the [GroupConversationRemoteDataSource] implementation.
-
-@ProviderFor(groupConversationRemoteDataSource)
-const groupConversationRemoteDataSourceProvider =
-    GroupConversationRemoteDataSourceProvider._();
-
-/// Provides the [GroupConversationRemoteDataSource] implementation.
-
-final class GroupConversationRemoteDataSourceProvider
-    extends
-        $FunctionalProvider<
-          GroupConversationRemoteDataSource,
-          GroupConversationRemoteDataSource,
-          GroupConversationRemoteDataSource
-        >
-    with $Provider<GroupConversationRemoteDataSource> {
-  /// Provides the [GroupConversationRemoteDataSource] implementation.
-  const GroupConversationRemoteDataSourceProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'groupConversationRemoteDataSourceProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() =>
-      _$groupConversationRemoteDataSourceHash();
-
-  @$internal
-  @override
-  $ProviderElement<GroupConversationRemoteDataSource> $createElement(
-    $ProviderPointer pointer,
-  ) => $ProviderElement(pointer);
-
-  @override
-  GroupConversationRemoteDataSource create(Ref ref) {
-    return groupConversationRemoteDataSource(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(GroupConversationRemoteDataSource value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<GroupConversationRemoteDataSource>(
-        value,
-      ),
-    );
-  }
-}
-
-String _$groupConversationRemoteDataSourceHash() =>
-    r'17aeea5d630aac4a061b77e85b841638e3449736';
-
-/// Provides the [GroupConversationRepository] implementation (offline-first).
-
-@ProviderFor(groupConversationRepository)
-const groupConversationRepositoryProvider =
-    GroupConversationRepositoryProvider._();
-
-/// Provides the [GroupConversationRepository] implementation (offline-first).
-
-final class GroupConversationRepositoryProvider
-    extends
-        $FunctionalProvider<
-          GroupConversationRepository,
-          GroupConversationRepository,
-          GroupConversationRepository
-        >
-    with $Provider<GroupConversationRepository> {
-  /// Provides the [GroupConversationRepository] implementation (offline-first).
-  const GroupConversationRepositoryProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'groupConversationRepositoryProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$groupConversationRepositoryHash();
-
-  @$internal
-  @override
-  $ProviderElement<GroupConversationRepository> $createElement(
-    $ProviderPointer pointer,
-  ) => $ProviderElement(pointer);
-
-  @override
-  GroupConversationRepository create(Ref ref) {
-    return groupConversationRepository(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(GroupConversationRepository value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<GroupConversationRepository>(value),
-    );
-  }
-}
-
-String _$groupConversationRepositoryHash() =>
-    r'e9589ce9e0a50eb85e14cf0f557c822b7b5fb59a';
-
 /// Provides the [CreateGroup] use case.
 
 @ProviderFor(createGroupUseCase)
@@ -1767,7 +1659,7 @@ final class CreateGroupUseCaseProvider
 }
 
 String _$createGroupUseCaseHash() =>
-    r'b2b5b97340c34aacea0f41d89b3a7c0d5800ba10';
+    r'fbb3f65b0ab80ab751c4de1cff8128b238c0a07c';
 
 /// Provides the [AddGroupMember] use case.
 
@@ -1814,7 +1706,7 @@ final class AddGroupMemberUseCaseProvider
 }
 
 String _$addGroupMemberUseCaseHash() =>
-    r'58f8c6f035467d040dac1e88b2e992dfdda83209';
+    r'95c3df0c66d5add7f2df913b94f2e562927138b3';
 
 /// Provides the [RemoveGroupMember] use case.
 
@@ -1867,7 +1759,7 @@ final class RemoveGroupMemberUseCaseProvider
 }
 
 String _$removeGroupMemberUseCaseHash() =>
-    r'07d6016e8d978e238a69046461f279e8bcb74eda';
+    r'4bed0d1ec1e4a2959a24f72bfb38339def17b165';
 
 /// Provides the [LeaveGroup] use case.
 
@@ -1913,7 +1805,7 @@ final class LeaveGroupUseCaseProvider
   }
 }
 
-String _$leaveGroupUseCaseHash() => r'883a6f832bed4999799ce990ad7a72a496796ce3';
+String _$leaveGroupUseCaseHash() => r'6121427889aa3b401c2dd0af7e5b76de5801763b';
 
 /// Provides the [UpdateGroupInfo] use case.
 
@@ -1961,11 +1853,11 @@ final class UpdateGroupInfoUseCaseProvider
 }
 
 String _$updateGroupInfoUseCaseHash() =>
-    r'b7867d6930abbc42f6b4d7cba76d85e13c0e825f';
+    r'6fc6f842c6c666144852593d2edde40673e2031e';
 
 /// Stream provider for watching all conversations (both direct and groups) in real-time.
 ///
-/// Merges direct conversations and group conversations into a single unified list,
+/// Returns all conversations from the unified ConversationRepository,
 /// sorted by last update time.
 
 @ProviderFor(allConversationsStream)
@@ -1973,7 +1865,7 @@ const allConversationsStreamProvider = AllConversationsStreamFamily._();
 
 /// Stream provider for watching all conversations (both direct and groups) in real-time.
 ///
-/// Merges direct conversations and group conversations into a single unified list,
+/// Returns all conversations from the unified ConversationRepository,
 /// sorted by last update time.
 
 final class AllConversationsStreamProvider
@@ -1988,7 +1880,7 @@ final class AllConversationsStreamProvider
         $StreamProvider<List<Map<String, dynamic>>> {
   /// Stream provider for watching all conversations (both direct and groups) in real-time.
   ///
-  /// Merges direct conversations and group conversations into a single unified list,
+  /// Returns all conversations from the unified ConversationRepository,
   /// sorted by last update time.
   const AllConversationsStreamProvider._({
     required AllConversationsStreamFamily super.from,
@@ -2036,11 +1928,11 @@ final class AllConversationsStreamProvider
 }
 
 String _$allConversationsStreamHash() =>
-    r'45fe048a7a04907d45b7ef1c2832c34207ecd517';
+    r'f25735dc7297e4e22c850a8c3cacaaae727d1ead';
 
 /// Stream provider for watching all conversations (both direct and groups) in real-time.
 ///
-/// Merges direct conversations and group conversations into a single unified list,
+/// Returns all conversations from the unified ConversationRepository,
 /// sorted by last update time.
 
 final class AllConversationsStreamFamily extends $Family
@@ -2056,7 +1948,7 @@ final class AllConversationsStreamFamily extends $Family
 
   /// Stream provider for watching all conversations (both direct and groups) in real-time.
   ///
-  /// Merges direct conversations and group conversations into a single unified list,
+  /// Returns all conversations from the unified ConversationRepository,
   /// sorted by last update time.
 
   AllConversationsStreamProvider call(String userId) =>
