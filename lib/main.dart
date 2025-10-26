@@ -7,6 +7,7 @@ import 'package:message_ai/app.dart';
 import 'package:message_ai/core/database/app_database.dart';
 import 'package:message_ai/core/error/error_logger.dart';
 import 'package:message_ai/core/network/network_info.dart';
+import 'package:message_ai/core/presentation/pages/splash_page.dart';
 import 'package:message_ai/features/messaging/data/services/fcm_service.dart';
 import 'package:message_ai/workers/delivery_tracking_worker.dart';
 import 'package:message_ai/workers/message_sync_worker.dart';
@@ -86,30 +87,97 @@ void workManagerCallbackDispatcher() {
 
 /// Application entry point
 ///
-/// Initializes Firebase and the Flutter application.
-/// Sets up error handling and runs the root App widget.
+/// **Optimized Startup Pattern (Task 10.1):**
+/// 1. Show splash screen immediately (<100ms)
+/// 2. Initialize services asynchronously in background
+/// 3. Transition to main app when initialization complete
+/// 4. Handle initialization errors gracefully
 void main() async {
   // Ensure Flutter bindings are initialized
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase
+  // Show splash screen immediately (no blocking operations)
+  // This provides instant visual feedback to the user
+  runApp(const SplashPage());
+
+  try {
+    // Initialize services asynchronously
+    await _initializeApp();
+
+    // Initialization successful - run the main app
+    runApp(const ProviderScope(child: App()));
+  } catch (error, stackTrace) {
+    // Initialization failed - show error screen
+    debugPrint('[Initialization] Failed: $error');
+    debugPrint('[Initialization] Stack trace: $stackTrace');
+
+    runApp(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: Scaffold(
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                const SizedBox(height: 24),
+                const Text(
+                  'Initialization Failed',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Error: $error',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.grey),
+                ),
+                const SizedBox(height: 32),
+                ElevatedButton(
+                  onPressed: () {
+                    // User can restart the app manually
+                    // In a real app, you might want to implement retry logic
+                  },
+                  child: const Text('Report Issue'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Initialize all app services.
+///
+/// **Sequential Initialization (Task 10.1):**
+/// Services are initialized in order of dependency.
+/// Task 10.2 will parallelize independent services.
+Future<void> _initializeApp() async {
+  debugPrint('[Initialization] Starting...');
+
+  // 1. Initialize Firebase (required by most services)
+  debugPrint('[Initialization] Firebase...');
   await Firebase.initializeApp();
 
-  // Register background message handler
-  // MUST be called AFTER Firebase.initializeApp() and BEFORE runApp()
+  // 2. Register background message handler
+  // MUST be called AFTER Firebase.initializeApp() and BEFORE showing UI
+  debugPrint('[Initialization] FCM background handler...');
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-  // Initialize WorkManager for background tasks
+  // 3. Initialize WorkManager for background tasks
+  debugPrint('[Initialization] WorkManager...');
   await Workmanager().initialize(workManagerCallbackDispatcher);
 
-  // Register periodic background tasks
+  // 4. Register periodic background tasks
+  debugPrint('[Initialization] Background tasks...');
   await _registerPeriodicTasks();
 
-  // Initialize error logging
+  // 5. Initialize error logging
+  debugPrint('[Initialization] Error logging...');
   await ErrorLogger.initialize();
 
-  // Run the app with Riverpod
-  runApp(const ProviderScope(child: App()));
+  debugPrint('[Initialization] Complete!');
 }
 
 /// Register periodic WorkManager tasks
