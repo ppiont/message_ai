@@ -10,6 +10,7 @@ import 'package:message_ai/features/authentication/presentation/providers/user_l
 import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:message_ai/features/messaging/presentation/widgets/message_context_dialog.dart';
 import 'package:message_ai/features/translation/data/services/language_detection_service.dart';
+import 'package:message_ai/features/translation/presentation/providers/language_detection_provider.dart';
 import 'package:message_ai/features/translation/presentation/providers/translation_providers.dart';
 
 /// Widget displaying a single message bubble in the chat.
@@ -74,11 +75,32 @@ class _MessageBubbleState extends ConsumerState<MessageBubble> {
   }
 
   /// Fallback language detection for messages without detectedLanguage
+  ///
+  /// First checks provider-level cache to avoid redundant ML Kit calls.
+  /// If not cached, performs detection and caches the result.
   Future<void> _detectLanguageFallback() async {
     if (_isDetectingLanguage) {
       return;
     }
 
+    // Check cache first before doing expensive ML Kit detection
+    final cache = ref.read(languageDetectionCacheProvider.notifier);
+    final cachedLanguage = cache.getCached(widget.messageId);
+
+    if (cachedLanguage != null) {
+      // Cache hit! Use cached result without detection
+      if (mounted) {
+        setState(() {
+          _fallbackDetectedLanguage = cachedLanguage;
+        });
+        debugPrint(
+          '✅ Using cached language detection: ${widget.message.substring(0, widget.message.length.clamp(0, 30))}... -> $cachedLanguage',
+        );
+      }
+      return;
+    }
+
+    // Cache miss - perform detection
     setState(() {
       _isDetectingLanguage = true;
     });
@@ -90,6 +112,9 @@ class _MessageBubbleState extends ConsumerState<MessageBubble> {
       );
 
       if (mounted && detected != null) {
+        // Cache the detection result for future use
+        cache.cache(widget.messageId, detected);
+
         setState(() {
           _fallbackDetectedLanguage = detected;
         });
