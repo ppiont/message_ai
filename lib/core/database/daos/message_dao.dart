@@ -40,20 +40,49 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
             ..limit(limit, offset: offset))
           .get();
 
-  /// Watch messages for a conversation (reactive stream)
+  /// Watch messages for a conversation with cursor-based pagination (reactive stream)
   ///
   /// Returns a stream that emits new values whenever messages change
-  /// Perfect for real-time chat UI updates
-  /// Orders by timestamp ascending (oldest first) for standard chat UI
+  /// Perfect for real-time chat UI updates with infinite scroll
+  ///
+  /// **Cursor-based pagination:**
+  /// - On initial load: Pass `lastMessageTimestamp = null` to get the 50 newest messages
+  /// - On scroll up: Pass the timestamp of the oldest loaded message to get the next 50 older messages
+  /// - Orders by timestamp descending (newest first) for efficient pagination
+  ///
+  /// **Benefits over offset pagination:**
+  /// - O(log n) performance with composite index on (conversationId, timestamp)
+  /// - No duplicate messages when new messages arrive during pagination
+  /// - Stable scroll position across page loads
+  ///
+  /// Example:
+  /// ```dart
+  /// // Initial load
+  /// watchMessagesForConversation('conv123', lastMessageTimestamp: null);
+  ///
+  /// // Load next page (older messages)
+  /// watchMessagesForConversation('conv123', lastMessageTimestamp: oldestVisibleMessage.timestamp);
+  /// ```
   Stream<List<MessageEntity>> watchMessagesForConversation(
     String conversationId, {
+    DateTime? lastMessageTimestamp,
     int limit = 50,
-  }) =>
-      (select(messages)
-            ..where((m) => m.conversationId.equals(conversationId))
-            ..orderBy([(m) => OrderingTerm.asc(m.timestamp)])
-            ..limit(limit))
-          .watch();
+  }) {
+    final query = select(messages)
+      ..where((m) => m.conversationId.equals(conversationId));
+
+    // Apply cursor filter if provided (load messages older than cursor)
+    if (lastMessageTimestamp != null) {
+      query.where((m) => m.timestamp.isSmallerThanValue(lastMessageTimestamp));
+    }
+
+    // Order by timestamp descending (newest first) for cursor pagination
+    query
+      ..orderBy([(m) => OrderingTerm.desc(m.timestamp)])
+      ..limit(limit);
+
+    return query.watch();
+  }
 
   /// Watch ALL messages across all conversations (reactive stream)
   ///
