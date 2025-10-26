@@ -6,14 +6,18 @@ import 'package:flutter/material.dart';
 /// Splash screen displayed during app initialization.
 ///
 /// Shows immediately on app launch while services initialize in the background.
-/// Provides visual feedback with loading indicator and app branding.
+/// Provides visual feedback with loading indicator, progress bar, and app branding.
+///
+/// **Task 10.3:** Added progress tracking for initialization phases.
 class SplashPage extends StatelessWidget {
   const SplashPage({
     this.message = 'Initializing...',
+    this.progress,
     super.key,
   });
 
   final String message;
+  final ValueNotifier<double>? progress;
 
   @override
   Widget build(BuildContext context) => MaterialApp(
@@ -80,10 +84,38 @@ class SplashPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 64),
 
-                  // Loading indicator
-                  const CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
+                  // Progress indicator
+                  if (progress != null)
+                    ValueListenableBuilder<double>(
+                      valueListenable: progress!,
+                      builder: (context, value, child) => Column(
+                        children: [
+                          SizedBox(
+                            width: 200,
+                            child: LinearProgressIndicator(
+                              value: value,
+                              backgroundColor: Colors.white.withValues(alpha: 0.3),
+                              valueColor: const AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            '${(value * 100).toInt()}%',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white.withValues(alpha: 0.9),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    const CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
                   const SizedBox(height: 24),
 
                   // Status message

@@ -87,25 +87,33 @@ void workManagerCallbackDispatcher() {
 
 /// Application entry point
 ///
-/// **Optimized Startup Pattern (Task 10.1):**
+/// **Optimized Startup Pattern (Tasks 10.1, 10.2, 10.3):**
 /// 1. Show splash screen immediately (<100ms)
-/// 2. Initialize services asynchronously in background
-/// 3. Transition to main app when initialization complete
-/// 4. Handle initialization errors gracefully
+/// 2. Initialize critical services asynchronously with progress tracking
+/// 3. Defer non-critical services to background
+/// 4. Transition to main app when ready
+/// 5. Handle initialization errors gracefully
 void main() async {
   // Ensure Flutter bindings are initialized
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Show splash screen immediately (no blocking operations)
+  // Create progress notifier for splash screen (Task 10.3)
+  final progress = ValueNotifier<double>(0);
+
+  // Show splash screen immediately with progress tracking
   // This provides instant visual feedback to the user
-  runApp(const SplashPage());
+  runApp(SplashPage(progress: progress));
 
   try {
-    // Initialize services asynchronously
-    await _initializeApp();
+    // Initialize critical services asynchronously
+    await _initializeApp(progress);
 
     // Initialization successful - run the main app
     runApp(const ProviderScope(child: App()));
+
+    // Defer non-critical services to background (Task 10.3)
+    // These run after app is interactive to minimize time-to-interactive
+    _initializeNonCriticalServices();
   } catch (error, stackTrace) {
     // Initialization failed - show error screen
     debugPrint('[Initialization] Failed: $error');
@@ -145,37 +153,73 @@ void main() async {
         ),
       ),
     );
+  } finally {
+    progress.dispose();
   }
 }
 
-/// Initialize all app services.
+/// Initialize critical app services.
+///
+/// **Critical Services (Task 10.3):**
+/// Only services needed for first screen are initialized here.
+/// Non-critical services are deferred to _initializeNonCriticalServices().
 ///
 /// **Parallel Initialization (Task 10.2):**
 /// Independent services run in parallel using Future.wait for optimal performance.
-/// Target: 40-60% reduction in total initialization time.
-Future<void> _initializeApp() async {
+///
+/// **Progress Tracking (Task 10.3):**
+/// Updates progress notifier to show initialization status to user.
+Future<void> _initializeApp(ValueNotifier<double> progress) async {
   final startTime = DateTime.now();
-  debugPrint('[Initialization] Starting...');
+  debugPrint('[Initialization] Starting critical services...');
 
-  // Phase 1: Parallelize truly independent services
-  // Firebase and ErrorLogger have no dependencies on each other
-  await Future.wait([
-    _initializeFirebase(),
-    _initializeErrorLogger(),
-  ]);
+  // Phase 1: Initialize Firebase (required by FCM and WorkManager)
+  // 0% -> 40%
+  progress.value = 0;
+  await _initializeFirebase();
+  progress.value = 0.4;
 
   // Phase 2: Parallelize services that depend on Firebase but not each other
   // FCM handler and WorkManager both need Firebase but are independent
+  // 40% -> 80%
   await Future.wait([
     _initializeFCMHandler(),
     _initializeWorkManager(),
   ]);
+  progress.value = 0.8;
 
   // Phase 3: Register background tasks (depends on WorkManager)
+  // 80% -> 100%
   await _registerPeriodicTasks();
+  progress.value = 1.0;
 
   final duration = DateTime.now().difference(startTime);
-  debugPrint('[Initialization] Complete in ${duration.inMilliseconds}ms!');
+  debugPrint('[Initialization] Critical services complete in ${duration.inMilliseconds}ms!');
+}
+
+/// Initialize non-critical services in the background.
+///
+/// **Task 10.3:** Deferred initialization for non-essential services.
+/// These services are not needed for the first screen to be interactive.
+/// They initialize in the background after the app loads.
+///
+/// **Non-Critical Services:**
+/// - ErrorLogger: Only needed when errors occur, can initialize later
+/// - Future: Analytics, crash reporting, etc. can be added here
+void _initializeNonCriticalServices() {
+  debugPrint('[Initialization] Starting non-critical services in background...');
+
+  // Run in background without blocking UI
+  Future.microtask(() async {
+    try {
+      await _initializeErrorLogger();
+      debugPrint('[Initialization] Non-critical services complete!');
+    } catch (error, stackTrace) {
+      // Non-critical service failures shouldn't crash the app
+      debugPrint('[Initialization] Non-critical service failed: $error');
+      debugPrint('[Initialization] Stack trace: $stackTrace');
+    }
+  });
 }
 
 /// Initialize Firebase.
