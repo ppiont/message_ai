@@ -185,7 +185,7 @@
               4
             ],
             "details": "Create a QueryPerformanceMonitor class in lib/core/database/monitoring/. In debug mode only, wrap critical queries in MessageDao with EXPLAIN QUERY PLAN analysis. Use Drift's customSelect to execute EXPLAIN statements. Log query plans, execution times, and index usage to console. Add performance threshold alerts for queries taking over 100ms. Create a debug UI overlay showing real-time query metrics. Implement automatic reporting of slow queries with their execution plans for optimization opportunities.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Enable debug mode and verify EXPLAIN QUERY PLAN output is captured for all major queries. Intentionally create slow queries by disabling indexes temporarily to test threshold alerts. Verify no performance impact in release mode."
           }
         ]
@@ -946,7 +946,7 @@
     ],
     "metadata": {
       "created": "2025-10-26T09:30:12.493Z",
-      "updated": "2025-10-26T10:31:36.277Z",
+      "updated": "2025-10-26T10:34:42.316Z",
       "description": "Tasks for master context"
     }
   }

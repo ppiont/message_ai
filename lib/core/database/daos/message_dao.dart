@@ -1,6 +1,8 @@
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
 import 'package:message_ai/core/database/app_database.dart';
 import 'package:message_ai/core/database/cache/message_query_cache.dart';
+import 'package:message_ai/core/database/monitoring/query_performance_monitor.dart';
 import 'package:message_ai/core/database/tables/messages_table.dart';
 
 part 'message_dao.g.dart';
@@ -22,6 +24,12 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
   /// Caches Future-based queries with 5-minute TTL and LRU eviction.
   /// Not used for Stream-based queries (Drift already optimizes those).
   final MessageQueryCache _cache = MessageQueryCache();
+
+  /// Query performance monitor (debug mode only).
+  ///
+  /// Tracks query execution times and analyzes query plans using EXPLAIN.
+  /// Zero overhead in release mode (compile-time eliminated).
+  late final QueryPerformanceMonitor _monitor = db.performanceMonitor;
 
   // ============================================================================
   // Query Methods
@@ -59,12 +67,28 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
       return cached;
     }
 
-    // Cache miss - query database
-    final results = await (select(messages)
-          ..where((m) => m.conversationId.equals(conversationId))
-          ..orderBy([(m) => OrderingTerm.asc(m.timestamp)])
-          ..limit(limit, offset: offset))
-        .get();
+    // Cache miss - query database with performance monitoring
+    final results = await _monitor.monitorQuery(
+      queryName: 'getMessagesForConversation',
+      queryFn: () => (select(messages)
+            ..where((m) => m.conversationId.equals(conversationId))
+            ..orderBy([(m) => OrderingTerm.asc(m.timestamp)])
+            ..limit(limit, offset: offset))
+          .get(),
+      explainSql: kDebugMode
+          ? '''
+          SELECT * FROM messages
+          WHERE conversation_id = ?
+          ORDER BY timestamp ASC
+          LIMIT ? OFFSET ?
+          '''
+          : null,
+      params: {
+        'conversationId': conversationId,
+        'limit': limit,
+        'offset': offset,
+      },
+    );
 
     // Cache the results
     _cache.put(cacheKey, results);
@@ -99,22 +123,41 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
     String conversationId, {
     DateTime? lastMessageTimestamp,
     int limit = 50,
-  }) {
-    final query = select(messages)
-      ..where((m) => m.conversationId.equals(conversationId));
+  }) => _monitor.monitorStream(
+        queryName: 'watchMessagesForConversation',
+        streamFn: () {
+          final query = select(messages)
+            ..where((m) => m.conversationId.equals(conversationId));
 
-    // Apply cursor filter if provided (load messages older than cursor)
-    if (lastMessageTimestamp != null) {
-      query.where((m) => m.timestamp.isSmallerThanValue(lastMessageTimestamp));
-    }
+          // Apply cursor filter if provided (load messages older than cursor)
+          if (lastMessageTimestamp != null) {
+            query.where(
+              (m) => m.timestamp.isSmallerThanValue(lastMessageTimestamp),
+            );
+          }
 
-    // Order by timestamp descending (newest first) for cursor pagination
-    query
-      ..orderBy([(m) => OrderingTerm.desc(m.timestamp)])
-      ..limit(limit);
+          // Order by timestamp descending (newest first) for cursor pagination
+          query
+            ..orderBy([(m) => OrderingTerm.desc(m.timestamp)])
+            ..limit(limit);
 
-    return query.watch();
-  }
+          return query.watch();
+        },
+        explainSql: kDebugMode
+            ? '''
+          SELECT * FROM messages
+          WHERE conversation_id = ?${lastMessageTimestamp != null ? ' AND timestamp < ?' : ''}
+          ORDER BY timestamp DESC
+          LIMIT ?
+          '''
+            : null,
+        params: {
+          'conversationId': conversationId,
+          if (lastMessageTimestamp != null)
+            'lastMessageTimestamp': lastMessageTimestamp.toIso8601String(),
+          'limit': limit,
+        },
+      );
 
   /// Watch ALL messages across all conversations (reactive stream)
   ///
@@ -127,15 +170,24 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
   /// Get messages that need to be synced
   ///
   /// Returns messages with syncStatus = 'pending' or 'failed'
-  Future<List<MessageEntity>> getUnsyncedMessages() =>
-      (select(messages)
-            ..where(
-              (m) =>
-                  m.syncStatus.equals('pending') |
-                  m.syncStatus.equals('failed'),
-            )
-            ..orderBy([(m) => OrderingTerm.asc(m.timestamp)]))
-          .get();
+  Future<List<MessageEntity>> getUnsyncedMessages() => _monitor.monitorQuery(
+        queryName: 'getUnsyncedMessages',
+        queryFn: () => (select(messages)
+              ..where(
+                (m) =>
+                    m.syncStatus.equals('pending') |
+                    m.syncStatus.equals('failed'),
+              )
+              ..orderBy([(m) => OrderingTerm.asc(m.timestamp)]))
+            .get(),
+        explainSql: kDebugMode
+            ? '''
+          SELECT * FROM messages
+          WHERE sync_status IN ('pending', 'failed')
+          ORDER BY timestamp ASC
+          '''
+            : null,
+      );
 
   /// Get messages by sync status
   Future<List<MessageEntity>> getMessagesByStatus(String syncStatus) =>
@@ -146,10 +198,21 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
 
   /// Search messages by text content
   Future<List<MessageEntity>> searchMessages(String query) =>
-      (select(messages)
-            ..where((m) => m.messageText.like('%$query%'))
-            ..orderBy([(m) => OrderingTerm.desc(m.timestamp)]))
-          .get();
+      _monitor.monitorQuery(
+        queryName: 'searchMessages',
+        queryFn: () => (select(messages)
+              ..where((m) => m.messageText.like('%$query%'))
+              ..orderBy([(m) => OrderingTerm.desc(m.timestamp)]))
+            .get(),
+        explainSql: kDebugMode
+            ? '''
+          SELECT * FROM messages
+          WHERE message_text LIKE ?
+          ORDER BY timestamp DESC
+          '''
+            : null,
+        params: {'query': '%$query%'},
+      );
 
   /// Get the last message for a conversation
   Future<MessageEntity?> getLastMessage(String conversationId) =>
