@@ -150,34 +150,90 @@ void main() async {
 
 /// Initialize all app services.
 ///
-/// **Sequential Initialization (Task 10.1):**
-/// Services are initialized in order of dependency.
-/// Task 10.2 will parallelize independent services.
+/// **Parallel Initialization (Task 10.2):**
+/// Independent services run in parallel using Future.wait for optimal performance.
+/// Target: 40-60% reduction in total initialization time.
 Future<void> _initializeApp() async {
+  final startTime = DateTime.now();
   debugPrint('[Initialization] Starting...');
 
-  // 1. Initialize Firebase (required by most services)
-  debugPrint('[Initialization] Firebase...');
-  await Firebase.initializeApp();
+  // Phase 1: Parallelize truly independent services
+  // Firebase and ErrorLogger have no dependencies on each other
+  await Future.wait([
+    _initializeFirebase(),
+    _initializeErrorLogger(),
+  ]);
 
-  // 2. Register background message handler
-  // MUST be called AFTER Firebase.initializeApp() and BEFORE showing UI
-  debugPrint('[Initialization] FCM background handler...');
-  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  // Phase 2: Parallelize services that depend on Firebase but not each other
+  // FCM handler and WorkManager both need Firebase but are independent
+  await Future.wait([
+    _initializeFCMHandler(),
+    _initializeWorkManager(),
+  ]);
 
-  // 3. Initialize WorkManager for background tasks
-  debugPrint('[Initialization] WorkManager...');
-  await Workmanager().initialize(workManagerCallbackDispatcher);
-
-  // 4. Register periodic background tasks
-  debugPrint('[Initialization] Background tasks...');
+  // Phase 3: Register background tasks (depends on WorkManager)
   await _registerPeriodicTasks();
 
-  // 5. Initialize error logging
-  debugPrint('[Initialization] Error logging...');
+  final duration = DateTime.now().difference(startTime);
+  debugPrint('[Initialization] Complete in ${duration.inMilliseconds}ms!');
+}
+
+/// Initialize Firebase.
+///
+/// **Timing:** ~200-500ms (depends on network)
+Future<void> _initializeFirebase() async {
+  final startTime = DateTime.now();
+  debugPrint('[Initialization] Firebase starting...');
+
+  await Firebase.initializeApp();
+
+  final duration = DateTime.now().difference(startTime);
+  debugPrint('[Initialization] Firebase complete (${duration.inMilliseconds}ms)');
+}
+
+/// Register Firebase Cloud Messaging background handler.
+///
+/// **Timing:** <10ms (synchronous operation)
+/// **Dependency:** Requires Firebase.initializeApp()
+Future<void> _initializeFCMHandler() async {
+  final startTime = DateTime.now();
+  debugPrint('[Initialization] FCM background handler starting...');
+
+  // MUST be called AFTER Firebase.initializeApp()
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+  final duration = DateTime.now().difference(startTime);
+  debugPrint(
+    '[Initialization] FCM background handler complete (${duration.inMilliseconds}ms)',
+  );
+}
+
+/// Initialize WorkManager for background tasks.
+///
+/// **Timing:** ~100-300ms (depends on platform)
+/// **Dependency:** Requires Firebase.initializeApp() (for background isolate)
+Future<void> _initializeWorkManager() async {
+  final startTime = DateTime.now();
+  debugPrint('[Initialization] WorkManager starting...');
+
+  await Workmanager().initialize(workManagerCallbackDispatcher);
+
+  final duration = DateTime.now().difference(startTime);
+  debugPrint('[Initialization] WorkManager complete (${duration.inMilliseconds}ms)');
+}
+
+/// Initialize error logging.
+///
+/// **Timing:** ~50-150ms
+/// **Dependency:** None (independent service)
+Future<void> _initializeErrorLogger() async {
+  final startTime = DateTime.now();
+  debugPrint('[Initialization] Error logging starting...');
+
   await ErrorLogger.initialize();
 
-  debugPrint('[Initialization] Complete!');
+  final duration = DateTime.now().difference(startTime);
+  debugPrint('[Initialization] Error logging complete (${duration.inMilliseconds}ms)');
 }
 
 /// Register periodic WorkManager tasks

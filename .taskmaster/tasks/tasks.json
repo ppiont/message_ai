@@ -623,7 +623,7 @@
             "description": "Refactor main.dart to show splash screen immediately while initializing services asynchronously in the background",
             "dependencies": [],
             "details": "Create a SplashScreen widget that displays immediately when app starts. Refactor main() to show splash first, then perform async initialization. Implement proper error handling for initialization failures. Use FutureBuilder or similar pattern to transition from splash to main app when initialization completes. Ensure splash screen matches app branding and provides visual feedback during loading.",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": "Measure time from app launch to splash screen display (should be <100ms). Verify splash shows while services initialize. Test error scenarios when initialization fails."
           },
           {
@@ -634,7 +634,7 @@
               1
             ],
             "details": "Refactor sequential initialization calls into parallel execution using Future.wait. Group independent services that can initialize simultaneously. Implement _initializeDatabase() and _initializeWorkManager() helper functions. Add proper error handling for partial initialization failures. Measure and log initialization time for each service to identify bottlenecks. Consider using completer pattern for services that need partial initialization.",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": "Profile initialization time before and after parallelization. Verify all services initialize correctly. Test partial failure scenarios. Target 40-60% reduction in total init time."
           },
           {
@@ -946,7 +946,7 @@
     ],
     "metadata": {
       "created": "2025-10-26T09:30:12.493Z",
-      "updated": "2025-10-26T22:03:13.964Z",
+      "updated": "2025-10-26T22:06:13.964Z",
       "description": "Tasks for master context"
     }
   }
