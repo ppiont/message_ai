@@ -9,7 +9,6 @@ import 'package:intl/intl.dart';
 import 'package:message_ai/features/authentication/presentation/providers/user_lookup_provider.dart';
 import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:message_ai/features/messaging/presentation/widgets/message_context_dialog.dart';
-import 'package:message_ai/features/translation/data/services/language_detection_service.dart';
 import 'package:message_ai/features/translation/presentation/providers/language_detection_provider.dart';
 import 'package:message_ai/features/translation/presentation/providers/translation_providers.dart';
 
@@ -76,14 +75,15 @@ class _MessageBubbleState extends ConsumerState<MessageBubble> {
 
   /// Fallback language detection for messages without detectedLanguage
   ///
-  /// First checks provider-level cache to avoid redundant ML Kit calls.
-  /// If not cached, performs detection and caches the result.
+  /// Uses debounced batch detection coordinator to avoid redundant ML Kit
+  /// calls during rapid scrolling. Instead of individual detection, registers
+  /// with coordinator and checks cache after batch detection completes.
   Future<void> _detectLanguageFallback() async {
     if (_isDetectingLanguage) {
       return;
     }
 
-    // Check cache first before doing expensive ML Kit detection
+    // Check cache first before requesting detection
     final cache = ref.read(languageDetectionCacheProvider.notifier);
     final cachedLanguage = cache.getCached(widget.messageId);
 
@@ -100,27 +100,38 @@ class _MessageBubbleState extends ConsumerState<MessageBubble> {
       return;
     }
 
-    // Cache miss - perform detection
+    // Cache miss - register with debounced coordinator for batch detection
     setState(() {
       _isDetectingLanguage = true;
     });
 
     try {
-      final languageDetectionService = LanguageDetectionService();
-      final detected = await languageDetectionService.detectLanguage(
-        widget.message,
+      // Register detection request with coordinator (non-blocking)
+      ref.read(
+        debouncedBatchDetectionCoordinatorProvider.notifier,
+      ).requestDetection(widget.messageId, widget.message);
+
+      debugPrint(
+        '📝 Registered detection request: ${widget.message.substring(0, widget.message.length.clamp(0, 30))}...',
       );
 
-      if (mounted && detected != null) {
-        // Cache the detection result for future use
-        cache.cache(widget.messageId, detected);
+      // Wait for batch detection to complete (300ms debounce + detection time)
+      // Check cache after reasonable delay to pick up batch result
+      await Future<void>.delayed(const Duration(milliseconds: 600));
 
+      // Check cache again for batch detection result
+      if (!mounted) {
+        return;
+      }
+
+      final batchDetected = cache.getCached(widget.messageId);
+      if (batchDetected != null) {
         setState(() {
-          _fallbackDetectedLanguage = detected;
+          _fallbackDetectedLanguage = batchDetected;
         });
 
         debugPrint(
-          '✅ Fallback language detection: ${widget.message.substring(0, widget.message.length.clamp(0, 30))}... -> $detected',
+          '✅ Batch language detection: ${widget.message.substring(0, widget.message.length.clamp(0, 30))}... -> $batchDetected',
         );
 
         // Update the message in Firestore with detected language for future
@@ -138,7 +149,7 @@ class _MessageBubbleState extends ConsumerState<MessageBubble> {
           },
           (messageEntity) async {
             final updatedMessage = messageEntity.copyWith(
-              detectedLanguage: detected,
+              detectedLanguage: batchDetected,
             );
             await messageRepository.updateMessage(
               widget.conversationId,

@@ -487,3 +487,174 @@ abstract class _$LanguageDetectionCache extends $Notifier<Map<String, String>> {
     element.handleValue(ref, created);
   }
 }
+
+/// Debounced batch detection coordinator for rapid message loads.
+///
+/// **Problem:**
+/// When scrolling rapidly through conversations with 100+ messages, each
+/// MessageBubble that appears triggers individual language detection calls.
+/// This causes:
+/// - Excessive ML Kit calls (50-100+ per second during fast scrolling)
+/// - UI jank and poor performance
+/// - Wasted CPU and battery
+///
+/// **Solution:**
+/// Debounce detection requests across all MessageBubbles. MessageBubbles
+/// register their detection needs, and after 300ms of no new registrations,
+/// trigger batch detection for all pending messages.
+///
+/// **Performance:**
+/// - Without debouncing: 100 individual ML Kit calls during scroll
+/// - With debouncing: 1-3 batch calls (10-30 messages each)
+/// - Reduces detection calls by 90-95% during rapid scrolling
+/// - Target: <20% of message count triggers detection
+///
+/// **Usage:**
+/// MessageBubble calls `requestDetection()` instead of direct detection:
+/// ```dart
+/// final coordinator = ref.read(debouncedBatchDetectionCoordinatorProvider.notifier);
+/// coordinator.requestDetection(messageId, text);
+/// // Coordinator batches and detects after 300ms
+/// ```
+
+@ProviderFor(DebouncedBatchDetectionCoordinator)
+const debouncedBatchDetectionCoordinatorProvider =
+    DebouncedBatchDetectionCoordinatorProvider._();
+
+/// Debounced batch detection coordinator for rapid message loads.
+///
+/// **Problem:**
+/// When scrolling rapidly through conversations with 100+ messages, each
+/// MessageBubble that appears triggers individual language detection calls.
+/// This causes:
+/// - Excessive ML Kit calls (50-100+ per second during fast scrolling)
+/// - UI jank and poor performance
+/// - Wasted CPU and battery
+///
+/// **Solution:**
+/// Debounce detection requests across all MessageBubbles. MessageBubbles
+/// register their detection needs, and after 300ms of no new registrations,
+/// trigger batch detection for all pending messages.
+///
+/// **Performance:**
+/// - Without debouncing: 100 individual ML Kit calls during scroll
+/// - With debouncing: 1-3 batch calls (10-30 messages each)
+/// - Reduces detection calls by 90-95% during rapid scrolling
+/// - Target: <20% of message count triggers detection
+///
+/// **Usage:**
+/// MessageBubble calls `requestDetection()` instead of direct detection:
+/// ```dart
+/// final coordinator = ref.read(debouncedBatchDetectionCoordinatorProvider.notifier);
+/// coordinator.requestDetection(messageId, text);
+/// // Coordinator batches and detects after 300ms
+/// ```
+final class DebouncedBatchDetectionCoordinatorProvider
+    extends $NotifierProvider<DebouncedBatchDetectionCoordinator, void> {
+  /// Debounced batch detection coordinator for rapid message loads.
+  ///
+  /// **Problem:**
+  /// When scrolling rapidly through conversations with 100+ messages, each
+  /// MessageBubble that appears triggers individual language detection calls.
+  /// This causes:
+  /// - Excessive ML Kit calls (50-100+ per second during fast scrolling)
+  /// - UI jank and poor performance
+  /// - Wasted CPU and battery
+  ///
+  /// **Solution:**
+  /// Debounce detection requests across all MessageBubbles. MessageBubbles
+  /// register their detection needs, and after 300ms of no new registrations,
+  /// trigger batch detection for all pending messages.
+  ///
+  /// **Performance:**
+  /// - Without debouncing: 100 individual ML Kit calls during scroll
+  /// - With debouncing: 1-3 batch calls (10-30 messages each)
+  /// - Reduces detection calls by 90-95% during rapid scrolling
+  /// - Target: <20% of message count triggers detection
+  ///
+  /// **Usage:**
+  /// MessageBubble calls `requestDetection()` instead of direct detection:
+  /// ```dart
+  /// final coordinator = ref.read(debouncedBatchDetectionCoordinatorProvider.notifier);
+  /// coordinator.requestDetection(messageId, text);
+  /// // Coordinator batches and detects after 300ms
+  /// ```
+  const DebouncedBatchDetectionCoordinatorProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'debouncedBatchDetectionCoordinatorProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() =>
+      _$debouncedBatchDetectionCoordinatorHash();
+
+  @$internal
+  @override
+  DebouncedBatchDetectionCoordinator create() =>
+      DebouncedBatchDetectionCoordinator();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(void value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<void>(value),
+    );
+  }
+}
+
+String _$debouncedBatchDetectionCoordinatorHash() =>
+    r'8c8c559c9eac36e677539c1391d480f9dae588fe';
+
+/// Debounced batch detection coordinator for rapid message loads.
+///
+/// **Problem:**
+/// When scrolling rapidly through conversations with 100+ messages, each
+/// MessageBubble that appears triggers individual language detection calls.
+/// This causes:
+/// - Excessive ML Kit calls (50-100+ per second during fast scrolling)
+/// - UI jank and poor performance
+/// - Wasted CPU and battery
+///
+/// **Solution:**
+/// Debounce detection requests across all MessageBubbles. MessageBubbles
+/// register their detection needs, and after 300ms of no new registrations,
+/// trigger batch detection for all pending messages.
+///
+/// **Performance:**
+/// - Without debouncing: 100 individual ML Kit calls during scroll
+/// - With debouncing: 1-3 batch calls (10-30 messages each)
+/// - Reduces detection calls by 90-95% during rapid scrolling
+/// - Target: <20% of message count triggers detection
+///
+/// **Usage:**
+/// MessageBubble calls `requestDetection()` instead of direct detection:
+/// ```dart
+/// final coordinator = ref.read(debouncedBatchDetectionCoordinatorProvider.notifier);
+/// coordinator.requestDetection(messageId, text);
+/// // Coordinator batches and detects after 300ms
+/// ```
+
+abstract class _$DebouncedBatchDetectionCoordinator extends $Notifier<void> {
+  void build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    build();
+    final ref = this.ref as $Ref<void, void>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<void, void>,
+              void,
+              Object?,
+              Object?
+            >;
+    element.handleValue(ref, null);
+  }
+}
