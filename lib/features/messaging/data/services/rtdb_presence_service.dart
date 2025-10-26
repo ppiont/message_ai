@@ -1,5 +1,7 @@
 import 'dart:async';
+
 import 'package:firebase_database/firebase_database.dart';
+import 'package:rxdart/rxdart.dart';
 
 /// Service for managing user online/offline presence using Firebase Realtime Database.
 ///
@@ -129,61 +131,32 @@ class RtdbPresenceService {
   }
 
   /// Combines multiple presence streams into a single map stream.
+  ///
+  /// Uses RxDart's combineLatest to properly handle stream disposal.
+  /// When the resulting stream is canceled, all source stream subscriptions
+  /// are automatically canceled, preventing memory leaks.
   Stream<Map<String, UserPresence>> _combinePresenceStreams(
     List<Stream<MapEntry<String, UserPresence?>>> streams,
-  ) async* {
-    final controllers = streams
-        .map(
-          (stream) =>
-              StreamController<MapEntry<String, UserPresence?>>.broadcast(),
-        )
-        .toList();
-
-    // Subscribe to each stream
-    final subscriptions =
-        <StreamSubscription<MapEntry<String, UserPresence?>>>[];
-    for (var i = 0; i < streams.length; i++) {
-      subscriptions.add(
-        streams[i].listen(
-          (entry) => controllers[i].add(entry),
-          onError: (Object error) => controllers[i].addError(error),
-        ),
-      );
+  ) {
+    if (streams.isEmpty) {
+      return Stream.value({});
     }
 
-    // Combine latest values from all streams
-    final latestValues = <String, UserPresence?>{};
-
-    await for (final _ in Stream<void>.periodic(
-      const Duration(milliseconds: 100),
-    )) {
-      // Collect latest values from each controller
-      for (var i = 0; i < controllers.length; i++) {
-        if (controllers[i].hasListener && !controllers[i].isClosed) {
-          await for (final entry in controllers[i].stream.take(1)) {
-            latestValues[entry.key] = entry.value;
-            break;
-          }
-        }
-      }
-
-      // Emit map with non-null presences
+    // Use RxDart's combineLatest to merge all streams
+    // This automatically handles subscription cleanup when the stream is canceled
+    return Rx.combineLatest<
+      MapEntry<String, UserPresence?>,
+      Map<String, UserPresence>
+    >(streams, (List<MapEntry<String, UserPresence?>> entries) {
+      // Build map with non-null presences only
       final result = <String, UserPresence>{};
-      for (final entry in latestValues.entries) {
+      for (final entry in entries) {
         if (entry.value != null) {
           result[entry.key] = entry.value!;
         }
       }
-      yield result;
-    }
-
-    // Cleanup
-    for (final sub in subscriptions) {
-      await sub.cancel();
-    }
-    for (final controller in controllers) {
-      await controller.close();
-    }
+      return result;
+    });
   }
 }
 
