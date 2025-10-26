@@ -237,7 +237,7 @@
             "description": "Implement transaction batching for Drift database operations to improve write performance when syncing multiple messages",
             "dependencies": [],
             "details": "Modify MessageDao to use database.batch() for bulk operations. Create batchUpsertMessages() method that accepts List<Message> and uses batch.insertAll with mode: InsertMode.insertOrReplace. Implement batch updates for sync status changes. Add transaction wrapper to ensure atomicity. Handle constraint violations gracefully. Optimize batch size based on SQLite limits (999 variables per statement).",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": null
           },
           {
@@ -248,7 +248,7 @@
               3
             ],
             "details": "Create TranslationCoalescer class with Map<String, Future<String>> for pending requests. Key format: '${text}_${targetLang}'.hashCode. Check if translation already in-flight before making new request. Return existing Future if found. Remove from map on completion. Add 30-second timeout for stale request cleanup. Implement singleton pattern for app-wide coalescing. Add metrics for coalescing hit rate.",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": null
           },
           {
@@ -946,7 +946,7 @@
     ],
     "metadata": {
       "created": "2025-10-26T09:30:12.493Z",
-      "updated": "2025-10-26T12:38:10.868Z",
+      "updated": "2025-10-26T15:14:17.553Z",
       "description": "Tasks for master context"
     }
   }
