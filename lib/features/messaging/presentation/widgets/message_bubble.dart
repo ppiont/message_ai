@@ -65,7 +65,11 @@ class _MessageBubbleState extends ConsumerState<MessageBubble> {
     super.initState();
     // If message doesn't have detectedLanguage, try to detect it on-the-fly
     if (widget.detectedLanguage == null && !widget.isMe) {
-      _detectLanguageFallback();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _detectLanguageFallback();
+        }
+      });
     }
   }
 
