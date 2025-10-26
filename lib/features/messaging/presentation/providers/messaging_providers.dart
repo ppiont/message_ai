@@ -1,4 +1,10 @@
 /// Riverpod providers for messaging feature
+///
+/// This file serves as the main entry point for messaging providers.
+/// Specific provider categories have been split into focused files:
+/// - messaging_core_providers.dart: Core infrastructure (Firestore)
+/// - typing_providers.dart: Typing indicators
+/// - presence_providers.dart: Presence tracking and FCM
 library;
 
 import 'dart:async';
@@ -6,7 +12,6 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:dartz/dartz.dart';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:message_ai/core/database/app_database.dart'
     show MessageStatusEntity;
@@ -21,12 +26,7 @@ import 'package:message_ai/features/messaging/data/datasources/message_remote_da
 import 'package:message_ai/features/messaging/data/repositories/conversation_repository_impl.dart';
 import 'package:message_ai/features/messaging/data/repositories/message_repository_impl.dart';
 import 'package:message_ai/features/messaging/data/services/auto_delivery_marker.dart';
-import 'package:message_ai/features/messaging/data/services/fcm_service.dart';
 import 'package:message_ai/features/messaging/data/services/message_context_service.dart';
-import 'package:message_ai/features/messaging/data/services/rtdb_presence_service.dart'
-    show RtdbPresenceService, UserPresence;
-import 'package:message_ai/features/messaging/data/services/rtdb_typing_service.dart'
-    show RtdbTypingService, TypingUser;
 import 'package:message_ai/features/messaging/domain/entities/conversation.dart'
     show Conversation, Participant;
 import 'package:message_ai/features/messaging/domain/entities/message.dart';
@@ -45,18 +45,20 @@ import 'package:message_ai/features/messaging/domain/usecases/update_group_info.
 import 'package:message_ai/features/messaging/domain/usecases/watch_conversations.dart';
 import 'package:message_ai/features/messaging/domain/usecases/watch_messages.dart';
 import 'package:message_ai/features/messaging/presentation/models/message_with_status.dart';
+import 'package:message_ai/features/messaging/presentation/providers/messaging_core_providers.dart';
 import 'package:message_ai/features/translation/presentation/providers/language_detection_provider.dart';
 import 'package:mutex/mutex.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:rxdart/rxdart.dart';
 
+// Export focused provider files for external use (Task 8.4)
+export 'messaging_core_providers.dart';
+export 'presence_providers.dart';
+export 'typing_providers.dart';
+
 part 'messaging_providers.g.dart';
 
 // ========== Data Layer Providers ==========
-
-/// Provides the FirebaseFirestore instance for messaging operations.
-@riverpod
-FirebaseFirestore messagingFirestore(Ref ref) => FirebaseFirestore.instance;
 
 /// Provides the [MessageRemoteDataSource] implementation.
 @riverpod
@@ -474,36 +476,6 @@ class ConversationReadMarker extends _$ConversationReadMarker {
   }
 }
 
-// ========== Typing Indicator Providers ==========
-
-/// Provides the [RtdbTypingService] instance for typing indicators.
-///
-/// Uses Firebase Realtime Database with automatic cleanup via onDisconnect()
-/// callbacks when user disconnects or app is closed.
-@riverpod
-RtdbTypingService typingIndicatorService(Ref ref) {
-  final service = RtdbTypingService(database: FirebaseDatabase.instance);
-
-  // Dispose when provider is disposed
-  ref.onDispose(service.dispose);
-
-  return service;
-}
-
-/// Watches typing users for a specific conversation.
-@riverpod
-Stream<List<TypingUser>> conversationTypingUsers(
-  Ref ref,
-  String conversationId,
-  String currentUserId,
-) {
-  final service = ref.watch(typingIndicatorServiceProvider);
-  return service.watchTypingUsers(
-    conversationId: conversationId,
-    currentUserId: currentUserId,
-  );
-}
-
 // ========== Auto Delivery Marker ==========
 
 /// Provides the [AutoDeliveryMarker] service.
@@ -594,107 +566,6 @@ Future<void> markMessagesDelivered(
 
   debugPrint(
     '[markMessagesDelivered] ✅ All delivered statuses written to Firestore',
-  );
-}
-
-// ========== Presence Providers ==========
-
-/// Provides the [RtdbPresenceService] instance for presence tracking.
-///
-/// Uses Firebase Realtime Database with automatic offline detection via
-/// onDisconnect() callbacks. No heartbeat mechanism needed.
-@Riverpod(keepAlive: true)
-RtdbPresenceService presenceService(Ref ref) =>
-    RtdbPresenceService(database: FirebaseDatabase.instance);
-
-/// Provides the [FCMService] instance for push notifications.
-@Riverpod(keepAlive: true)
-FCMService fcmService(Ref ref) {
-  final service = FCMService(firestore: ref.watch(messagingFirestoreProvider));
-
-  // Dispose when provider is disposed
-  ref.onDispose(service.dispose);
-
-  return service;
-}
-
-/// Watches presence status for a specific user.
-///
-/// Returns a stream of presence data including:
-/// - isOnline: true if user is currently online
-/// - lastSeen: timestamp of last activity
-/// - userName: display name
-@riverpod
-Stream<Map<String, dynamic>?> userPresence(Ref ref, String userId) {
-  final service = ref.watch(presenceServiceProvider);
-  return service.watchUserPresence(userId: userId).map((presence) {
-    if (presence == null) {
-      return null;
-    }
-    return {
-      'isOnline': presence.isOnline,
-      'lastSeen': presence.lastSeen,
-      'userName': presence.userName,
-    };
-  });
-}
-
-/// Batch presence lookup for multiple users (optimized for conversation lists).
-///
-/// **Performance Optimization:**
-/// Instead of creating N individual stream subscriptions (one per conversation),
-/// this provider creates a single subscription that watches all user IDs at once.
-///
-/// **Usage:**
-/// ```dart
-/// // In ConversationListPage: extract all user IDs from visible conversations
-/// final allUserIds = conversations
-///     .expand((conv) => conv['participants'] as List)
-///     .map((p) => p['uid'] as String)
-///     .toSet()
-///     .toList();
-///
-/// // Watch batch presence (1 subscription instead of N)
-/// final presenceMapAsync = ref.watch(batchUserPresenceProvider(allUserIds));
-///
-/// // Pass to child widgets as prop
-/// ConversationListItem(
-///   presenceMap: presenceMapAsync.value ?? {},
-///   ...
-/// )
-/// ```
-///
-/// **Returns:**
-/// Map of userId -> presence data:
-/// - 'isOnline': bool
-/// - 'lastSeen': DateTime?
-/// - 'userName': String
-@riverpod
-Stream<Map<String, Map<String, dynamic>>> batchUserPresence(
-  Ref ref,
-  List<String> userIds,
-) {
-  final presenceService = ref.watch(presenceServiceProvider);
-
-  if (userIds.isEmpty) {
-    return Stream<Map<String, Map<String, dynamic>>>.value(
-      <String, Map<String, dynamic>>{},
-    );
-  }
-
-  // Watch presence for all users using a single RTDB subscription
-  // Transform UserPresence objects to Map format for UI consistency
-  return presenceService.watchUsersPresence(userIds: userIds).map(
-    (Map<String, UserPresence> presenceMap) => presenceMap.map(
-      (String userId, UserPresence presence) => MapEntry(
-        userId,
-        <String, dynamic>{
-          'isOnline': presence.isOnline,
-          'lastSeen': presence.lastSeen,
-          'userName': presence.userName,
-        },
-      ),
-    ),
   );
 }
 
@@ -1019,47 +890,3 @@ Stream<List<Map<String, dynamic>>> conversationUsersStream(Ref ref) {
       );
 }
 
-// ========== Group Presence Provider ==========
-
-/// Provides aggregated online status for a group conversation.
-///
-/// Returns a map with:
-/// - 'onlineCount': Number of members currently online
-/// - 'totalCount': Total number of members
-/// - 'onlineMembers': List of online member IDs
-/// - 'displayText': Human-readable status (e.g., "3/5 online")
-@riverpod
-Stream<Map<String, dynamic>> groupPresenceStatus(
-  Ref ref,
-  List<String> participantIds,
-) {
-  final presenceService = ref.watch(presenceServiceProvider);
-
-  if (participantIds.isEmpty) {
-    return Stream<Map<String, dynamic>>.value(<String, dynamic>{
-      'onlineCount': 0,
-      'totalCount': 0,
-      'onlineMembers': <String>[],
-      'displayText': 'No members',
-    });
-  }
-
-  // Watch presence for all participants using Firestore real-time listener
-  return presenceService.watchUsersPresence(userIds: participantIds).map((
-    Map<String, UserPresence> presenceMap,
-  ) {
-    final onlineMembers = presenceMap.entries
-        .where((MapEntry<String, UserPresence> entry) => entry.value.isOnline)
-        .map((MapEntry<String, UserPresence> entry) => entry.key)
-        .toList();
-
-    return <String, dynamic>{
-      'onlineCount': onlineMembers.length,
-      'totalCount': participantIds.length,
-      'onlineMembers': onlineMembers,
-      'displayText': onlineMembers.isEmpty
-          ? 'All offline'
-          : '${onlineMembers.length}/${participantIds.length} online',
-    };
-  });
-}
