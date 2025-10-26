@@ -72,4 +72,15 @@ class Messages extends Table {
 
   @override
   Set<Column> get primaryKey => {id};
+
+  /// Composite indexes for optimized queries
+  ///
+  /// - conversationId + timestamp: Optimizes conversation message queries (most frequent)
+  /// - syncStatus: Optimizes sync worker queries for pending/failed messages
+  /// - senderId + timestamp: Optimizes user-specific message queries
+  List<Set<Column>> get indices => [
+        {conversationId, timestamp},
+        {syncStatus},
+        {senderId, timestamp},
+      ];
 }

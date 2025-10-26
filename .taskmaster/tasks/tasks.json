@@ -131,7 +131,7 @@
         "testStrategy": "Benchmark query performance with 1000+ messages using Drift's built-in logging. Measure query time before/after indexing. Target: <50ms for indexed queries, <10ms for cached queries.",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [
           {
             "id": 1,
@@ -139,7 +139,7 @@
             "description": "Modify messages_table.dart to add composite indexes on (conversationId, timestamp), syncStatus, and (senderId, timestamp) to optimize query performance",
             "dependencies": [],
             "details": "Edit lib/core/database/tables/messages_table.dart to add the indices override method. Define three composite indexes: {conversationId, timestamp} for conversation queries, {syncStatus} for sync worker queries, and {senderId, timestamp} for user message queries. The Drift syntax requires using Set<Column> within a List for index definitions. After modification, run dart run build_runner build --delete-conflicting-outputs to regenerate the database code.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Use Drift's built-in query logging to capture EXPLAIN QUERY PLAN output before and after index addition. Measure query execution time for selecting 1000 messages from a conversation. Target: reduction from 500ms to under 50ms."
           },
           {
@@ -946,7 +946,7 @@
     ],
     "metadata": {
       "created": "2025-10-26T09:30:12.493Z",
-      "updated": "2025-10-26T10:20:54.913Z",
+      "updated": "2025-10-26T10:23:50.379Z",
       "description": "Tasks for master context"
     }
   }
