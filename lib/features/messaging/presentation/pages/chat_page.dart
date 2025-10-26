@@ -97,6 +97,14 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           );
         }
 
+        // Watch the read marker to keep it active (auto-marks messages as read)
+        ref.watch(
+          conversationReadMarkerProvider(
+            widget.conversationId,
+            currentUser.uid,
+          ),
+        );
+
         return _buildChatScaffold(context, currentUser);
       },
       loading: () => Scaffold(

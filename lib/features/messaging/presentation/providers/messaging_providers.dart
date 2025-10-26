@@ -43,6 +43,7 @@ import 'package:message_ai/features/messaging/domain/usecases/watch_messages.dar
 import 'package:message_ai/features/messaging/presentation/models/message_with_status.dart';
 import 'package:message_ai/features/translation/presentation/providers/language_detection_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:rxdart/rxdart.dart';
 
 part 'messaging_providers.g.dart';
 
@@ -196,13 +197,30 @@ Stream<List<Map<String, dynamic>>> userConversationsStream(
   }
 }
 
+/// Cached provider for conversation participant IDs.
+///
+/// Fetches once and caches to avoid repeated fetches during stream rebuilds.
+@riverpod
+Future<List<String>> conversationParticipantIds(
+  Ref ref,
+  String conversationId,
+) async {
+  final getConversationUseCase = ref.watch(getConversationByIdUseCaseProvider);
+  final convResult = await getConversationUseCase(conversationId);
+
+  return convResult.fold(
+    (failure) => <String>[],
+    (conversation) => conversation.participants.map((p) => p.uid).toList(),
+  );
+}
+
 /// Stream provider for watching messages in a conversation in real-time.
 ///
 /// Automatically updates when messages change in Firestore.
 /// Returns messages with computed status from Firestore.
 ///
 /// Uses real-time listeners for BOTH messages AND status subcollections.
-/// When receiver marks delivered/read, sender sees it instantly.
+/// When receiver marks delivered/read, sender sees it instantly via WebSocket.
 @riverpod
 Stream<List<Map<String, dynamic>>> conversationMessagesStream(
   Ref ref,
@@ -211,183 +229,245 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
 ) async* {
   final watchUseCase = ref.watch(watchMessagesUseCaseProvider);
   final userSyncService = ref.watch(userSyncServiceProvider);
-  final getConversationUseCase = ref.watch(getConversationByIdUseCaseProvider);
+  final messageRemoteDataSource = ref.watch(messageRemoteDataSourceProvider);
 
-  // Track which messages we've already marked as read to prevent infinite loop
-  final markedAsRead = <String>{};
-
-  // Get conversation to extract participant IDs for aggregate status computation
-  var participantIds = <String>[];
-  final convResult = await getConversationUseCase(conversationId);
-
-  await convResult.fold(
-    (failure) async {
-      debugPrint(
-        '❌ conversationMessagesStream: Failed to get conversation $conversationId: ${failure.message}',
-      );
-    },
-    (conversation) async {
-      participantIds = conversation.participants.map((p) => p.uid).toList();
-      debugPrint(
-        '✅ conversationMessagesStream: Got ${participantIds.length} participants for status computation: $participantIds',
-      );
-    },
+  // Wait for participant IDs once (cached, won't refetch)
+  final participantIdsAsync = ref.watch(
+    conversationParticipantIdsProvider(conversationId),
   );
 
-  // PERFORMANCE FIX: Removed global collectionGroup status watcher
-  // The previous implementation watched ALL status subcollections across the
-  // ENTIRE Firestore database, not just this conversation. This caused:
-  // - Excessive Firestore reads
-  // - Unnecessary rebuilds when other conversations' statuses changed
-  // - Poor scalability with large databases
-  //
-  // TODO: Consider re-adding a scoped status watcher if real-time status
-  // updates are needed. Options:
-  // 1. Watch messages collection (doesn't catch subcollection changes)
-  // 2. Create individual watchers per message (complex)
-  // 3. Poll for status updates periodically
-  // 4. Add conversationId field to status documents for filtering
-  //
-  // For now, status updates are fetched when messages stream emits.
+  // Wait for participant IDs to load
+  List<String> participantIds;
+  if (participantIdsAsync is AsyncData<List<String>>) {
+    participantIds = participantIdsAsync.value;
+  } else if (participantIdsAsync is AsyncLoading<List<String>>) {
+    // Wait for it to load
+    participantIds = await ref.read(
+      conversationParticipantIdsProvider(conversationId).future,
+    );
+  } else {
+    // Error case
+    participantIds = <String>[];
+  }
 
-  // Process messages stream directly (status fetched per message below)
-  await for (final result in watchUseCase(
+  // Create messages stream (Either<Failure, List<Message>>)
+  final messagesEitherStream = watchUseCase(
     conversationId: conversationId,
     currentUserId: currentUserId,
-  )) {
-    yield await result.fold(
-      (failure) async => [],
+  );
 
-      // Log error but return empty list to keep UI functional
-      (List<Message> messages) async {
-        // Sync all message senders to Drift for offline access
-        final allSenderIds = messages
-            .map((Message msg) => msg.senderId)
-            .toSet()
-            .toList();
-        if (allSenderIds.isNotEmpty) {
-          allSenderIds.forEach(userSyncService.syncMessageSender);
-        }
+  // Create real-time status stream (scoped to this conversation only)
+  final statusStream = messageRemoteDataSource
+      .watchConversationStatus(conversationId)
+      .map((statusMaps) {
+        // Transform list of status maps into Map<messageId, List<statusRecords>>
+        final statusByMessage = <String, List<MessageStatusEntity>>{};
 
-        // WhatsApp-style: When chat is OPEN, mark messages as READ
-        // Note: Delivery marking is handled automatically by AutoDeliveryMarker service
-        final messageRemoteDataSource = ref.read(
-          messageRemoteDataSourceProvider,
-        );
-
-        // Collect messages that need to be marked as read
-        final messagesToMark = messages
-            .where(
-              (msg) =>
-                  msg.senderId != currentUserId &&
-                  !markedAsRead.contains(msg.id),
-            )
-            .toList();
-
-        if (messagesToMark.isNotEmpty) {
-          debugPrint(
-            '📖 Marking ${messagesToMark.length} messages as READ in parallel for user ${currentUserId.substring(0, 8)}',
-          );
-
-          // Mark all messages as READ in parallel (significant performance improvement)
-          final results = await Future.wait(
-            messagesToMark.map((msg) async {
-              try {
-                await messageRemoteDataSource.markAsRead(
-                  conversationId,
-                  msg.id,
-                  currentUserId,
-                );
-                return (msg.id, true); // Success
-              } catch (e) {
-                debugPrint(
-                  '❌ Failed to mark ${msg.id.substring(0, 8)} as READ: $e',
-                );
-                return (msg.id, false); // Failure
-              }
-            }),
-          );
-
-          // Track successfully marked messages to prevent re-marking
-          final successCount = results.where((r) => r.$2).length;
-          for (final (messageId, success) in results) {
-            if (success) {
-              markedAsRead.add(messageId);
-            }
+        for (final statusMap in statusMaps) {
+          final messageId = statusMap['messageId'] as String?;
+          if (messageId == null) {
+            continue;
           }
 
-          debugPrint(
-            '✅ Successfully marked $successCount/${messagesToMark.length} messages as READ',
+          final statusEntity = MessageStatusEntity(
+            messageId: messageId,
+            userId: statusMap['userId'] as String,
+            status: statusMap['status'] as String,
+            timestamp: statusMap['timestamp'] != null
+                ? (statusMap['timestamp'] as Timestamp).toDate()
+                : null,
           );
+
+          statusByMessage.putIfAbsent(messageId, () => []).add(statusEntity);
         }
 
-        // Build MessageWithStatus objects by querying Firestore for current status
-        final messagesWithStatus = await Future.wait(
-          messages.map((Message msg) async {
-            // For messages sent by current user, query Firestore for recipients' status
-            var statusRecords = <MessageStatusEntity>[];
+        return statusByMessage;
+      })
+      .distinct((prev, next) {
+        // Deep equality check: only emit if status actually changed
+        if (prev.length != next.length) return false;
 
-            if (msg.senderId == currentUserId) {
-              try {
-                final messageRemoteDataSource = ref.read(
-                  messageRemoteDataSourceProvider,
-                );
-                final firestoreStatusMaps = await messageRemoteDataSource
-                    .getMessageStatus(conversationId, msg.id);
+        for (final entry in prev.entries) {
+          final prevRecords = entry.value;
+          final nextRecords = next[entry.key];
 
-                // Convert Firestore status maps to MessageStatusEntity objects
-                statusRecords = firestoreStatusMaps
-                    .map(
-                      (data) => MessageStatusEntity(
-                        messageId: msg.id,
-                        userId: data['userId'] as String,
-                        status: data['status'] as String,
-                        timestamp: data['timestamp'] != null
-                            ? (data['timestamp'] as Timestamp).toDate()
-                            : null,
-                      ),
-                    )
-                    .toList();
-              } catch (e) {
-                debugPrint(
-                  '⚠️ Failed to fetch Firestore status for ${msg.id}: $e',
-                );
-                // Empty list on error
-              }
+          if (nextRecords == null || prevRecords.length != nextRecords.length) {
+            return false;
+          }
+
+          // Check if all status records are the same
+          for (var i = 0; i < prevRecords.length; i++) {
+            if (prevRecords[i].userId != nextRecords[i].userId ||
+                prevRecords[i].status != nextRecords[i].status) {
+              return false;
+            }
+          }
+        }
+
+        return true; // Data is identical, skip emission
+      });
+
+  // Combine messages and status streams (participantIds is now constant)
+  final combinedStream =
+      Rx.combineLatest2<
+        Either<Failure, List<Message>>,
+        Map<String, List<MessageStatusEntity>>,
+        List<Map<String, dynamic>>
+      >(messagesEitherStream, statusStream.startWith({}), (
+        messagesEither,
+        statusByMessage,
+      ) {
+        // Use fold to extract messages or handle failure
+        return messagesEither.fold(
+          (failure) {
+            debugPrint('❌ messagesEitherStream error: ${failure.message}');
+            return <Map<String, dynamic>>[];
+          },
+          (List<Message> messages) {
+            // Sync all message senders to Drift for offline access (fire-and-forget)
+            final allSenderIds = messages
+                .map((Message msg) => msg.senderId)
+                .toSet()
+                .toList();
+            if (allSenderIds.isNotEmpty) {
+              allSenderIds.forEach(userSyncService.syncMessageSender);
             }
 
-            // Build MessageWithStatus using factory
-            final messageWithStatus = MessageWithStatus.fromStatusRecords(
-              message: msg,
-              statusRecords: statusRecords,
-              currentUserId: currentUserId,
-              allParticipantIds: participantIds,
-            );
+            // Build MessageWithStatus objects using real-time status data
+            return messages.map((Message msg) {
+              // Get status records from real-time stream (not one-time fetch)
+              final statusRecords = msg.senderId == currentUserId
+                  ? (statusByMessage[msg.id] ?? <MessageStatusEntity>[])
+                  : <MessageStatusEntity>[];
 
-            // Return as Map for backward compatibility with UI
-            return <String, dynamic>{
-              'id': msg.id,
-              'text': msg.text,
-              'senderId': msg.senderId,
-              'timestamp': msg.timestamp,
-              'status': messageWithStatus.status,
-              'type': msg.type,
-              'detectedLanguage': msg.detectedLanguage,
-              'translations': msg.translations,
-              'culturalHint': msg.culturalHint,
-              'readCount': messageWithStatus.readCount,
-              'deliveredCount': messageWithStatus.deliveredCount,
-              // Total recipients (excluding sender) for group chat status display
-              'totalRecipients': participantIds.isNotEmpty
-                  ? participantIds.where((id) => id != msg.senderId).length
-                  : 0,
-            };
-          }),
+              // Build MessageWithStatus using factory
+              final messageWithStatus = MessageWithStatus.fromStatusRecords(
+                message: msg,
+                statusRecords: statusRecords,
+                currentUserId: currentUserId,
+                allParticipantIds: participantIds,
+              );
+
+              // Return as Map for backward compatibility with UI
+              return <String, dynamic>{
+                'id': msg.id,
+                'text': msg.text,
+                'senderId': msg.senderId,
+                'timestamp': msg.timestamp,
+                'status': messageWithStatus.status,
+                'type': msg.type,
+                'detectedLanguage': msg.detectedLanguage,
+                'translations': msg.translations,
+                'culturalHint': msg.culturalHint,
+                'readCount': messageWithStatus.readCount,
+                'deliveredCount': messageWithStatus.deliveredCount,
+                // Total recipients (excluding sender) for group chat status display
+                'totalRecipients': participantIds.isNotEmpty
+                    ? participantIds
+                          .where((String id) => id != msg.senderId)
+                          .length
+                    : 0,
+              };
+            }).toList();
+          },
         );
+      });
 
-        return messagesWithStatus;
+  // Emit combined stream results
+  await for (final messages in combinedStream) {
+    yield messages;
+  }
+}
+
+/// Auto-marks incoming messages as read when the conversation is open.
+///
+/// This provider should be watched in the chat page to automatically
+/// mark messages as read. It runs as a side effect separate from the
+/// message stream to avoid feedback loops.
+@Riverpod(keepAlive: true)
+class ConversationReadMarker extends _$ConversationReadMarker {
+  final _markedAsRead = <String>{};
+  bool _isMarking = false; // Guard to prevent overlapping operations
+
+  @override
+  void build(String conversationId, String currentUserId) {
+    // Listen to messages and mark as read
+    ref.listen(
+      conversationMessagesStreamProvider(conversationId, currentUserId),
+      (previous, next) {
+        next.whenData((messages) {
+          // Fire and forget - don't await to avoid blocking the stream
+          _markMessagesAsRead(messages, conversationId, currentUserId);
+        });
       },
     );
+  }
+
+  Future<void> _markMessagesAsRead(
+    List<Map<String, dynamic>> messages,
+    String conversationId,
+    String currentUserId,
+  ) async {
+    // Prevent overlapping operations
+    if (_isMarking) {
+      debugPrint('⏸️ Already marking messages, skipping...');
+      return;
+    }
+
+    final messageRemoteDataSource = ref.read(messageRemoteDataSourceProvider);
+
+    // Find messages to mark (incoming messages not yet marked)
+    final messagesToMark = messages
+        .where(
+          (msg) =>
+              msg['senderId'] != currentUserId &&
+              !_markedAsRead.contains(msg['id']),
+        )
+        .toList();
+
+    if (messagesToMark.isEmpty) {
+      return;
+    }
+
+    _isMarking = true;
+
+    debugPrint(
+      '📖 Marking ${messagesToMark.length} messages as READ for user ${currentUserId.substring(0, 8)}',
+    );
+
+    // Mark all messages as READ in parallel
+    final results = await Future.wait(
+      messagesToMark.map((msg) async {
+        final messageId = msg['id'] as String;
+        try {
+          await messageRemoteDataSource.markAsRead(
+            conversationId,
+            messageId,
+            currentUserId,
+          );
+          return (messageId, true);
+        } catch (e) {
+          debugPrint(
+            '❌ Failed to mark ${messageId.substring(0, 8)} as READ: $e',
+          );
+          return (messageId, false);
+        }
+      }),
+    );
+
+    // Track successfully marked messages
+    final successCount = results.where((r) => r.$2).length;
+    for (final (messageId, success) in results) {
+      if (success) {
+        _markedAsRead.add(messageId);
+      }
+    }
+
+    debugPrint(
+      '✅ Successfully marked $successCount/${messagesToMark.length} messages as READ',
+    );
+
+    _isMarking = false;
   }
 }
 

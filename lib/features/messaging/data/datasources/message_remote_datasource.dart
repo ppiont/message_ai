@@ -69,6 +69,15 @@ abstract class MessageRemoteDataSource {
     String conversationId,
     String messageId,
   );
+
+  /// Watches all status changes for a conversation in real-time
+  ///
+  /// Returns a stream of ALL status records for all messages in the conversation.
+  /// Uses collectionGroup query with conversationId filter for efficient real-time updates.
+  /// Updates whenever any recipient marks any message as delivered/read in this conversation.
+  Stream<List<Map<String, dynamic>>> watchConversationStatus(
+    String conversationId,
+  );
 }
 
 /// Implementation of [MessageRemoteDataSource] using Firebase Firestore.
@@ -304,6 +313,8 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
           'status': 'delivered',
           'timestamp': FieldValue.serverTimestamp(),
           'userId': userId,
+          'conversationId': conversationId, // For collectionGroup filtering
+          'messageId': messageId, // For collectionGroup filtering
         });
       }
       // If already 'read', do nothing (don't downgrade)
@@ -335,6 +346,8 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
         'status': 'read',
         'timestamp': FieldValue.serverTimestamp(),
         'userId': userId,
+        'conversationId': conversationId, // For collectionGroup filtering
+        'messageId': messageId, // For collectionGroup filtering
       }); // No merge needed for read - it's the final state
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
@@ -398,6 +411,31 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
       }
       throw UnknownException(
         message: 'Failed to watch message status',
+        originalError: e,
+      );
+    }
+  }
+
+  @override
+  Stream<List<Map<String, dynamic>>> watchConversationStatus(
+    String conversationId,
+  ) {
+    try {
+      // Use collectionGroup to watch ALL status subcollections
+      // Filter by conversationId to scope to this conversation only
+      return _firestore
+          .collectionGroup('status')
+          .where('conversationId', isEqualTo: conversationId)
+          .snapshots()
+          .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+    } on FirebaseException catch (e) {
+      throw _mapFirestoreException(e);
+    } catch (e) {
+      if (e is AppException) {
+        rethrow;
+      }
+      throw UnknownException(
+        message: 'Failed to watch conversation status',
         originalError: e,
       );
     }

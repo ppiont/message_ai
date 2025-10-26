@@ -958,13 +958,112 @@ final class UserConversationsStreamFamily extends $Family
   String toString() => r'userConversationsStreamProvider';
 }
 
+/// Cached provider for conversation participant IDs.
+///
+/// Fetches once and caches to avoid repeated fetches during stream rebuilds.
+
+@ProviderFor(conversationParticipantIds)
+const conversationParticipantIdsProvider = ConversationParticipantIdsFamily._();
+
+/// Cached provider for conversation participant IDs.
+///
+/// Fetches once and caches to avoid repeated fetches during stream rebuilds.
+
+final class ConversationParticipantIdsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<String>>,
+          List<String>,
+          FutureOr<List<String>>
+        >
+    with $FutureModifier<List<String>>, $FutureProvider<List<String>> {
+  /// Cached provider for conversation participant IDs.
+  ///
+  /// Fetches once and caches to avoid repeated fetches during stream rebuilds.
+  const ConversationParticipantIdsProvider._({
+    required ConversationParticipantIdsFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'conversationParticipantIdsProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$conversationParticipantIdsHash();
+
+  @override
+  String toString() {
+    return r'conversationParticipantIdsProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<List<String>> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<List<String>> create(Ref ref) {
+    final argument = this.argument as String;
+    return conversationParticipantIds(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is ConversationParticipantIdsProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$conversationParticipantIdsHash() =>
+    r'8fd2eb7a0c73f74e301d6939480a6ec9c96bb594';
+
+/// Cached provider for conversation participant IDs.
+///
+/// Fetches once and caches to avoid repeated fetches during stream rebuilds.
+
+final class ConversationParticipantIdsFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<List<String>>, String> {
+  const ConversationParticipantIdsFamily._()
+    : super(
+        retry: null,
+        name: r'conversationParticipantIdsProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Cached provider for conversation participant IDs.
+  ///
+  /// Fetches once and caches to avoid repeated fetches during stream rebuilds.
+
+  ConversationParticipantIdsProvider call(String conversationId) =>
+      ConversationParticipantIdsProvider._(
+        argument: conversationId,
+        from: this,
+      );
+
+  @override
+  String toString() => r'conversationParticipantIdsProvider';
+}
+
 /// Stream provider for watching messages in a conversation in real-time.
 ///
 /// Automatically updates when messages change in Firestore.
 /// Returns messages with computed status from Firestore.
 ///
 /// Uses real-time listeners for BOTH messages AND status subcollections.
-/// When receiver marks delivered/read, sender sees it instantly.
+/// When receiver marks delivered/read, sender sees it instantly via WebSocket.
 
 @ProviderFor(conversationMessagesStream)
 const conversationMessagesStreamProvider = ConversationMessagesStreamFamily._();
@@ -975,7 +1074,7 @@ const conversationMessagesStreamProvider = ConversationMessagesStreamFamily._();
 /// Returns messages with computed status from Firestore.
 ///
 /// Uses real-time listeners for BOTH messages AND status subcollections.
-/// When receiver marks delivered/read, sender sees it instantly.
+/// When receiver marks delivered/read, sender sees it instantly via WebSocket.
 
 final class ConversationMessagesStreamProvider
     extends
@@ -993,7 +1092,7 @@ final class ConversationMessagesStreamProvider
   /// Returns messages with computed status from Firestore.
   ///
   /// Uses real-time listeners for BOTH messages AND status subcollections.
-  /// When receiver marks delivered/read, sender sees it instantly.
+  /// When receiver marks delivered/read, sender sees it instantly via WebSocket.
   const ConversationMessagesStreamProvider._({
     required ConversationMessagesStreamFamily super.from,
     required (String, String) super.argument,
@@ -1040,7 +1139,7 @@ final class ConversationMessagesStreamProvider
 }
 
 String _$conversationMessagesStreamHash() =>
-    r'01fcbbe90789c33542873c97f54b7f7cffff3ad0';
+    r'd6b9bc00275f4dd1541d058090f359448482edde';
 
 /// Stream provider for watching messages in a conversation in real-time.
 ///
@@ -1048,7 +1147,7 @@ String _$conversationMessagesStreamHash() =>
 /// Returns messages with computed status from Firestore.
 ///
 /// Uses real-time listeners for BOTH messages AND status subcollections.
-/// When receiver marks delivered/read, sender sees it instantly.
+/// When receiver marks delivered/read, sender sees it instantly via WebSocket.
 
 final class ConversationMessagesStreamFamily extends $Family
     with
@@ -1071,7 +1170,7 @@ final class ConversationMessagesStreamFamily extends $Family
   /// Returns messages with computed status from Firestore.
   ///
   /// Uses real-time listeners for BOTH messages AND status subcollections.
-  /// When receiver marks delivered/read, sender sees it instantly.
+  /// When receiver marks delivered/read, sender sees it instantly via WebSocket.
 
   ConversationMessagesStreamProvider call(
     String conversationId,
@@ -1083,6 +1182,146 @@ final class ConversationMessagesStreamFamily extends $Family
 
   @override
   String toString() => r'conversationMessagesStreamProvider';
+}
+
+/// Auto-marks incoming messages as read when the conversation is open.
+///
+/// This provider should be watched in the chat page to automatically
+/// mark messages as read. It runs as a side effect separate from the
+/// message stream to avoid feedback loops.
+
+@ProviderFor(ConversationReadMarker)
+const conversationReadMarkerProvider = ConversationReadMarkerFamily._();
+
+/// Auto-marks incoming messages as read when the conversation is open.
+///
+/// This provider should be watched in the chat page to automatically
+/// mark messages as read. It runs as a side effect separate from the
+/// message stream to avoid feedback loops.
+final class ConversationReadMarkerProvider
+    extends $NotifierProvider<ConversationReadMarker, void> {
+  /// Auto-marks incoming messages as read when the conversation is open.
+  ///
+  /// This provider should be watched in the chat page to automatically
+  /// mark messages as read. It runs as a side effect separate from the
+  /// message stream to avoid feedback loops.
+  const ConversationReadMarkerProvider._({
+    required ConversationReadMarkerFamily super.from,
+    required (String, String) super.argument,
+  }) : super(
+         retry: null,
+         name: r'conversationReadMarkerProvider',
+         isAutoDispose: false,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$conversationReadMarkerHash();
+
+  @override
+  String toString() {
+    return r'conversationReadMarkerProvider'
+        ''
+        '$argument';
+  }
+
+  @$internal
+  @override
+  ConversationReadMarker create() => ConversationReadMarker();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(void value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<void>(value),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is ConversationReadMarkerProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$conversationReadMarkerHash() =>
+    r'03aa950d13ddc340e73cda2beeaccb5f05b94a3d';
+
+/// Auto-marks incoming messages as read when the conversation is open.
+///
+/// This provider should be watched in the chat page to automatically
+/// mark messages as read. It runs as a side effect separate from the
+/// message stream to avoid feedback loops.
+
+final class ConversationReadMarkerFamily extends $Family
+    with
+        $ClassFamilyOverride<
+          ConversationReadMarker,
+          void,
+          void,
+          void,
+          (String, String)
+        > {
+  const ConversationReadMarkerFamily._()
+    : super(
+        retry: null,
+        name: r'conversationReadMarkerProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: false,
+      );
+
+  /// Auto-marks incoming messages as read when the conversation is open.
+  ///
+  /// This provider should be watched in the chat page to automatically
+  /// mark messages as read. It runs as a side effect separate from the
+  /// message stream to avoid feedback loops.
+
+  ConversationReadMarkerProvider call(
+    String conversationId,
+    String currentUserId,
+  ) => ConversationReadMarkerProvider._(
+    argument: (conversationId, currentUserId),
+    from: this,
+  );
+
+  @override
+  String toString() => r'conversationReadMarkerProvider';
+}
+
+/// Auto-marks incoming messages as read when the conversation is open.
+///
+/// This provider should be watched in the chat page to automatically
+/// mark messages as read. It runs as a side effect separate from the
+/// message stream to avoid feedback loops.
+
+abstract class _$ConversationReadMarker extends $Notifier<void> {
+  late final _$args = ref.$arg as (String, String);
+  String get conversationId => _$args.$1;
+  String get currentUserId => _$args.$2;
+
+  void build(String conversationId, String currentUserId);
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    build(_$args.$1, _$args.$2);
+    final ref = this.ref as $Ref<void, void>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<void, void>,
+              void,
+              Object?,
+              Object?
+            >;
+    element.handleValue(ref, null);
+  }
 }
 
 /// Provides the [TypingIndicatorService] instance.
