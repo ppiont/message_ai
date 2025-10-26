@@ -10,6 +10,10 @@ import 'package:message_ai/features/messaging/domain/entities/message_context_de
 /// Status tracking (delivered/read) is now handled separately via
 /// MessageStatus table and MessageStatusDao. See MessageWithStatus
 /// for presentation layer wrapper that includes status information.
+///
+/// **Performance Optimization (Task 8.1):**
+/// Uses hash-based comparison for collections instead of deep equality.
+/// This prevents unnecessary rebuilds when collections haven't changed.
 class Message extends Equatable {
   /// Creates a new message entity
   const Message({
@@ -72,6 +76,18 @@ class Message extends Equatable {
   /// in Firestore for eventual consistency across all users in group chats.
   final MessageContextDetails? contextDetails;
 
+  /// Computes hash of translations for efficient equality comparison (Task 8.1)
+  int get translationsHash => translations != null
+      ? Object.hash(
+          translations!.length,
+          Object.hashAll(translations!.keys),
+          Object.hashAll(translations!.values),
+        )
+      : 0;
+
+  /// Computes hash of embedding for efficient equality comparison (Task 8.1)
+  int get embeddingHash => embedding != null ? Object.hashAll(embedding!) : 0;
+
   /// Creates a copy of this message with the given fields replaced.
   ///
   /// Fields not provided will retain their current values.
@@ -113,10 +129,10 @@ class Message extends Equatable {
     timestamp,
     type,
     detectedLanguage,
-    translations,
+    translationsHash, // Instead of translations (Task 8.1)
     replyTo,
     metadata,
-    embedding,
+    embeddingHash, // Instead of embedding (Task 8.1)
     aiAnalysis,
     culturalHint,
     contextDetails,
@@ -175,6 +191,9 @@ class MessageMetadata extends Equatable {
 /// AI-generated analysis results for a message.
 ///
 /// Contains extracted insights from NLP processing.
+///
+/// **Performance Optimization (Task 8.1):**
+/// Uses hash-based comparison for actionItems list.
 class MessageAIAnalysis extends Equatable {
   /// Creates a new AI analysis instance.
   const MessageAIAnalysis({
@@ -192,6 +211,9 @@ class MessageAIAnalysis extends Equatable {
   /// Sentiment analysis result: 'positive', 'neutral', or 'negative'
   final String sentiment;
 
+  /// Computes hash of actionItems for efficient equality comparison (Task 8.1)
+  int get actionItemsHash => Object.hashAll(actionItems);
+
   /// Creates a copy of this analysis with the given fields replaced.
   MessageAIAnalysis copyWith({
     final String? priority,
@@ -204,5 +226,9 @@ class MessageAIAnalysis extends Equatable {
   );
 
   @override
-  List<Object?> get props => <Object?>[priority, actionItems, sentiment];
+  List<Object?> get props => <Object?>[
+    priority,
+    actionItemsHash, // Instead of actionItems (Task 8.1)
+    sentiment,
+  ];
 }

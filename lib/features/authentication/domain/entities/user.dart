@@ -4,6 +4,9 @@ import 'package:equatable/equatable.dart';
 ///
 /// This is the core domain model for users, independent of any
 /// data source implementation details.
+///
+/// **Performance Optimization (Task 8.1):**
+/// Uses hash-based comparison for fcmTokens list.
 class User extends Equatable {
   const User({
     required this.uid,
@@ -48,6 +51,9 @@ class User extends Equatable {
   /// List of FCM tokens for push notifications across devices
   final List<String> fcmTokens;
 
+  /// Computes hash of fcmTokens for efficient equality comparison (Task 8.1)
+  int get fcmTokensHash => Object.hashAll(fcmTokens);
+
   /// Creates a copy of this user with the given fields replaced
   User copyWith({
     String? uid,
@@ -84,7 +90,7 @@ class User extends Equatable {
     createdAt,
     lastSeen,
     isOnline,
-    fcmTokens,
+    fcmTokensHash, // Instead of fcmTokens (Task 8.1)
   ];
 
   @override

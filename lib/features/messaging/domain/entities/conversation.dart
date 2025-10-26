@@ -4,6 +4,10 @@ import 'package:equatable/equatable.dart';
 ///
 /// This entity follows the clean architecture pattern and represents
 /// the core business logic for conversations.
+///
+/// **Performance Optimization (Task 8.1):**
+/// Uses hash-based comparison for collections instead of deep equality.
+/// This prevents unnecessary rebuilds when collections haven't changed.
 class Conversation extends Equatable {
   const Conversation({
     required this.documentId,
@@ -60,6 +64,24 @@ class Conversation extends Equatable {
   /// List of admin user IDs (only for group conversations)
   final List<String>? adminIds;
 
+  /// Computes hash of participantIds for efficient equality comparison (Task 8.1)
+  int get participantIdsHash => Object.hashAll(participantIds);
+
+  /// Computes hash of participants for efficient equality comparison (Task 8.1)
+  int get participantsHash =>
+      Object.hashAll(participants.map((p) => p.hashCode));
+
+  /// Computes hash of unreadCount for efficient equality comparison (Task 8.1)
+  int get unreadCountHash => Object.hash(
+        unreadCount.length,
+        Object.hashAll(unreadCount.keys),
+        Object.hashAll(unreadCount.values),
+      );
+
+  /// Computes hash of adminIds for efficient equality comparison (Task 8.1)
+  int get adminIdsHash =>
+      adminIds != null ? Object.hashAll(adminIds!) : 0;
+
   /// Creates a copy of this conversation with the given fields replaced
   Conversation copyWith({
     String? documentId,
@@ -104,17 +126,18 @@ class Conversation extends Equatable {
   List<Object?> get props => [
     documentId,
     type,
-    participantIds,
-    participants,
+    // Use hashes instead of collections for efficient comparison (Task 8.1)
+    participantIdsHash, // Instead of participantIds
+    participantsHash, // Instead of participants
     lastMessage,
     lastUpdatedAt,
     initiatedAt,
-    unreadCount,
+    unreadCountHash, // Instead of unreadCount
     translationEnabled,
     autoDetectLanguage,
     groupName,
     groupImage,
-    adminIds,
+    adminIdsHash, // Instead of adminIds
   ];
 }
 
