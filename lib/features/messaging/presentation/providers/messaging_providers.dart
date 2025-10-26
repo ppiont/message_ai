@@ -1,6 +1,8 @@
 /// Riverpod providers for messaging feature
 library;
 
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:dartz/dartz.dart';
@@ -808,6 +810,179 @@ Stream<List<Map<String, dynamic>>> allConversationsStream(
 
     return mapped;
   });
+}
+
+// ========== Optimized Sorted Conversation List Provider ==========
+
+/// Optimized conversation list that maintains sort order with binary search insertion.
+///
+/// **Performance Optimization (Task 6.4):**
+/// Instead of re-sorting the entire list on every stream update (O(n log n)),
+/// this provider uses binary search insertion for incremental updates (O(log n)).
+///
+/// **Implementation:**
+/// - Maintains sorted list state in memory
+/// - Diffs incoming stream data to find changed conversations
+/// - Uses binary search to find insertion index for changed items
+/// - Removes old position and inserts at new position
+/// - Debounces rapid updates to prevent excessive list modifications
+@Riverpod(keepAlive: true)
+class SortedConversationList extends _$SortedConversationList {
+  /// Current sorted conversation list
+  List<Map<String, dynamic>> _conversations = [];
+
+  /// Debounce timer for rapid updates
+  Timer? _debounceTimer;
+
+  /// Debounce delay (200ms is optimal for conversation updates)
+  static const Duration _debounceDelay = Duration(milliseconds: 200);
+
+  @override
+  List<Map<String, dynamic>> build(String userId) {
+    // Listen to conversation stream and apply incremental updates
+    ref.listen(
+      allConversationsStreamProvider(userId),
+      (previous, next) {
+        next.whenData((newConversations) {
+          // Debounce rapid updates
+          _debounceTimer?.cancel();
+          _debounceTimer = Timer(_debounceDelay, () {
+            _updateConversations(newConversations);
+          });
+        });
+      },
+    );
+
+    return _conversations;
+  }
+
+  /// Updates conversations using binary search insertion for efficiency.
+  ///
+  /// Instead of re-sorting entire list, this method:
+  /// 1. Diffs old and new conversation lists
+  /// 2. For each changed conversation, removes it from old position
+  /// 3. Uses binary search to find new insertion index
+  /// 4. Inserts at correct position to maintain sort order
+  void _updateConversations(List<Map<String, dynamic>> newConversations) {
+    if (newConversations.isEmpty) {
+      if (_conversations.isNotEmpty) {
+        _conversations = [];
+        state = _conversations;
+      }
+      return;
+    }
+
+    // If list is empty, initialize with sorted list
+    if (_conversations.isEmpty) {
+      _conversations = List.from(newConversations)
+        ..sort((a, b) {
+          final aTime = a['lastUpdatedAt'] as DateTime;
+          final bTime = b['lastUpdatedAt'] as DateTime;
+          return bTime.compareTo(aTime); // Newest first
+        });
+      state = _conversations;
+      return;
+    }
+
+    // Create maps for fast lookup
+    final oldMap = {
+      for (final conv in _conversations) conv['id'] as String: conv,
+    };
+    final newMap = {
+      for (final conv in newConversations) conv['id'] as String: conv,
+    };
+
+    // Find conversations that changed or are new
+    final changedIds = <String>[];
+    for (final newConv in newConversations) {
+      final id = newConv['id'] as String;
+      final oldConv = oldMap[id];
+
+      // Check if conversation is new or if lastUpdatedAt changed
+      if (oldConv == null ||
+          (oldConv['lastUpdatedAt'] as DateTime) !=
+              (newConv['lastUpdatedAt'] as DateTime)) {
+        changedIds.add(id);
+      }
+    }
+
+    // Find removed conversations
+    final removedIds = oldMap.keys.where((id) => !newMap.containsKey(id)).toList();
+
+    // If more than 50% of list changed, just re-sort (more efficient than many individual updates)
+    if (changedIds.length + removedIds.length > _conversations.length * 0.5) {
+      _conversations = List.from(newConversations)
+        ..sort((a, b) {
+          final aTime = a['lastUpdatedAt'] as DateTime;
+          final bTime = b['lastUpdatedAt'] as DateTime;
+          return bTime.compareTo(aTime);
+        });
+      state = _conversations;
+      return;
+    }
+
+    // Apply incremental updates using binary search insertion
+    for (final id in removedIds) {
+      _conversations.removeWhere((conv) => conv['id'] == id);
+    }
+
+    for (final id in changedIds) {
+      final newConv = newMap[id]!;
+
+      // Remove old position if exists
+      _conversations.removeWhere((conv) => conv['id'] == id);
+
+      // Find insertion index using binary search
+      final insertIndex = _binarySearchInsertIndex(
+        newConv['lastUpdatedAt'] as DateTime,
+      );
+
+      // Insert at correct position
+      _conversations.insert(insertIndex, newConv);
+    }
+
+    state = _conversations;
+  }
+
+  /// Binary search to find insertion index for a conversation with given timestamp.
+  ///
+  /// Returns the index where a conversation with the given lastUpdatedAt
+  /// should be inserted to maintain descending sort order (newest first).
+  ///
+  /// **Time Complexity:** O(log n)
+  int _binarySearchInsertIndex(DateTime lastUpdatedAt) {
+    if (_conversations.isEmpty) {
+      return 0;
+    }
+
+    var left = 0;
+    var right = _conversations.length;
+
+    while (left < right) {
+      final mid = left + (right - left) ~/ 2;
+      final midTime = _conversations[mid]['lastUpdatedAt'] as DateTime;
+
+      // Sort descending (newest first)
+      // If new timestamp is after mid, insert before mid
+      if (lastUpdatedAt.isAfter(midTime)) {
+        right = mid;
+      } else {
+        left = mid + 1;
+      }
+    }
+
+    return left;
+  }
+
+  /// Manually trigger a full re-sort (useful for testing or recovery)
+  void forceResort() {
+    _conversations.sort((a, b) {
+      final aTime = a['lastUpdatedAt'] as DateTime;
+      final bTime = b['lastUpdatedAt'] as DateTime;
+      return bTime.compareTo(aTime);
+    });
+    state = _conversations;
+  }
 }
 
 // ========== User Discovery Provider ==========

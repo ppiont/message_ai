@@ -370,7 +370,7 @@
               1
             ],
             "details": "Create a single presence stream subscription in ConversationListPage that fetches all user presence data for visible conversations. Store presence data in a Map<String, PresenceData> and pass it to ConversationListItem as a prop. Update ConversationListItem to receive presence data via constructor instead of watching individual streams. Use context.select() or Consumer for granular updates only when specific user presence changes. This reduces stream subscriptions from N (one per item) to 1.",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": null
           },
           {
@@ -381,7 +381,7 @@
               3
             ],
             "details": "Create _binarySearch method in conversation list controller that finds the correct insertion index based on lastMessageTime. Implement _insertSorted method that uses binary search to find position and inserts conversation at correct index. Modify conversation update logic to remove old position and insert at new position rather than re-sorting entire list. Add debouncing for rapid updates to prevent excessive list modifications. Ensure this works with both new conversations and updates to existing ones.",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": null
           },
           {
@@ -946,7 +946,7 @@
     ],
     "metadata": {
       "created": "2025-10-26T09:30:12.493Z",
-      "updated": "2025-10-26T19:02:48.624Z",
+      "updated": "2025-10-26T19:09:57.606Z",
       "description": "Tasks for master context"
     }
   }

@@ -2025,7 +2025,7 @@ final class BatchUserPresenceProvider
   }
 }
 
-String _$batchUserPresenceHash() => r'5f49eea88033530195b854a3e059bfda1bcea12b';
+String _$batchUserPresenceHash() => r'c2487646c6d68dba07b6eece8129a192ca985e54';
 
 /// Batch presence lookup for multiple users (optimized for conversation lists).
 ///
@@ -2453,6 +2453,189 @@ final class AllConversationsStreamFamily extends $Family
 
   @override
   String toString() => r'allConversationsStreamProvider';
+}
+
+/// Optimized conversation list that maintains sort order with binary search insertion.
+///
+/// **Performance Optimization (Task 6.4):**
+/// Instead of re-sorting the entire list on every stream update (O(n log n)),
+/// this provider uses binary search insertion for incremental updates (O(log n)).
+///
+/// **Implementation:**
+/// - Maintains sorted list state in memory
+/// - Diffs incoming stream data to find changed conversations
+/// - Uses binary search to find insertion index for changed items
+/// - Removes old position and inserts at new position
+/// - Debounces rapid updates to prevent excessive list modifications
+
+@ProviderFor(SortedConversationList)
+const sortedConversationListProvider = SortedConversationListFamily._();
+
+/// Optimized conversation list that maintains sort order with binary search insertion.
+///
+/// **Performance Optimization (Task 6.4):**
+/// Instead of re-sorting the entire list on every stream update (O(n log n)),
+/// this provider uses binary search insertion for incremental updates (O(log n)).
+///
+/// **Implementation:**
+/// - Maintains sorted list state in memory
+/// - Diffs incoming stream data to find changed conversations
+/// - Uses binary search to find insertion index for changed items
+/// - Removes old position and inserts at new position
+/// - Debounces rapid updates to prevent excessive list modifications
+final class SortedConversationListProvider
+    extends
+        $NotifierProvider<SortedConversationList, List<Map<String, dynamic>>> {
+  /// Optimized conversation list that maintains sort order with binary search insertion.
+  ///
+  /// **Performance Optimization (Task 6.4):**
+  /// Instead of re-sorting the entire list on every stream update (O(n log n)),
+  /// this provider uses binary search insertion for incremental updates (O(log n)).
+  ///
+  /// **Implementation:**
+  /// - Maintains sorted list state in memory
+  /// - Diffs incoming stream data to find changed conversations
+  /// - Uses binary search to find insertion index for changed items
+  /// - Removes old position and inserts at new position
+  /// - Debounces rapid updates to prevent excessive list modifications
+  const SortedConversationListProvider._({
+    required SortedConversationListFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'sortedConversationListProvider',
+         isAutoDispose: false,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$sortedConversationListHash();
+
+  @override
+  String toString() {
+    return r'sortedConversationListProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  SortedConversationList create() => SortedConversationList();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(List<Map<String, dynamic>> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<List<Map<String, dynamic>>>(value),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is SortedConversationListProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$sortedConversationListHash() =>
+    r'07a228322a108e3acc47f723ecfbe52b5a5109e8';
+
+/// Optimized conversation list that maintains sort order with binary search insertion.
+///
+/// **Performance Optimization (Task 6.4):**
+/// Instead of re-sorting the entire list on every stream update (O(n log n)),
+/// this provider uses binary search insertion for incremental updates (O(log n)).
+///
+/// **Implementation:**
+/// - Maintains sorted list state in memory
+/// - Diffs incoming stream data to find changed conversations
+/// - Uses binary search to find insertion index for changed items
+/// - Removes old position and inserts at new position
+/// - Debounces rapid updates to prevent excessive list modifications
+
+final class SortedConversationListFamily extends $Family
+    with
+        $ClassFamilyOverride<
+          SortedConversationList,
+          List<Map<String, dynamic>>,
+          List<Map<String, dynamic>>,
+          List<Map<String, dynamic>>,
+          String
+        > {
+  const SortedConversationListFamily._()
+    : super(
+        retry: null,
+        name: r'sortedConversationListProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: false,
+      );
+
+  /// Optimized conversation list that maintains sort order with binary search insertion.
+  ///
+  /// **Performance Optimization (Task 6.4):**
+  /// Instead of re-sorting the entire list on every stream update (O(n log n)),
+  /// this provider uses binary search insertion for incremental updates (O(log n)).
+  ///
+  /// **Implementation:**
+  /// - Maintains sorted list state in memory
+  /// - Diffs incoming stream data to find changed conversations
+  /// - Uses binary search to find insertion index for changed items
+  /// - Removes old position and inserts at new position
+  /// - Debounces rapid updates to prevent excessive list modifications
+
+  SortedConversationListProvider call(String userId) =>
+      SortedConversationListProvider._(argument: userId, from: this);
+
+  @override
+  String toString() => r'sortedConversationListProvider';
+}
+
+/// Optimized conversation list that maintains sort order with binary search insertion.
+///
+/// **Performance Optimization (Task 6.4):**
+/// Instead of re-sorting the entire list on every stream update (O(n log n)),
+/// this provider uses binary search insertion for incremental updates (O(log n)).
+///
+/// **Implementation:**
+/// - Maintains sorted list state in memory
+/// - Diffs incoming stream data to find changed conversations
+/// - Uses binary search to find insertion index for changed items
+/// - Removes old position and inserts at new position
+/// - Debounces rapid updates to prevent excessive list modifications
+
+abstract class _$SortedConversationList
+    extends $Notifier<List<Map<String, dynamic>>> {
+  late final _$args = ref.$arg as String;
+  String get userId => _$args;
+
+  List<Map<String, dynamic>> build(String userId);
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final created = build(_$args);
+    final ref =
+        this.ref
+            as $Ref<List<Map<String, dynamic>>, List<Map<String, dynamic>>>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<
+                List<Map<String, dynamic>>,
+                List<Map<String, dynamic>>
+              >,
+              List<Map<String, dynamic>>,
+              Object?,
+              Object?
+            >;
+    element.handleValue(ref, created);
+  }
 }
 
 /// Provider for streaming all users from Firestore.

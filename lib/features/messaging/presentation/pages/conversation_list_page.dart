@@ -120,57 +120,81 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
   }
 
   Widget _buildConversationList(String userId) {
-    // Use unified stream that includes both direct conversations and groups
-    final conversationsStream = ref.watch(
-      allConversationsStreamProvider(userId),
-    );
+    // Use optimized sorted conversation list with binary search insertion
+    // This provider maintains sorted state and uses O(log n) insertion
+    // instead of O(n log n) full re-sort on every update
+    final conversations = ref.watch(sortedConversationListProvider(userId));
 
-    return conversationsStream.when(
-      data: (conversations) {
-        // Filter conversations based on search query
-        final filteredConversations = _searchQuery.isEmpty
-            ? conversations
-            : conversations.where((conv) {
-                final type = conv['type'] as String?;
+    if (conversations.isEmpty) {
+      // Check if we're loading initial data
+      final streamState = ref.watch(allConversationsStreamProvider(userId));
+      return streamState.when(
+        data: (_) => _buildEmptyState(),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 48, color: Colors.red),
+              const SizedBox(height: 16),
+              Text('Failed to load conversations: $error'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () =>
+                    ref.invalidate(sortedConversationListProvider(userId)),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
-                // For groups, search by group name
-                if (type == 'group') {
-                  final groupName = conv['groupName'] as String? ?? '';
-                  return groupName.toLowerCase().contains(
-                    _searchQuery.toLowerCase(),
-                  );
-                }
+    // Use sorted conversation list (no need for .when since it's not async)
+    // Filter conversations based on search query
+    final filteredConversations = _searchQuery.isEmpty
+        ? conversations
+        : conversations.where((conv) {
+            final type = conv['type'] as String?;
 
-                // For direct conversations, search by participant name
-                final participants =
-                    conv['participants'] as List<Map<String, dynamic>>;
-                return participants.any((p) {
-                  final name = p['name'] as String? ?? '';
-                  return name.toLowerCase().contains(
-                    _searchQuery.toLowerCase(),
-                  );
-                });
-              }).toList();
+            // For groups, search by group name
+            if (type == 'group') {
+              final groupName = conv['groupName'] as String? ?? '';
+              return groupName.toLowerCase().contains(
+                _searchQuery.toLowerCase(),
+              );
+            }
 
-        if (filteredConversations.isEmpty) {
-          return _buildEmptyState();
-        }
+            // For direct conversations, search by participant name
+            final participants =
+                conv['participants'] as List<Map<String, dynamic>>;
+            return participants.any((p) {
+              final name = p['name'] as String? ?? '';
+              return name.toLowerCase().contains(
+                _searchQuery.toLowerCase(),
+              );
+            });
+          }).toList();
 
-        // Extract all unique user IDs from all visible conversations for batch presence lookup
-        // This replaces N individual presence subscriptions with 1 batch subscription
-        final allUserIds = filteredConversations
-            .expand(
-              (conv) => (conv['participants'] as List<Map<String, dynamic>>)
-                  .map((p) => p['uid'] as String),
-            )
-            .toSet()
-            .toList();
+    if (filteredConversations.isEmpty) {
+      return _buildEmptyState();
+    }
 
-        // Watch batch presence (single subscription for all users)
-        final presenceMapAsync = ref.watch(batchUserPresenceProvider(allUserIds));
+    // Extract all unique user IDs from all visible conversations for batch presence lookup
+    // This replaces N individual presence subscriptions with 1 batch subscription
+    final allUserIds = filteredConversations
+        .expand(
+          (conv) => (conv['participants'] as List<Map<String, dynamic>>)
+              .map((p) => p['uid'] as String),
+        )
+        .toSet()
+        .toList();
 
-        // Handle loading/error states for batch presence
-        return presenceMapAsync.when(
+    // Watch batch presence (single subscription for all users)
+    final presenceMapAsync = ref.watch(batchUserPresenceProvider(allUserIds));
+
+    // Handle loading/error states for batch presence
+    return presenceMapAsync.when(
           data: (presenceMap) => RefreshIndicator(
             onRefresh: () async {
               // Invalidate the stream to trigger a refresh
@@ -441,25 +465,6 @@ class _ConversationListPageState extends ConsumerState<ConversationListPage> {
           ),
         ),
       );
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
-            const SizedBox(height: 16),
-            Text('Failed to load conversations: $error'),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () =>
-                  ref.invalidate(allConversationsStreamProvider(userId)),
-              child: const Text('Retry'),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   Widget _buildEmptyState() => Center(
