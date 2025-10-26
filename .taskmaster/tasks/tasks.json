@@ -1,0 +1,953 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Implement memory leak fixes for service instances and stream controllers",
+        "description": "Fix critical memory leaks in LanguageDetectionService, RtdbPresenceService, and AutoTranslationService by implementing proper disposal patterns and singleton/caching approaches",
+        "details": "1. Convert LanguageDetectionService to singleton pattern using Riverpod provider with keepAlive: true. Current issue: Created on every MessageBubble render (100+ instances for 100 messages).\n2. Track and dispose StreamControllers in RtdbPresenceService._combinePresenceStreams using ref.onDispose. Add controller.close() calls and verify with Flutter DevTools.\n3. Track AutoTranslationService subscription with proper cleanup in all exit paths. Ensure stop() is called in ChatPage's dispose method.\n4. Implement WeakReference pattern for long-lived service instances that shouldn't prevent garbage collection.\n5. Add memory leak detection tests using LeakTesting package.\nCode patterns to implement:\n- Singleton: @Riverpod(keepAlive: true) LanguageDetectionService languageDetectionService(Ref ref) => LanguageDetectionService();\n- Disposal: ref.onDispose(() => controller.close());\n- Subscription tracking: _subscription?.cancel() in dispose()",
+        "testStrategy": "Use Flutter DevTools Memory profiler to verify no increase in instance count after navigating between 10+ conversations. Monitor heap snapshots before/after optimization. Add integration tests that navigate between conversations and verify memory usage stays below threshold.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Convert LanguageDetectionService to singleton with Riverpod keepAlive",
+            "description": "Modify language_detection_provider.dart to use keepAlive: true annotation, preventing multiple instances from being created on every MessageBubble render",
+            "dependencies": [],
+            "details": "Update language_detection_provider.dart to use @Riverpod(keepAlive: true) annotation. Verify that the service is only instantiated once across the entire app lifecycle. Check MessageBubble widget at line 83 to ensure it's using ref.watch() correctly. Use Flutter DevTools to confirm only one instance exists after viewing 100+ messages.",
+            "status": "pending",
+            "testStrategy": "Use Flutter DevTools Memory profiler to verify single instance. Navigate through multiple conversations with 100+ messages each and confirm instance count remains at 1"
+          },
+          {
+            "id": 2,
+            "title": "Add StreamController disposal in RtdbPresenceService._combinePresenceStreams",
+            "description": "Implement proper disposal for StreamControllers created in _combinePresenceStreams method to prevent memory leaks from undisposed controllers",
+            "dependencies": [],
+            "details": "In RtdbPresenceService._combinePresenceStreams (lines 135-139), track all created StreamControllers in a List. Add ref.onDispose() callback to close all controllers. Ensure controller.close() is called for each StreamController when the service is disposed. Add null checks and error handling for safe disposal.",
+            "status": "pending",
+            "testStrategy": "Monitor Flutter DevTools for StreamController instances. Navigate between 10+ conversations and verify controller count doesn't increase. Check for 'Stream already listened to' errors"
+          },
+          {
+            "id": 3,
+            "title": "Track and cleanup AutoTranslationService subscriptions in ChatPage",
+            "description": "Ensure AutoTranslationService subscriptions are properly cancelled when ChatPage is disposed to prevent memory leaks from active subscriptions",
+            "dependencies": [],
+            "details": "In ChatPage's dispose() method, add explicit call to AutoTranslationService.stop(). Track the subscription reference and ensure _subscription?.cancel() is called in all exit paths including error cases. Add logging to verify cleanup occurs. Check that the service properly handles multiple start/stop cycles without leaking subscriptions.",
+            "status": "pending",
+            "testStrategy": "Add debug logging to track subscription lifecycle. Navigate in/out of ChatPage multiple times and verify equal number of subscribe/cancel calls. Use memory profiler to confirm no subscription buildup"
+          },
+          {
+            "id": 4,
+            "title": "Implement WeakReference pattern for long-lived service instances",
+            "description": "Apply WeakReference pattern to service instances that should be garbage collected when not actively used, preventing unnecessary memory retention",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "Create a ServiceRegistry class using WeakReference<T> for non-critical service instances. Implement lazy initialization with null checks: if (_weakRef?.target == null) { _weakRef = WeakReference(createService()); }. Apply to services that can be recreated like UserCache, TranslationCache. Maintain strong references only for critical services.",
+            "status": "pending",
+            "testStrategy": "Force garbage collection using Flutter DevTools and verify weak-referenced services are collected. Monitor memory usage during app idle periods. Ensure services recreate properly when needed"
+          },
+          {
+            "id": 5,
+            "title": "Add memory leak detection tests using LeakTesting package",
+            "description": "Implement automated tests to detect memory leaks in services using the leak_tracker package, ensuring ongoing prevention of memory issues",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "Add leak_tracker: ^10.0.0 to dev_dependencies. Create memory_leak_test.dart with tests for each service: testWidgets('LanguageDetectionService no leak', (tester) async { ... }). Use LeakTesting.settings.ignore = false to enable strict checking. Test navigation flows that previously caused leaks. Add CI job to run leak tests on every PR.",
+            "status": "pending",
+            "testStrategy": "Run leak detection tests in CI pipeline. Verify tests fail before fixes and pass after. Monitor test execution time stays under 30 seconds. Add memory threshold assertions"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Optimize widget rendering performance with const constructors and RepaintBoundary",
+        "description": "Eliminate unnecessary rebuilds by adding const constructors throughout the codebase and implementing RepaintBoundary for isolated widget repaints",
+        "details": "1. Add const constructors to all stateless widgets: MessageBubble (20+ instances), MessageInput (15+ instances), ConversationListItem (14+ instances).\n2. Wrap MessageBubble with RepaintBoundary to isolate translation toggle repaints.\n3. Replace AnimatedSwitcher with AnimatedOpacity for translation UI (avoids expensive saveLayer).\n4. Implement const keyword for all immutable widget parameters.\n5. Use const constructors for DateFormat, NumberFormat, and other formatters.\n6. Enable aggressive const linting in analysis_options.yaml:\nlinter:\n  rules:\n    - prefer_const_constructors\n    - prefer_const_declarations\n    - prefer_const_literals_to_create_immutables\n7. Wrap expensive widgets in RepaintBoundary: avatar images, typing indicators, presence status.\nImplementation pattern:\nclass MessageBubble extends ConsumerStatefulWidget {\n  const MessageBubble({...super.key});\n}\nWrap with: RepaintBoundary(child: MessageBubble(...))",
+        "testStrategy": "Use Flutter Inspector's 'Select Widget Mode' with 'Highlight Repaints' enabled. Verify that translation toggle only repaints single message bubble. Measure frame rendering time with Flutter Performance overlay - target 60fps consistently.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Add const constructors to MessageBubble, MessageInput, and ConversationListItem widgets",
+            "description": "Convert MessageBubble, MessageInput, and ConversationListItem widgets to use const constructors by making all parameters final and adding const keyword to constructors",
+            "dependencies": [],
+            "details": "Modify message_bubble.dart, message_input.dart, and conversation_list_item.dart to add const constructors. Ensure all widget parameters are final and immutable. Update all instantiation sites (20+ for MessageBubble, 15+ for MessageInput, 14+ for ConversationListItem) to use const keyword where possible. Fix any mutable state issues that prevent const usage.",
+            "status": "pending",
+            "testStrategy": null
+          },
+          {
+            "id": 2,
+            "title": "Implement RepaintBoundary wrapping for MessageBubble and other expensive widgets",
+            "description": "Wrap MessageBubble with RepaintBoundary to isolate translation toggle repaints, and add RepaintBoundary to avatar images, typing indicators, and presence status widgets",
+            "dependencies": [
+              1
+            ],
+            "details": "In message_list.dart and conversation_page.dart, wrap each MessageBubble instance with RepaintBoundary widget. Also wrap UserAvatar, TypingIndicator, and PresenceStatus widgets with RepaintBoundary in their respective parent widgets. This will isolate repaints to only the widgets that actually change, preventing cascading rebuilds up the widget tree.",
+            "status": "pending",
+            "testStrategy": null
+          },
+          {
+            "id": 3,
+            "title": "Replace AnimatedSwitcher with AnimatedOpacity in translation UI",
+            "description": "Replace the AnimatedSwitcher widget used for translation toggle with AnimatedOpacity to avoid expensive saveLayer operations and improve animation performance",
+            "dependencies": [
+              1
+            ],
+            "details": "In message_bubble.dart, locate the AnimatedSwitcher used for showing/hiding translated text. Replace it with AnimatedOpacity that fades between opacity 0 and 1. Use a Stack to overlay original and translated text, controlling visibility with opacity. This avoids the expensive saveLayer operation that AnimatedSwitcher uses internally.",
+            "status": "pending",
+            "testStrategy": null
+          },
+          {
+            "id": 4,
+            "title": "Enable and fix all const linting rules project-wide",
+            "description": "Enable aggressive const linting rules in analysis_options.yaml and fix all resulting warnings by adding const keywords throughout the codebase",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "Add prefer_const_constructors, prefer_const_declarations, and prefer_const_literals_to_create_immutables to linter rules in analysis_options.yaml. Run dart analyze to identify all places where const can be added. Fix all warnings by adding const keywords to widget instantiations, list/map literals, and constructor calls. Also make DateFormat, NumberFormat, and other formatters const where possible.",
+            "status": "pending",
+            "testStrategy": null
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Implement database indexing and query optimization",
+        "description": "Add composite indexes to Messages table and implement pagination to reduce query time from 500ms to under 50ms for large conversations",
+        "details": "1. Add composite index on (conversationId, timestamp DESC) for message queries in messages_table.dart:\n@override\nList<Set<Column>> get indices => [\n  {conversationId, timestamp},\n  {syncStatus},\n  {senderId, timestamp}\n];\n2. Implement cursor-based pagination in MessageDao.watchMessagesForConversation:\n- Add lastMessageTimestamp parameter\n- Use where clause: m.timestamp.isSmallerThan(lastMessageTimestamp)\n- Load 50 messages at a time with infinite scroll\n3. Add index on syncStatus for worker queries.\n4. Implement query result caching with TTL of 5 minutes for read-heavy operations.\n5. Use database views for complex joins.\n6. Add EXPLAIN QUERY PLAN analysis in debug mode.\n7. Increment schema version to 6 and add migration.\nRun: dart run build_runner build --delete-conflicting-outputs after changes.",
+        "testStrategy": "Benchmark query performance with 1000+ messages using Drift's built-in logging. Measure query time before/after indexing. Target: <50ms for indexed queries, <10ms for cached queries.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Add composite indexes to Messages table in Drift schema",
+            "description": "Modify messages_table.dart to add composite indexes on (conversationId, timestamp), syncStatus, and (senderId, timestamp) to optimize query performance",
+            "dependencies": [],
+            "details": "Edit lib/core/database/tables/messages_table.dart to add the indices override method. Define three composite indexes: {conversationId, timestamp} for conversation queries, {syncStatus} for sync worker queries, and {senderId, timestamp} for user message queries. The Drift syntax requires using Set<Column> within a List for index definitions. After modification, run dart run build_runner build --delete-conflicting-outputs to regenerate the database code.",
+            "status": "pending",
+            "testStrategy": "Use Drift's built-in query logging to capture EXPLAIN QUERY PLAN output before and after index addition. Measure query execution time for selecting 1000 messages from a conversation. Target: reduction from 500ms to under 50ms."
+          },
+          {
+            "id": 2,
+            "title": "Implement cursor-based pagination in MessageDao",
+            "description": "Replace the current simple offset pagination in MessageDao.watchMessagesForConversation with cursor-based pagination using timestamp as the cursor",
+            "dependencies": [
+              1
+            ],
+            "details": "Modify lib/core/database/daos/message_dao.dart at lines 48-56. Add optional DateTime? lastMessageTimestamp parameter to watchMessagesForConversation. Implement where clause using m.timestamp.isSmallerThan(lastMessageTimestamp) for cursor pagination. Set limit to 50 messages per page. Update the query to return messages in descending timestamp order. Ensure the stream properly handles infinite scroll by loading additional pages when requested.",
+            "status": "pending",
+            "testStrategy": "Test with conversations containing 500+ messages. Verify that only 50 messages load initially, and subsequent pages load correctly when scrolling. Measure memory usage to ensure old messages are properly released."
+          },
+          {
+            "id": 3,
+            "title": "Add query result caching layer with 5-minute TTL",
+            "description": "Implement a caching mechanism for read-heavy message queries to reduce database load and improve response times",
+            "dependencies": [
+              2
+            ],
+            "details": "Create a new MessageQueryCache class in lib/core/database/cache/ directory. Use LRU cache with maximum 50 cached queries. Implement cache key generation based on conversationId and pagination cursor. Add 5-minute TTL using DateTime timestamps. Integrate cache checks in MessageDao before executing queries. Implement cache invalidation when new messages arrive or messages are updated. Consider using the existing drift_cache package or implement custom solution with Map and Timer for TTL management.",
+            "status": "pending",
+            "testStrategy": "Monitor cache hit/miss rates using debug logging. Verify that cached results are returned within 10ms. Test cache invalidation when new messages arrive. Ensure memory usage stays under 10MB for cache storage."
+          },
+          {
+            "id": 4,
+            "title": "Increment schema version and write database migration",
+            "description": "Update the database schema version from 5 to 6 and create a migration that adds the new indexes without data loss",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "Modify lib/core/database/app_database.dart to increment schemaVersion to 6. Implement the migration in the onUpgrade callback using MigrationStrategy. The migration should check if upgrading from version 5 to 6, then execute CREATE INDEX statements for the composite indexes if they don't already exist. Use Drift's customStatement to run raw SQL for index creation. Ensure migration is idempotent and handles partial migrations gracefully. Test rollback scenarios and verify data integrity is maintained.",
+            "status": "pending",
+            "testStrategy": "Test migration from version 5 database with existing data. Verify all indexes are created correctly using PRAGMA index_list. Ensure no data loss occurs during migration. Test with databases containing 10,000+ messages."
+          },
+          {
+            "id": 5,
+            "title": "Add query performance monitoring with EXPLAIN QUERY PLAN",
+            "description": "Implement debug-mode query analysis using SQLite's EXPLAIN QUERY PLAN to monitor and log query performance metrics",
+            "dependencies": [
+              4
+            ],
+            "details": "Create a QueryPerformanceMonitor class in lib/core/database/monitoring/. In debug mode only, wrap critical queries in MessageDao with EXPLAIN QUERY PLAN analysis. Use Drift's customSelect to execute EXPLAIN statements. Log query plans, execution times, and index usage to console. Add performance threshold alerts for queries taking over 100ms. Create a debug UI overlay showing real-time query metrics. Implement automatic reporting of slow queries with their execution plans for optimization opportunities.",
+            "status": "pending",
+            "testStrategy": "Enable debug mode and verify EXPLAIN QUERY PLAN output is captured for all major queries. Intentionally create slow queries by disabling indexes temporarily to test threshold alerts. Verify no performance impact in release mode."
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Implement batch operations for Firestore sync and message processing",
+        "description": "Replace sequential message sync with batch operations to reduce sync time by 80% and improve network efficiency",
+        "details": "1. Implement WriteBatch in MessageSyncWorker.syncAll():\nfinal batch = _firestore.batch();\nfor (final message in unsyncedMessages) {\n  batch.set(docRef, data);\n  if (++count % 500 == 0) {\n    await batch.commit();\n    batch = _firestore.batch();\n  }\n}\n2. Add batch translation API endpoint in Cloud Function:\n- Accept array of texts (max 100)\n- Return Map<String, String> of translations\n- Implement in translate_message function\n3. Use Future.wait for parallel auto-translation:\nfinal translations = await Future.wait(\n  messages.map((m) => _translateWithTimeout(m)),\n);\n4. Implement transaction batching for Drift writes:\nawait database.batch((batch) {\n  for (final update in updates) {\n    batch.update(messages, update);\n  }\n});\n5. Add request coalescing for duplicate translation requests.\n6. Implement exponential backoff for failed syncs.",
+        "testStrategy": "Stress test with 50 pending messages. Measure sync time before (sequential) vs after (batch). Monitor network requests with Charles Proxy. Target: <2 seconds for 50 messages.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Refactor MessageSyncWorker.syncAll() to use Firestore WriteBatch",
+            "description": "Replace sequential Firestore writes in MessageSyncWorker.syncAll() with WriteBatch operations to process messages in batches of 500, reducing API calls and improving sync performance",
+            "dependencies": [],
+            "details": "Locate MessageSyncWorker.syncAll() at lines 65-100 in message_sync_worker.dart. Replace the current sequential processing loop with WriteBatch implementation: create batch instance, accumulate operations up to 500 documents, commit batch when limit reached or all messages processed. Add error handling for partial batch failures with retry logic. Track batch commit success/failure for each message to update local sync status accordingly.",
+            "status": "pending",
+            "testStrategy": null
+          },
+          {
+            "id": 2,
+            "title": "Create batch translation Cloud Function endpoint in Python",
+            "description": "Implement a new Cloud Function endpoint 'translate_batch' in main.py that accepts arrays of text for translation and returns a map of translations, supporting up to 100 texts per request",
+            "dependencies": [],
+            "details": "Add new function translate_batch to functions/main.py. Accept JSON payload with array of {text, targetLanguage} objects (max 100). Implement rate limiting and request validation. Use Google Translate API batch capabilities or parallel processing with asyncio. Return Map<String, String> where key is original text hash and value is translation. Add proper error handling for partial failures, returning successful translations even if some fail.",
+            "status": "pending",
+            "testStrategy": null
+          },
+          {
+            "id": 3,
+            "title": "Implement Future.wait for parallel message translation in Flutter",
+            "description": "Replace sequential translation calls with Future.wait to process multiple translations concurrently, implementing timeout handling and partial failure recovery",
+            "dependencies": [
+              2
+            ],
+            "details": "Modify translation logic in MessageRepository or TranslationService to batch translation requests. Implement _translateWithTimeout() method with 5-second timeout per translation. Use Future.wait with eagerError: false to handle partial failures. Group messages by target language for efficient batching. Add fallback to sequential processing if batch endpoint fails. Cache successful translations immediately to avoid re-translation.",
+            "status": "pending",
+            "testStrategy": null
+          },
+          {
+            "id": 4,
+            "title": "Add Drift database batch operations for message writes",
+            "description": "Implement transaction batching for Drift database operations to improve write performance when syncing multiple messages",
+            "dependencies": [],
+            "details": "Modify MessageDao to use database.batch() for bulk operations. Create batchUpsertMessages() method that accepts List<Message> and uses batch.insertAll with mode: InsertMode.insertOrReplace. Implement batch updates for sync status changes. Add transaction wrapper to ensure atomicity. Handle constraint violations gracefully. Optimize batch size based on SQLite limits (999 variables per statement).",
+            "status": "pending",
+            "testStrategy": null
+          },
+          {
+            "id": 5,
+            "title": "Implement request coalescing for duplicate translation requests",
+            "description": "Add request deduplication to prevent multiple identical translation requests from being sent simultaneously, using in-memory request tracking",
+            "dependencies": [
+              3
+            ],
+            "details": "Create TranslationCoalescer class with Map<String, Future<String>> for pending requests. Key format: '${text}_${targetLang}'.hashCode. Check if translation already in-flight before making new request. Return existing Future if found. Remove from map on completion. Add 30-second timeout for stale request cleanup. Implement singleton pattern for app-wide coalescing. Add metrics for coalescing hit rate.",
+            "status": "pending",
+            "testStrategy": null
+          },
+          {
+            "id": 6,
+            "title": "Add exponential backoff for failed sync operations",
+            "description": "Implement retry logic with exponential backoff for failed Firestore sync operations to handle transient network failures gracefully",
+            "dependencies": [
+              1
+            ],
+            "details": "Create RetryPolicy class with exponential backoff: initial delay 1s, max delay 32s, multiplier 2x. Add jitter (±20%) to prevent thundering herd. Implement max retry count of 5 attempts. Store retry metadata in message table (retryCount, lastRetryAt columns). Skip messages exceeding max retries until manual retry. Add NetworkConnectivity check before retry attempts. Log retry attempts for debugging. Expose retry queue size in UI.",
+            "status": "pending",
+            "testStrategy": null
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Fix language detection performance issues and setState during build",
+        "description": "Move language detection to post-frame callback and implement proper caching to prevent UI jank and rebuild cycles",
+        "details": "1. Move language detection to post-frame callback in MessageBubble:\nWidgetsBinding.instance.addPostFrameCallback((_) {\n  _detectLanguageFallback();\n});\n2. Implement language detection cache at provider level:\n@riverpod\nclass LanguageDetectionCache extends _$LanguageDetectionCache {\n  final _cache = <String, String>{}; // messageId -> language\n  String? getCached(String messageId) => _cache[messageId];\n  void cache(String messageId, String language) => _cache[messageId] = language;\n}\n3. Move detection to background isolate for old messages:\ncompute(_detectLanguageInIsolate, messageText);\n4. Batch language detection for multiple messages.\n5. Add debouncing for rapid message loads.\n6. Pre-detect language during message composition (as user types).\n7. Cache detection results in local database.",
+        "testStrategy": "Profile with Flutter Performance overlay while loading conversation with 100+ old messages. Verify no frame drops. Monitor setState calls with debugPrintRebuildDirtyWidgets.",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Move language detection to post-frame callback in MessageBubble",
+            "description": "Refactor MessageBubble widget to move language detection from initState (line 68) to addPostFrameCallback to prevent setState during build errors and improve initial render performance",
+            "dependencies": [],
+            "details": "Replace the current _detectLanguageFallback() call in initState with: WidgetsBinding.instance.addPostFrameCallback((_) { if (mounted) { _detectLanguageFallback(); } }); This ensures detection happens after the frame is rendered, preventing setState during build errors. Add mounted check to prevent calling setState on unmounted widgets.",
+            "status": "pending",
+            "testStrategy": "Test with conversations containing 100+ messages. Use debugPrintRebuildDirtyWidgets to verify no unnecessary rebuilds. Monitor with Flutter Performance overlay for frame drops."
+          },
+          {
+            "id": 2,
+            "title": "Implement provider-level language detection cache",
+            "description": "Create a Riverpod provider for caching language detection results across the app, preventing redundant ML Kit calls for the same messages",
+            "dependencies": [],
+            "details": "Extend language_detection_provider.dart with: @riverpod class LanguageDetectionCache extends _$LanguageDetectionCache { final _cache = <String, String>{}; String? getCached(String messageId) => _cache[messageId]; void cache(String messageId, String language) { _cache[messageId] = language; } void clearOldEntries() { if (_cache.length > 1000) _cache.clear(); } } Integrate with MessageBubble to check cache before detection.",
+            "status": "pending",
+            "testStrategy": "Verify cache hit rate >90% when scrolling through previously viewed messages. Monitor memory usage to ensure cache doesn't grow unbounded."
+          },
+          {
+            "id": 3,
+            "title": "Add compute isolate for batch language detection",
+            "description": "Implement background isolate processing for detecting language of multiple old messages simultaneously, preventing main thread blocking",
+            "dependencies": [
+              2
+            ],
+            "details": "Create static function for isolate: static Future<Map<String, String>> _detectLanguagesInIsolate(List<MapEntry<String, String>> entries) async { final detector = LanguageDetector(); final results = <String, String>{}; for (final entry in entries) { results[entry.key] = await detector.detect(entry.value); } return results; } Call with compute() for batches of 10+ undetected messages. Store results in cache.",
+            "status": "pending",
+            "testStrategy": "Profile with 50+ messages needing detection. Verify main thread stays responsive during batch detection. Measure time difference vs sequential detection."
+          },
+          {
+            "id": 4,
+            "title": "Implement debouncing for rapid message loads",
+            "description": "Add debouncing mechanism to batch language detection requests when scrolling quickly through conversations, reducing redundant ML Kit calls",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Implement Timer-based debouncing: Timer? _detectionTimer; void _scheduleDetection(String messageId, String text) { _detectionTimer?.cancel(); _detectionTimer = Timer(Duration(milliseconds: 300), () { if (!_cache.containsKey(messageId)) { _detectLanguageWithCache(messageId, text); } }); } Apply in MessageBubble for old messages without detectedLanguage. Batch multiple pending detections.",
+            "status": "pending",
+            "testStrategy": "Test rapid scrolling through 200+ messages. Verify detection calls are batched and total detection calls are <20% of message count."
+          },
+          {
+            "id": 5,
+            "title": "Add pre-detection during message composition",
+            "description": "Implement real-time language detection as user types in MessageInput widget, enabling instant translation toggle and reducing post-send detection latency",
+            "dependencies": [
+              2
+            ],
+            "details": "In MessageInput, add debounced detection: Timer? _typeTimer; void _onTextChanged(String text) { _typeTimer?.cancel(); if (text.length > 10) { _typeTimer = Timer(Duration(seconds: 1), () async { final language = await ref.read(languageDetectionCacheProvider).detectWithCache(text); setState(() => _composingLanguage = language); }); } } Pre-cache result for message ID when sending. Show language indicator in input field.",
+            "status": "pending",
+            "testStrategy": "Type messages in different languages. Verify detection happens within 1-2 seconds of pause. Confirm pre-detected language is used when message is sent."
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Optimize list rendering and incremental updates",
+        "description": "Implement efficient list rendering with item keys, virtual scrolling, and incremental updates to prevent full list rebuilds",
+        "details": "1. Add ValueKey to conversation list items:\nListView.builder(\n  itemBuilder: (context, index) => ConversationListItem(\n    key: ValueKey(conversations[index].id),\n    ...\n  ),\n);\n2. Implement virtual scrolling for messages using flutter_list_view package or custom solution.\n3. Replace ConversationListItem's individual presence watchers with batch lookup:\n- Parent fetches all presence data once\n- Pass down as props to children\n- Use context.select for granular updates\n4. Implement sorted insert instead of re-sorting entire list:\nvoid _insertSorted(Conversation conv) {\n  final index = _binarySearch(conv.lastMessageTime);\n  _conversations.insert(index, conv);\n}\n5. Use ListView.custom with findChildIndexCallback for large lists.\n6. Add item extent for fixed height items.\n7. Implement incremental diff updates instead of full list replacement.",
+        "testStrategy": "Test with 200+ conversations. Monitor rebuilds with Flutter Inspector. Verify smooth 60fps scrolling. Use Timeline view to measure list update performance.",
+        "priority": "high",
+        "dependencies": [
+          3
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Add ValueKey to conversation list items for efficient widget recycling",
+            "description": "Implement ValueKey for all conversation list items in ConversationListPage to enable Flutter's efficient widget recycling and prevent unnecessary rebuilds when list order changes",
+            "dependencies": [],
+            "details": "Modify lib/features/messaging/presentation/pages/conversation_list_page.dart to add ValueKey to ListView.builder. Update ConversationListItem widget instantiation to include key: ValueKey(conversation.id). Also add keys to any nested list items within conversations. This will help Flutter identify which widgets can be reused when the list updates, significantly improving performance for list operations like sorting and filtering.",
+            "status": "pending",
+            "testStrategy": null
+          },
+          {
+            "id": 2,
+            "title": "Implement virtual scrolling for large message lists using flutter_list_view",
+            "description": "Add virtual scrolling capability to message lists to handle conversations with thousands of messages efficiently by only rendering visible items plus a buffer",
+            "dependencies": [
+              1
+            ],
+            "details": "Add flutter_list_view package to pubspec.yaml. Replace existing ListView.builder in MessageList widget with FlutterListView. Configure keepPositionOffset and cacheExtent parameters for optimal performance. Implement custom ScrollController with position restoration. Add message item height calculation for better scroll position accuracy. Consider implementing jump-to-message functionality with virtual scrolling support.",
+            "status": "pending",
+            "testStrategy": null
+          },
+          {
+            "id": 3,
+            "title": "Replace individual presence watchers with batch lookup system",
+            "description": "Refactor ConversationListPage to fetch all presence data once at the parent level and pass it down as props to child widgets, eliminating multiple individual presence stream subscriptions",
+            "dependencies": [
+              1
+            ],
+            "details": "Create a single presence stream subscription in ConversationListPage that fetches all user presence data for visible conversations. Store presence data in a Map<String, PresenceData> and pass it to ConversationListItem as a prop. Update ConversationListItem to receive presence data via constructor instead of watching individual streams. Use context.select() or Consumer for granular updates only when specific user presence changes. This reduces stream subscriptions from N (one per item) to 1.",
+            "status": "pending",
+            "testStrategy": null
+          },
+          {
+            "id": 4,
+            "title": "Implement binary search sorted insert for conversation updates",
+            "description": "Replace full list re-sorting with efficient binary search insertion when conversations are updated, maintaining sort order without rebuilding the entire list",
+            "dependencies": [
+              3
+            ],
+            "details": "Create _binarySearch method in conversation list controller that finds the correct insertion index based on lastMessageTime. Implement _insertSorted method that uses binary search to find position and inserts conversation at correct index. Modify conversation update logic to remove old position and insert at new position rather than re-sorting entire list. Add debouncing for rapid updates to prevent excessive list modifications. Ensure this works with both new conversations and updates to existing ones.",
+            "status": "pending",
+            "testStrategy": null
+          },
+          {
+            "id": 5,
+            "title": "Add ListView.custom with findChildIndexCallback for large list optimization",
+            "description": "Implement ListView.custom with findChildIndexCallback to enable Flutter to efficiently map between widget positions and data indices, improving scrolling performance for large lists",
+            "dependencies": [
+              4
+            ],
+            "details": "Replace ListView.builder with ListView.custom in both ConversationListPage and MessageList widgets. Implement SliverChildBuilderDelegate with findChildIndexCallback that maps conversation/message IDs to their indices. Add itemExtent parameter for fixed-height items where applicable (like conversation list items). Configure cacheExtent for optimal memory usage. Implement custom keepAlive logic for important items. This allows Flutter to quickly jump to specific positions and improves scrolling performance.",
+            "status": "pending",
+            "testStrategy": null
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Implement intelligent caching layer for user data and translations",
+        "description": "Add LRU caching for frequently accessed data to reduce redundant lookups and API calls",
+        "details": "1. Implement UserCache with LRU eviction (already exists, enhance it):\nclass EnhancedUserCache {\n  final _cache = LruMap<String, User>(maximumSize: 100);\n  final _ttl = Duration(minutes: 15);\n  User? get(String id) => _isValid(id) ? _cache[id] : null;\n}\n2. Add translation cache with 24-hour TTL:\nclass TranslationCache {\n  // Key: hash(text + targetLang), Value: translation\n  final _cache = <String, CachedTranslation>{};\n}\n3. Implement NetworkImage caching with cached_network_image: ^3.3.1 package.\n4. Add Drift query result caching for expensive joins.\n5. Cache MediaQueryData and Theme data in build methods.\n6. Implement HTTP response caching with dio_cache_interceptor.\n7. Add cache warming for predictable data access patterns.\n8. Implement cache statistics and monitoring.",
+        "testStrategy": "Monitor cache hit rates with custom metrics. Verify memory usage stays within bounds. Test cache eviction with memory pressure simulation.",
+        "priority": "medium",
+        "dependencies": [
+          4,
+          5
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Enhance UserCacheService with LRU eviction and TTL management",
+            "description": "Upgrade the existing UserCacheService to implement proper LRU eviction with configurable size limits and TTL-based expiration for cached user objects",
+            "dependencies": [],
+            "details": "Modify lib/features/authentication/data/services/user_cache_service.dart to add LRU eviction using the collection package's LruMap. Implement a maximum cache size of 100 users with 15-minute TTL. Add methods for cache invalidation on user updates and implement timestamp tracking for each cached entry. Include cache hit/miss metrics collection.",
+            "status": "pending",
+            "testStrategy": null
+          },
+          {
+            "id": 2,
+            "title": "Create TranslationCache service with persistent 24-hour TTL storage",
+            "description": "Build a dedicated translation caching service that stores translated text with 24-hour TTL and implements hash-based key generation for efficient lookups",
+            "dependencies": [],
+            "details": "Create lib/features/translation/data/services/translation_cache_service.dart with hash-based keys combining source text and target language. Implement 24-hour TTL with background cleanup. Use crypto package for MD5 hashing of cache keys. Store translations in memory with optional SharedPreferences persistence for app restarts. Include cache size limits (1000 translations max) and LRU eviction.",
+            "status": "pending",
+            "testStrategy": null
+          },
+          {
+            "id": 3,
+            "title": "Integrate cached_network_image for avatar and media caching",
+            "description": "Add cached_network_image dependency to pubspec.yaml and implement it for all user avatars and conversation images throughout the app",
+            "dependencies": [],
+            "details": "Add cached_network_image: ^3.3.1 to pubspec.yaml dependencies. Replace all NetworkImage widgets with CachedNetworkImage in UserAvatar, ConversationTile, and MessageBubble widgets. Configure cache manager with 7-day retention and 100MB max disk cache. Add placeholder shimmer effects during image loading. Implement error handling with fallback avatars.",
+            "status": "pending",
+            "testStrategy": null
+          },
+          {
+            "id": 4,
+            "title": "Implement Drift query result caching for expensive joins",
+            "description": "Add query result caching layer for Drift database queries involving joins between messages, users, and conversations tables",
+            "dependencies": [
+              1
+            ],
+            "details": "Create QueryCache class in lib/core/database/query_cache.dart to cache results of expensive Drift queries. Focus on caching conversation list with participant info and recent messages with user data. Implement cache key generation based on query parameters. Add 5-minute TTL for query results. Invalidate cache on relevant table updates using Drift's table update streams. Maximum 50 cached queries with LRU eviction.",
+            "status": "pending",
+            "testStrategy": null
+          },
+          {
+            "id": 5,
+            "title": "Add cache warming for predictable data access patterns",
+            "description": "Implement proactive cache warming for frequently accessed data like recent conversations and active user profiles during app startup",
+            "dependencies": [
+              1,
+              2,
+              4
+            ],
+            "details": "Create CacheWarmingService in lib/core/services/cache_warming_service.dart to preload data on app launch. Warm up: last 10 conversations, all conversation participants, recent 50 messages per conversation, and user's contact list. Implement progressive loading to avoid blocking UI. Use background isolate for heavy warming operations. Add predictive warming based on user interaction patterns (e.g., pre-fetch next page of messages).",
+            "status": "pending",
+            "testStrategy": null
+          },
+          {
+            "id": 6,
+            "title": "Implement cache monitoring dashboard and statistics collection",
+            "description": "Build comprehensive cache monitoring system to track hit rates, memory usage, and performance metrics across all cache layers",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "Create CacheMonitor singleton in lib/core/services/cache_monitor.dart to collect metrics from all cache services. Track hit/miss rates, memory usage, eviction counts, and average retrieval times. Add debug overlay widget showing real-time cache stats (only in debug mode). Implement periodic memory pressure checks and automatic cache trimming when approaching limits. Export metrics to Firebase Analytics for production monitoring.",
+            "status": "pending",
+            "testStrategy": null
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Optimize state management and provider efficiency",
+        "description": "Reduce unnecessary provider rebuilds and implement efficient state updates using select() and proper equality checks",
+        "details": "1. Replace deep equality checks with hash-based comparison:\nclass MessageListState extends Equatable {\n  final String conversationId;\n  final List<Message> messages;\n  final int messageHash; // Hash of message IDs\n  \n  @override\n  List<Object> get props => [conversationId, messageHash];\n}\n2. Use ref.watch().select() for granular updates:\nfinal userName = ref.watch(\n  userProvider.select((user) => user?.displayName),\n);\n3. Implement mutex for ConversationReadMarker:\nfinal _markAsReadMutex = Mutex();\nFuture<void> markAsRead() => _markAsReadMutex.protect(() async {...});\n4. Split large providers into focused ones:\n- messaging_providers.dart (834 lines) -> messages_provider.dart, conversations_provider.dart, presence_provider.dart\n5. Use family providers for parameterized state.\n6. Implement provider caching with autoDispose and cacheTime.\n7. Add provider dependency visualization for debugging.",
+        "testStrategy": "Use ProviderObserver to log rebuild frequency. Verify reduced rebuilds with ref.watch().select(). Test concurrent operations don't cause race conditions.",
+        "priority": "medium",
+        "dependencies": [
+          6
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Equatable for state classes with hash-based comparison",
+            "description": "Replace deep equality checks in MessageListState and other state classes with efficient hash-based comparison using Equatable to reduce unnecessary provider rebuilds",
+            "dependencies": [],
+            "details": "Update MessageListState to extend Equatable and implement hash-based comparison for messages list. Instead of comparing entire message lists, compute and compare a hash of message IDs. Apply same pattern to ConversationListState, UserState, and other frequently-rebuilt state classes. This will prevent rebuilds when message content changes but the list composition remains the same.",
+            "status": "pending",
+            "testStrategy": "Create unit tests comparing rebuild frequency with old vs new implementation. Use ProviderObserver to log and verify reduced rebuild counts. Test edge cases where hash collision might occur."
+          },
+          {
+            "id": 2,
+            "title": "Refactor providers to use ref.watch().select() for granular updates",
+            "description": "Systematically refactor all provider consumers to use select() for watching only specific properties, preventing unnecessary widget rebuilds when unrelated state changes",
+            "dependencies": [
+              1
+            ],
+            "details": "Audit all ref.watch() calls and replace with ref.watch().select() where appropriate. Focus on high-frequency update areas like message lists, user status, and typing indicators. Example: replace ref.watch(userProvider) with ref.watch(userProvider.select((user) => user?.displayName)) when only name is needed. Document each change to track performance improvements.",
+            "status": "pending",
+            "testStrategy": "Use Flutter Inspector's rebuild tracker to verify widgets only rebuild when their selected properties change. Create integration tests that modify unrelated state and verify no rebuilds occur."
+          },
+          {
+            "id": 3,
+            "title": "Add mutex synchronization for ConversationReadMarker",
+            "description": "Implement mutex-based synchronization for markAsRead operations to prevent race conditions when multiple read marker updates occur simultaneously",
+            "dependencies": [],
+            "details": "Add mutex package dependency and create _markAsReadMutex instance in ConversationReadMarker. Wrap all markAsRead() operations with mutex.protect() to ensure sequential execution. Handle edge cases like rapid conversation switching and background sync conflicts. Consider implementing a debounce mechanism for frequent read marker updates.",
+            "status": "pending",
+            "testStrategy": "Create concurrent operation tests simulating rapid markAsRead calls. Verify no duplicate Firestore writes occur. Test with network delays to ensure race conditions are prevented."
+          },
+          {
+            "id": 4,
+            "title": "Split messaging_providers.dart into focused provider files",
+            "description": "Refactor the monolithic messaging_providers.dart file (834 lines, 35 providers) into separate, focused provider files for better maintainability and selective imports",
+            "dependencies": [
+              2
+            ],
+            "details": "Create separate files: messages_provider.dart for message-related providers, conversations_provider.dart for conversation management, presence_provider.dart for online status, typing_provider.dart for typing indicators, and search_provider.dart for search functionality. Update all imports throughout the codebase. Ensure proper export structure to maintain backward compatibility during migration.",
+            "status": "pending",
+            "testStrategy": "Verify all providers are accessible after split. Run full app test suite to ensure no broken imports. Check that tree shaking properly eliminates unused providers in production builds."
+          },
+          {
+            "id": 5,
+            "title": "Implement family providers for parameterized state management",
+            "description": "Convert singleton providers to family providers where parameters are needed, enabling efficient caching and disposal of parameterized state",
+            "dependencies": [
+              4
+            ],
+            "details": "Identify providers that currently use global state with filtering (e.g., messages for specific conversations). Convert to family providers like messageListProvider.family((ref, conversationId) => ...). Implement proper autoDispose with cacheTime for automatic cleanup. Focus on conversation-specific, user-specific, and search-specific providers. Ensure proper parameter equality for effective caching.",
+            "status": "pending",
+            "testStrategy": "Test provider disposal after cacheTime expiration. Verify memory usage reduction with multiple conversations. Ensure proper state isolation between different parameter values."
+          },
+          {
+            "id": 6,
+            "title": "Add provider dependency visualization and debugging tools",
+            "description": "Implement development tools to visualize provider dependencies and track rebuild patterns for easier debugging and optimization",
+            "dependencies": [
+              5
+            ],
+            "details": "Create a ProviderInspector widget that visualizes the dependency graph of providers. Implement a custom ProviderObserver that logs rebuild frequency and highlights hot paths. Add debug overlay showing real-time rebuild counts for each provider. Create documentation showing provider architecture and dependency flow. Consider integrating with Redux DevTools for time-travel debugging.",
+            "status": "pending",
+            "testStrategy": "Verify visualization accurately represents provider dependencies. Test that debug tools don't affect production performance. Ensure observer correctly tracks all provider updates and rebuilds."
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Add request cancellation and timeout handling",
+        "description": "Implement proper request lifecycle management with cancellation tokens and timeouts for all network operations",
+        "details": "1. Add CancelToken to translation requests:\nclass TranslationService {\n  final _cancelTokens = <String, CancelToken>{};\n  \n  void cancelTranslation(String messageId) {\n    _cancelTokens[messageId]?.cancel();\n  }\n  \n  Future<String> translate(text, {required String messageId}) {\n    final token = CancelToken();\n    _cancelTokens[messageId] = token;\n    return _api.translate(text, cancelToken: token)\n      .timeout(Duration(seconds: 30));\n  }\n}\n2. Add timeout to all Cloud Function calls:\nFirebaseFunctions.instance\n  .httpsCallable('translate_message', options: HttpsCallableOptions(\n    timeout: Duration(seconds: 30),\n  ));\n3. Cancel in-flight requests on widget disposal.\n4. Implement request deduplication for identical concurrent requests.\n5. Add circuit breaker pattern for failing services.\n6. Implement retry with exponential backoff.",
+        "testStrategy": "Simulate slow network with Network Link Conditioner. Verify timeouts trigger correctly. Test request cancellation when navigating away rapidly.",
+        "priority": "medium",
+        "dependencies": [
+          7
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement CancelToken infrastructure for translation requests",
+            "description": "Create a comprehensive CancelToken management system for translation service to handle request cancellation properly when users navigate away or trigger new translations",
+            "dependencies": [],
+            "details": "Create a CancelTokenManager class to track and manage tokens by messageId. Implement in TranslationService with proper token lifecycle management including creation, storage, cancellation, and cleanup. Add cancelTranslation method that cancels tokens and removes them from the map. Ensure tokens are properly disposed when requests complete successfully or fail. Handle CancelToken.isCancel() errors gracefully in the UI layer without showing error messages for user-initiated cancellations.",
+            "status": "pending",
+            "testStrategy": "Test rapid translation toggling to verify previous requests are cancelled. Verify memory leaks don't occur from retained tokens. Test widget disposal during active translation."
+          },
+          {
+            "id": 2,
+            "title": "Add timeout configuration to all Cloud Function calls",
+            "description": "Configure appropriate timeout durations for all Firebase Cloud Function calls including translate_message and adjust_formality to prevent hanging requests",
+            "dependencies": [],
+            "details": "Add HttpsCallableOptions with 30-second timeout to translate_message function call in translation_service.dart. Configure 20-second timeout for adjust_formality function in formality_adjustment_service.dart. Implement timeout error handling with specific error messages for timeout vs other failures. Add retry logic with shorter timeouts (10s, 15s, 20s) for critical operations. Create a CloudFunctionConfig class to centralize timeout values and make them configurable based on network conditions.",
+            "status": "pending",
+            "testStrategy": "Simulate slow network conditions and verify timeouts trigger correctly. Test with Network Link Conditioner set to 100% packet loss. Verify appropriate error messages are shown."
+          },
+          {
+            "id": 3,
+            "title": "Cancel in-flight requests on widget disposal and navigation",
+            "description": "Implement proper cleanup of active network requests when widgets are disposed or users navigate away from screens to prevent memory leaks and unnecessary processing",
+            "dependencies": [
+              1
+            ],
+            "details": "Override dispose() method in MessageBubble ConsumerStatefulWidget to cancel any active translation requests for that message. Implement disposal tracking in ConversationPage to cancel all pending translations when navigating away. Add lifecycle observer to cancel requests when app goes to background. Create RequestLifecycleManager mixin for reusable request cancellation logic. Ensure FormattedTextDisplay widget properly cancels formality adjustment requests on disposal. Handle race conditions where responses arrive after disposal.",
+            "status": "pending",
+            "testStrategy": "Navigate away rapidly during translation and verify no setState errors occur. Monitor network traffic to confirm cancelled requests stop data transfer. Test app backgrounding during active requests."
+          },
+          {
+            "id": 4,
+            "title": "Implement circuit breaker pattern for translation and formality services",
+            "description": "Create a circuit breaker implementation to prevent cascading failures when translation or formality adjustment services are experiencing issues",
+            "dependencies": [
+              2
+            ],
+            "details": "Implement CircuitBreaker class with three states: CLOSED (normal operation), OPEN (failing, reject requests), HALF_OPEN (testing recovery). Configure failure threshold at 5 failures within 30 seconds to trip the breaker. Set reset timeout to 60 seconds before attempting recovery. Track failure types separately for translation and formality services. Provide fallback behavior when circuit is open - show original text with info message. Implement exponential backoff for retry attempts in HALF_OPEN state. Add metrics tracking for circuit breaker state changes and failure rates. Integrate with existing error handling in TranslationService and FormalityAdjustmentService.",
+            "status": "pending",
+            "testStrategy": "Simulate service failures and verify circuit opens after threshold. Confirm requests fail fast when circuit is open. Test automatic recovery after reset timeout."
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Optimize app startup and service initialization",
+        "description": "Move synchronous service initialization to async pattern with splash screen to improve time-to-interactive",
+        "details": "1. Implement async initialization in main.dart:\nFuture<void> main() async {\n  WidgetsFlutterBinding.ensureInitialized();\n  \n  // Show splash immediately\n  runApp(SplashScreen());\n  \n  // Initialize in parallel\n  await Future.wait([\n    Firebase.initializeApp(),\n    _initializeDatabase(),\n    _initializeWorkManager(),\n  ]);\n  \n  runApp(ProviderScope(child: MyApp()));\n}\n2. Lazy load heavy dependencies.\n3. Implement progressive initialization (core features first).\n4. Add initialization progress indicator.\n5. Defer non-critical service initialization.\n6. Preload critical assets during splash.\n7. Use AppStartup package for structured initialization.",
+        "testStrategy": "Measure time-to-interactive with Firebase Performance. Profile startup with Timeline view. Target: <2 seconds on average device.",
+        "priority": "medium",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement async initialization with splash screen in main.dart",
+            "description": "Refactor main.dart to show splash screen immediately while initializing services asynchronously in the background",
+            "dependencies": [],
+            "details": "Create a SplashScreen widget that displays immediately when app starts. Refactor main() to show splash first, then perform async initialization. Implement proper error handling for initialization failures. Use FutureBuilder or similar pattern to transition from splash to main app when initialization completes. Ensure splash screen matches app branding and provides visual feedback during loading.",
+            "status": "pending",
+            "testStrategy": "Measure time from app launch to splash screen display (should be <100ms). Verify splash shows while services initialize. Test error scenarios when initialization fails."
+          },
+          {
+            "id": 2,
+            "title": "Parallelize Firebase and core service initialization with Future.wait",
+            "description": "Optimize service initialization by running Firebase, database, and work manager initialization in parallel using Future.wait to reduce total startup time",
+            "dependencies": [
+              1
+            ],
+            "details": "Refactor sequential initialization calls into parallel execution using Future.wait. Group independent services that can initialize simultaneously. Implement _initializeDatabase() and _initializeWorkManager() helper functions. Add proper error handling for partial initialization failures. Measure and log initialization time for each service to identify bottlenecks. Consider using completer pattern for services that need partial initialization.",
+            "status": "pending",
+            "testStrategy": "Profile initialization time before and after parallelization. Verify all services initialize correctly. Test partial failure scenarios. Target 40-60% reduction in total init time."
+          },
+          {
+            "id": 3,
+            "title": "Defer non-critical service initialization and add progress indicators",
+            "description": "Move non-essential service initialization to post-launch and implement visual progress indicators during startup sequence",
+            "dependencies": [
+              2
+            ],
+            "details": "Identify and categorize services as critical (needed for first screen) vs non-critical (can load later). Move non-critical services like analytics, crash reporting, and secondary features to background initialization after main app loads. Implement progress indicator on splash screen showing initialization stages. Use StreamBuilder or ValueListenableBuilder to update progress. Consider using AppStartup package for structured initialization phases. Lazy-load heavy dependencies on first use rather than startup.",
+            "status": "pending",
+            "testStrategy": "Verify app is interactive before all services load. Monitor time-to-interactive metric (<2 seconds target). Test that deferred services initialize properly when needed."
+          }
+        ]
+      },
+      {
+        "id": 11,
+        "title": "Implement server-side presence aggregation for groups",
+        "description": "Create Cloud Function for aggregated presence to reduce RTDB connections from N to 1 for large groups",
+        "details": "1. Create new Cloud Function 'aggregate_group_presence':\ndef aggregate_group_presence(group_id: str):\n  # Subscribe to all member presence\n  # Emit aggregated status to single RTDB node\n  # Return {online_count: X, members_online: [...]}\n2. Modify RtdbPresenceService for groups >10 members:\nif (memberCount > 10) {\n  return watchGroupPresenceAggregated(groupId);\n} else {\n  return _combinePresenceStreams(memberIds);\n}\n3. Add server-side caching for 5-second granularity.\n4. Implement presence summary (X of Y online).\n5. Add typing indicator aggregation.\n6. Use Cloud Scheduler for periodic cleanup.\n7. Implement graceful degradation if aggregation fails.",
+        "testStrategy": "Test with 50-person group. Monitor Firebase connection count. Verify single subscription instead of 50. Measure battery impact improvement.",
+        "priority": "medium",
+        "dependencies": [
+          9
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Design and implement aggregate_group_presence Cloud Function",
+            "description": "Create a new Python Cloud Function that subscribes to all member presence updates for a group and emits aggregated status to a single RTDB node, reducing connections from N to 1",
+            "dependencies": [],
+            "details": "Implement the aggregate_group_presence function in functions/main.py that subscribes to /presence/{userId} for all group members, calculates online_count and members_online list, and writes aggregated data to /group_presence/{groupId}. Use RTDB admin SDK to watch multiple presence nodes and emit updates when any member's status changes. Include proper error handling and rate limiting to prevent excessive updates.",
+            "status": "pending",
+            "testStrategy": "Create test group with 20+ members, verify single RTDB connection instead of 20, measure latency of presence updates"
+          },
+          {
+            "id": 2,
+            "title": "Modify RtdbPresenceService for large group detection and aggregation",
+            "description": "Update the Flutter RtdbPresenceService to automatically detect groups with >10 members and switch to using aggregated presence data from the Cloud Function",
+            "dependencies": [
+              1
+            ],
+            "details": "Modify lib/features/messaging/data/services/rtdb_presence_service.dart to add logic that checks member count and switches between _combinePresenceStreams for small groups and new watchGroupPresenceAggregated method for large groups. Implement the new watchGroupPresenceAggregated method that subscribes to /group_presence/{groupId} instead of individual user nodes. Ensure seamless fallback if aggregation is unavailable.",
+            "status": "pending",
+            "testStrategy": "Test with groups of 5, 10, 11, and 50 members to verify threshold detection and proper method selection"
+          },
+          {
+            "id": 3,
+            "title": "Implement server-side caching with 5-second granularity",
+            "description": "Add caching layer in the Cloud Function to batch presence updates and reduce RTDB write operations by implementing a 5-second update window",
+            "dependencies": [
+              1
+            ],
+            "details": "Enhance the aggregate_group_presence function to implement a caching mechanism that collects presence changes over a 5-second window before writing to RTDB. Use Python's threading.Timer or Cloud Tasks to schedule batch updates. Store pending changes in memory and flush them every 5 seconds or when significant changes occur (e.g., online count changes by >10%). This reduces RTDB write operations and improves performance.",
+            "status": "pending",
+            "testStrategy": "Monitor RTDB write operations with and without caching, verify 80%+ reduction in writes during rapid presence changes"
+          },
+          {
+            "id": 4,
+            "title": "Add presence summary UI component (X of Y online)",
+            "description": "Create Flutter UI component that displays aggregated presence information showing how many members are online out of the total group size",
+            "dependencies": [
+              2
+            ],
+            "details": "Create a new PresenceSummaryWidget in lib/features/messaging/presentation/widgets/ that displays 'X of Y online' format. Connect it to the aggregated presence stream from RtdbPresenceService. Add proper loading states, error handling, and graceful degradation to individual presence if aggregation fails. Style the component to match existing UI patterns and ensure it updates in real-time as members come online/offline.",
+            "status": "pending",
+            "testStrategy": "Verify UI updates within 5 seconds of presence changes, test with 0, 1, and all members online scenarios"
+          },
+          {
+            "id": 5,
+            "title": "Implement graceful degradation and error recovery",
+            "description": "Add comprehensive error handling and fallback mechanisms to ensure presence functionality continues working even if the aggregation service fails",
+            "dependencies": [
+              2,
+              3,
+              4
+            ],
+            "details": "Implement try-catch blocks and timeout handling in both Cloud Function and Flutter service. Add automatic fallback from aggregated to individual presence streams if Cloud Function is unavailable or returns errors. Implement exponential backoff for retries and circuit breaker pattern to prevent cascade failures. Add logging and monitoring to track aggregation service health. Ensure UI displays appropriate messages when degraded to individual streams.",
+            "status": "pending",
+            "testStrategy": "Simulate Cloud Function failures, network issues, and RTDB outages to verify fallback mechanisms activate correctly"
+          }
+        ]
+      },
+      {
+        "id": 12,
+        "title": "Optimize image loading and caching",
+        "description": "Implement efficient image caching and loading strategies for avatars and media content",
+        "details": "1. Replace NetworkImage with CachedNetworkImage:\nCachedNetworkImage(\n  imageUrl: user.photoURL,\n  placeholder: (context, url) => ShimmerAvatar(),\n  errorWidget: (context, url, error) => DefaultAvatar(),\n  cacheManager: CustomCacheManager(\n    Config('avatars', maxNrOfCacheObjects: 200),\n  ),\n);\n2. Implement image size optimization:\n- Request appropriate size from Firebase Storage\n- Use thumbnails for list views\n3. Add memory cache with size limits.\n4. Implement progressive image loading.\n5. Preload avatars for visible conversations.\n6. Add WebP support for better compression.\n7. Implement lazy loading for images in long lists.",
+        "testStrategy": "Monitor network traffic for duplicate image downloads. Verify images load from cache on second view. Test memory usage with 100+ avatars loaded.",
+        "priority": "low",
+        "dependencies": [
+          7
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Add cached_network_image dependency and create custom cache manager",
+            "description": "Add the cached_network_image package to pubspec.yaml and create a custom cache manager configuration for different image types (avatars, media)",
+            "dependencies": [],
+            "details": "Add cached_network_image: ^3.3.0 to pubspec.yaml dependencies. Create a custom cache manager in lib/core/services/image_cache_manager.dart with separate configurations for avatars (max 200 objects, 7 days stale period) and media content (max 100 objects, 30 days stale period). Configure memory cache limits using PaintingBinding.instance.imageCache with maxByteSize of 100MB and maxSize of 150 images.",
+            "status": "pending",
+            "testStrategy": null
+          },
+          {
+            "id": 2,
+            "title": "Replace NetworkImage with CachedNetworkImage in avatar widgets",
+            "description": "Systematically replace all NetworkImage usage with CachedNetworkImage in avatar-related widgets, adding proper placeholder and error widgets",
+            "dependencies": [
+              1
+            ],
+            "details": "Replace NetworkImage in UserAvatar widget at lib/features/authentication/presentation/widgets/user_avatar.dart. Update ConversationListItem avatars in lib/features/messaging/presentation/widgets/conversation_list_item.dart. Implement ShimmerAvatar placeholder widget using shimmer package for loading state. Create DefaultAvatar error widget with initials fallback. Add fadeInDuration and fadeOutDuration for smooth transitions. Ensure all replacements use the custom avatar cache manager.",
+            "status": "pending",
+            "testStrategy": null
+          },
+          {
+            "id": 3,
+            "title": "Implement thumbnail generation and size optimization for avatars",
+            "description": "Create a thumbnail generation system that requests appropriately sized images from Firebase Storage based on display context",
+            "dependencies": [
+              1
+            ],
+            "details": "Create ImageUrlBuilder service in lib/core/services/image_url_builder.dart to generate Firebase Storage URLs with size parameters using ?w=150&h=150 for list view thumbnails and ?w=400&h=400 for profile views. Modify user_avatar.dart to accept an AvatarSize enum (small: 40x40, medium: 80x80, large: 150x150) and request appropriate sizes. Update Firestore user model to store both thumbnail and full-size photoURL paths. Implement progressive loading that shows thumbnail first, then loads full size when needed.",
+            "status": "pending",
+            "testStrategy": null
+          },
+          {
+            "id": 4,
+            "title": "Implement lazy loading for images in conversation and message lists",
+            "description": "Add visibility detection to conversation and message lists to only load images when they are about to become visible to the user",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Add visibility_detector package to detect when list items enter viewport. Wrap ConversationListItem avatars with VisibilityDetector to trigger image loading only when visibility > 0.1. Implement preloading for next 3 items in scroll direction using ScrollController listener. Add image recycling when items scroll out of view by clearing memory cache for items > 10 positions away from viewport. Create LazyImage wrapper widget that handles visibility-based loading logic. Monitor memory usage with ImageCache.currentSizeBytes and trigger cache clearing when approaching limits.",
+            "status": "pending",
+            "testStrategy": null
+          }
+        ]
+      },
+      {
+        "id": 13,
+        "title": "Add performance monitoring and alerting",
+        "description": "Implement comprehensive performance monitoring using Firebase Performance and custom metrics",
+        "details": "1. Add Firebase Performance monitoring:\nfinal trace = FirebasePerformance.instance.newTrace('message_send');\nawait trace.start();\ntrace.putAttribute('conversation_type', isGroup ? 'group' : 'direct');\n// ... perform operation\ntrace.putMetric('message_size', message.length);\nawait trace.stop();\n2. Track key metrics:\n- App startup time\n- Message send latency\n- Database query time\n- Translation response time\n- Frame rendering time\n3. Add custom performance logger:\nclass PerformanceLogger {\n  void logSlowOperation(String op, Duration time) {\n    if (time > Duration(seconds: 1)) {\n      FirebaseCrashlytics.instance.log('Slow op: $op took ${time.inMilliseconds}ms');\n    }\n  }\n}\n4. Implement A/B testing for optimizations.\n5. Add performance regression detection in CI.\n6. Create performance dashboard.",
+        "testStrategy": "Deploy to staging and monitor metrics. Set up alerts for regression. Verify all critical paths have instrumentation.",
+        "priority": "low",
+        "dependencies": [
+          10,
+          11
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Add Firebase Performance SDK and configure basic monitoring",
+            "description": "Integrate Firebase Performance SDK into the Flutter app and set up basic performance monitoring configuration with automatic traces for app startup and screen rendering",
+            "dependencies": [],
+            "details": "Add firebase_performance: ^0.10.0 to pubspec.yaml. Initialize FirebasePerformance in main.dart after Firebase.initializeApp(). Enable automatic traces for app startup, screen rendering, and HTTP monitoring. Configure performance collection settings in firebase.json. Set up performance thresholds for alerts (startup > 3s, screen render > 16ms). Verify Performance tab appears in Firebase Console with initial data.",
+            "status": "pending",
+            "testStrategy": null
+          },
+          {
+            "id": 2,
+            "title": "Implement custom traces for message operations and translations",
+            "description": "Add detailed performance traces for critical user operations including message sending, translation requests, and database queries with appropriate attributes and metrics",
+            "dependencies": [
+              1
+            ],
+            "details": "Create traces in MessageRepository.sendMessage() with attributes for conversation_type, message_length, has_attachments. Add trace in TranslationUseCase with metrics for source_language, target_language, text_length, translation_time. Implement traces in MessageDao for database operations with query_type and result_count metrics. Add trace attributes for network conditions (WiFi/cellular). Include user segment attributes (free/premium) for A/B testing analysis.",
+            "status": "pending",
+            "testStrategy": null
+          },
+          {
+            "id": 3,
+            "title": "Create PerformanceLogger service for slow operation detection",
+            "description": "Implement a centralized PerformanceLogger service that automatically detects and logs slow operations to Crashlytics for monitoring and alerting",
+            "dependencies": [
+              1
+            ],
+            "details": "Create lib/core/performance/performance_logger.dart with singleton pattern. Implement logSlowOperation() method with configurable thresholds per operation type (db: 100ms, network: 1000ms, ui: 16ms). Auto-log to FirebaseCrashlytics for operations exceeding thresholds. Add operation categories: database_query, network_request, ui_render, background_sync. Include context data: user_id, app_version, device_model, memory_usage. Create wrapper methods for common operations with automatic timing.",
+            "status": "pending",
+            "testStrategy": null
+          },
+          {
+            "id": 4,
+            "title": "Configure performance dashboard and alerting rules",
+            "description": "Set up Firebase Performance dashboard with custom metrics visualization and configure alerting rules for performance regressions and threshold violations",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Configure Firebase Console Performance dashboard with custom metrics for message_send_latency, translation_response_time, database_query_time. Set up alerting rules in Firebase: app startup > 3 seconds, message send > 2 seconds, translation > 5 seconds. Create custom dashboard views for different user segments and device types. Configure performance regression detection with 20% degradation threshold. Set up email/Slack notifications for performance alerts. Document performance baselines and acceptable thresholds in PERFORMANCE.md.",
+            "status": "pending",
+            "testStrategy": null
+          }
+        ]
+      },
+      {
+        "id": 14,
+        "title": "Implement message retention and database cleanup",
+        "description": "Add automatic cleanup for old messages to prevent unbounded database growth",
+        "details": "1. Implement message retention policy in MessageDao:\nFuture<void> archiveOldMessages() async {\n  final cutoff = DateTime.now().subtract(Duration(days: 90));\n  \n  // Move to archive table\n  await into(messagesArchive).insertAllOnConflictUpdate(\n    await (select(messages)..where((m) => m.timestamp.isSmallerThan(cutoff))).get()\n  );\n  \n  // Delete from main table\n  await (delete(messages)..where((m) => m.timestamp.isSmallerThan(cutoff))).go();\n}\n2. Create messages_archive table for old messages.\n3. Run cleanup in background worker daily.\n4. Implement on-demand restoration from archive.\n5. Add user preference for retention period.\n6. Compress archived messages.\n7. Add database VACUUM after cleanup.",
+        "testStrategy": "Test with database containing 10,000+ messages. Verify cleanup runs without blocking UI. Confirm archived messages can be restored.",
+        "priority": "low",
+        "dependencies": [
+          3
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Design and create messages_archive table in Drift schema",
+            "description": "Create a new Drift table for archiving old messages with the same structure as the messages table, including proper indexes and migration logic",
+            "dependencies": [],
+            "details": "Define MessagesArchive table in core/database/tables/messages_archive_table.dart with identical columns to Messages table. Add composite indexes for conversationId and timestamp. Create migration script in AppDatabase to add the table. Ensure table supports all message types and includes metadata fields for archive date and original timestamp.",
+            "status": "pending",
+            "testStrategy": null
+          },
+          {
+            "id": 2,
+            "title": "Implement archiveOldMessages method in MessageDao",
+            "description": "Add the archiveOldMessages method to MessageDao that moves messages older than the retention period to the archive table",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement archiveOldMessages() in MessageDao with configurable retention period (default 90 days). Use transaction to ensure atomic move operation: first insert into messages_archive, then delete from messages. Add error handling for partial failures. Include logging for number of messages archived. Implement batch processing to handle large volumes without memory issues.",
+            "status": "pending",
+            "testStrategy": null
+          },
+          {
+            "id": 3,
+            "title": "Configure WorkManager for daily cleanup job",
+            "description": "Set up a background worker using WorkManager to run the message cleanup process daily at a low-traffic time",
+            "dependencies": [
+              2
+            ],
+            "details": "Create MessageCleanupWorker extending Worker class. Configure periodic work request with 24-hour interval, requiring network and charging constraints. Schedule for 3 AM local time. Add retry policy with exponential backoff. Implement doWork() to call archiveOldMessages and run VACUUM. Register worker in main.dart initialization. Add monitoring for successful/failed runs.",
+            "status": "pending",
+            "testStrategy": null
+          },
+          {
+            "id": 4,
+            "title": "Implement on-demand restoration from archive",
+            "description": "Create functionality to restore archived messages back to the main messages table when users need to access older conversations",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Add restoreArchivedMessages(conversationId, dateRange) method in MessageDao. Implement UI trigger in conversation settings for 'Load older messages'. Use pagination to restore in chunks of 100 messages. Move restored messages back to main table within transaction. Update local sync status to prevent re-sync with Firestore. Add loading indicator during restoration process.",
+            "status": "pending",
+            "testStrategy": null
+          },
+          {
+            "id": 5,
+            "title": "Add user preferences for retention period",
+            "description": "Implement user-configurable retention period settings in the app preferences with UI controls",
+            "dependencies": [
+              2
+            ],
+            "details": "Add retentionDays field to UserPreferences model (default: 90, min: 30, max: 365). Create settings UI with slider or dropdown for retention period selection. Store preference in SharedPreferences and sync to Firestore user document. Pass user preference to archiveOldMessages method. Add explanation text about storage savings and performance benefits. Validate retention period bounds before saving.",
+            "status": "pending",
+            "testStrategy": null
+          }
+        ]
+      },
+      {
+        "id": 15,
+        "title": "Optimize build configuration and remove debug code",
+        "description": "Clean up production builds by removing debug statements and optimizing build configuration",
+        "details": "1. Wrap all debugPrint statements with kDebugMode:\nif (kDebugMode) {\n  debugPrint('Debug message');\n}\n2. Configure release build optimizations in build.gradle:\nrelease {\n  shrinkResources true\n  minifyEnabled true\n  useProguard true\n}\n3. Add tree shaking for unused code.\n4. Enable R8 code shrinker.\n5. Remove unused dependencies from pubspec.yaml.\n6. Configure optimal Dart compilation:\nflutter build apk --release --split-per-abi --obfuscate\n7. Add build-time environment configs.\n8. Strip debug symbols from release builds.",
+        "testStrategy": "Compare APK size before/after optimization. Verify no debug output in release builds. Test app functionality isn't broken by optimizations.",
+        "priority": "low",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Wrap all debugPrint statements with kDebugMode checks",
+            "description": "Systematically find and wrap all debugPrint statements throughout the codebase with kDebugMode conditional checks to prevent debug output in release builds",
+            "dependencies": [],
+            "details": "Search the entire lib/ directory for all debugPrint statements using grep or IDE search. Wrap each occurrence with if (kDebugMode) { debugPrint(...); } blocks. Ensure foundation.dart is imported where kDebugMode is used. Focus on files in messaging, authentication, translation, and formality adjustment features. Verify no debugPrint statements remain unwrapped.",
+            "status": "pending",
+            "testStrategy": null
+          },
+          {
+            "id": 2,
+            "title": "Configure release build optimizations in android/app/build.gradle",
+            "description": "Update the Android build configuration to enable code shrinking, resource shrinking, and R8 optimizer for smaller APK size and better performance",
+            "dependencies": [],
+            "details": "Edit android/app/build.gradle to configure the release buildType with shrinkResources true, minifyEnabled true, and ensure R8 is enabled (default in newer Android Gradle Plugin). Add proguard rules if necessary to keep required classes. Configure splits { abi { enable true } } for per-ABI APK generation. Set debuggable false and remove any debug-specific configurations from release build.",
+            "status": "pending",
+            "testStrategy": null
+          },
+          {
+            "id": 3,
+            "title": "Add build-time stripping of debug symbols and configure optimal compilation",
+            "description": "Configure Flutter build commands to strip debug symbols and enable obfuscation for minimal APK size while maintaining stack trace deobfuscation capability",
+            "dependencies": [
+              2
+            ],
+            "details": "Create a build script or update existing ones to use flutter build apk --release --split-per-abi --obfuscate --split-debug-info=build/app/outputs/symbols. Document the build command in README or build documentation. Store the symbols directory path for crash reporting deobfuscation. Test that the release APK has no debug symbols using apkanalyzer or similar tools. Measure and document the APK size reduction achieved.",
+            "status": "pending",
+            "testStrategy": null
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "created": "2025-10-26T09:30:12.493Z",
+      "updated": "2025-10-26T09:30:12.493Z",
+      "description": "Tasks for master context"
+    }
+  }
+}

@@ -1,0 +1,133 @@
+{
+	"meta": {
+		"generatedAt": "2025-10-26T09:34:27.807Z",
+		"tasksAnalyzed": 15,
+		"totalTasks": 15,
+		"analysisCount": 15,
+		"thresholdScore": 5,
+		"projectName": "Taskmaster",
+		"usedResearch": true
+	},
+	"complexityAnalysis": [
+		{
+			"taskId": 1,
+			"taskTitle": "Implement memory leak fixes for service instances and stream controllers",
+			"complexityScore": 6,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down the memory leak fixes into: 1) Convert LanguageDetectionService to singleton with Riverpod keepAlive (currently creating instances in MessageBubble line 83), 2) Add stream controller disposal in RtdbPresenceService._combinePresenceStreams (controllers created at line 135-139 but never disposed), 3) Track and cleanup AutoTranslationService subscriptions in ChatPage dispose, 4) Implement WeakReference pattern for service instances, 5) Add memory leak detection tests. Each subtask should include specific code changes and verification steps.",
+			"reasoning": "Medium-high complexity due to multiple service refactoring needs. The LanguageDetectionService is already a provider but not keepAlive (language_detection_provider.dart). RtdbPresenceService has clear stream controller leaks in _combinePresenceStreams. Requires careful state management changes across 3+ services and testing memory profiling."
+		},
+		{
+			"taskId": 2,
+			"taskTitle": "Optimize widget rendering performance with const constructors and RepaintBoundary",
+			"complexityScore": 5,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Create subtasks for: 1) Add const constructors to MessageBubble, MessageInput, and ConversationListItem widgets (currently none are const), 2) Implement RepaintBoundary wrapping for MessageBubble to isolate translation toggle repaints, 3) Replace AnimatedSwitcher with AnimatedOpacity in translation UI, 4) Enable and fix all const linting rules project-wide. Include specific file modifications and performance measurement criteria.",
+			"reasoning": "Medium complexity - straightforward but requires changes across many widgets. MessageBubble (message_bubble.dart) and other widgets lack const constructors. No RepaintBoundary usage found. Requires systematic widget tree optimization but patterns are well-established."
+		},
+		{
+			"taskId": 3,
+			"taskTitle": "Implement database indexing and query optimization",
+			"complexityScore": 7,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Expand into: 1) Add composite indexes to Messages table (modify messages_table.dart to add indices override), 2) Implement cursor-based pagination in MessageDao.watchMessagesForConversation (currently uses simple offset at line 48-56), 3) Add query result caching layer with TTL, 4) Increment schema version and write migration, 5) Add query performance monitoring with EXPLAIN QUERY PLAN. Focus on the specific Drift syntax and migration handling.",
+			"reasoning": "High complexity due to Drift-specific implementation requirements. Messages table has no indices defined (messages_table.dart). MessageDao queries lack optimization (message_dao.dart lines 37-56). Requires database migration, careful index design, and Drift-specific syntax knowledge."
+		},
+		{
+			"taskId": 4,
+			"taskTitle": "Implement batch operations for Firestore sync and message processing",
+			"complexityScore": 8,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Break down into: 1) Refactor MessageSyncWorker.syncAll() to use WriteBatch (currently sequential at lines 65-100), 2) Create batch translation endpoint in Cloud Function main.py (add new function for batch processing), 3) Implement Future.wait for parallel translations, 4) Add Drift batch operations using database.batch(), 5) Implement request coalescing for duplicate translations, 6) Add exponential backoff for failed syncs. Include specific code patterns and error handling.",
+			"reasoning": "High complexity requiring both Flutter and Cloud Function changes. MessageSyncWorker processes messages sequentially (message_sync_worker.dart). Cloud Functions lack batch endpoints (main.py). Requires coordinated backend/frontend changes and careful error handling."
+		},
+		{
+			"taskId": 5,
+			"taskTitle": "Fix language detection performance issues and setState during build",
+			"complexityScore": 6,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Create subtasks: 1) Move language detection to addPostFrameCallback in MessageBubble (currently in initState at line 68), 2) Implement provider-level language detection cache (extend language_detection_provider.dart), 3) Add compute isolate for batch detection, 4) Implement debouncing for rapid message loads, 5) Add pre-detection during message composition. Focus on preventing setState during build and optimizing detection timing.",
+			"reasoning": "Medium-high complexity due to state management intricacies. MessageBubble performs detection in initState (line 68) which can cause setState issues. LanguageDetectionService has basic caching but not at provider level. Requires careful async handling and state management."
+		},
+		{
+			"taskId": 6,
+			"taskTitle": "Optimize list rendering and incremental updates",
+			"complexityScore": 6,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Expand into: 1) Add ValueKey to all list items in ConversationListItem and message lists, 2) Implement virtual scrolling for large message lists (consider flutter_list_view package), 3) Replace individual presence watchers with batch lookup in ConversationListPage, 4) Implement binary search sorted insert for conversation updates, 5) Add ListView.custom with findChildIndexCallback for optimization. Include specific widget modifications.",
+			"reasoning": "Medium-high complexity requiring careful list optimization. No ValueKey usage found in list widgets. Multiple presence watchers create inefficiency. Requires understanding of Flutter's list rendering optimizations and careful state management."
+		},
+		{
+			"taskId": 7,
+			"taskTitle": "Implement intelligent caching layer for user data and translations",
+			"complexityScore": 7,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Break down into: 1) Enhance UserCacheService with LRU eviction (currently no size limits at user_cache_service.dart), 2) Create TranslationCache service with 24-hour TTL, 3) Add cached_network_image dependency and implement for avatars (not in pubspec.yaml), 4) Implement Drift query result caching, 5) Add cache warming for predictable patterns, 6) Implement cache monitoring and statistics. Include specific implementation patterns and memory management.",
+			"reasoning": "High complexity requiring new caching infrastructure. UserCacheService exists but lacks LRU eviction (user_cache_service.dart). No translation caching found. cached_network_image not in dependencies. Requires careful memory management and cache invalidation strategies."
+		},
+		{
+			"taskId": 8,
+			"taskTitle": "Optimize state management and provider efficiency",
+			"complexityScore": 8,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Create subtasks: 1) Implement Equatable for state classes with hash-based comparison, 2) Refactor to use ref.watch().select() throughout the app, 3) Add mutex for ConversationReadMarker to prevent race conditions, 4) Split messaging_providers.dart (834 lines with 35 providers) into focused provider files, 5) Implement family providers for parameterized state, 6) Add provider dependency visualization. Focus on reducing unnecessary rebuilds.",
+			"reasoning": "High complexity due to extensive provider refactoring needed. messaging_providers.dart has 35 providers in 834 lines. Limited use of select() for granular updates. Requires deep understanding of Riverpod patterns and careful refactoring to avoid breaking changes."
+		},
+		{
+			"taskId": 9,
+			"taskTitle": "Add request cancellation and timeout handling",
+			"complexityScore": 5,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Expand into: 1) Implement CancelToken for translation requests in TranslationService, 2) Add timeout options to all Cloud Function calls (currently no timeouts in messaging code), 3) Cancel in-flight requests on widget disposal, 4) Implement circuit breaker pattern for failing services. Include specific error handling and recovery strategies.",
+			"reasoning": "Medium complexity with clear implementation path. No CancelToken usage found in translation services. Cloud Function calls lack timeout configuration. Requires systematic addition of cancellation tokens and timeout handling but patterns are straightforward."
+		},
+		{
+			"taskId": 10,
+			"taskTitle": "Optimize app startup and service initialization",
+			"complexityScore": 4,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down into: 1) Implement async initialization with splash screen in main.dart, 2) Parallelize Firebase initialization with Future.wait, 3) Defer non-critical service initialization. Focus on reducing time-to-interactive and implementing progress indicators.",
+			"reasoning": "Lower complexity with clear optimization path. main.dart likely has synchronous initialization. Requires restructuring initialization flow but changes are localized to app startup code."
+		},
+		{
+			"taskId": 11,
+			"taskTitle": "Implement server-side presence aggregation for groups",
+			"complexityScore": 7,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Create subtasks: 1) Design and implement 'aggregate_group_presence' Cloud Function in main.py, 2) Modify RtdbPresenceService to detect large groups and use aggregation, 3) Implement server-side caching with 5-second granularity, 4) Add presence summary UI (X of Y online), 5) Implement graceful degradation if aggregation fails. Include Python function implementation and Flutter integration.",
+			"reasoning": "High complexity requiring new Cloud Function. RtdbPresenceService creates individual streams per user (lines 117-129). Requires Python Cloud Function development, RTDB schema changes, and Flutter service modifications."
+		},
+		{
+			"taskId": 12,
+			"taskTitle": "Optimize image loading and caching",
+			"complexityScore": 4,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Expand into: 1) Add cached_network_image to pubspec.yaml and replace NetworkImage usage, 2) Implement thumbnail generation for avatars, 3) Add memory cache with size limits, 4) Implement lazy loading for images in lists. Focus on reducing memory usage and network calls.",
+			"reasoning": "Lower complexity with clear implementation. cached_network_image not in dependencies. Requires adding package and systematic replacement of image loading code. Patterns are well-documented and straightforward."
+		},
+		{
+			"taskId": 13,
+			"taskTitle": "Add performance monitoring and alerting",
+			"complexityScore": 5,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down into: 1) Add Firebase Performance SDK and implement traces for key operations, 2) Track custom metrics for message send latency and query times, 3) Implement PerformanceLogger service for slow operation detection, 4) Create performance dashboard configuration. Include specific trace points and metric definitions.",
+			"reasoning": "Medium complexity with clear Firebase Performance patterns. No performance monitoring found in codebase. Requires systematic instrumentation of key operations but Firebase Performance SDK provides clear patterns."
+		},
+		{
+			"taskId": 14,
+			"taskTitle": "Implement message retention and database cleanup",
+			"complexityScore": 6,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Create subtasks: 1) Design and create messages_archive table in Drift schema, 2) Implement archiveOldMessages() in MessageDao, 3) Configure WorkManager for daily cleanup job, 4) Implement on-demand restoration from archive, 5) Add user preferences for retention period. Focus on maintaining data integrity during archival.",
+			"reasoning": "Medium-high complexity requiring new table and archival logic. No archive table exists in schema. MessageDao lacks cleanup methods. Requires database schema changes, migration, and careful data management to prevent data loss."
+		},
+		{
+			"taskId": 15,
+			"taskTitle": "Optimize build configuration and remove debug code",
+			"complexityScore": 3,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Expand into: 1) Wrap all debugPrint statements with kDebugMode checks, 2) Configure release build optimizations in android/app/build.gradle, 3) Add build-time stripping of debug symbols. Focus on reducing APK size and removing debug overhead.",
+			"reasoning": "Low complexity with straightforward implementation. Multiple debugPrint statements found without kDebugMode checks. Requires systematic code review and build configuration but changes are mechanical."
+		}
+	]
+}
