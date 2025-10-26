@@ -1876,6 +1876,241 @@ final class UserPresenceFamily extends $Family
   String toString() => r'userPresenceProvider';
 }
 
+/// Batch presence lookup for multiple users (optimized for conversation lists).
+///
+/// **Performance Optimization:**
+/// Instead of creating N individual stream subscriptions (one per conversation),
+/// this provider creates a single subscription that watches all user IDs at once.
+///
+/// **Usage:**
+/// ```dart
+/// // In ConversationListPage: extract all user IDs from visible conversations
+/// final allUserIds = conversations
+///     .expand((conv) => conv['participants'] as List)
+///     .map((p) => p['uid'] as String)
+///     .toSet()
+///     .toList();
+///
+/// // Watch batch presence (1 subscription instead of N)
+/// final presenceMapAsync = ref.watch(batchUserPresenceProvider(allUserIds));
+///
+/// // Pass to child widgets as prop
+/// ConversationListItem(
+///   presenceMap: presenceMapAsync.value ?? {},
+///   ...
+/// )
+/// ```
+///
+/// **Returns:**
+/// Map of userId -> presence data:
+/// - 'isOnline': bool
+/// - 'lastSeen': DateTime?
+/// - 'userName': String
+
+@ProviderFor(batchUserPresence)
+const batchUserPresenceProvider = BatchUserPresenceFamily._();
+
+/// Batch presence lookup for multiple users (optimized for conversation lists).
+///
+/// **Performance Optimization:**
+/// Instead of creating N individual stream subscriptions (one per conversation),
+/// this provider creates a single subscription that watches all user IDs at once.
+///
+/// **Usage:**
+/// ```dart
+/// // In ConversationListPage: extract all user IDs from visible conversations
+/// final allUserIds = conversations
+///     .expand((conv) => conv['participants'] as List)
+///     .map((p) => p['uid'] as String)
+///     .toSet()
+///     .toList();
+///
+/// // Watch batch presence (1 subscription instead of N)
+/// final presenceMapAsync = ref.watch(batchUserPresenceProvider(allUserIds));
+///
+/// // Pass to child widgets as prop
+/// ConversationListItem(
+///   presenceMap: presenceMapAsync.value ?? {},
+///   ...
+/// )
+/// ```
+///
+/// **Returns:**
+/// Map of userId -> presence data:
+/// - 'isOnline': bool
+/// - 'lastSeen': DateTime?
+/// - 'userName': String
+
+final class BatchUserPresenceProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<Map<String, Map<String, dynamic>>>,
+          Map<String, Map<String, dynamic>>,
+          Stream<Map<String, Map<String, dynamic>>>
+        >
+    with
+        $FutureModifier<Map<String, Map<String, dynamic>>>,
+        $StreamProvider<Map<String, Map<String, dynamic>>> {
+  /// Batch presence lookup for multiple users (optimized for conversation lists).
+  ///
+  /// **Performance Optimization:**
+  /// Instead of creating N individual stream subscriptions (one per conversation),
+  /// this provider creates a single subscription that watches all user IDs at once.
+  ///
+  /// **Usage:**
+  /// ```dart
+  /// // In ConversationListPage: extract all user IDs from visible conversations
+  /// final allUserIds = conversations
+  ///     .expand((conv) => conv['participants'] as List)
+  ///     .map((p) => p['uid'] as String)
+  ///     .toSet()
+  ///     .toList();
+  ///
+  /// // Watch batch presence (1 subscription instead of N)
+  /// final presenceMapAsync = ref.watch(batchUserPresenceProvider(allUserIds));
+  ///
+  /// // Pass to child widgets as prop
+  /// ConversationListItem(
+  ///   presenceMap: presenceMapAsync.value ?? {},
+  ///   ...
+  /// )
+  /// ```
+  ///
+  /// **Returns:**
+  /// Map of userId -> presence data:
+  /// - 'isOnline': bool
+  /// - 'lastSeen': DateTime?
+  /// - 'userName': String
+  const BatchUserPresenceProvider._({
+    required BatchUserPresenceFamily super.from,
+    required List<String> super.argument,
+  }) : super(
+         retry: null,
+         name: r'batchUserPresenceProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$batchUserPresenceHash();
+
+  @override
+  String toString() {
+    return r'batchUserPresenceProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<Map<String, Map<String, dynamic>>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<Map<String, Map<String, dynamic>>> create(Ref ref) {
+    final argument = this.argument as List<String>;
+    return batchUserPresence(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is BatchUserPresenceProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$batchUserPresenceHash() => r'5f49eea88033530195b854a3e059bfda1bcea12b';
+
+/// Batch presence lookup for multiple users (optimized for conversation lists).
+///
+/// **Performance Optimization:**
+/// Instead of creating N individual stream subscriptions (one per conversation),
+/// this provider creates a single subscription that watches all user IDs at once.
+///
+/// **Usage:**
+/// ```dart
+/// // In ConversationListPage: extract all user IDs from visible conversations
+/// final allUserIds = conversations
+///     .expand((conv) => conv['participants'] as List)
+///     .map((p) => p['uid'] as String)
+///     .toSet()
+///     .toList();
+///
+/// // Watch batch presence (1 subscription instead of N)
+/// final presenceMapAsync = ref.watch(batchUserPresenceProvider(allUserIds));
+///
+/// // Pass to child widgets as prop
+/// ConversationListItem(
+///   presenceMap: presenceMapAsync.value ?? {},
+///   ...
+/// )
+/// ```
+///
+/// **Returns:**
+/// Map of userId -> presence data:
+/// - 'isOnline': bool
+/// - 'lastSeen': DateTime?
+/// - 'userName': String
+
+final class BatchUserPresenceFamily extends $Family
+    with
+        $FunctionalFamilyOverride<
+          Stream<Map<String, Map<String, dynamic>>>,
+          List<String>
+        > {
+  const BatchUserPresenceFamily._()
+    : super(
+        retry: null,
+        name: r'batchUserPresenceProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Batch presence lookup for multiple users (optimized for conversation lists).
+  ///
+  /// **Performance Optimization:**
+  /// Instead of creating N individual stream subscriptions (one per conversation),
+  /// this provider creates a single subscription that watches all user IDs at once.
+  ///
+  /// **Usage:**
+  /// ```dart
+  /// // In ConversationListPage: extract all user IDs from visible conversations
+  /// final allUserIds = conversations
+  ///     .expand((conv) => conv['participants'] as List)
+  ///     .map((p) => p['uid'] as String)
+  ///     .toSet()
+  ///     .toList();
+  ///
+  /// // Watch batch presence (1 subscription instead of N)
+  /// final presenceMapAsync = ref.watch(batchUserPresenceProvider(allUserIds));
+  ///
+  /// // Pass to child widgets as prop
+  /// ConversationListItem(
+  ///   presenceMap: presenceMapAsync.value ?? {},
+  ///   ...
+  /// )
+  /// ```
+  ///
+  /// **Returns:**
+  /// Map of userId -> presence data:
+  /// - 'isOnline': bool
+  /// - 'lastSeen': DateTime?
+  /// - 'userName': String
+
+  BatchUserPresenceProvider call(List<String> userIds) =>
+      BatchUserPresenceProvider._(argument: userIds, from: this);
+
+  @override
+  String toString() => r'batchUserPresenceProvider';
+}
+
 /// Provides the [CreateGroup] use case.
 
 @ProviderFor(createGroupUseCase)

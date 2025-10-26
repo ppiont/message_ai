@@ -640,6 +640,65 @@ Stream<Map<String, dynamic>?> userPresence(Ref ref, String userId) {
   });
 }
 
+/// Batch presence lookup for multiple users (optimized for conversation lists).
+///
+/// **Performance Optimization:**
+/// Instead of creating N individual stream subscriptions (one per conversation),
+/// this provider creates a single subscription that watches all user IDs at once.
+///
+/// **Usage:**
+/// ```dart
+/// // In ConversationListPage: extract all user IDs from visible conversations
+/// final allUserIds = conversations
+///     .expand((conv) => conv['participants'] as List)
+///     .map((p) => p['uid'] as String)
+///     .toSet()
+///     .toList();
+///
+/// // Watch batch presence (1 subscription instead of N)
+/// final presenceMapAsync = ref.watch(batchUserPresenceProvider(allUserIds));
+///
+/// // Pass to child widgets as prop
+/// ConversationListItem(
+///   presenceMap: presenceMapAsync.value ?? {},
+///   ...
+/// )
+/// ```
+///
+/// **Returns:**
+/// Map of userId -> presence data:
+/// - 'isOnline': bool
+/// - 'lastSeen': DateTime?
+/// - 'userName': String
+@riverpod
+Stream<Map<String, Map<String, dynamic>>> batchUserPresence(
+  Ref ref,
+  List<String> userIds,
+) {
+  final presenceService = ref.watch(presenceServiceProvider);
+
+  if (userIds.isEmpty) {
+    return Stream<Map<String, Map<String, dynamic>>>.value(
+      <String, Map<String, dynamic>>{},
+    );
+  }
+
+  // Watch presence for all users using a single RTDB subscription
+  // Transform UserPresence objects to Map format for UI consistency
+  return presenceService.watchUsersPresence(userIds: userIds).map(
+    (Map<String, UserPresence> presenceMap) => presenceMap.map(
+      (String userId, UserPresence presence) => MapEntry(
+        userId,
+        <String, dynamic>{
+          'isOnline': presence.isOnline,
+          'lastSeen': presence.lastSeen,
+          'userName': presence.userName,
+        },
+      ),
+    ),
+  );
+}
+
 // ========== Offline & Sync Providers ==========
 //
 // NOTE: MessageSyncService and MessageQueue have been removed.

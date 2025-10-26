@@ -5,19 +5,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:message_ai/features/authentication/presentation/providers/user_lookup_provider.dart';
-import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
 
 /// Widget displaying a single conversation in the conversation list.
 ///
 /// Shows participant info, last message preview, timestamp, unread badge, and online status.
 /// Supports both direct conversations and group chats.
-class ConversationListItem extends ConsumerWidget {
+///
+/// **Performance Optimization (Task 6.3):**
+/// Instead of watching individual presence streams (N subscriptions),
+/// presence data is passed as a prop from parent (1 batch subscription).
+class ConversationListItem extends StatelessWidget {
   const ConversationListItem({
     required this.conversationId,
     required this.participants,
     required this.currentUserId,
     required this.lastUpdatedAt,
     required this.onTap,
+    required this.presenceMap,
     this.lastMessage,
     this.unreadCount = 0,
     this.isGroup = false,
@@ -37,21 +41,35 @@ class ConversationListItem extends ConsumerWidget {
   final String? groupName;
   final int? participantCount;
 
+  /// Batch presence data from parent (replaces individual stream subscriptions)
+  /// Map format: userId -> {'isOnline': bool, 'lastSeen': DateTime?, 'userName': String}
+  final Map<String, Map<String, dynamic>> presenceMap;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     if (isGroup) {
       // Group conversation
       final name = groupName ?? 'Unknown Group';
       final participantIds = participants
           .map((p) => p['uid'] as String)
           .toList();
-      final groupPresenceAsync = ref.watch(
-        groupPresenceStatusProvider(participantIds),
-      );
+
+      // Calculate group presence from batch presence data
+      final onlineMembers = participantIds
+          .where((id) => presenceMap[id]?['isOnline'] == true)
+          .toList();
+
+      final groupPresence = <String, dynamic>{
+        'onlineCount': onlineMembers.length,
+        'totalCount': participantIds.length,
+        'displayText': onlineMembers.isEmpty
+            ? 'All offline'
+            : '${onlineMembers.length}/${participantIds.length} online',
+      };
 
       return ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: _buildGroupAvatarWithPresence(name, groupPresenceAsync),
+        leading: _buildGroupAvatarWithPresence(name, groupPresence),
         title: Row(
           children: [
             Expanded(
@@ -101,36 +119,17 @@ class ConversationListItem extends ConsumerWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
-                  // Show member count and online status
-                  groupPresenceAsync.when(
-                    data: (presence) {
-                      final onlineCount = presence['onlineCount'] as int? ?? 0;
-                      final totalCount =
-                          presence['totalCount'] as int? ??
-                          participantCount ??
-                          0;
-                      return Text(
-                        onlineCount > 0
-                            ? '$onlineCount/$totalCount online'
-                            : '$totalCount members',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: onlineCount > 0
-                              ? Colors.green
-                              : Colors.grey[600],
-                          fontWeight: onlineCount > 0
-                              ? FontWeight.w500
-                              : FontWeight.normal,
-                        ),
-                      );
-                    },
-                    loading: () => Text(
-                      '${participantCount ?? 0} members',
-                      style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-                    ),
-                    error: (_, _) => Text(
-                      '${participantCount ?? 0} members',
-                      style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                  // Show member count and online status (from batch presence data)
+                  Text(
+                    groupPresence['displayText'] as String? ?? '${participantCount ?? 0} members',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: (groupPresence['onlineCount'] as int? ?? 0) > 0
+                          ? Colors.green
+                          : Colors.grey[600],
+                      fontWeight: (groupPresence['onlineCount'] as int? ?? 0) > 0
+                          ? FontWeight.w500
+                          : FontWeight.normal,
                     ),
                   ),
                 ],
@@ -161,23 +160,25 @@ class ConversationListItem extends ConsumerWidget {
       final imageUrl = otherParticipant['imageUrl'] as String?;
       final otherUserId = otherParticipant['uid'] as String? ?? '';
 
-      // Watch presence for the other user
-      final presenceAsync = ref.watch(userPresenceProvider(otherUserId));
+      // Get presence from batch presence data (no stream subscription)
+      final presence = presenceMap[otherUserId];
 
-      // Dynamically look up display name
-      final displayNameAsync = ref.watch(userDisplayNameProvider(otherUserId));
+      // Dynamically look up display name (still need Consumer for this)
+      return Consumer(
+        builder: (context, ref, _) {
+          final displayNameAsync = ref.watch(userDisplayNameProvider(otherUserId));
 
-      return displayNameAsync.when(
-        data: (displayName) => ListTile(
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 8,
-          ),
-          leading: _buildAvatarWithPresence(
-            displayName,
-            imageUrl,
-            presenceAsync,
-          ),
+          return displayNameAsync.when(
+            data: (displayName) => ListTile(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 8,
+              ),
+              leading: _buildAvatarWithPresence(
+                displayName,
+                imageUrl,
+                presence,
+              ),
           title: Row(
             children: [
               Expanded(
@@ -228,49 +229,48 @@ class ConversationListItem extends ConsumerWidget {
               ],
             ],
           ),
-          onTap: onTap,
-        ),
-        loading: () => ListTile(
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 8,
-          ),
-          leading: _buildAvatarWithPresence(
-            'Loading...',
-            imageUrl,
-            presenceAsync,
-          ),
-          title: const Text('Loading...'),
-          onTap: onTap,
-        ),
-        error: (_, _) => ListTile(
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 8,
-          ),
-          leading: _buildAvatarWithPresence('Unknown', imageUrl, presenceAsync),
-          title: const Text('Unknown'),
-          onTap: onTap,
-        ),
+              onTap: onTap,
+            ),
+            loading: () => ListTile(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 8,
+              ),
+              leading: _buildAvatarWithPresence(
+                'Loading...',
+                imageUrl,
+                presence,
+              ),
+              title: const Text('Loading...'),
+              onTap: onTap,
+            ),
+            error: (_, _) => ListTile(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 8,
+              ),
+              leading: _buildAvatarWithPresence('Unknown', imageUrl, presence),
+              title: const Text('Unknown'),
+              onTap: onTap,
+            ),
+          );
+        },
       );
     }
   }
 
   Widget _buildGroupAvatarWithPresence(
     String name,
-    AsyncValue<Map<String, dynamic>> groupPresenceAsync,
-  ) => Stack(
-    children: [
-      _buildGroupAvatar(name),
-      // Online indicator (bottom-right of avatar)
-      groupPresenceAsync.when(
-        data: (presence) {
-          final onlineCount = presence['onlineCount'] as int? ?? 0;
-          if (onlineCount == 0) {
-            return const SizedBox.shrink();
-          }
+    Map<String, dynamic> groupPresence,
+  ) {
+    final onlineCount = groupPresence['onlineCount'] as int? ?? 0;
 
-          return Positioned(
+    return Stack(
+      children: [
+        _buildGroupAvatar(name),
+        // Online indicator (bottom-right of avatar)
+        if (onlineCount > 0)
+          Positioned(
             right: 0,
             bottom: 0,
             child: Container(
@@ -282,30 +282,24 @@ class ConversationListItem extends ConsumerWidget {
                 border: Border.all(color: Colors.white, width: 2),
               ),
             ),
-          );
-        },
-        loading: () => const SizedBox.shrink(),
-        error: (_, _) => const SizedBox.shrink(),
-      ),
-    ],
-  );
+          ),
+      ],
+    );
+  }
 
   Widget _buildAvatarWithPresence(
     String name,
     String? imageUrl,
-    AsyncValue<Map<String, dynamic>?> presenceAsync,
-  ) => Stack(
-    children: [
-      _buildAvatar(name, imageUrl),
-      // Presence indicator (bottom-right of avatar)
-      presenceAsync.when(
-        data: (presence) {
-          if (presence == null) {
-            return const SizedBox.shrink();
-          }
+    Map<String, dynamic>? presence,
+  ) {
+    final isOnline = presence?['isOnline'] as bool? ?? false;
 
-          final isOnline = presence['isOnline'] as bool? ?? false;
-          return Positioned(
+    return Stack(
+      children: [
+        _buildAvatar(name, imageUrl),
+        // Presence indicator (bottom-right of avatar)
+        if (presence != null)
+          Positioned(
             right: 0,
             bottom: 0,
             child: Container(
@@ -317,13 +311,10 @@ class ConversationListItem extends ConsumerWidget {
                 border: Border.all(color: Colors.white, width: 2),
               ),
             ),
-          );
-        },
-        loading: () => const SizedBox.shrink(),
-        error: (_, _) => const SizedBox.shrink(),
-      ),
-    ],
-  );
+          ),
+      ],
+    );
+  }
 
   Widget _buildGroupAvatar(String name) {
     // Generate color from name for consistent avatar colors

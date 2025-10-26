@@ -359,7 +359,7 @@
               1
             ],
             "details": "Add flutter_list_view package to pubspec.yaml. Replace existing ListView.builder in MessageList widget with FlutterListView. Configure keepPositionOffset and cacheExtent parameters for optimal performance. Implement custom ScrollController with position restoration. Add message item height calculation for better scroll position accuracy. Consider implementing jump-to-message functionality with virtual scrolling support.",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": null
           },
           {
@@ -370,7 +370,7 @@
               1
             ],
             "details": "Create a single presence stream subscription in ConversationListPage that fetches all user presence data for visible conversations. Store presence data in a Map<String, PresenceData> and pass it to ConversationListItem as a prop. Update ConversationListItem to receive presence data via constructor instead of watching individual streams. Use context.select() or Consumer for granular updates only when specific user presence changes. This reduces stream subscriptions from N (one per item) to 1.",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": null
           },
           {
@@ -946,7 +946,7 @@
     ],
     "metadata": {
       "created": "2025-10-26T09:30:12.493Z",
-      "updated": "2025-10-26T18:55:52.937Z",
+      "updated": "2025-10-26T19:02:48.624Z",
       "description": "Tasks for master context"
     }
   }
