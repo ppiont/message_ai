@@ -200,7 +200,7 @@
         "dependencies": [
           1
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [
           {
             "id": 1,
@@ -208,7 +208,7 @@
             "description": "Replace sequential Firestore writes in MessageSyncWorker.syncAll() with WriteBatch operations to process messages in batches of 500, reducing API calls and improving sync performance",
             "dependencies": [],
             "details": "Locate MessageSyncWorker.syncAll() at lines 65-100 in message_sync_worker.dart. Replace the current sequential processing loop with WriteBatch implementation: create batch instance, accumulate operations up to 500 documents, commit batch when limit reached or all messages processed. Add error handling for partial batch failures with retry logic. Track batch commit success/failure for each message to update local sync status accordingly.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": null
           },
           {
@@ -946,7 +946,7 @@
     ],
     "metadata": {
       "created": "2025-10-26T09:30:12.493Z",
-      "updated": "2025-10-26T10:34:59.158Z",
+      "updated": "2025-10-26T10:37:04.369Z",
       "description": "Tasks for master context"
     }
   }
