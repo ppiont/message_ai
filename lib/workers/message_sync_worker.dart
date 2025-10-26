@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:message_ai/core/database/app_database.dart';
+import 'package:message_ai/core/network/network_info.dart';
+import 'package:message_ai/core/network/retry_policy.dart';
 import 'package:message_ai/features/messaging/data/datasources/message_local_datasource.dart';
 import 'package:message_ai/features/messaging/data/datasources/message_remote_datasource.dart';
 import 'package:message_ai/features/messaging/domain/entities/message.dart';
@@ -12,18 +14,25 @@ import 'package:message_ai/features/messaging/domain/entities/message.dart';
 ///
 /// Architecture:
 /// - Queries pending messages from Drift
-/// - Batch syncs to Firestore
+/// - Batch syncs to Firestore with exponential backoff retry
 /// - Updates local DB sync status
-/// - WorkManager handles retry logic and scheduling
+/// - Checks network connectivity before retrying
+/// - Skips messages exceeding max retry attempts
 class MessageSyncWorker {
   MessageSyncWorker({
     required AppDatabase database,
+    required NetworkInfo networkInfo,
     FirebaseFirestore? firestore,
+    RetryPolicy? retryPolicy,
   }) : _database = database,
-       _firestore = firestore ?? FirebaseFirestore.instance;
+       _firestore = firestore ?? FirebaseFirestore.instance,
+       _networkInfo = networkInfo,
+       _retryPolicy = retryPolicy ?? firestoreSyncRetryPolicy;
 
   final AppDatabase _database;
   final FirebaseFirestore _firestore;
+  final NetworkInfo _networkInfo;
+  final RetryPolicy _retryPolicy;
 
   /// Sync all pending messages to Firestore using WriteBatch
   ///
@@ -33,14 +42,27 @@ class MessageSyncWorker {
   /// **Batching Strategy:**
   /// - Firestore WriteBatch supports up to 500 operations
   /// - Process messages in batches of 500
-  /// - Commit each batch atomically
+  /// - Commit each batch atomically with exponential backoff retry
   /// - Update local sync status in bulk after successful commit
+  ///
+  /// **Retry Strategy:**
+  /// - Exponential backoff: 1s → 2s → 4s → 8s → 16s → 32s
+  /// - Max 5 retry attempts per batch
+  /// - Network connectivity check before each retry
+  /// - Skip messages exceeding max retry count
   ///
   /// **Performance:**
   /// - 80% reduction in sync time vs sequential
-  /// - Target: <2s for 50 messages
+  /// - Target: <2s for 50 messages (without retries)
   Future<MessageSyncResult> syncAll() async {
     debugPrint('[MessageSyncWorker] Starting batch sync...');
+
+    // Check network connectivity before attempting sync
+    final isConnected = await _networkInfo.isConnected;
+    if (!isConnected) {
+      debugPrint('[MessageSyncWorker] No network connection, aborting sync');
+      return const MessageSyncResult(synced: 0, failed: 0);
+    }
 
     try {
       // Initialize data sources
@@ -59,8 +81,25 @@ class MessageSyncWorker {
         return const MessageSyncResult(synced: 0, failed: 0);
       }
 
+      // Filter out messages that exceeded max retry count
+      final retryableMessages = unsyncedMessages
+          .where((m) => m.retryCount < _retryPolicy.maxAttempts)
+          .toList();
+
+      final skippedCount = unsyncedMessages.length - retryableMessages.length;
+      if (skippedCount > 0) {
+        debugPrint(
+          '[MessageSyncWorker] Skipping $skippedCount messages (max retries exceeded)',
+        );
+      }
+
+      if (retryableMessages.isEmpty) {
+        debugPrint('[MessageSyncWorker] No retryable messages to sync');
+        return const MessageSyncResult(synced: 0, failed: 0);
+      }
+
       debugPrint(
-        '[MessageSyncWorker] Found ${unsyncedMessages.length} messages to sync',
+        '[MessageSyncWorker] Found ${retryableMessages.length} messages to sync',
       );
 
       var totalSynced = 0;
@@ -68,11 +107,11 @@ class MessageSyncWorker {
 
       // Process messages in batches of 500 (Firestore WriteBatch limit)
       const batchSize = 500;
-      for (var i = 0; i < unsyncedMessages.length; i += batchSize) {
-        final end = (i + batchSize < unsyncedMessages.length)
+      for (var i = 0; i < retryableMessages.length; i += batchSize) {
+        final end = (i + batchSize < retryableMessages.length)
             ? i + batchSize
-            : unsyncedMessages.length;
-        final batchMessages = unsyncedMessages.sublist(i, end);
+            : retryableMessages.length;
+        final batchMessages = retryableMessages.sublist(i, end);
 
         final result = await _syncBatch(
           batchMessages,
@@ -143,33 +182,68 @@ class MessageSyncWorker {
       }
     }
 
-    // Commit the batch
-    try {
-      await batch.commit();
-      debugPrint('[MessageSyncWorker] Batch committed successfully');
+    // Commit the batch with exponential backoff retry
+    var attemptNumber = 0;
+    while (true) {
+      try {
+        // Check network connectivity before each attempt
+        if (attemptNumber > 0) {
+          final isConnected = await _networkInfo.isConnected;
+          if (!isConnected) {
+            debugPrint(
+              '[MessageSyncWorker] No network connection, aborting batch retry',
+            );
+            throw Exception('Network connection lost during retry');
+          }
+        }
 
-      // Update local sync status for all synced messages
-      await _updateSyncStatusBatch(
-        batchMessages.where((m) => messageData.containsKey(m.id)).toList(),
-        messageLocalDataSource,
-        'synced',
-      );
+        await batch.commit();
+        debugPrint(
+          '[MessageSyncWorker] Batch committed successfully '
+          '(attempt ${attemptNumber + 1})',
+        );
 
-      return MessageSyncResult(
-        synced: messageData.length,
-        failed: batchMessages.length - messageData.length,
-      );
-    } catch (e) {
-      debugPrint('[MessageSyncWorker] Batch commit failed: $e');
+        // Update local sync status for all synced messages
+        await _updateSyncStatusBatch(
+          batchMessages.where((m) => messageData.containsKey(m.id)).toList(),
+          messageLocalDataSource,
+          'synced',
+        );
 
-      // Update all as failed
-      await _updateSyncStatusBatch(
-        batchMessages,
-        messageLocalDataSource,
-        'failed',
-      );
+        return MessageSyncResult(
+          synced: messageData.length,
+          failed: batchMessages.length - messageData.length,
+        );
+      } catch (e) {
+        debugPrint(
+          '[MessageSyncWorker] Batch commit failed (attempt ${attemptNumber + 1}): $e',
+        );
 
-      return MessageSyncResult(synced: 0, failed: batchMessages.length);
+        // Check if we should retry
+        if (!_retryPolicy.shouldRetry(attemptNumber)) {
+          debugPrint(
+            '[MessageSyncWorker] Max retry attempts reached, marking batch as failed',
+          );
+
+          // Update all as failed
+          await _updateSyncStatusBatch(
+            batchMessages,
+            messageLocalDataSource,
+            'failed',
+          );
+
+          return MessageSyncResult(synced: 0, failed: batchMessages.length);
+        }
+
+        // Calculate delay with exponential backoff and jitter
+        final delay = _retryPolicy.getDelay(attemptNumber);
+        debugPrint(
+          '[MessageSyncWorker] Retrying batch in ${delay.inMilliseconds}ms...',
+        );
+
+        await Future<void>.delayed(delay);
+        attemptNumber++;
+      }
     }
   }
 

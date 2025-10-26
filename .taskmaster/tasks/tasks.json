@@ -248,7 +248,7 @@
               3
             ],
             "details": "Create TranslationCoalescer class with Map<String, Future<String>> for pending requests. Key format: '${text}_${targetLang}'.hashCode. Check if translation already in-flight before making new request. Return existing Future if found. Remove from map on completion. Add 30-second timeout for stale request cleanup. Implement singleton pattern for app-wide coalescing. Add metrics for coalescing hit rate.",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": null
           },
           {
@@ -259,7 +259,7 @@
               1
             ],
             "details": "Create RetryPolicy class with exponential backoff: initial delay 1s, max delay 32s, multiplier 2x. Add jitter (±20%) to prevent thundering herd. Implement max retry count of 5 attempts. Store retry metadata in message table (retryCount, lastRetryAt columns). Skip messages exceeding max retries until manual retry. Add NetworkConnectivity check before retry attempts. Log retry attempts for debugging. Expose retry queue size in UI.",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": null
           }
         ]
@@ -946,7 +946,7 @@
     ],
     "metadata": {
       "created": "2025-10-26T09:30:12.493Z",
-      "updated": "2025-10-26T15:14:17.553Z",
+      "updated": "2025-10-26T16:17:11.375Z",
       "description": "Tasks for master context"
     }
   }

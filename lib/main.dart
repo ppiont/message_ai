@@ -1,3 +1,4 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -5,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:message_ai/app.dart';
 import 'package:message_ai/core/database/app_database.dart';
 import 'package:message_ai/core/error/error_logger.dart';
+import 'package:message_ai/core/network/network_info.dart';
 import 'package:message_ai/features/messaging/data/services/fcm_service.dart';
 import 'package:message_ai/workers/delivery_tracking_worker.dart';
 import 'package:message_ai/workers/message_sync_worker.dart';
@@ -40,7 +42,11 @@ void workManagerCallbackDispatcher() {
       // Route to appropriate worker based on task name
       switch (task) {
         case 'message-sync':
-          final worker = MessageSyncWorker(database: database);
+          final networkInfo = NetworkInfoImpl(Connectivity());
+          final worker = MessageSyncWorker(
+            database: database,
+            networkInfo: networkInfo,
+          );
           final result = await worker.syncAll();
           debugPrint(
             '[WorkManager] message-sync complete: ${result.synced} synced, ${result.failed} failed',
