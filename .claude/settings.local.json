@@ -46,7 +46,16 @@
       "Bash(firebase functions:delete:*)",
       "WebFetch(domain:github.com)",
       "mcp__task-master-ai__analyze_project_complexity",
-      "mcp__task-master-ai__expand_all"
+      "mcp__task-master-ai__expand_all",
+      "mcp__task-master-ai__next_task",
+      "mcp__task-master-ai__set_task_status",
+      "mcp__Dart__analyze_files",
+      "mcp__Dart__add_roots",
+      "mcp__task-master-ai__update_subtask",
+      "mcp__GitKraken__git_status",
+      "mcp__GitKraken__git_add_or_commit",
+      "mcp__task-master-ai__get_task",
+      "mcp__Dart__pub"
     ],
     "deny": [],
     "ask": []
