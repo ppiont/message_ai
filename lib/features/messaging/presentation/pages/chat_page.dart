@@ -198,16 +198,18 @@ class _ChatPageState extends ConsumerState<ChatPage> {
 
   Widget _buildPresenceStatus() {
     if (widget.isGroup) {
-      // Get conversation to extract participant IDs
-      final conversationAsync = ref.watch(
-        getConversationByIdProvider(widget.conversationId),
+      // Extract only participant IDs using select() to prevent rebuilds
+      // when other conversation properties change (Task 8.2)
+      final participantIdsAsync = ref.watch(
+        getConversationByIdProvider(widget.conversationId).select(
+          (conversationAsync) => conversationAsync.whenData(
+            (conversation) => conversation.participants.map((p) => p.uid).toList(),
+          ),
+        ),
       );
 
-      return conversationAsync.when(
-        data: (conversation) {
-          final participantIds = conversation.participants
-              .map((p) => p.uid)
-              .toList();
+      return participantIdsAsync.when(
+        data: (participantIds) {
           final groupPresenceAsync = ref.watch(
             groupPresenceStatusProvider(participantIds),
           );

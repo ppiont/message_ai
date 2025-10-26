@@ -356,9 +356,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final currentUser = ref.watch(currentUserProvider);
+    // Extract only uid using select() to prevent rebuilds when other
+    // user properties change (Task 8.2)
+    final currentUserUid = ref.watch(
+      currentUserProvider.select((user) => user?.uid),
+    );
 
-    if (currentUser == null) {
+    if (currentUserUid == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Settings'), elevation: 0),
         body: const Center(
@@ -376,7 +380,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Settings'), elevation: 0),
       body: StreamBuilder<UserEntity?>(
-        stream: db.userDao.watchUser(currentUser.uid),
+        stream: db.userDao.watchUser(currentUserUid),
         builder: (context, snapshot) {
           // Handle connection states
           if (snapshot.connectionState == ConnectionState.waiting &&
