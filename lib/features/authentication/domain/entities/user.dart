@@ -5,13 +5,19 @@ import 'package:equatable/equatable.dart';
 /// This is the core domain model for users, independent of any
 /// data source implementation details.
 class User extends Equatable {
-
   const User({
     required this.uid,
-    required this.displayName, required this.preferredLanguage, required this.createdAt, required this.lastSeen, required this.isOnline, required this.fcmTokens, this.email,
+    required this.displayName,
+    required this.preferredLanguage,
+    required this.createdAt,
+    required this.lastSeen,
+    required this.isOnline,
+    required this.fcmTokens,
+    this.email,
     this.phoneNumber,
     this.photoURL,
   });
+
   /// Firebase Authentication unique identifier
   final String uid;
 
@@ -55,17 +61,17 @@ class User extends Equatable {
     bool? isOnline,
     List<String>? fcmTokens,
   }) => User(
-      uid: uid ?? this.uid,
-      email: email ?? this.email,
-      phoneNumber: phoneNumber ?? this.phoneNumber,
-      displayName: displayName ?? this.displayName,
-      photoURL: photoURL ?? this.photoURL,
-      preferredLanguage: preferredLanguage ?? this.preferredLanguage,
-      createdAt: createdAt ?? this.createdAt,
-      lastSeen: lastSeen ?? this.lastSeen,
-      isOnline: isOnline ?? this.isOnline,
-      fcmTokens: fcmTokens ?? this.fcmTokens,
-    );
+    uid: uid ?? this.uid,
+    email: email ?? this.email,
+    phoneNumber: phoneNumber ?? this.phoneNumber,
+    displayName: displayName ?? this.displayName,
+    photoURL: photoURL ?? this.photoURL,
+    preferredLanguage: preferredLanguage ?? this.preferredLanguage,
+    createdAt: createdAt ?? this.createdAt,
+    lastSeen: lastSeen ?? this.lastSeen,
+    isOnline: isOnline ?? this.isOnline,
+    fcmTokens: fcmTokens ?? this.fcmTokens,
+  );
 
   @override
   List<Object?> get props => [
@@ -82,6 +88,7 @@ class User extends Equatable {
   ];
 
   @override
-  String toString() => 'User(uid: $uid, displayName: $displayName, email: $email, '
-        'isOnline: $isOnline, preferredLanguage: $preferredLanguage)';
+  String toString() =>
+      'User(uid: $uid, displayName: $displayName, email: $email, '
+      'isOnline: $isOnline, preferredLanguage: $preferredLanguage)';
 }

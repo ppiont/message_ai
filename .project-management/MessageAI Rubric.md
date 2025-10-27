@@ -4,6 +4,96 @@ Total Points: 100
 
 ---
 
+## Checklist
+
+**Section 1: Core Messaging Infrastructure (35 points)**
+
+- [x] Sub-200ms message delivery on good network
+- [x] Messages appear instantly for all online users
+- [x] Zero visible lag during rapid messaging (20+ messages)
+- [x] Typing indicators work smoothly
+- [ ] Presence updates (online/offline) sync immediately
+Presence doesn't work fully. If a user shuts down their app or phone, their online status doesn't update. It only updates correctly if they click logout.
+
+- [ ] User goes offline → messages queue locally → send when reconnected
+- [x] App force-quit → reopen → full chat history preserved
+- [ ] Messages sent while offline appear for other users once online
+- [x] Network drop (30s+) → auto-reconnects with complete sync
+- [ ] Clear UI indicators for connection status and pending messages
+- [ ] Sub-1 second sync time after reconnection
+I haven't tested the system for sending messages while offline. I suspect it may not work entirely.
+
+- [x] 3+ users can message simultaneously
+- [x] Clear message attribution (names/avatars)
+- [ ] Read receipts show who's read each message
+- [ ] Typing indicators work with multiple users
+- [ ] Group member list with online status
+- [x] Smooth performance with active conversation
+Haven't tested the unchecked features.
+
+**Section 2: Mobile App Quality (20 points)**
+
+- [x] App backgrounding → WebSocket maintains or reconnects instantly
+- [x] Foregrounding → instant sync of missed messages
+- [x] Push notifications work when app is closed
+- [ ] No messages lost during lifecycle transitions
+- [ ] Battery efficient (no excessive background activity)
+I'm not sure what messages being lost during lifecycle transitions means. Battery efficient? I don't think so. It's a very bloated app.
+
+- [ ] App launch to chat screen \<2 seconds
+- [x] Smooth 60 FPS scrolling through 1000+ messages
+- [x] Optimistic UI updates (messages appear instantly before server confirm)
+- [ ] Images load progressively with placeholders
+- [x] Keyboard handling perfect (no UI jank)
+- [ ] Professional layout and transitions
+Images not implemented. App I think loads fast enough, but not sure. Professional layout is so-so.
+
+**Section 3: AI Features Implementation (30 points)**
+
+- [ ] All 5 required AI features implemented and working excellently
+- [x] Features genuinely useful for persona's pain points
+- [x] Natural language commands work 90%+ of the time
+- [x] Fast response times (\<2s for simple commands)
+- [x] Clean UI integration (contextual menus, chat interface, or hybrid)
+- [ ] Clear loading states and error handling
+Formality adjustment is missing. Loading states and error handling, I'm not sure.
+
+- [x] AI features clearly map to real pain points of the chosen persona.
+- [x] Each feature demonstrates daily usefulness and contextual value.
+- [x] The overall experience feels purpose-built for that user type.
+
+- [ ] Advanced capability fully implemented and impressive
+- [ ] **Multi-Step Agent**: Executes complex workflows autonomously, maintains context across 5+ steps, handles edge cases gracefully
+- [ ] **Proactive Assistant**: Monitors conversations intelligently, triggers suggestions at right moments, learns from user feedback
+- [x] **Context-Aware Smart Replies**: Learns user style accurately, generates authentic-sounding replies, provides 3+ relevant options
+- [x] **Intelligent Processing**: Extracts structured data accurately, handles multilingual content, presents clear summaries
+- [ ] Uses required agent framework correctly (if applicable)
+- [x] Response times meet targets (\<15s for agents, \<8s for others)
+- [x] Seamless integration with other features
+
+**Section 4: Technical Implementation (10 points)**
+- [x] Clean, well-organized code
+- [x] API keys secured (never exposed in mobile app)
+- [x] Function calling/tool use implemented correctly
+- [x] RAG pipeline for conversation context
+- [x] Rate limiting implemented
+- [x] Response streaming for long operations (if applicable)
+
+- [x] Robust auth system (Firebase Auth, Auth0, or equivalent)
+- [x] Secure user management
+- [x] Proper session handling
+- [x] Local database (SQLite/Realm/SwiftData) implemented correctly
+- [x] Data sync logic handles conflicts
+- [ ] User profiles with photos working
+No photos for profiles yet.
+
+- [ ] Clear, comprehensive README
+- [ ] Step-by-step setup instructions
+- [ ] Architecture overview with diagrams
+- [ ] Environment variables template
+- [x] Easy to run locally
+- [x] Code is well-commented
+
 ## **Section 1: Core Messaging Infrastructure (35 points)**
 
 ### **Real-Time Message Delivery (12 points)**

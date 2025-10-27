@@ -8,28 +8,39 @@ import 'package:message_ai/features/formality_adjustment/presentation/providers/
 
 /// Widget for adjusting the formality level of the message being composed.
 ///
-/// Displays ChoiceChips for selecting formality level (Casual, Neutral, Formal)
-/// and triggers formality adjustment via Cloud Function.
+/// Features:
+/// - Lazy loading: Generates formality versions only when requested
+/// - Instant switching: Caches versions for instant toggling
+/// - Preserves original: User's exact text is never modified at "Original" level
+/// - Per-chip loading indicators
+/// - Auto-clears cache when text changes
 class FormalityAdjuster extends ConsumerWidget {
   const FormalityAdjuster({
     required this.text,
     required this.onTextAdjusted,
-    this.language,
+    required this.language,
     super.key,
   });
 
   final String text;
   final ValueChanged<String> onTextAdjusted;
-  final String? language;
+  final String language;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(formalityControllerProvider);
-    final controller = ref.read(formalityControllerProvider.notifier);
-
     // Don't show if text is empty
     if (text.trim().isEmpty) {
       return const SizedBox.shrink();
+    }
+
+    final state = ref.watch(formalityControllerProvider);
+    final controller = ref.read(formalityControllerProvider.notifier);
+
+    // Update original text if it changed (clears cache)
+    if (state.originalText != text) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        controller.setOriginalText(text);
+      });
     }
 
     return Container(
@@ -49,39 +60,16 @@ class FormalityAdjuster extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              ...FormalityLevel.values.map((level) => Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: ChoiceChip(
-                  label: Text(level.displayName),
-                  selected: state.selectedFormality == level,
-                  onSelected: state.isAdjusting ? null : (selected) {
-                    if (selected) {
-                      controller.setSelectedFormality(level);
-                      _adjustFormality(ref, level);
-                    }
-                  },
-                  selectedColor: Theme.of(context).colorScheme.primary,
-                  labelStyle: TextStyle(
-                    color: state.selectedFormality == level
-                        ? Colors.white
-                        : Colors.black87,
-                    fontSize: 12,
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+
+              // Show all formality level chips
+              ...FormalityLevel.values.map(
+                (level) => _buildChip(
+                  context: context,
+                  ref: ref,
+                  level: level,
+                  state: state,
                 ),
-              )),
-              if (state.isAdjusting) ...[
-                const SizedBox(width: 8),
-                const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              ],
+              ),
             ],
           ),
           if (state.error != null)
@@ -89,10 +77,7 @@ class FormalityAdjuster extends ConsumerWidget {
               padding: const EdgeInsets.only(top: 4),
               child: Text(
                 state.error!,
-                style: const TextStyle(
-                  color: Colors.red,
-                  fontSize: 11,
-                ),
+                style: const TextStyle(color: Colors.red, fontSize: 11),
               ),
             ),
         ],
@@ -100,21 +85,87 @@ class FormalityAdjuster extends ConsumerWidget {
     );
   }
 
-  Future<void> _adjustFormality(
+  Widget _buildChip({
+    required BuildContext context,
+    required WidgetRef ref,
+    required FormalityLevel level,
+    required FormalityAdjustmentState state,
+  }) {
+    final isSelected = state.currentLevel == level;
+    final isLoading = state.loadingLevel == level;
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: ChoiceChip(
+        label: isLoading
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(level.displayName),
+                  const SizedBox(width: 4),
+                  const SizedBox(
+                    width: 12,
+                    height: 12,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ],
+              )
+            : Text(level.displayName),
+        selected: isSelected,
+        onSelected: isLoading
+            ? null // Disable while loading
+            : (selected) {
+                if (!selected) {
+                  return;
+                }
+                _handleLevelSelected(ref, level, state);
+              },
+        selectedColor: Theme.of(context).colorScheme.primary,
+        labelStyle: TextStyle(
+          color: isSelected ? Colors.white : Colors.black87,
+          fontSize: 12,
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+    );
+  }
+
+  void _handleLevelSelected(
     WidgetRef ref,
-    FormalityLevel targetFormality,
+    FormalityLevel level,
+    FormalityAdjustmentState state,
+  ) {
+    final controller = ref.read(formalityControllerProvider.notifier);
+
+    // If it's original or already cached → instant switch
+    if (level == FormalityLevel.original || state.hasCachedVersion(level)) {
+      controller.switchToLevel(level);
+      final textForLevel = state.getTextForLevel(level);
+      if (textForLevel != null) {
+        onTextAdjusted(textForLevel);
+      }
+      return;
+    }
+
+    // Need to generate → call API
+    _generateLevel(ref, level, state);
+  }
+
+  Future<void> _generateLevel(
+    WidgetRef ref,
+    FormalityLevel level,
+    FormalityAdjustmentState state,
   ) async {
     final controller = ref.read(formalityControllerProvider.notifier);
     final adjustUseCase = ref.read(adjustMessageFormalityProvider);
 
-    controller
-      ..setAdjusting(isAdjusting: true)
-      ..clearError();
+    controller.setLoadingLevel(level);
 
     final result = await adjustUseCase(
-      text: text,
-      targetFormality: targetFormality,
-      language: language ?? 'en',
+      text: state.originalText!,
+      targetFormality: level,
+      language: language,
     );
 
     result.fold(
@@ -122,7 +173,11 @@ class FormalityAdjuster extends ConsumerWidget {
         controller.setError(failure.message);
       },
       (adjustedText) {
-        controller.setAdjustedText(adjustedText);
+        controller
+          ..cacheVersion(level, adjustedText)
+          ..switchToLevel(level);
+
+        // Update TextField
         onTextAdjusted(adjustedText);
       },
     );

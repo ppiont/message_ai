@@ -18,6 +18,9 @@ from typing import Any
 import time
 import os
 from openai import OpenAI
+from google.auth import default
+from google.auth.transport.requests import Request
+import json
 
 # Initialize Firebase Admin SDK
 app = initialize_app()
@@ -66,6 +69,67 @@ def get_openai_client(api_key: str):
     Get OpenAI client with the provided API key.
     """
     return OpenAI(api_key=api_key)
+
+
+def generate_vertex_ai_embedding(text: str) -> list[float]:
+    """
+    Generate text embedding using Vertex AI REST API.
+
+    Uses text-multilingual-embedding-002 model which produces 768-dimensional vectors.
+    This model supports 100+ languages and is optimized for semantic search/retrieval.
+
+    This approach uses the REST API instead of the heavy google-cloud-aiplatform SDK
+    to avoid dependency conflicts and reduce Cloud Build times.
+
+    Args:
+        text: The text to generate an embedding for
+
+    Returns:
+        List of 768 floats representing the embedding vector
+
+    Raises:
+        Exception: If the API call fails
+    """
+    import requests
+
+    # Get Application Default Credentials
+    credentials, project = default()
+
+    # Refresh credentials if needed
+    if not credentials.valid:
+        credentials.refresh(Request())
+
+    # Vertex AI endpoint
+    project_id = project or os.environ.get('GCP_PROJECT') or os.environ.get('GCLOUD_PROJECT')
+    location = 'us-central1'
+    model = 'text-multilingual-embedding-002'
+    url = f'https://{location}-aiplatform.googleapis.com/v1/projects/{project_id}/locations/{location}/publishers/google/models/{model}:predict'
+
+    # Request payload
+    # task_type: RETRIEVAL_DOCUMENT optimizes embeddings for semantic search
+    payload = {
+        'instances': [
+            {
+                'content': text,
+                'task_type': 'RETRIEVAL_DOCUMENT'
+            }
+        ]
+    }
+
+    # Make the API call
+    headers = {
+        'Authorization': f'Bearer {credentials.token}',
+        'Content-Type': 'application/json'
+    }
+
+    response = requests.post(url, headers=headers, json=payload)
+    response.raise_for_status()
+
+    # Parse response
+    result = response.json()
+    embedding = result['predictions'][0]['embeddings']['values']
+
+    return embedding
 
 
 # Cost control: Limit concurrent function instances
@@ -335,139 +399,6 @@ Return ONLY the rewritten message."""
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INTERNAL,
             message=f"Formality adjustment failed: {str(e)}"
-        )
-
-
-@https_fn.on_call(secrets=[OPENAI_API_KEY])
-def generate_embedding(req: https_fn.CallableRequest) -> dict[str, Any]:
-    """
-    Generates a 1536-dimensional embedding vector for text using text-embedding-3-small.
-
-    This function is designed for the Smart Replies RAG pipeline to enable semantic search
-    over message history. Embeddings are cached in Firestore to avoid redundant API calls.
-
-    Args:
-        req.data should contain:
-            - text (str): The text to embed (required)
-
-    Returns:
-        dict: {
-            'embedding': List[float],  # 1536-dimensional vector
-            'model': str,              # Model used (text-embedding-3-small)
-            'tokenCount': int,         # Approximate token count
-            'cached': bool             # Whether result was from cache
-        }
-
-    Raises:
-        https_fn.HttpsError: If validation fails or embedding generation errors occur
-
-    Cost: ~$0.02 per 1M tokens (very cheap)
-    """
-    # Extract and validate request data
-    data = req.data
-
-    if not isinstance(data, dict):
-        raise https_fn.HttpsError(
-            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
-            message="Request data must be a dictionary"
-        )
-
-    text = data.get("text")
-
-    # Validate required fields
-    if not text or not isinstance(text, str):
-        raise https_fn.HttpsError(
-            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
-            message="'text' field is required and must be a string"
-        )
-
-    if len(text.strip()) == 0:
-        raise https_fn.HttpsError(
-            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
-            message="'text' cannot be empty"
-        )
-
-    # Don't generate embeddings for very short messages (<5 characters)
-    if len(text.strip()) < 5:
-        raise https_fn.HttpsError(
-            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
-            message="Text must be at least 5 characters long for meaningful embeddings"
-        )
-
-    # Log embedding request
-    print(f"Embedding generation request: '{text[:50]}...' ({len(text)} chars)")
-
-    try:
-        start_time = time.time()
-
-        # Step 1: Check cache first (embeddings are deterministic, cache indefinitely)
-        db = firestore.client()
-        cache_collection = db.collection("embedding_cache")
-
-        # Create cache key from text hash (embeddings are deterministic)
-        import hashlib
-        text_hash = hashlib.sha256(text.encode('utf-8')).hexdigest()
-        cache_ref = cache_collection.document(text_hash)
-        cache_doc = cache_ref.get()
-
-        # Check if cache entry exists
-        if cache_doc.exists:
-            cache_data = cache_doc.to_dict()
-            elapsed_time = time.time() - start_time
-            print(f"Embedding cache HIT in {elapsed_time:.3f}s")
-
-            return {
-                "embedding": cache_data["embedding"],
-                "model": cache_data["model"],
-                "tokenCount": cache_data.get("tokenCount", 0),
-                "cached": True,
-            }
-
-        # Step 2: Cache miss - call OpenAI Embeddings API
-        print("Embedding cache MISS - calling OpenAI Embeddings API")
-
-        # Get OpenAI client
-        client = get_openai_client(OPENAI_API_KEY.value)
-
-        # Call OpenAI Embeddings API (text-embedding-3-small)
-        # This model produces 1536-dimensional vectors
-        response = client.embeddings.create(
-            model="text-embedding-3-small",
-            input=text,
-            encoding_format="float"  # Returns floats instead of base64
-        )
-
-        elapsed_time = time.time() - start_time
-
-        # Extract embedding vector
-        embedding = response.data[0].embedding
-        token_count = response.usage.total_tokens
-
-        # Step 3: Store in cache (embeddings are deterministic, cache indefinitely)
-        cache_ref.set({
-            "text": text,  # Store text for debugging
-            "textHash": text_hash,
-            "embedding": embedding,
-            "model": "text-embedding-3-small",
-            "tokenCount": token_count,
-            "timestamp": time.time(),
-        })
-
-        print(f"Embedding generation successful in {elapsed_time:.2f}s: "
-              f"{len(embedding)} dimensions, {token_count} tokens")
-
-        return {
-            "embedding": embedding,
-            "model": "text-embedding-3-small",
-            "tokenCount": token_count,
-            "cached": False,
-        }
-
-    except Exception as e:
-        print(f"Embedding generation error: {e}")
-        raise https_fn.HttpsError(
-            code=https_fn.FunctionsErrorCode.INTERNAL,
-            message=f"Embedding generation failed: {str(e)}"
         )
 
 
@@ -1029,42 +960,122 @@ def send_message_notification(
     _send_notification_for_message(event, "conversations")
 
 
+# Note: Group conversations are also in 'conversations' collection (single collection architecture)
+# Both direct and group messages trigger the same function above
+
+
+# ========== Automatic Embedding Generation ==========
+
+
 @firestore_fn.on_document_created(
-    document="group-conversations/{conversationId}/messages/{messageId}"
+    document="conversations/{conversationId}/messages/{messageId}"
 )
-def send_group_message_notification(
+def generate_message_embedding(
     event: firestore_fn.Event[firestore_fn.DocumentSnapshot | None],
 ) -> None:
     """
-    Sends push notifications when a new group message is created.
+    Automatically generates embeddings for direct conversation messages.
 
-    Triggered by: New document in group-conversations/{conversationId}/messages/
-    Action: Sends FCM notification to all group participants except sender
+    This trigger fires when a new message is created in a direct conversation.
+    It uses Vertex AI's textembedding-gecko model to generate a 768-dimensional
+    embedding vector and writes it back to the message document.
 
-    Group notifications include the group name in the title:
-    "John in Team Discussion" instead of just "John"
+    Benefits:
+    - Zero phone involvement (server-side only)
+    - Async/non-blocking (doesn't slow down message send)
+    - Cheaper than OpenAI ($1 vs $20 per 1M messages)
+    - Automatic indexing by Firestore vector search
+
+    Triggered by: New document in conversations/{conversationId}/messages/
+    Action: Generate 768D embedding using Vertex AI and update document
+
+    Note: Works for both direct and group conversations (single collection architecture)
     """
-    _send_notification_for_message(event, "group-conversations")
+    _generate_embedding_for_message(event)
+
+
+def _generate_embedding_for_message(
+    event: firestore_fn.Event[firestore_fn.DocumentSnapshot | None],
+) -> None:
+    """
+    Shared logic for generating embeddings for messages.
+
+    This function:
+    1. Extracts the message text from the document
+    2. Validates it's long enough (>= 5 chars)
+    3. Generates embedding using Vertex AI textembedding-gecko
+    4. Updates the message document with the embedding
+
+    Args:
+        event: Firestore document creation event
+
+    Note: Errors are logged but don't throw to avoid retry loops
+    """
+    try:
+        if event.data is None:
+            print("Warning: Event data is None, skipping embedding generation")
+            return
+
+        message_data = event.data.to_dict()
+        if message_data is None:
+            print("Warning: Message data is None, skipping embedding generation")
+            return
+
+        text = message_data.get('text', '')
+        message_id = event.data.id
+
+        # Skip if text is too short
+        if len(text.strip()) < 5:
+            print(f"Skipping embedding for message {message_id}: text too short ({len(text)} chars)")
+            return
+
+        # Skip if embedding already exists (shouldn't happen, but defensive)
+        if 'embedding' in message_data and message_data['embedding']:
+            print(f"Skipping embedding for message {message_id}: embedding already exists")
+            return
+
+        print(f"Generating embedding for message {message_id}: '{text[:50]}...'")
+        start_time = time.time()
+
+        # Generate embedding using Vertex AI textembedding-gecko (via REST API)
+        # This model produces 768-dimensional vectors
+        embedding_vector = generate_vertex_ai_embedding(text)
+
+        # Update message document with embedding
+        event.data.reference.update({'embedding': embedding_vector})
+
+        elapsed_ms = (time.time() - start_time) * 1000
+        print(f"Successfully generated 768D embedding for message {message_id} in {elapsed_ms:.0f}ms")
+
+    except Exception as e:
+        # Log error but don't throw to avoid retry loops
+        print(f"Error generating embedding for message: {e}")
+        import traceback
+        traceback.print_exc()
+
+
+# ========== Smart Replies ==========
 
 
 @https_fn.on_call(secrets=[OPENAI_API_KEY])
-def generate_smart_replies(req: https_fn.CallableRequest) -> dict[str, Any]:
+def generate_smart_replies_complete(req: https_fn.CallableRequest) -> dict[str, Any]:
     """
-    Generates smart reply suggestions using GPT-4o-mini with RAG context.
+    Unified smart reply generation with complete RAG pipeline server-side.
 
-    This function implements the final step of the Smart Replies RAG pipeline:
-    - Takes incoming message embedding
-    - Uses relevant context from semantic search
-    - Applies user communication style
-    - Generates 3 reply suggestions with different intents
+    This function implements the entire Smart Replies RAG pipeline in one call:
+    1. Generates embedding for incoming message using Vertex AI (768D)
+    2. Performs vector search using Firestore find_nearest()
+    3. Fetches user communication style from Firestore
+    4. Generates 3 reply suggestions with GPT-4o-mini
+
+    This replaces the old multi-step client-side orchestration with a single
+    server-side function call, reducing latency and complexity.
 
     Args:
         req.data should contain:
             - conversationId (str): The conversation context
             - incomingMessageText (str): The message to generate replies for
-            - incomingMessageEmbedding (list): 1536-dimensional embedding vector
-            - userStyle (dict): User communication style from UserCommunicationStyle.toJson()
-            - relevantContext (list): Semantic search results (messages)
+            - userId (str): The user ID for fetching communication style
 
     Returns:
         dict: {
@@ -1073,14 +1084,25 @@ def generate_smart_replies(req: https_fn.CallableRequest) -> dict[str, Any]:
                 {'text': str, 'intent': str},  # neutral
                 {'text': str, 'intent': str},  # question
             ],
-            'cached': bool
+            'cached': bool,
+            'latency': float  # Total latency in milliseconds
         }
 
     Raises:
         https_fn.HttpsError: If validation fails or generation errors occur
 
-    Performance: Target <2 seconds response time
+    Performance: Target <2 seconds response time (embedding + search + LLM)
+    Cost: ~$0.001 embedding + ~$0.0001 GPT-4o-mini = ~$0.0011 per request
     """
+    start_time = time.time()
+
+    # Validate authentication
+    if req.auth is None:
+        raise https_fn.HttpsError(
+            code=https_fn.FunctionsErrorCode.UNAUTHENTICATED,
+            message="User must be authenticated to generate smart replies"
+        )
+
     # Extract and validate request data
     data = req.data
 
@@ -1092,9 +1114,7 @@ def generate_smart_replies(req: https_fn.CallableRequest) -> dict[str, Any]:
 
     conversation_id = data.get("conversationId")
     incoming_message_text = data.get("incomingMessageText")
-    incoming_message_embedding = data.get("incomingMessageEmbedding")
-    user_style = data.get("userStyle")
-    relevant_context = data.get("relevantContext")
+    user_id = data.get("userId")
 
     # Validate required fields
     if not conversation_id or not isinstance(conversation_id, str):
@@ -1109,47 +1129,21 @@ def generate_smart_replies(req: https_fn.CallableRequest) -> dict[str, Any]:
             message="'incomingMessageText' field is required and must be a string"
         )
 
-    if not incoming_message_embedding or not isinstance(incoming_message_embedding, list):
+    if not user_id or not isinstance(user_id, str):
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
-            message="'incomingMessageEmbedding' field is required and must be a list"
-        )
-
-    if len(incoming_message_embedding) != 1536:
-        raise https_fn.HttpsError(
-            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
-            message="'incomingMessageEmbedding' must be 1536 dimensions"
-        )
-
-    if not user_style or not isinstance(user_style, dict):
-        raise https_fn.HttpsError(
-            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
-            message="'userStyle' field is required and must be a dictionary"
-        )
-
-    if not isinstance(relevant_context, list):
-        raise https_fn.HttpsError(
-            code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
-            message="'relevantContext' field must be a list"
+            message="'userId' field is required and must be a string"
         )
 
     # Log smart reply request
-    print(f"Smart reply request: '{incoming_message_text[:50]}...' in conversation {conversation_id}")
+    print(f"Smart reply complete request: '{incoming_message_text[:50]}...' in conversation {conversation_id}")
 
     try:
-        start_time = time.time()
-
-        # Step 0: Check rate limit (50 requests per hour per user)
         db = firestore.client()
 
-        # Get user ID from request context (authenticated user)
-        user_id = req.auth.uid if req.auth else "anonymous"
-
-        # Calculate current hour window (truncate timestamp to hour)
-        current_hour = int(time.time() // 3600)  # Unix timestamp divided by 3600 seconds
+        # Step 0: Rate limiting (50 requests per hour per user)
+        current_hour = int(time.time() // 3600)
         rate_limit_key = f"{user_id}_{current_hour}"
-
-        # Check rate limit
         rate_limit_ref = db.collection("smart_reply_rate_limits").document(rate_limit_key)
         rate_limit_doc = rate_limit_ref.get()
 
@@ -1158,15 +1152,11 @@ def generate_smart_replies(req: https_fn.CallableRequest) -> dict[str, Any]:
             rate_limit_data = rate_limit_doc.to_dict()
             request_count = rate_limit_data.get("count", 0)
 
-        # Rate limit: 50 requests per hour per user
         RATE_LIMIT = 50
         if request_count >= RATE_LIMIT:
-            # Calculate when the limit resets (next hour)
             next_hour = (current_hour + 1) * 3600
             reset_seconds = next_hour - time.time()
-
             print(f"Rate limit exceeded for user {user_id}: {request_count}/{RATE_LIMIT}")
-
             raise https_fn.HttpsError(
                 code=https_fn.FunctionsErrorCode.RESOURCE_EXHAUSTED,
                 message=f"Smart reply rate limit exceeded. Limit: {RATE_LIMIT} requests per hour. "
@@ -1181,22 +1171,15 @@ def generate_smart_replies(req: https_fn.CallableRequest) -> dict[str, Any]:
             "lastRequest": time.time(),
         })
 
-        print(f"Rate limit check passed: {request_count + 1}/{RATE_LIMIT} requests (user: {user_id})")
+        print(f"Rate limit check passed: {request_count + 1}/{RATE_LIMIT} requests")
 
         # Step 1: Check cache first (7-day TTL)
         import hashlib
         import json
 
-        # Create cache key from hash of inputs
-        cache_input = {
-            "incomingMessageText": incoming_message_text,
-            "userStyle": user_style,
-            "contextTexts": [msg.get("text", "") for msg in relevant_context],
-        }
-        cache_key_hash = hashlib.sha256(
-            json.dumps(cache_input, sort_keys=True).encode('utf-8')
-        ).hexdigest()
-
+        # Create cache key from incoming message text and conversation ID
+        cache_key_data = f"{conversation_id}_{incoming_message_text}_{user_id}"
+        cache_key_hash = hashlib.sha256(cache_key_data.encode('utf-8')).hexdigest()
         cache_collection = db.collection("smart_reply_cache")
         cache_ref = cache_collection.document(cache_key_hash)
         cache_doc = cache_ref.get()
@@ -1207,33 +1190,90 @@ def generate_smart_replies(req: https_fn.CallableRequest) -> dict[str, Any]:
             timestamp = cache_data.get("timestamp")
 
             if timestamp:
-                # Check if cache is still valid (7 days)
                 age_seconds = time.time() - timestamp
                 if age_seconds < 604800:  # 7 days
-                    # Cache hit!
-                    elapsed_time = time.time() - start_time
-                    print(f"Smart reply cache HIT in {elapsed_time:.3f}s (age: {age_seconds/86400:.1f} days)")
-
+                    elapsed_time = (time.time() - start_time) * 1000
+                    print(f"Smart reply cache HIT in {elapsed_time:.0f}ms (age: {age_seconds/86400:.1f} days)")
                     return {
                         "suggestions": cache_data["suggestions"],
                         "cached": True,
-                        "cacheAge": age_seconds,
+                        "latency": elapsed_time,
                     }
 
-        # Step 2: Cache miss - call OpenAI API
-        print("Smart reply cache MISS - calling OpenAI API")
+        # Step 2: Cache miss - run full RAG pipeline
+        print("Smart reply cache MISS - running full RAG pipeline")
 
-        # Get OpenAI client
-        client = get_openai_client(OPENAI_API_KEY.value)
+        # Step 2a: Generate embedding for incoming message using Vertex AI (via REST API)
+        embedding_start = time.time()
+        query_embedding = generate_vertex_ai_embedding(incoming_message_text)
+        embedding_ms = (time.time() - embedding_start) * 1000
+        print(f"Generated 768D embedding in {embedding_ms:.0f}ms")
+
+        # Step 2b: Perform vector search using find_nearest()
+        # Single collection architecture - all conversations in 'conversations' collection
+        search_start = time.time()
+        messages_ref = db.collection('conversations').document(conversation_id).collection('messages')
+
+        # Perform vector search (find_nearest requires firestore-admin SDK)
+        from google.cloud.firestore_v1.base_vector_query import DistanceMeasure
+
+        vector_query = messages_ref.find_nearest(
+            vector_field='embedding',
+            query_vector=query_embedding,
+            distance_measure=DistanceMeasure.COSINE,
+            limit=10  # Get top 10 most relevant messages
+        )
+
+        search_results = vector_query.stream()
+        relevant_messages = []
+        for doc in search_results:
+            msg_data = doc.to_dict()
+            relevant_messages.append({
+                'text': msg_data.get('text', ''),
+                'senderId': msg_data.get('senderId', ''),
+                'timestamp': msg_data.get('timestamp', ''),
+            })
+
+        search_ms = (time.time() - search_start) * 1000
+        print(f"Vector search completed in {search_ms:.0f}ms, found {len(relevant_messages)} results")
+
+        # Step 2c: Fetch user communication style from Firestore
+        style_start = time.time()
+        user_ref = db.collection('users').document(user_id)
+        user_doc = user_ref.get()
+
+        # Default style if user doc doesn't exist
+        user_style = {
+            'styleDescription': 'neutral, conversational',
+            'averageMessageLength': '50',
+            'emojiUsageRate': '10%',
+            'casualityScore': '0.5',
+        }
+
+        if user_doc.exists:
+            user_data = user_doc.to_dict()
+            communication_style = user_data.get('communicationStyle', {})
+            if communication_style:
+                user_style = {
+                    'styleDescription': communication_style.get('styleDescription', user_style['styleDescription']),
+                    'averageMessageLength': str(communication_style.get('averageMessageLength', 50)),
+                    'emojiUsageRate': f"{int(communication_style.get('emojiUsageRate', 0.1) * 100)}%",
+                    'casualityScore': str(communication_style.get('casualityScore', 0.5)),
+                }
+
+        style_ms = (time.time() - style_start) * 1000
+        print(f"Fetched user style in {style_ms:.0f}ms")
+
+        # Step 2d: Generate smart replies with GPT-4o-mini
+        llm_start = time.time()
 
         # Build context messages string
         context_str = ""
-        if relevant_context:
+        if relevant_messages:
             context_messages = []
-            for msg in relevant_context[:5]:  # Limit to top 5 for prompt size
+            for msg in relevant_messages[:5]:  # Limit to top 5 for prompt size
                 sender_id = msg.get("senderId", "Unknown")
                 text = msg.get("text", "")
-                # Use just sender ID (display name lookup is done client-side)
                 context_messages.append(f"User {sender_id[-4:]}: {text}")
             context_str = "\n".join(context_messages)
         else:
@@ -1242,7 +1282,7 @@ def generate_smart_replies(req: https_fn.CallableRequest) -> dict[str, Any]:
         # Build user style string
         style_description = user_style.get("styleDescription", "neutral, conversational")
         avg_length = user_style.get("averageMessageLength", "50")
-        emoji_rate = user_style.get("emojiUsageRate", "0%")
+        emoji_rate = user_style.get("emojiUsageRate", "10%")
         casualty = user_style.get("casualityScore", "0.5")
 
         # Construct the prompt for GPT-4o-mini
@@ -1285,6 +1325,9 @@ Return JSON in this exact format:
 
 Only return the JSON, no additional text."""
 
+        # Get OpenAI client
+        client = get_openai_client(OPENAI_API_KEY.value)
+
         # Call OpenAI API (GPT-4o-mini)
         response = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -1294,10 +1337,11 @@ Only return the JSON, no additional text."""
             ],
             temperature=0.7,
             max_tokens=300,
-            response_format={"type": "json_object"}  # Ensure JSON response
+            response_format={"type": "json_object"}
         )
 
-        elapsed_time = time.time() - start_time
+        llm_ms = (time.time() - llm_start) * 1000
+        print(f"GPT-4o-mini completed in {llm_ms:.0f}ms")
 
         # Extract and parse response
         response_text = response.choices[0].message.content.strip()
@@ -1331,21 +1375,28 @@ Only return the JSON, no additional text."""
 
         # Step 3: Store in cache for future requests (7-day TTL)
         cache_ref.set({
+            "conversationId": conversation_id,
             "incomingMessageText": incoming_message_text,
-            "userStyle": user_style,
+            "userId": user_id,
             "suggestions": suggestions,
             "timestamp": time.time(),
         })
 
-        print(f"Smart reply generation successful in {elapsed_time:.2f}s: {len(suggestions)} suggestions")
+        total_latency = (time.time() - start_time) * 1000
+        print(f"Smart reply complete successful in {total_latency:.0f}ms total "
+              f"(embed: {embedding_ms:.0f}ms, search: {search_ms:.0f}ms, "
+              f"style: {style_ms:.0f}ms, llm: {llm_ms:.0f}ms)")
 
         return {
             "suggestions": suggestions,
             "cached": False,
+            "latency": total_latency,
         }
 
     except Exception as e:
-        print(f"Smart reply generation error: {e}")
+        print(f"Smart reply complete error: {e}")
+        import traceback
+        traceback.print_exc()
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.INTERNAL,
             message=f"Smart reply generation failed: {str(e)}"

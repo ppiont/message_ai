@@ -487,16 +487,25 @@ String _$messageContextServiceHash() =>
     r'114aed6960eab3ef822125bef7440c05cb675eeb';
 
 /// Provides the [SendMessage] use case with language detection.
+///
+/// Note: messageQueue removed - WorkManager handles background sync now
+/// Note: embeddingGenerator removed - Firestore triggers handle embeddings server-side
 
 @ProviderFor(sendMessageUseCase)
 const sendMessageUseCaseProvider = SendMessageUseCaseProvider._();
 
 /// Provides the [SendMessage] use case with language detection.
+///
+/// Note: messageQueue removed - WorkManager handles background sync now
+/// Note: embeddingGenerator removed - Firestore triggers handle embeddings server-side
 
 final class SendMessageUseCaseProvider
     extends $FunctionalProvider<SendMessage, SendMessage, SendMessage>
     with $Provider<SendMessage> {
   /// Provides the [SendMessage] use case with language detection.
+  ///
+  /// Note: messageQueue removed - WorkManager handles background sync now
+  /// Note: embeddingGenerator removed - Firestore triggers handle embeddings server-side
   const SendMessageUseCaseProvider._()
     : super(
         from: null,
@@ -531,7 +540,7 @@ final class SendMessageUseCaseProvider
 }
 
 String _$sendMessageUseCaseHash() =>
-    r'2a140209617e601ce7d9328ed6a17a6b151b21a3';
+    r'd2eff0e069317ba222183fd88cc05f4b3d816f82';
 
 /// Provides the [WatchMessages] use case.
 
@@ -949,11 +958,112 @@ final class UserConversationsStreamFamily extends $Family
   String toString() => r'userConversationsStreamProvider';
 }
 
+/// Cached provider for conversation participant IDs.
+///
+/// Fetches once and caches to avoid repeated fetches during stream rebuilds.
+
+@ProviderFor(conversationParticipantIds)
+const conversationParticipantIdsProvider = ConversationParticipantIdsFamily._();
+
+/// Cached provider for conversation participant IDs.
+///
+/// Fetches once and caches to avoid repeated fetches during stream rebuilds.
+
+final class ConversationParticipantIdsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<String>>,
+          List<String>,
+          FutureOr<List<String>>
+        >
+    with $FutureModifier<List<String>>, $FutureProvider<List<String>> {
+  /// Cached provider for conversation participant IDs.
+  ///
+  /// Fetches once and caches to avoid repeated fetches during stream rebuilds.
+  const ConversationParticipantIdsProvider._({
+    required ConversationParticipantIdsFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'conversationParticipantIdsProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$conversationParticipantIdsHash();
+
+  @override
+  String toString() {
+    return r'conversationParticipantIdsProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<List<String>> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<List<String>> create(Ref ref) {
+    final argument = this.argument as String;
+    return conversationParticipantIds(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is ConversationParticipantIdsProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$conversationParticipantIdsHash() =>
+    r'fa804986da868a3a86888732f03eab0dad4e12e1';
+
+/// Cached provider for conversation participant IDs.
+///
+/// Fetches once and caches to avoid repeated fetches during stream rebuilds.
+
+final class ConversationParticipantIdsFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<List<String>>, String> {
+  const ConversationParticipantIdsFamily._()
+    : super(
+        retry: null,
+        name: r'conversationParticipantIdsProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Cached provider for conversation participant IDs.
+  ///
+  /// Fetches once and caches to avoid repeated fetches during stream rebuilds.
+
+  ConversationParticipantIdsProvider call(String conversationId) =>
+      ConversationParticipantIdsProvider._(
+        argument: conversationId,
+        from: this,
+      );
+
+  @override
+  String toString() => r'conversationParticipantIdsProvider';
+}
+
 /// Stream provider for watching messages in a conversation in real-time.
 ///
 /// Automatically updates when messages change in Firestore.
-/// Automatically marks incoming messages as delivered.
-/// Computes aggregate read receipt status for group messages.
+/// Returns messages with computed status from Firestore.
+///
+/// Uses real-time listeners for BOTH messages AND status subcollections.
+/// When receiver marks delivered/read, sender sees it instantly via WebSocket.
 
 @ProviderFor(conversationMessagesStream)
 const conversationMessagesStreamProvider = ConversationMessagesStreamFamily._();
@@ -961,8 +1071,10 @@ const conversationMessagesStreamProvider = ConversationMessagesStreamFamily._();
 /// Stream provider for watching messages in a conversation in real-time.
 ///
 /// Automatically updates when messages change in Firestore.
-/// Automatically marks incoming messages as delivered.
-/// Computes aggregate read receipt status for group messages.
+/// Returns messages with computed status from Firestore.
+///
+/// Uses real-time listeners for BOTH messages AND status subcollections.
+/// When receiver marks delivered/read, sender sees it instantly via WebSocket.
 
 final class ConversationMessagesStreamProvider
     extends
@@ -977,8 +1089,10 @@ final class ConversationMessagesStreamProvider
   /// Stream provider for watching messages in a conversation in real-time.
   ///
   /// Automatically updates when messages change in Firestore.
-  /// Automatically marks incoming messages as delivered.
-  /// Computes aggregate read receipt status for group messages.
+  /// Returns messages with computed status from Firestore.
+  ///
+  /// Uses real-time listeners for BOTH messages AND status subcollections.
+  /// When receiver marks delivered/read, sender sees it instantly via WebSocket.
   const ConversationMessagesStreamProvider._({
     required ConversationMessagesStreamFamily super.from,
     required (String, String) super.argument,
@@ -1025,13 +1139,15 @@ final class ConversationMessagesStreamProvider
 }
 
 String _$conversationMessagesStreamHash() =>
-    r'f6119358b591bc856369cab2c62990c1781988a6';
+    r'00d2b7dd72a6b880372d9e0e6d6ba4d3bae31c1e';
 
 /// Stream provider for watching messages in a conversation in real-time.
 ///
 /// Automatically updates when messages change in Firestore.
-/// Automatically marks incoming messages as delivered.
-/// Computes aggregate read receipt status for group messages.
+/// Returns messages with computed status from Firestore.
+///
+/// Uses real-time listeners for BOTH messages AND status subcollections.
+/// When receiver marks delivered/read, sender sees it instantly via WebSocket.
 
 final class ConversationMessagesStreamFamily extends $Family
     with
@@ -1051,8 +1167,10 @@ final class ConversationMessagesStreamFamily extends $Family
   /// Stream provider for watching messages in a conversation in real-time.
   ///
   /// Automatically updates when messages change in Firestore.
-  /// Automatically marks incoming messages as delivered.
-  /// Computes aggregate read receipt status for group messages.
+  /// Returns messages with computed status from Firestore.
+  ///
+  /// Uses real-time listeners for BOTH messages AND status subcollections.
+  /// When receiver marks delivered/read, sender sees it instantly via WebSocket.
 
   ConversationMessagesStreamProvider call(
     String conversationId,
@@ -1066,22 +1184,183 @@ final class ConversationMessagesStreamFamily extends $Family
   String toString() => r'conversationMessagesStreamProvider';
 }
 
-/// Provides the [TypingIndicatorService] instance.
+/// Auto-marks incoming messages as read when the conversation is open.
+///
+/// This provider should be watched in the chat page to automatically
+/// mark messages as read. It runs as a side effect separate from the
+/// message stream to avoid feedback loops.
+///
+/// **FIXED**: Removed keepAlive to prevent memory leak from accumulated instances
+
+@ProviderFor(ConversationReadMarker)
+const conversationReadMarkerProvider = ConversationReadMarkerFamily._();
+
+/// Auto-marks incoming messages as read when the conversation is open.
+///
+/// This provider should be watched in the chat page to automatically
+/// mark messages as read. It runs as a side effect separate from the
+/// message stream to avoid feedback loops.
+///
+/// **FIXED**: Removed keepAlive to prevent memory leak from accumulated instances
+final class ConversationReadMarkerProvider
+    extends $NotifierProvider<ConversationReadMarker, void> {
+  /// Auto-marks incoming messages as read when the conversation is open.
+  ///
+  /// This provider should be watched in the chat page to automatically
+  /// mark messages as read. It runs as a side effect separate from the
+  /// message stream to avoid feedback loops.
+  ///
+  /// **FIXED**: Removed keepAlive to prevent memory leak from accumulated instances
+  const ConversationReadMarkerProvider._({
+    required ConversationReadMarkerFamily super.from,
+    required (String, String) super.argument,
+  }) : super(
+         retry: null,
+         name: r'conversationReadMarkerProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$conversationReadMarkerHash();
+
+  @override
+  String toString() {
+    return r'conversationReadMarkerProvider'
+        ''
+        '$argument';
+  }
+
+  @$internal
+  @override
+  ConversationReadMarker create() => ConversationReadMarker();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(void value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<void>(value),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is ConversationReadMarkerProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$conversationReadMarkerHash() =>
+    r'd71b1d07b9b93146584b4933e7f4a9ed59fd0203';
+
+/// Auto-marks incoming messages as read when the conversation is open.
+///
+/// This provider should be watched in the chat page to automatically
+/// mark messages as read. It runs as a side effect separate from the
+/// message stream to avoid feedback loops.
+///
+/// **FIXED**: Removed keepAlive to prevent memory leak from accumulated instances
+
+final class ConversationReadMarkerFamily extends $Family
+    with
+        $ClassFamilyOverride<
+          ConversationReadMarker,
+          void,
+          void,
+          void,
+          (String, String)
+        > {
+  const ConversationReadMarkerFamily._()
+    : super(
+        retry: null,
+        name: r'conversationReadMarkerProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Auto-marks incoming messages as read when the conversation is open.
+  ///
+  /// This provider should be watched in the chat page to automatically
+  /// mark messages as read. It runs as a side effect separate from the
+  /// message stream to avoid feedback loops.
+  ///
+  /// **FIXED**: Removed keepAlive to prevent memory leak from accumulated instances
+
+  ConversationReadMarkerProvider call(
+    String conversationId,
+    String currentUserId,
+  ) => ConversationReadMarkerProvider._(
+    argument: (conversationId, currentUserId),
+    from: this,
+  );
+
+  @override
+  String toString() => r'conversationReadMarkerProvider';
+}
+
+/// Auto-marks incoming messages as read when the conversation is open.
+///
+/// This provider should be watched in the chat page to automatically
+/// mark messages as read. It runs as a side effect separate from the
+/// message stream to avoid feedback loops.
+///
+/// **FIXED**: Removed keepAlive to prevent memory leak from accumulated instances
+
+abstract class _$ConversationReadMarker extends $Notifier<void> {
+  late final _$args = ref.$arg as (String, String);
+  String get conversationId => _$args.$1;
+  String get currentUserId => _$args.$2;
+
+  void build(String conversationId, String currentUserId);
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    build(_$args.$1, _$args.$2);
+    final ref = this.ref as $Ref<void, void>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<void, void>,
+              void,
+              Object?,
+              Object?
+            >;
+    element.handleValue(ref, null);
+  }
+}
+
+/// Provides the [RtdbTypingService] instance for typing indicators.
+///
+/// Uses Firebase Realtime Database with automatic cleanup via onDisconnect()
+/// callbacks when user disconnects or app is closed.
 
 @ProviderFor(typingIndicatorService)
 const typingIndicatorServiceProvider = TypingIndicatorServiceProvider._();
 
-/// Provides the [TypingIndicatorService] instance.
+/// Provides the [RtdbTypingService] instance for typing indicators.
+///
+/// Uses Firebase Realtime Database with automatic cleanup via onDisconnect()
+/// callbacks when user disconnects or app is closed.
 
 final class TypingIndicatorServiceProvider
     extends
         $FunctionalProvider<
-          TypingIndicatorService,
-          TypingIndicatorService,
-          TypingIndicatorService
+          RtdbTypingService,
+          RtdbTypingService,
+          RtdbTypingService
         >
-    with $Provider<TypingIndicatorService> {
-  /// Provides the [TypingIndicatorService] instance.
+    with $Provider<RtdbTypingService> {
+  /// Provides the [RtdbTypingService] instance for typing indicators.
+  ///
+  /// Uses Firebase Realtime Database with automatic cleanup via onDisconnect()
+  /// callbacks when user disconnects or app is closed.
   const TypingIndicatorServiceProvider._()
     : super(
         from: null,
@@ -1098,33 +1377,39 @@ final class TypingIndicatorServiceProvider
 
   @$internal
   @override
-  $ProviderElement<TypingIndicatorService> $createElement(
+  $ProviderElement<RtdbTypingService> $createElement(
     $ProviderPointer pointer,
   ) => $ProviderElement(pointer);
 
   @override
-  TypingIndicatorService create(Ref ref) {
+  RtdbTypingService create(Ref ref) {
     return typingIndicatorService(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(TypingIndicatorService value) {
+  Override overrideWithValue(RtdbTypingService value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<TypingIndicatorService>(value),
+      providerOverride: $SyncValueProvider<RtdbTypingService>(value),
     );
   }
 }
 
 String _$typingIndicatorServiceHash() =>
-    r'56460f0728d1454e91436c0da25ac4890892c9d3';
+    r'dd411505bc3f881c8b040e02e0c558f92396bc62';
 
 /// Watches typing users for a specific conversation.
+///
+/// The service handles permission errors gracefully (returns empty list),
+/// so no auth guard is needed here.
 
 @ProviderFor(conversationTypingUsers)
 const conversationTypingUsersProvider = ConversationTypingUsersFamily._();
 
 /// Watches typing users for a specific conversation.
+///
+/// The service handles permission errors gracefully (returns empty list),
+/// so no auth guard is needed here.
 
 final class ConversationTypingUsersProvider
     extends
@@ -1135,6 +1420,9 @@ final class ConversationTypingUsersProvider
         >
     with $FutureModifier<List<TypingUser>>, $StreamProvider<List<TypingUser>> {
   /// Watches typing users for a specific conversation.
+  ///
+  /// The service handles permission errors gracefully (returns empty list),
+  /// so no auth guard is needed here.
   const ConversationTypingUsersProvider._({
     required ConversationTypingUsersFamily super.from,
     required (String, String) super.argument,
@@ -1184,6 +1472,9 @@ String _$conversationTypingUsersHash() =>
     r'e44bf7227cb75dbf07b826d8c34689c7589d1dd5';
 
 /// Watches typing users for a specific conversation.
+///
+/// The service handles permission errors gracefully (returns empty list),
+/// so no auth guard is needed here.
 
 final class ConversationTypingUsersFamily extends $Family
     with $FunctionalFamilyOverride<Stream<List<TypingUser>>, (String, String)> {
@@ -1197,6 +1488,9 @@ final class ConversationTypingUsersFamily extends $Family
       );
 
   /// Watches typing users for a specific conversation.
+  ///
+  /// The service handles permission errors gracefully (returns empty list),
+  /// so no auth guard is needed here.
 
   ConversationTypingUsersProvider call(
     String conversationId,
@@ -1212,16 +1506,14 @@ final class ConversationTypingUsersFamily extends $Family
 
 /// Provides the [AutoDeliveryMarker] service.
 ///
-/// Automatically marks incoming messages as delivered for all conversations
-/// (both direct and group conversations).
+/// Automatically marks incoming messages as delivered for all conversations.
 
 @ProviderFor(autoDeliveryMarker)
 const autoDeliveryMarkerProvider = AutoDeliveryMarkerProvider._();
 
 /// Provides the [AutoDeliveryMarker] service.
 ///
-/// Automatically marks incoming messages as delivered for all conversations
-/// (both direct and group conversations).
+/// Automatically marks incoming messages as delivered for all conversations.
 
 final class AutoDeliveryMarkerProvider
     extends
@@ -1233,8 +1525,7 @@ final class AutoDeliveryMarkerProvider
     with $Provider<AutoDeliveryMarker?> {
   /// Provides the [AutoDeliveryMarker] service.
   ///
-  /// Automatically marks incoming messages as delivered for all conversations
-  /// (both direct and group conversations).
+  /// Automatically marks incoming messages as delivered for all conversations.
   const AutoDeliveryMarkerProvider._()
     : super(
         from: null,
@@ -1270,20 +1561,155 @@ final class AutoDeliveryMarkerProvider
 }
 
 String _$autoDeliveryMarkerHash() =>
-    r'711a95d9b7e6a0cb0c27884afc4262f4738d7f9d';
+    r'df83ba6c61fcf8a41585782cd90d68ee8cea85cb';
 
-/// Provides the [PresenceService] instance.
+/// Marks all messages in a conversation as delivered for the current user.
+///
+/// Simple approach: Writes directly to Firestore subcollections.
+/// Sender listens to these subcollections for instant status updates.
+///
+/// Flow:
+/// 1. Get all messages not sent by current user
+/// 2. Write "delivered" to Firestore: conversations/{convId}/messages/{msgId}/status/{userId}
+/// 3. Sender's listener picks it up instantly
+
+@ProviderFor(markMessagesDelivered)
+const markMessagesDeliveredProvider = MarkMessagesDeliveredFamily._();
+
+/// Marks all messages in a conversation as delivered for the current user.
+///
+/// Simple approach: Writes directly to Firestore subcollections.
+/// Sender listens to these subcollections for instant status updates.
+///
+/// Flow:
+/// 1. Get all messages not sent by current user
+/// 2. Write "delivered" to Firestore: conversations/{convId}/messages/{msgId}/status/{userId}
+/// 3. Sender's listener picks it up instantly
+
+final class MarkMessagesDeliveredProvider
+    extends $FunctionalProvider<AsyncValue<void>, void, FutureOr<void>>
+    with $FutureModifier<void>, $FutureProvider<void> {
+  /// Marks all messages in a conversation as delivered for the current user.
+  ///
+  /// Simple approach: Writes directly to Firestore subcollections.
+  /// Sender listens to these subcollections for instant status updates.
+  ///
+  /// Flow:
+  /// 1. Get all messages not sent by current user
+  /// 2. Write "delivered" to Firestore: conversations/{convId}/messages/{msgId}/status/{userId}
+  /// 3. Sender's listener picks it up instantly
+  const MarkMessagesDeliveredProvider._({
+    required MarkMessagesDeliveredFamily super.from,
+    required (String, String) super.argument,
+  }) : super(
+         retry: null,
+         name: r'markMessagesDeliveredProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$markMessagesDeliveredHash();
+
+  @override
+  String toString() {
+    return r'markMessagesDeliveredProvider'
+        ''
+        '$argument';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<void> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<void> create(Ref ref) {
+    final argument = this.argument as (String, String);
+    return markMessagesDelivered(ref, argument.$1, argument.$2);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is MarkMessagesDeliveredProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$markMessagesDeliveredHash() =>
+    r'9fb8e3e633273e8003767120eef8fe36ebd18f2f';
+
+/// Marks all messages in a conversation as delivered for the current user.
+///
+/// Simple approach: Writes directly to Firestore subcollections.
+/// Sender listens to these subcollections for instant status updates.
+///
+/// Flow:
+/// 1. Get all messages not sent by current user
+/// 2. Write "delivered" to Firestore: conversations/{convId}/messages/{msgId}/status/{userId}
+/// 3. Sender's listener picks it up instantly
+
+final class MarkMessagesDeliveredFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<void>, (String, String)> {
+  const MarkMessagesDeliveredFamily._()
+    : super(
+        retry: null,
+        name: r'markMessagesDeliveredProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Marks all messages in a conversation as delivered for the current user.
+  ///
+  /// Simple approach: Writes directly to Firestore subcollections.
+  /// Sender listens to these subcollections for instant status updates.
+  ///
+  /// Flow:
+  /// 1. Get all messages not sent by current user
+  /// 2. Write "delivered" to Firestore: conversations/{convId}/messages/{msgId}/status/{userId}
+  /// 3. Sender's listener picks it up instantly
+
+  MarkMessagesDeliveredProvider call(String conversationId, String userId) =>
+      MarkMessagesDeliveredProvider._(
+        argument: (conversationId, userId),
+        from: this,
+      );
+
+  @override
+  String toString() => r'markMessagesDeliveredProvider';
+}
+
+/// Provides the [RtdbPresenceService] instance for presence tracking.
+///
+/// Uses Firebase Realtime Database with automatic offline detection via
+/// onDisconnect() callbacks. No heartbeat mechanism needed.
 
 @ProviderFor(presenceService)
 const presenceServiceProvider = PresenceServiceProvider._();
 
-/// Provides the [PresenceService] instance.
+/// Provides the [RtdbPresenceService] instance for presence tracking.
+///
+/// Uses Firebase Realtime Database with automatic offline detection via
+/// onDisconnect() callbacks. No heartbeat mechanism needed.
 
 final class PresenceServiceProvider
     extends
-        $FunctionalProvider<PresenceService, PresenceService, PresenceService>
-    with $Provider<PresenceService> {
-  /// Provides the [PresenceService] instance.
+        $FunctionalProvider<
+          RtdbPresenceService,
+          RtdbPresenceService,
+          RtdbPresenceService
+        >
+    with $Provider<RtdbPresenceService> {
+  /// Provides the [RtdbPresenceService] instance for presence tracking.
+  ///
+  /// Uses Firebase Realtime Database with automatic offline detection via
+  /// onDisconnect() callbacks. No heartbeat mechanism needed.
   const PresenceServiceProvider._()
     : super(
         from: null,
@@ -1300,24 +1726,25 @@ final class PresenceServiceProvider
 
   @$internal
   @override
-  $ProviderElement<PresenceService> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
+  $ProviderElement<RtdbPresenceService> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
 
   @override
-  PresenceService create(Ref ref) {
+  RtdbPresenceService create(Ref ref) {
     return presenceService(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(PresenceService value) {
+  Override overrideWithValue(RtdbPresenceService value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<PresenceService>(value),
+      providerOverride: $SyncValueProvider<RtdbPresenceService>(value),
     );
   }
 }
 
-String _$presenceServiceHash() => r'63a0b7d276c7c1c17d885601a307c2b4335c2669';
+String _$presenceServiceHash() => r'bde75b02ef096e975b3fda4b4401b36a43492711';
 
 /// Provides the [FCMService] instance for push notifications.
 
@@ -1367,20 +1794,18 @@ String _$fcmServiceHash() => r'f44dd3cee344080597815373251c1d1017a61507';
 
 /// Watches presence status for a specific user.
 ///
-/// Returns a stream of presence data including:
-/// - isOnline: true if user is currently online
-/// - lastSeen: timestamp of last activity
-/// - userName: display name
+/// Returns a stream with presence data:
+/// - isOnline: boolean indicating if user is currently online
+/// - lastSeen: DateTime of last activity (if offline)
 
 @ProviderFor(userPresence)
 const userPresenceProvider = UserPresenceFamily._();
 
 /// Watches presence status for a specific user.
 ///
-/// Returns a stream of presence data including:
-/// - isOnline: true if user is currently online
-/// - lastSeen: timestamp of last activity
-/// - userName: display name
+/// Returns a stream with presence data:
+/// - isOnline: boolean indicating if user is currently online
+/// - lastSeen: DateTime of last activity (if offline)
 
 final class UserPresenceProvider
     extends
@@ -1394,10 +1819,9 @@ final class UserPresenceProvider
         $StreamProvider<Map<String, dynamic>?> {
   /// Watches presence status for a specific user.
   ///
-  /// Returns a stream of presence data including:
-  /// - isOnline: true if user is currently online
-  /// - lastSeen: timestamp of last activity
-  /// - userName: display name
+  /// Returns a stream with presence data:
+  /// - isOnline: boolean indicating if user is currently online
+  /// - lastSeen: DateTime of last activity (if offline)
   const UserPresenceProvider._({
     required UserPresenceFamily super.from,
     required String super.argument,
@@ -1442,14 +1866,13 @@ final class UserPresenceProvider
   }
 }
 
-String _$userPresenceHash() => r'b49e76812a23aaac3acf6a1a3ad87634fc5c3584';
+String _$userPresenceHash() => r'7ab8273aef47b89740398805c661a92caa579baf';
 
 /// Watches presence status for a specific user.
 ///
-/// Returns a stream of presence data including:
-/// - isOnline: true if user is currently online
-/// - lastSeen: timestamp of last activity
-/// - userName: display name
+/// Returns a stream with presence data:
+/// - isOnline: boolean indicating if user is currently online
+/// - lastSeen: DateTime of last activity (if offline)
 
 final class UserPresenceFamily extends $Family
     with $FunctionalFamilyOverride<Stream<Map<String, dynamic>?>, String> {
@@ -1464,10 +1887,9 @@ final class UserPresenceFamily extends $Family
 
   /// Watches presence status for a specific user.
   ///
-  /// Returns a stream of presence data including:
-  /// - isOnline: true if user is currently online
-  /// - lastSeen: timestamp of last activity
-  /// - userName: display name
+  /// Returns a stream with presence data:
+  /// - isOnline: boolean indicating if user is currently online
+  /// - lastSeen: DateTime of last activity (if offline)
 
   UserPresenceProvider call(String userId) =>
       UserPresenceProvider._(argument: userId, from: this);
@@ -1475,228 +1897,6 @@ final class UserPresenceFamily extends $Family
   @override
   String toString() => r'userPresenceProvider';
 }
-
-/// Provides the [MessageSyncService] instance.
-///
-/// Handles background synchronization between local and remote storage.
-
-@ProviderFor(messageSyncService)
-const messageSyncServiceProvider = MessageSyncServiceProvider._();
-
-/// Provides the [MessageSyncService] instance.
-///
-/// Handles background synchronization between local and remote storage.
-
-final class MessageSyncServiceProvider
-    extends
-        $FunctionalProvider<
-          MessageSyncService,
-          MessageSyncService,
-          MessageSyncService
-        >
-    with $Provider<MessageSyncService> {
-  /// Provides the [MessageSyncService] instance.
-  ///
-  /// Handles background synchronization between local and remote storage.
-  const MessageSyncServiceProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'messageSyncServiceProvider',
-        isAutoDispose: false,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$messageSyncServiceHash();
-
-  @$internal
-  @override
-  $ProviderElement<MessageSyncService> $createElement(
-    $ProviderPointer pointer,
-  ) => $ProviderElement(pointer);
-
-  @override
-  MessageSyncService create(Ref ref) {
-    return messageSyncService(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(MessageSyncService value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<MessageSyncService>(value),
-    );
-  }
-}
-
-String _$messageSyncServiceHash() =>
-    r'ecc8f2ff52e4fa5e1fae9c8e385c5a6558ce8e7b';
-
-/// Provides the [MessageQueue] instance.
-///
-/// Handles optimistic UI updates and background message processing.
-
-@ProviderFor(messageQueue)
-const messageQueueProvider = MessageQueueProvider._();
-
-/// Provides the [MessageQueue] instance.
-///
-/// Handles optimistic UI updates and background message processing.
-
-final class MessageQueueProvider
-    extends $FunctionalProvider<MessageQueue, MessageQueue, MessageQueue>
-    with $Provider<MessageQueue> {
-  /// Provides the [MessageQueue] instance.
-  ///
-  /// Handles optimistic UI updates and background message processing.
-  const MessageQueueProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'messageQueueProvider',
-        isAutoDispose: false,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$messageQueueHash();
-
-  @$internal
-  @override
-  $ProviderElement<MessageQueue> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
-
-  @override
-  MessageQueue create(Ref ref) {
-    return messageQueue(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(MessageQueue value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<MessageQueue>(value),
-    );
-  }
-}
-
-String _$messageQueueHash() => r'58a6d1448bd786b5e80aea7a47a72991717725bb';
-
-/// Provides the [GroupConversationRemoteDataSource] implementation.
-
-@ProviderFor(groupConversationRemoteDataSource)
-const groupConversationRemoteDataSourceProvider =
-    GroupConversationRemoteDataSourceProvider._();
-
-/// Provides the [GroupConversationRemoteDataSource] implementation.
-
-final class GroupConversationRemoteDataSourceProvider
-    extends
-        $FunctionalProvider<
-          GroupConversationRemoteDataSource,
-          GroupConversationRemoteDataSource,
-          GroupConversationRemoteDataSource
-        >
-    with $Provider<GroupConversationRemoteDataSource> {
-  /// Provides the [GroupConversationRemoteDataSource] implementation.
-  const GroupConversationRemoteDataSourceProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'groupConversationRemoteDataSourceProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() =>
-      _$groupConversationRemoteDataSourceHash();
-
-  @$internal
-  @override
-  $ProviderElement<GroupConversationRemoteDataSource> $createElement(
-    $ProviderPointer pointer,
-  ) => $ProviderElement(pointer);
-
-  @override
-  GroupConversationRemoteDataSource create(Ref ref) {
-    return groupConversationRemoteDataSource(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(GroupConversationRemoteDataSource value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<GroupConversationRemoteDataSource>(
-        value,
-      ),
-    );
-  }
-}
-
-String _$groupConversationRemoteDataSourceHash() =>
-    r'17aeea5d630aac4a061b77e85b841638e3449736';
-
-/// Provides the [GroupConversationRepository] implementation (offline-first).
-
-@ProviderFor(groupConversationRepository)
-const groupConversationRepositoryProvider =
-    GroupConversationRepositoryProvider._();
-
-/// Provides the [GroupConversationRepository] implementation (offline-first).
-
-final class GroupConversationRepositoryProvider
-    extends
-        $FunctionalProvider<
-          GroupConversationRepository,
-          GroupConversationRepository,
-          GroupConversationRepository
-        >
-    with $Provider<GroupConversationRepository> {
-  /// Provides the [GroupConversationRepository] implementation (offline-first).
-  const GroupConversationRepositoryProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'groupConversationRepositoryProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$groupConversationRepositoryHash();
-
-  @$internal
-  @override
-  $ProviderElement<GroupConversationRepository> $createElement(
-    $ProviderPointer pointer,
-  ) => $ProviderElement(pointer);
-
-  @override
-  GroupConversationRepository create(Ref ref) {
-    return groupConversationRepository(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(GroupConversationRepository value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<GroupConversationRepository>(value),
-    );
-  }
-}
-
-String _$groupConversationRepositoryHash() =>
-    r'e9589ce9e0a50eb85e14cf0f557c822b7b5fb59a';
 
 /// Provides the [CreateGroup] use case.
 
@@ -1743,7 +1943,7 @@ final class CreateGroupUseCaseProvider
 }
 
 String _$createGroupUseCaseHash() =>
-    r'b2b5b97340c34aacea0f41d89b3a7c0d5800ba10';
+    r'fbb3f65b0ab80ab751c4de1cff8128b238c0a07c';
 
 /// Provides the [AddGroupMember] use case.
 
@@ -1790,7 +1990,7 @@ final class AddGroupMemberUseCaseProvider
 }
 
 String _$addGroupMemberUseCaseHash() =>
-    r'58f8c6f035467d040dac1e88b2e992dfdda83209';
+    r'95c3df0c66d5add7f2df913b94f2e562927138b3';
 
 /// Provides the [RemoveGroupMember] use case.
 
@@ -1843,7 +2043,7 @@ final class RemoveGroupMemberUseCaseProvider
 }
 
 String _$removeGroupMemberUseCaseHash() =>
-    r'07d6016e8d978e238a69046461f279e8bcb74eda';
+    r'4bed0d1ec1e4a2959a24f72bfb38339def17b165';
 
 /// Provides the [LeaveGroup] use case.
 
@@ -1889,7 +2089,7 @@ final class LeaveGroupUseCaseProvider
   }
 }
 
-String _$leaveGroupUseCaseHash() => r'883a6f832bed4999799ce990ad7a72a496796ce3';
+String _$leaveGroupUseCaseHash() => r'6121427889aa3b401c2dd0af7e5b76de5801763b';
 
 /// Provides the [UpdateGroupInfo] use case.
 
@@ -1937,11 +2137,11 @@ final class UpdateGroupInfoUseCaseProvider
 }
 
 String _$updateGroupInfoUseCaseHash() =>
-    r'b7867d6930abbc42f6b4d7cba76d85e13c0e825f';
+    r'6fc6f842c6c666144852593d2edde40673e2031e';
 
 /// Stream provider for watching all conversations (both direct and groups) in real-time.
 ///
-/// Merges direct conversations and group conversations into a single unified list,
+/// Returns all conversations from the unified ConversationRepository,
 /// sorted by last update time.
 
 @ProviderFor(allConversationsStream)
@@ -1949,7 +2149,7 @@ const allConversationsStreamProvider = AllConversationsStreamFamily._();
 
 /// Stream provider for watching all conversations (both direct and groups) in real-time.
 ///
-/// Merges direct conversations and group conversations into a single unified list,
+/// Returns all conversations from the unified ConversationRepository,
 /// sorted by last update time.
 
 final class AllConversationsStreamProvider
@@ -1964,7 +2164,7 @@ final class AllConversationsStreamProvider
         $StreamProvider<List<Map<String, dynamic>>> {
   /// Stream provider for watching all conversations (both direct and groups) in real-time.
   ///
-  /// Merges direct conversations and group conversations into a single unified list,
+  /// Returns all conversations from the unified ConversationRepository,
   /// sorted by last update time.
   const AllConversationsStreamProvider._({
     required AllConversationsStreamFamily super.from,
@@ -2012,11 +2212,11 @@ final class AllConversationsStreamProvider
 }
 
 String _$allConversationsStreamHash() =>
-    r'45fe048a7a04907d45b7ef1c2832c34207ecd517';
+    r'f25735dc7297e4e22c850a8c3cacaaae727d1ead';
 
 /// Stream provider for watching all conversations (both direct and groups) in real-time.
 ///
-/// Merges direct conversations and group conversations into a single unified list,
+/// Returns all conversations from the unified ConversationRepository,
 /// sorted by last update time.
 
 final class AllConversationsStreamFamily extends $Family
@@ -2032,7 +2232,7 @@ final class AllConversationsStreamFamily extends $Family
 
   /// Stream provider for watching all conversations (both direct and groups) in real-time.
   ///
-  /// Merges direct conversations and group conversations into a single unified list,
+  /// Returns all conversations from the unified ConversationRepository,
   /// sorted by last update time.
 
   AllConversationsStreamProvider call(String userId) =>
@@ -2176,7 +2376,7 @@ final class GroupPresenceStatusProvider
 }
 
 String _$groupPresenceStatusHash() =>
-    r'1548d5c934a736b4300a8bd4413af5418fafc4f6';
+    r'1f33954126138ca2306835b06b14506a5568c54e';
 
 /// Provides aggregated online status for a group conversation.
 ///

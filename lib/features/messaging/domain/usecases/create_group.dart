@@ -4,7 +4,7 @@ library;
 import 'package:dartz/dartz.dart';
 import 'package:message_ai/core/error/failures.dart';
 import 'package:message_ai/features/messaging/domain/entities/conversation.dart';
-import 'package:message_ai/features/messaging/domain/repositories/group_conversation_repository.dart';
+import 'package:message_ai/features/messaging/domain/repositories/conversation_repository.dart';
 import 'package:uuid/uuid.dart';
 
 /// Use case for creating a new group conversation.
@@ -12,9 +12,8 @@ import 'package:uuid/uuid.dart';
 /// This validates group requirements and creates a new group
 /// with the specified participants and admin(s).
 class CreateGroup {
-
-  CreateGroup(this._groupRepository) : _uuid = const Uuid();
-  final GroupConversationRepository _groupRepository;
+  CreateGroup(this._conversationRepository) : _uuid = const Uuid();
+  final ConversationRepository _conversationRepository;
   final Uuid _uuid;
 
   /// Creates a new group conversation.
@@ -114,6 +113,6 @@ class CreateGroup {
       adminIds: adminIds,
     );
 
-    return _groupRepository.createGroup(newGroup);
+    return _conversationRepository.createConversation(newGroup);
   }
 }

@@ -48,9 +48,7 @@ class PIIDetector {
     r'\b(?:\d{4}[-\s]?){3}\d{4}\b',
   );
 
-  static final RegExp _ssnPattern = RegExp(
-    r'\b\d{3}[-\s]?\d{2}[-\s]?\d{4}\b',
-  );
+  static final RegExp _ssnPattern = RegExp(r'\b\d{3}[-\s]?\d{2}[-\s]?\d{4}\b');
 
   static final RegExp _urlPattern = RegExp(
     r'https?://[^\s]+|www\.[^\s]+',
@@ -105,7 +103,8 @@ class PIIDetector {
   }
 
   /// Check if text contains PII without sanitizing
-  static bool containsPII(String text) => _emailPattern.hasMatch(text) ||
+  static bool containsPII(String text) =>
+      _emailPattern.hasMatch(text) ||
       _phonePattern.hasMatch(text) ||
       _creditCardPattern.hasMatch(text) ||
       _ssnPattern.hasMatch(text) ||

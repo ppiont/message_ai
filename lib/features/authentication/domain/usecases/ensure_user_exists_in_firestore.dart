@@ -12,7 +12,6 @@ import 'package:message_ai/features/authentication/domain/repositories/user_repo
 /// documents (e.g., for existing Firebase Auth users migrating to Firestore),
 /// but don't want to perform unnecessary updates.
 class EnsureUserExistsInFirestore {
-
   EnsureUserExistsInFirestore(this._userRepository);
   final UserRepository _userRepository;
 
@@ -32,10 +31,7 @@ class EnsureUserExistsInFirestore {
       } else {
         // Create new user document
         final createResult = await _userRepository.createUser(user);
-        return createResult.fold(
-          Left.new,
-          Right.new,
-        );
+        return createResult.fold(Left.new, Right.new);
       }
     });
   }

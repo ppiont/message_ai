@@ -23,7 +23,8 @@ part 'auth_providers.g.dart';
 
 /// Provider for Firebase Auth instance
 @riverpod
-firebase_auth.FirebaseAuth firebaseAuth(Ref ref) => firebase_auth.FirebaseAuth.instance;
+firebase_auth.FirebaseAuth firebaseAuth(Ref ref) =>
+    firebase_auth.FirebaseAuth.instance;
 
 /// Provider for authentication remote data source
 @riverpod
@@ -59,7 +60,8 @@ SignInWithEmail signInWithEmailUseCase(Ref ref) {
 @riverpod
 SignOut signOutUseCase(Ref ref) {
   final repository = ref.watch(authRepositoryProvider);
-  return SignOut(repository);
+  final presenceService = ref.watch(presenceServiceProvider);
+  return SignOut(repository, presenceService);
 }
 
 /// Provider for get current user use case
@@ -151,13 +153,12 @@ Future<User?> currentUserWithFirestore(Ref ref) async {
     final userRepository = ref.watch(userRepositoryProvider);
     final result = await userRepository.getUserById(authUser.uid);
 
-    return result.fold(
-      (failure) {
-        debugPrint('⚠️ Failed to fetch Firestore user data, using Auth user: ${failure.message}');
-        return authUser; // Fallback to auth user
-      },
-      (firestoreUser) => firestoreUser,
-    );
+    return result.fold((failure) {
+      debugPrint(
+        '⚠️ Failed to fetch Firestore user data, using Auth user: ${failure.message}',
+      );
+      return authUser; // Fallback to auth user
+    }, (firestoreUser) => firestoreUser);
   } catch (e) {
     debugPrint('⚠️ Error fetching Firestore user data: $e');
     return authUser; // Fallback to auth user
@@ -173,33 +174,38 @@ bool isAuthenticated(Ref ref) {
 
 // ========== Presence Management ==========
 
-/// Automatically manages user presence based on auth state.
+/// Manages user presence for auth events.
 ///
-/// This provider watches the auth state and:
-/// - Sets user as online when they sign in
-/// - Sets user as offline when they sign out
+/// **Hybrid presence approach** (works with app lifecycle observer in app.dart):
+/// - This controller: Auth events (initial setup, sign-in)
+/// - SignOut use case: Clears presence BEFORE signing out (to avoid permission issues)
+/// - App lifecycle: Foreground/background (immediate offline when backgrounded)
+/// - RTDB onDisconnect: Backup for connection loss/app kill
+///
+/// **Why hybrid works:**
+/// - setOffline() doesn't cancel onDisconnect (both can coexist)
+/// - Calling setOnline() multiple times is idempotent
+/// - Lifecycle provides immediate feedback, onDisconnect is safety net
 @Riverpod(keepAlive: true)
 void presenceController(Ref ref) {
   final presenceService = ref.watch(presenceServiceProvider);
 
-  // Watch auth state changes
+  // Handle initial state (user already signed in on app startup)
+  ref.read(authStateProvider).whenData((user) {
+    if (user != null) {
+      debugPrint('✅ Presence Controller: Initial auth state - user signed in');
+      presenceService.setOnline(userId: user.uid, userName: user.displayName);
+    }
+  });
+
+  // Watch for auth changes (sign in only)
+  // Note: Sign-out is handled by SignOut use case (clears presence BEFORE signing out)
   ref.listen(authStateProvider, (previous, next) {
-    next.whenData((user) async {
-      if (user != null) {
-        // User logged in - set online
-        await presenceService.setOnline(
-          userId: user.uid,
-          userName: user.displayName,
-        );
-      } else {
-        // User logged out - set offline
-        final prevUser = previous?.value;
-        if (prevUser != null) {
-          await presenceService.setOffline(
-            userId: prevUser.uid,
-            userName: prevUser.displayName,
-          );
-        }
+    next.whenData((user) {
+      if (user != null && previous?.value == null) {
+        // User just signed in
+        debugPrint('✅ Presence Controller: User signed in');
+        presenceService.setOnline(userId: user.uid, userName: user.displayName);
       }
     });
   });

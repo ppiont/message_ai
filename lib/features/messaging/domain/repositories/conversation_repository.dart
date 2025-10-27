@@ -61,4 +61,39 @@ abstract class ConversationRepository {
     String userId,
     int count,
   );
+
+  // ========== Group-specific operations ==========
+
+  /// Adds a member to a group conversation.
+  Future<Either<Failure, void>> addMember(
+    String conversationId,
+    String userId,
+    String userName,
+    String preferredLanguage,
+  );
+
+  /// Removes a member from a group conversation.
+  Future<Either<Failure, void>> removeMember(
+    String conversationId,
+    String userId,
+  );
+
+  /// Promotes a member to admin in a group conversation.
+  Future<Either<Failure, void>> promoteToAdmin(
+    String conversationId,
+    String userId,
+  );
+
+  /// Demotes an admin to regular member in a group conversation.
+  Future<Either<Failure, void>> demoteFromAdmin(
+    String conversationId,
+    String userId,
+  );
+
+  /// Updates group information (name, image).
+  Future<Either<Failure, void>> updateGroupInfo({
+    required String conversationId,
+    String? groupName,
+    String? groupImage,
+  });
 }

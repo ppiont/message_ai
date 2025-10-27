@@ -290,9 +290,7 @@ class ErrorMapper {
     if (message.contains('unique') ||
         message.contains('constraint') ||
         message.contains('foreign key')) {
-      return const ConstraintViolationFailure(
-
-      );
+      return const ConstraintViolationFailure();
     }
 
     // Check for not found errors
@@ -332,13 +330,15 @@ class ErrorMapper {
   }
 
   /// Helper method to check if an error is retryable
-  static bool isRetryable(Failure failure) => failure is NoInternetFailure ||
-        failure is NetworkTimeoutFailure ||
-        failure is ServerFailure ||
-        failure is RateLimitExceededFailure;
+  static bool isRetryable(Failure failure) =>
+      failure is NoInternetFailure ||
+      failure is NetworkTimeoutFailure ||
+      failure is ServerFailure ||
+      failure is RateLimitExceededFailure;
 
   /// Helper method to check if an error requires authentication
-  static bool requiresAuthentication(Failure failure) => failure is UnauthenticatedFailure ||
-        (failure is UnauthorizedFailure &&
-            failure.code == 'requires-recent-login');
+  static bool requiresAuthentication(Failure failure) =>
+      failure is UnauthenticatedFailure ||
+      (failure is UnauthorizedFailure &&
+          failure.code == 'requires-recent-login');
 }

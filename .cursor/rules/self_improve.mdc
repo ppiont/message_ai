@@ -38,7 +38,7 @@ alwaysApply: true
     select: { id: true, email: true },
     where: { status: 'ACTIVE' }
   });
-
+  
   // Consider adding to [prisma.mdc](mdc:.cursor/rules/prisma.mdc):
   // - Standard select fields
   // - Common where conditions
@@ -70,19 +70,3 @@ alwaysApply: true
   - Maintain links between related rules
   - Document breaking changes
 Follow [cursor_rules.mdc](mdc:.cursor/rules/cursor_rules.mdc) for proper rule formatting and structure.
-
-## Available Documentation
-
-### External Documentation (Indexed/Searchable)
-- **Drift ORM**: Database documentation available - use for table definitions, queries, and migrations
-- **Dart/Flutter MCP**: General Dart and Flutter patterns available
-
-### How to Use
-When working with specific technologies:
-1. Search indexed documentation using `codebase_search` with specific questions
-2. Create/update rules in `.cursor/rules/` with learned patterns
-3. Reference created rules in future work
-
-### Created Rules
-- [drift.mdc](mdc:.cursor/rules/drift.mdc) - Drift ORM patterns and column syntax
-- [dart_flutter_mcp.mdc](mdc:.cursor/rules/dart_flutter_mcp.mdc) - Using indexed docs and Dart/Flutter patterns

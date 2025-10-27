@@ -3,34 +3,32 @@ library;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dartz/dartz.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
+import 'package:message_ai/core/database/app_database.dart'
+    show MessageStatusEntity;
 import 'package:message_ai/core/error/failures.dart';
 import 'package:message_ai/core/providers/database_provider.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
 import 'package:message_ai/features/authentication/presentation/providers/user_providers.dart';
 import 'package:message_ai/features/messaging/data/datasources/conversation_local_datasource.dart';
 import 'package:message_ai/features/messaging/data/datasources/conversation_remote_datasource.dart';
-import 'package:message_ai/features/messaging/data/datasources/group_conversation_remote_datasource.dart';
 import 'package:message_ai/features/messaging/data/datasources/message_local_datasource.dart';
 import 'package:message_ai/features/messaging/data/datasources/message_remote_datasource.dart';
 import 'package:message_ai/features/messaging/data/repositories/conversation_repository_impl.dart';
-import 'package:message_ai/features/messaging/data/repositories/group_conversation_repository_impl.dart';
 import 'package:message_ai/features/messaging/data/repositories/message_repository_impl.dart';
 import 'package:message_ai/features/messaging/data/services/auto_delivery_marker.dart';
 import 'package:message_ai/features/messaging/data/services/fcm_service.dart';
 import 'package:message_ai/features/messaging/data/services/message_context_service.dart';
-import 'package:message_ai/features/messaging/data/services/message_queue.dart';
-import 'package:message_ai/features/messaging/data/services/message_sync_service.dart';
-import 'package:message_ai/features/messaging/data/services/presence_service.dart'
-    show PresenceService, UserPresence;
-import 'package:message_ai/features/messaging/data/services/typing_indicator_service.dart';
+import 'package:message_ai/features/messaging/data/services/rtdb_presence_service.dart'
+    show RtdbPresenceService;
+import 'package:message_ai/features/messaging/data/services/rtdb_typing_service.dart'
+    show RtdbTypingService, TypingUser;
 import 'package:message_ai/features/messaging/domain/entities/conversation.dart'
     show Conversation, Participant;
 import 'package:message_ai/features/messaging/domain/entities/message.dart';
 import 'package:message_ai/features/messaging/domain/repositories/conversation_repository.dart';
-import 'package:message_ai/features/messaging/domain/repositories/group_conversation_repository.dart';
 import 'package:message_ai/features/messaging/domain/repositories/message_repository.dart';
 import 'package:message_ai/features/messaging/domain/usecases/add_group_member.dart';
 import 'package:message_ai/features/messaging/domain/usecases/create_group.dart';
@@ -44,7 +42,7 @@ import 'package:message_ai/features/messaging/domain/usecases/send_message.dart'
 import 'package:message_ai/features/messaging/domain/usecases/update_group_info.dart';
 import 'package:message_ai/features/messaging/domain/usecases/watch_conversations.dart';
 import 'package:message_ai/features/messaging/domain/usecases/watch_messages.dart';
-import 'package:message_ai/features/smart_replies/presentation/providers/embedding_providers.dart';
+import 'package:message_ai/features/messaging/presentation/models/message_with_status.dart';
 import 'package:message_ai/features/translation/presentation/providers/language_detection_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:rxdart/rxdart.dart';
@@ -120,13 +118,14 @@ MessageContextService messageContextService(Ref ref) => MessageContextService(
 // ========== Use Case Providers ==========
 
 /// Provides the [SendMessage] use case with language detection.
+///
+/// Note: messageQueue removed - WorkManager handles background sync now
+/// Note: embeddingGenerator removed - Firestore triggers handle embeddings server-side
 @riverpod
 SendMessage sendMessageUseCase(Ref ref) => SendMessage(
   messageRepository: ref.watch(messageRepositoryProvider),
   conversationRepository: ref.watch(conversationRepositoryProvider),
   languageDetectionService: ref.watch(languageDetectionServiceProvider),
-  embeddingGenerator: ref.watch(embeddingGeneratorProvider),
-  messageQueue: ref.watch(messageQueueProvider),
 );
 
 /// Provides the [WatchMessages] use case.
@@ -200,11 +199,30 @@ Stream<List<Map<String, dynamic>>> userConversationsStream(
   }
 }
 
+/// Cached provider for conversation participant IDs.
+///
+/// Fetches once and caches to avoid repeated fetches during stream rebuilds.
+@riverpod
+Future<List<String>> conversationParticipantIds(
+  Ref ref,
+  String conversationId,
+) async {
+  final getConversationUseCase = ref.watch(getConversationByIdUseCaseProvider);
+  final convResult = await getConversationUseCase(conversationId);
+
+  return convResult.fold(
+    (failure) => <String>[],
+    (conversation) => conversation.participants.map((p) => p.uid).toList(),
+  );
+}
+
 /// Stream provider for watching messages in a conversation in real-time.
 ///
 /// Automatically updates when messages change in Firestore.
-/// Automatically marks incoming messages as delivered.
-/// Computes aggregate read receipt status for group messages.
+/// Returns messages with computed status from Firestore.
+///
+/// Uses real-time listeners for BOTH messages AND status subcollections.
+/// When receiver marks delivered/read, sender sees it instantly via WebSocket.
 @riverpod
 Stream<List<Map<String, dynamic>>> conversationMessagesStream(
   Ref ref,
@@ -213,89 +231,242 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
 ) async* {
   final watchUseCase = ref.watch(watchMessagesUseCaseProvider);
   final userSyncService = ref.watch(userSyncServiceProvider);
-  final getConversationUseCase = ref.watch(getConversationByIdUseCaseProvider);
-  final groupConversationRepository = ref.watch(groupConversationRepositoryProvider);
+  final messageRemoteDataSource = ref.watch(messageRemoteDataSourceProvider);
 
-  // Get conversation to extract participant IDs for aggregate status computation
-  // Try direct conversation first, then group conversation
-  var participantIds = <String>[];
-  final directConvResult = await getConversationUseCase(conversationId);
-
-  // Check if we got a conversation or need to try group repository
-  await directConvResult.fold(
-    (failure) async {
-      // Direct conversation fetch failed, try group conversation
-      debugPrint('📨 conversationMessagesStream: Not a direct conversation, trying group...');
-      final groupResult = await groupConversationRepository.getGroupById(conversationId);
-      groupResult.fold(
-        (groupFailure) {
-          debugPrint('❌ conversationMessagesStream: Failed to get conversation $conversationId: ${groupFailure.message}');
-        },
-        (conversation) {
-          participantIds = conversation.participants.map((p) => p.uid).toList();
-          debugPrint('✅ conversationMessagesStream: Got ${participantIds.length} participants for status computation: $participantIds');
-        },
-      );
-    },
-    (conversation) async {
-      participantIds = conversation.participants.map((p) => p.uid).toList();
-      debugPrint('✅ conversationMessagesStream: Got ${participantIds.length} participants for status computation: $participantIds');
-    },
+  // Wait for participant IDs once (cached, won't refetch)
+  final participantIdsAsync = ref.watch(
+    conversationParticipantIdsProvider(conversationId),
   );
 
-  await for (final result in watchUseCase(
+  // Wait for participant IDs to load
+  List<String> participantIds;
+  if (participantIdsAsync is AsyncData<List<String>>) {
+    participantIds = participantIdsAsync.value;
+  } else if (participantIdsAsync is AsyncLoading<List<String>>) {
+    // Wait for it to load
+    participantIds = await ref.read(
+      conversationParticipantIdsProvider(conversationId).future,
+    );
+  } else {
+    // Error case
+    participantIds = <String>[];
+  }
+
+  // Create messages stream (Either<Failure, List<Message>>)
+  final messagesEitherStream = watchUseCase(
     conversationId: conversationId,
     currentUserId: currentUserId,
-  )) {
-    yield result.fold(
-      (failure) => [],
+  );
 
-      // Log error but return empty list to keep UI functional
-      (List<Message> messages) {
-        // Sync all message senders to Drift for offline access
-        final allSenderIds = messages
-            .map((Message msg) => msg.senderId)
-            .toSet()
-            .toList();
-        if (allSenderIds.isNotEmpty) {
-          allSenderIds.forEach(userSyncService.syncMessageSender);
+  // Create real-time status stream (scoped to this conversation only)
+  final statusStream = messageRemoteDataSource
+      .watchConversationStatus(conversationId)
+      .map((statusMaps) {
+        // Transform list of status maps into Map<messageId, List<statusRecords>>
+        final statusByMessage = <String, List<MessageStatusEntity>>{};
+
+        for (final statusMap in statusMaps) {
+          final messageId = statusMap['messageId'] as String?;
+          if (messageId == null) {
+            continue;
+          }
+
+          final statusEntity = MessageStatusEntity(
+            messageId: messageId,
+            userId: statusMap['userId'] as String,
+            status: statusMap['status'] as String,
+            timestamp: statusMap['timestamp'] != null
+                ? (statusMap['timestamp'] as Timestamp).toDate()
+                : null,
+          );
+
+          statusByMessage.putIfAbsent(messageId, () => []).add(statusEntity);
         }
 
-        return messages.map((Message msg) {
-          // Compute aggregate status using per-user tracking
-          // getAggregateStatus handles empty participant lists by returning 'sent'
-          final status = msg.getAggregateStatus(participantIds);
+        return statusByMessage;
+      })
+      // Use debounce instead of complex deep equality check
+      // This reduces CPU overhead from nested loops
+      .debounceTime(const Duration(milliseconds: 100));
 
-          debugPrint('📊 Message ${msg.id.substring(0, 8)}: computed status=$status (participantIds=$participantIds, deliveredTo=${msg.deliveredTo?.keys.toList()}, readBy=${msg.readBy?.keys.toList()})');
+  // Combine messages and status streams (participantIds is now constant)
+  final combinedStream =
+      Rx.combineLatest2<
+        Either<Failure, List<Message>>,
+        Map<String, List<MessageStatusEntity>>,
+        List<Map<String, dynamic>>
+      >(
+        messagesEitherStream,
+        statusStream.startWith({}),
+        (messagesEither, statusByMessage) =>
+            // Use fold to extract messages or handle failure
+            messagesEither.fold(
+              (failure) {
+                debugPrint('❌ messagesEitherStream error: ${failure.message}');
+                return <Map<String, dynamic>>[];
+              },
+              (List<Message> messages) {
+                // Sync all message senders to Drift for offline access
+                // Use microtask to ensure it doesn't block the stream at all
+                final allSenderIds = messages
+                    .map((Message msg) => msg.senderId)
+                    .toSet()
+                    .toList();
+                if (allSenderIds.isNotEmpty) {
+                  Future.microtask(
+                    () => allSenderIds.forEach(userSyncService.syncMessageSender),
+                  );
+                }
 
-          return <String, dynamic>{
-            'id': msg.id,
-            'text': msg.text,
-            'senderId': msg.senderId,
-            'timestamp': msg.timestamp,
-            'status': status,
-            'type': msg.type,
-            'detectedLanguage': msg.detectedLanguage,
-            'translations': msg.translations,
-            'culturalHint': msg.culturalHint,
-            // Include per-user tracking maps for potential future use
-            'deliveredTo': msg.deliveredTo,
-            'readBy': msg.readBy,
-          };
-        }).toList();
+                // Build MessageWithStatus objects using real-time status data
+                return messages.map((Message msg) {
+                  // Get status records from real-time stream (not one-time fetch)
+                  final statusRecords = msg.senderId == currentUserId
+                      ? (statusByMessage[msg.id] ?? <MessageStatusEntity>[])
+                      : <MessageStatusEntity>[];
+
+                  // Build MessageWithStatus using factory
+                  final messageWithStatus = MessageWithStatus.fromStatusRecords(
+                    message: msg,
+                    statusRecords: statusRecords,
+                    currentUserId: currentUserId,
+                    allParticipantIds: participantIds,
+                  );
+
+                  // Return as Map for backward compatibility with UI
+                  return <String, dynamic>{
+                    'id': msg.id,
+                    'text': msg.text,
+                    'senderId': msg.senderId,
+                    'timestamp': msg.timestamp,
+                    'status': messageWithStatus.status,
+                    'type': msg.type,
+                    'detectedLanguage': msg.detectedLanguage,
+                    'translations': msg.translations,
+                    'culturalHint': msg.culturalHint,
+                    'readCount': messageWithStatus.readCount,
+                    'deliveredCount': messageWithStatus.deliveredCount,
+                    // Total recipients (excluding sender) for group chat status display
+                    'totalRecipients': participantIds.isNotEmpty
+                        ? participantIds
+                              .where((String id) => id != msg.senderId)
+                              .length
+                        : 0,
+                  };
+                }).toList();
+              },
+            ),
+      );
+
+  // Emit combined stream results
+  await for (final messages in combinedStream) {
+    yield messages;
+  }
+}
+
+/// Auto-marks incoming messages as read when the conversation is open.
+///
+/// This provider should be watched in the chat page to automatically
+/// mark messages as read. It runs as a side effect separate from the
+/// message stream to avoid feedback loops.
+///
+/// **FIXED**: Removed keepAlive to prevent memory leak from accumulated instances
+@Riverpod()  // ← REMOVED keepAlive: true
+class ConversationReadMarker extends _$ConversationReadMarker {
+  final _markedAsRead = <String>{};
+  bool _isMarking = false; // Guard to prevent overlapping operations
+
+  @override
+  void build(String conversationId, String currentUserId) {
+    // Listen to messages and mark as read
+    ref.listen(
+      conversationMessagesStreamProvider(conversationId, currentUserId),
+      (previous, next) {
+        next.whenData((messages) {
+          // Fire and forget - don't await to avoid blocking the stream
+          _markMessagesAsRead(messages, conversationId, currentUserId);
+        });
       },
     );
+  }
+
+  Future<void> _markMessagesAsRead(
+    List<Map<String, dynamic>> messages,
+    String conversationId,
+    String currentUserId,
+  ) async {
+    // Prevent overlapping operations
+    if (_isMarking) {
+      debugPrint('⏸️ Already marking messages, skipping...');
+      return;
+    }
+
+    final messageRemoteDataSource = ref.read(messageRemoteDataSourceProvider);
+
+    // Find messages to mark (incoming messages not yet marked)
+    final messagesToMark = messages
+        .where(
+          (msg) =>
+              msg['senderId'] != currentUserId &&
+              !_markedAsRead.contains(msg['id']),
+        )
+        .toList();
+
+    if (messagesToMark.isEmpty) {
+      return;
+    }
+
+    _isMarking = true;
+
+    debugPrint(
+      '📖 Marking ${messagesToMark.length} messages as READ for user ${currentUserId.substring(0, 8)}',
+    );
+
+    // Mark all messages as READ in parallel
+    final results = await Future.wait(
+      messagesToMark.map((msg) async {
+        final messageId = msg['id'] as String;
+        try {
+          await messageRemoteDataSource.markAsRead(
+            conversationId,
+            messageId,
+            currentUserId,
+          );
+          return (messageId, true);
+        } catch (e) {
+          debugPrint(
+            '❌ Failed to mark ${messageId.substring(0, 8)} as READ: $e',
+          );
+          return (messageId, false);
+        }
+      }),
+    );
+
+    // Track successfully marked messages
+    final successCount = results.where((r) => r.$2).length;
+    for (final (messageId, success) in results) {
+      if (success) {
+        _markedAsRead.add(messageId);
+      }
+    }
+
+    debugPrint(
+      '✅ Successfully marked $successCount/${messagesToMark.length} messages as READ',
+    );
+
+    _isMarking = false;
   }
 }
 
 // ========== Typing Indicator Providers ==========
 
-/// Provides the [TypingIndicatorService] instance.
+/// Provides the [RtdbTypingService] instance for typing indicators.
+///
+/// Uses Firebase Realtime Database with automatic cleanup via onDisconnect()
+/// callbacks when user disconnects or app is closed.
 @riverpod
-TypingIndicatorService typingIndicatorService(Ref ref) {
-  final service = TypingIndicatorService(
-    firestore: ref.watch(messagingFirestoreProvider),
-  );
+RtdbTypingService typingIndicatorService(Ref ref) {
+  final service = RtdbTypingService(database: FirebaseDatabase.instance);
 
   // Dispose when provider is disposed
   ref.onDispose(service.dispose);
@@ -304,6 +475,9 @@ TypingIndicatorService typingIndicatorService(Ref ref) {
 }
 
 /// Watches typing users for a specific conversation.
+///
+/// The service handles permission errors gracefully (returns empty list),
+/// so no auth guard is needed here.
 @riverpod
 Stream<List<TypingUser>> conversationTypingUsers(
   Ref ref,
@@ -321,28 +495,23 @@ Stream<List<TypingUser>> conversationTypingUsers(
 
 /// Provides the [AutoDeliveryMarker] service.
 ///
-/// Automatically marks incoming messages as delivered for all conversations
-/// (both direct and group conversations).
+/// Automatically marks incoming messages as delivered for all conversations.
 @Riverpod(keepAlive: true)
 AutoDeliveryMarker? autoDeliveryMarker(Ref ref) {
   final currentUser = ref.watch(authStateProvider).value;
 
-  // Return null if user is not authenticated (e.g., on logout)
   if (currentUser == null) {
+    // Return null instead of throwing - prevents exceptions during sign-out
     return null;
   }
 
   final marker =
       AutoDeliveryMarker(
           conversationRepository: ref.watch(conversationRepositoryProvider),
-          groupConversationRepository: ref.watch(
-            groupConversationRepositoryProvider,
-          ),
           messageRepository: ref.watch(messageRepositoryProvider),
           currentUserId: currentUser.uid,
         )
         // Start watching
-        // ignore: cascade_invocations
         ..start();
 
   // Dispose when provider is disposed
@@ -351,20 +520,80 @@ AutoDeliveryMarker? autoDeliveryMarker(Ref ref) {
   return marker;
 }
 
-// ========== Presence Providers ==========
+// ========== Message Status Delivery Marker ==========
 
-/// Provides the [PresenceService] instance.
-@Riverpod(keepAlive: true)
-PresenceService presenceService(Ref ref) {
-  final service = PresenceService(
-    firestore: ref.watch(messagingFirestoreProvider),
+/// Marks all messages in a conversation as delivered for the current user.
+///
+/// Simple approach: Writes directly to Firestore subcollections.
+/// Sender listens to these subcollections for instant status updates.
+///
+/// Flow:
+/// 1. Get all messages not sent by current user
+/// 2. Write "delivered" to Firestore: conversations/{convId}/messages/{msgId}/status/{userId}
+/// 3. Sender's listener picks it up instantly
+@riverpod
+Future<void> markMessagesDelivered(
+  Ref ref,
+  String conversationId,
+  String userId,
+) async {
+  final messageRemoteDataSource = ref.read(messageRemoteDataSourceProvider);
+
+  debugPrint('[markMessagesDelivered] Fetching messages from Firestore...');
+
+  // Query FIRESTORE directly (not local DB which might be empty!)
+  final messages = await messageRemoteDataSource.getMessages(
+    conversationId: conversationId,
+    limit: 100, // Get recent messages
   );
 
-  // Dispose when provider is disposed
-  ref.onDispose(service.dispose);
+  debugPrint(
+    '[markMessagesDelivered] Found ${messages.length} messages in Firestore',
+  );
 
-  return service;
+  // Filter messages not sent by this user
+  final otherMessages = messages.where((m) => m.senderId != userId).toList();
+
+  if (otherMessages.isEmpty) {
+    debugPrint('[markMessagesDelivered] No messages to mark as delivered');
+    return;
+  }
+
+  debugPrint(
+    '[markMessagesDelivered] Marking ${otherMessages.length} messages as delivered in Firestore',
+  );
+
+  // Write directly to Firestore subcollections
+  for (final message in otherMessages) {
+    try {
+      debugPrint(
+        '[markMessagesDelivered] Writing status for message ${message.id}',
+      );
+      await messageRemoteDataSource.markAsDelivered(
+        conversationId,
+        message.id,
+        userId,
+      );
+      debugPrint('[markMessagesDelivered] ✅ Wrote status for ${message.id}');
+    } catch (e) {
+      debugPrint('[markMessagesDelivered] ❌ Failed to mark ${message.id}: $e');
+    }
+  }
+
+  debugPrint(
+    '[markMessagesDelivered] ✅ All delivered statuses written to Firestore',
+  );
 }
+
+// ========== Presence Providers ==========
+
+/// Provides the [RtdbPresenceService] instance for presence tracking.
+///
+/// Uses Firebase Realtime Database with automatic offline detection via
+/// onDisconnect() callbacks. No heartbeat mechanism needed.
+@Riverpod(keepAlive: true)
+RtdbPresenceService presenceService(Ref ref) =>
+    RtdbPresenceService(database: FirebaseDatabase.instance);
 
 /// Provides the [FCMService] instance for push notifications.
 @Riverpod(keepAlive: true)
@@ -379,123 +608,63 @@ FCMService fcmService(Ref ref) {
 
 /// Watches presence status for a specific user.
 ///
-/// Returns a stream of presence data including:
-/// - isOnline: true if user is currently online
-/// - lastSeen: timestamp of last activity
-/// - userName: display name
+/// Returns a stream with presence data:
+/// - isOnline: boolean indicating if user is currently online
+/// - lastSeen: DateTime of last activity (if offline)
 @riverpod
 Stream<Map<String, dynamic>?> userPresence(Ref ref, String userId) {
   final service = ref.watch(presenceServiceProvider);
-  return service.watchUserPresence(userId: userId).map((presence) {
-    if (presence == null) {
-      return null;
+
+  return service.watchUserPresence(userId: userId).asyncMap((isOnline) async {
+    if (isOnline) {
+      return {'isOnline': true};
+    } else {
+      // Get lastSeen timestamp
+      final lastSeen = await service.getLastSeen(userId: userId);
+      return {'isOnline': false, 'lastSeen': lastSeen};
     }
-    return {
-      'isOnline': presence.isOnline,
-      'lastSeen': presence.lastSeen,
-      'userName': presence.userName,
-    };
   });
 }
 
 // ========== Offline & Sync Providers ==========
-
-/// Provides the [MessageSyncService] instance.
-///
-/// Handles background synchronization between local and remote storage.
-@Riverpod(keepAlive: true)
-MessageSyncService messageSyncService(Ref ref) {
-  final database = ref.watch(databaseProvider);
-  final service =
-      MessageSyncService(
-          messageLocalDataSource: ref.watch(messageLocalDataSourceProvider),
-          messageRepository: ref.watch(messageRepositoryProvider),
-          conversationLocalDataSource: ref.watch(
-            conversationLocalDataSourceProvider,
-          ),
-          conversationRepository: ref.watch(conversationRepositoryProvider),
-          messageDao: database.messageDao,
-          connectivity: Connectivity(),
-        )
-        // Start monitoring connectivity and syncing
-        // ignore: cascade_invocations
-        ..start();
-
-  // Dispose when provider is disposed
-  ref.onDispose(service.stop);
-
-  return service;
-}
-
-/// Provides the [MessageQueue] instance.
-///
-/// Handles optimistic UI updates and background message processing.
-@Riverpod(keepAlive: true)
-MessageQueue messageQueue(Ref ref) {
-  final queue =
-      MessageQueue(
-          localDataSource: ref.watch(messageLocalDataSourceProvider),
-          syncService: ref.watch(messageSyncServiceProvider),
-        )
-        // Start processing queue
-        // ignore: cascade_invocations
-        ..start();
-
-  // Dispose when provider is disposed
-  ref.onDispose(queue.stop);
-
-  return queue;
-}
-
-// ========== Group Conversation Providers ==========
-
-/// Provides the [GroupConversationRemoteDataSource] implementation.
-@riverpod
-GroupConversationRemoteDataSource groupConversationRemoteDataSource(Ref ref) =>
-    GroupConversationRemoteDataSourceImpl(
-      firestore: ref.watch(messagingFirestoreProvider),
-    );
-
-/// Provides the [GroupConversationRepository] implementation (offline-first).
-@riverpod
-GroupConversationRepository groupConversationRepository(Ref ref) =>
-    GroupConversationRepositoryImpl(
-      remoteDataSource: ref.watch(groupConversationRemoteDataSourceProvider),
-      localDataSource: ref.watch(conversationLocalDataSourceProvider),
-    );
-
+//
+// NOTE: MessageSyncService and MessageQueue have been removed.
+// Background sync is now handled by WorkManager periodic tasks.
+// See lib/workers/ for MessageSyncWorker, DeliveryTrackingWorker, ReadReceiptWorker.
+//
 // ========== Group Use Case Providers ==========
+// Note: Group conversations now use the unified ConversationRepository
 
 /// Provides the [CreateGroup] use case.
 @riverpod
 CreateGroup createGroupUseCase(Ref ref) =>
-    CreateGroup(ref.watch(groupConversationRepositoryProvider));
+    CreateGroup(ref.watch(conversationRepositoryProvider));
 
 /// Provides the [AddGroupMember] use case.
 @riverpod
 AddGroupMember addGroupMemberUseCase(Ref ref) =>
-    AddGroupMember(ref.watch(groupConversationRepositoryProvider));
+    AddGroupMember(ref.watch(conversationRepositoryProvider));
 
 /// Provides the [RemoveGroupMember] use case.
 @riverpod
 RemoveGroupMember removeGroupMemberUseCase(Ref ref) =>
-    RemoveGroupMember(ref.watch(groupConversationRepositoryProvider));
+    RemoveGroupMember(ref.watch(conversationRepositoryProvider));
 
 /// Provides the [LeaveGroup] use case.
 @riverpod
 LeaveGroup leaveGroupUseCase(Ref ref) =>
-    LeaveGroup(ref.watch(groupConversationRepositoryProvider));
+    LeaveGroup(ref.watch(conversationRepositoryProvider));
 
 /// Provides the [UpdateGroupInfo] use case.
 @riverpod
 UpdateGroupInfo updateGroupInfoUseCase(Ref ref) =>
-    UpdateGroupInfo(ref.watch(groupConversationRepositoryProvider));
+    UpdateGroupInfo(ref.watch(conversationRepositoryProvider));
 
 // ========== Unified Conversation List Provider ==========
 
 /// Stream provider for watching all conversations (both direct and groups) in real-time.
 ///
-/// Merges direct conversations and group conversations into a single unified list,
+/// Returns all conversations from the unified ConversationRepository,
 /// sorted by last update time.
 @riverpod
 Stream<List<Map<String, dynamic>>> allConversationsStream(
@@ -505,42 +674,17 @@ Stream<List<Map<String, dynamic>>> allConversationsStream(
   final watchConversationsUseCase = ref.watch(
     watchConversationsUseCaseProvider,
   );
-  final groupConversationRepository = ref.watch(
-    groupConversationRepositoryProvider,
-  );
   final userSyncService = ref.watch(userSyncServiceProvider);
 
-  // Watch BOTH direct conversations AND group conversations
-  final directConversationsStream = watchConversationsUseCase(userId: userId);
-  final groupConversationsStream = groupConversationRepository
-      .watchGroupsForUser(userId);
+  // Watch all conversations (both direct and group)
+  final conversationsStream = watchConversationsUseCase(userId: userId);
 
-  // Combine the two streams using Rx.combineLatest2
-  return Rx.combineLatest2<
-    Either<Failure, List<Conversation>>,
-    Either<Failure, List<Conversation>>,
-    List<Map<String, dynamic>>
-  >(directConversationsStream, groupConversationsStream, (
-    Either<Failure, List<Conversation>> directResult,
-    Either<Failure, List<Conversation>> groupResult,
-  ) {
-    // Extract direct conversations (or empty list on failure)
-    final directConversations = directResult.fold(
+  return conversationsStream.map((Either<Failure, List<Conversation>> result) {
+    // Extract conversations (or empty list on failure)
+    final allConversations = result.fold(
       (Failure failure) => <Conversation>[],
       (List<Conversation> conversations) => conversations,
     );
-
-    // Extract group conversations (or empty list on failure)
-    final groupConversations = groupResult.fold(
-      (Failure failure) => <Conversation>[],
-      (List<Conversation> conversations) => conversations,
-    );
-
-    // Combine both lists
-    final allConversations = <Conversation>[
-      ...directConversations,
-      ...groupConversations,
-    ];
 
     // Sync all participant users to Drift for offline access (fire-and-forget)
     final allParticipantIds = allConversations
@@ -655,13 +799,13 @@ Stream<Map<String, dynamic>> groupPresenceStatus(
     });
   }
 
-  // Watch presence for all participants using Firestore real-time listener
+  // Watch presence for all participants
   return presenceService.watchUsersPresence(userIds: participantIds).map((
-    Map<String, UserPresence> presenceMap,
+    Map<String, bool> presenceMap,
   ) {
     final onlineMembers = presenceMap.entries
-        .where((MapEntry<String, UserPresence> entry) => entry.value.isOnline)
-        .map((MapEntry<String, UserPresence> entry) => entry.key)
+        .where((MapEntry<String, bool> entry) => entry.value)
+        .map((MapEntry<String, bool> entry) => entry.key)
         .toList();
 
     return <String, dynamic>{

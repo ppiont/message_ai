@@ -8,7 +8,6 @@ import 'package:message_ai/core/error/failures.dart' show Failure;
 
 /// Base exception class for all custom exceptions
 abstract class AppException implements Exception {
-
   const AppException({required this.message, this.code, this.originalError});
   final String message;
   final String? code;
@@ -36,7 +35,6 @@ class NetworkTimeoutException extends AppException {
 
 /// Exception thrown when the server returns an error
 class ServerException extends AppException {
-
   const ServerException({
     required super.message,
     super.code,
@@ -112,7 +110,6 @@ class DatabaseException extends AppException {
 
 /// Exception thrown when a record is not found
 class RecordNotFoundException extends AppException {
-
   const RecordNotFoundException({required this.recordType, this.recordId})
     : super(message: 'Record not found', code: 'RECORD_NOT_FOUND');
   final String recordType;
@@ -129,7 +126,6 @@ class RecordNotFoundException extends AppException {
 
 /// Exception thrown when a record already exists
 class RecordAlreadyExistsException extends AppException {
-
   const RecordAlreadyExistsException({required this.recordType, this.recordId})
     : super(message: 'Record already exists', code: 'RECORD_ALREADY_EXISTS');
   final String recordType;
@@ -158,7 +154,6 @@ class ConstraintViolationException extends AppException {
 
 /// Exception thrown when input validation fails
 class ValidationException extends AppException {
-
   const ValidationException({required super.message, this.fieldErrors})
     : super(code: 'VALIDATION_ERROR');
   final Map<String, String>? fieldErrors;
@@ -174,7 +169,6 @@ class ValidationException extends AppException {
 
 /// Exception thrown when input format is invalid
 class InvalidFormatException extends AppException {
-
   const InvalidFormatException({
     required this.fieldName,
     required super.message,
@@ -259,7 +253,6 @@ class TranslationException extends AppException {
 
 /// Exception thrown when AI rate limit is exceeded
 class RateLimitExceededException extends AppException {
-
   const RateLimitExceededException({this.retryAfter})
     : super(message: 'Rate limit exceeded', code: 'RATE_LIMIT_EXCEEDED');
   final DateTime? retryAfter;

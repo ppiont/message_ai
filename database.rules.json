@@ -1,0 +1,18 @@
+{
+  "rules": {
+    "presence": {
+      ".read": true,
+      "$userId": {
+        ".write": "$userId === auth.uid"
+      }
+    },
+    "typing": {
+      "$conversationId": {
+        ".read": true,
+        "$userId": {
+          ".write": "$userId === auth.uid"
+        }
+      }
+    }
+  }
+}

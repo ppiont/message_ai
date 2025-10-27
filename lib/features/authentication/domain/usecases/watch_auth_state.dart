@@ -3,7 +3,6 @@ import 'package:message_ai/features/authentication/domain/repositories/auth_repo
 
 /// Use case for watching authentication state changes
 class WatchAuthState {
-
   WatchAuthState(this._repository);
   final AuthRepository _repository;
 

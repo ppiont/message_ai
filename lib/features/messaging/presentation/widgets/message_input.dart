@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:message_ai/features/formality_adjustment/presentation/controllers/formality_controller.dart';
 import 'package:message_ai/features/formality_adjustment/presentation/widgets/formality_adjuster.dart';
 import 'package:message_ai/features/messaging/domain/entities/message.dart';
 import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
@@ -64,24 +65,22 @@ class _MessageInputState extends ConsumerState<MessageInput> {
     });
     final typingService = ref.read(typingIndicatorServiceProvider);
     // ignore: cascade_invocations
-    typingService
-      .setTyping(
-        conversationId: widget.conversationId,
-        userId: widget.currentUserId,
-        userName: widget.currentUserName,
-        isTyping: text.isNotEmpty,
-      );
+    typingService.setTyping(
+      conversationId: widget.conversationId,
+      userId: widget.currentUserId,
+      userName: widget.currentUserName,
+      isTyping: text.isNotEmpty,
+    );
   }
 
   void _clearTypingStatus() {
     final typingService = ref.read(typingIndicatorServiceProvider);
     // ignore: cascade_invocations
-    typingService
-      .clearTyping(
-        conversationId: widget.conversationId,
-        userId: widget.currentUserId,
-        userName: widget.currentUserName,
-      );
+    typingService.clearTyping(
+      conversationId: widget.conversationId,
+      userId: widget.currentUserId,
+      userName: widget.currentUserName,
+    );
   }
 
   @override
@@ -108,12 +107,17 @@ class _MessageInputState extends ConsumerState<MessageInput> {
         // Formality adjuster (shown only when typing)
         FormalityAdjuster(
           text: _currentText,
+          language: 'auto',
           onTextAdjusted: (adjustedText) {
             _controller.text = adjustedText;
             // Move cursor to end
             _controller.selection = TextSelection.fromPosition(
               TextPosition(offset: adjustedText.length),
             );
+            // Update current text state
+            setState(() {
+              _currentText = adjustedText;
+            });
           },
         ),
         Row(
@@ -192,8 +196,7 @@ class _MessageInputState extends ConsumerState<MessageInput> {
         timestamp: DateTime.now(),
         type: 'text',
         metadata: MessageMetadata.defaultMetadata(),
-        deliveredTo: const <String, DateTime>{}, // Initialize with empty map
-        readBy: const <String, DateTime>{}, // Initialize with empty map
+        // Note: Status tracking done separately via MessageStatus table
       );
 
       // Send message via use case
@@ -217,6 +220,10 @@ class _MessageInputState extends ConsumerState<MessageInput> {
           // Clear input and typing status
           _controller.clear();
           _clearTypingStatus();
+
+          // Clear formality cache
+          ref.read(formalityControllerProvider.notifier).clear();
+
           widget.onMessageSent?.call();
         },
       );

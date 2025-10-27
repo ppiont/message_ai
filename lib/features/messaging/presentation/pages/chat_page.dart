@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:message_ai/features/authentication/domain/entities/user.dart';
 import 'package:message_ai/features/authentication/presentation/providers/auth_providers.dart';
 import 'package:message_ai/features/authentication/presentation/providers/user_lookup_provider.dart';
-import 'package:message_ai/features/messaging/data/services/typing_indicator_service.dart';
+import 'package:message_ai/features/messaging/data/services/rtdb_typing_service.dart';
 import 'package:message_ai/features/messaging/domain/entities/message.dart';
 import 'package:message_ai/features/messaging/presentation/pages/group_management_page.dart';
 import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
@@ -14,6 +14,7 @@ import 'package:message_ai/features/messaging/presentation/widgets/message_bubbl
 import 'package:message_ai/features/messaging/presentation/widgets/message_input.dart';
 import 'package:message_ai/features/messaging/presentation/widgets/typing_indicator.dart';
 import 'package:message_ai/features/smart_replies/presentation/widgets/smart_reply_bar.dart';
+import 'package:message_ai/features/translation/data/services/auto_translation_service.dart';
 import 'package:message_ai/features/translation/presentation/providers/translation_providers.dart';
 
 /// Main chat screen for displaying and sending messages.
@@ -41,8 +42,6 @@ class ChatPage extends ConsumerStatefulWidget {
 
 class _ChatPageState extends ConsumerState<ChatPage> {
   final ScrollController _scrollController = ScrollController();
-  final Set<String> _markedAsRead =
-      {}; // Track which messages we've marked as read
   final TextEditingController _messageInputController = TextEditingController();
 
   /// Latest incoming message (for smart reply generation)
@@ -50,6 +49,9 @@ class _ChatPageState extends ConsumerState<ChatPage> {
 
   /// Track previous message count to detect new messages vs updates
   int _previousMessageCount = 0;
+
+  /// Auto-translation service instance (saved to avoid using ref in dispose)
+  AutoTranslationService? _autoTranslationService;
 
   @override
   void initState() {
@@ -60,7 +62,8 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final currentUser = ref.read(currentUserWithFirestoreProvider).value;
       if (currentUser != null) {
-        ref.read(autoTranslationServiceProvider).start(
+        _autoTranslationService = ref.read(autoTranslationServiceProvider);
+        _autoTranslationService!.start(
           conversationId: widget.conversationId,
           currentUserId: currentUser.uid,
           userPreferredLanguage: currentUser.preferredLanguage,
@@ -72,33 +75,12 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   @override
   void dispose() {
     // Stop auto-translation service when leaving conversation
-    ref.read(autoTranslationServiceProvider).stop();
+    // Safe: using saved instance instead of ref.read() during dispose
+    _autoTranslationService?.stop();
 
     _scrollController.dispose();
     _messageInputController.dispose();
     super.dispose();
-  }
-
-  /// Marks a message as read for the current user (when user actually sees it)
-  /// Note: Messages are automatically marked as delivered in the repository
-  void _markMessageAsRead(String messageId, String userId) {
-    // Add to set immediately to prevent duplicate calls
-    _markedAsRead.add(messageId);
-
-    // Call use case asynchronously with userId for per-user tracking
-    final markAsReadUseCase = ref.read(markMessageAsReadUseCaseProvider);
-    markAsReadUseCase(widget.conversationId, messageId, userId).then((result) {
-      result.fold(
-        (failure) {
-          // Silently fail - read receipts are not critical
-          // Remove from set so we can retry later
-          _markedAsRead.remove(messageId);
-        },
-        (_) {
-          // Success - keep in set
-        },
-      );
-    });
   }
 
   @override
@@ -114,6 +96,14 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             body: const Center(child: Text('Please sign in to view messages')),
           );
         }
+
+        // Watch the read marker to keep it active (auto-marks messages as read)
+        ref.watch(
+          conversationReadMarkerProvider(
+            widget.conversationId,
+            currentUser.uid,
+          ),
+        );
 
         return _buildChatScaffold(context, currentUser);
       },
@@ -185,6 +175,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             );
           },
           incomingMessage: _latestIncomingMessage,
+          isUserTyping: _messageInputController.text.isNotEmpty,
         ),
         MessageInput(
           conversationId: widget.conversationId,
@@ -346,7 +337,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                       senderId: senderId,
                       timestamp: msg['timestamp'] as DateTime,
                       type: msg['type'] as String? ?? 'text',
-                      status: msg['status'] as String? ?? 'sent',
+                      // Note: msg['status'] ignored - status now tracked separately
                       metadata: MessageMetadata.defaultMetadata(),
                       detectedLanguage: msg['detectedLanguage'] as String?,
                       translations: msg['translations'] != null
@@ -356,8 +347,9 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                           : null,
                       embedding: msg['embedding'] != null
                           ? List<double>.from(
-                              (msg['embedding'] as List<dynamic>)
-                                  .map((e) => (e as num).toDouble()),
+                              (msg['embedding'] as List<dynamic>).map(
+                                (e) => (e as num).toDouble(),
+                              ),
                             )
                           : null,
                     );
@@ -394,12 +386,8 @@ class _ChatPageState extends ConsumerState<ChatPage> {
 
             // Mark incoming messages as read when user sees them (only once)
             // Only mark as read if already delivered (not sent)
-            // Note: Messages are automatically marked as delivered in the repository
-            if (!isMe &&
-                status == 'delivered' &&
-                !_markedAsRead.contains(messageId)) {
-              _markMessageAsRead(messageId, currentUser.uid);
-            }
+            // Note: Messages are automatically marked as delivered when conversation opens
+            // Read receipts are handled separately by markMessageAsReadUseCase if needed
 
             // Check if we should show timestamp
             final showTimestamp = _shouldShowTimestamp(messages, index);
@@ -422,6 +410,11 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                   : null,
               userPreferredLanguage: currentUser.preferredLanguage,
               culturalHint: message['culturalHint'] as String?,
+              readCount: message['readCount'] as int?,
+              deliveredCount: message['deliveredCount'] as int?,
+              // For group chats, totalRecipients should exclude sender
+              // For now, we'll add it to the message map in the stream provider
+              totalRecipients: message['totalRecipients'] as int?,
             );
           },
         );
@@ -473,10 +466,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     ),
   );
 
-  bool _shouldShowTimestamp(
-    List<Map<String, dynamic>> messages,
-    int index,
-  ) {
+  bool _shouldShowTimestamp(List<Map<String, dynamic>> messages, int index) {
     if (index == 0) {
       return true; // Always show for first message
     }

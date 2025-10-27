@@ -60,87 +60,36 @@ final class SmartReplyServiceProvider
 
 String _$smartReplyServiceHash() => r'c4c1e209d6a201ea0b575f68bbd717f96c82febd';
 
-/// Provider for SmartReplyGenerator
-
-@ProviderFor(smartReplyGenerator)
-const smartReplyGeneratorProvider = SmartReplyGeneratorProvider._();
-
-/// Provider for SmartReplyGenerator
-
-final class SmartReplyGeneratorProvider
-    extends
-        $FunctionalProvider<
-          SmartReplyGenerator,
-          SmartReplyGenerator,
-          SmartReplyGenerator
-        >
-    with $Provider<SmartReplyGenerator> {
-  /// Provider for SmartReplyGenerator
-  const SmartReplyGeneratorProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'smartReplyGeneratorProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$smartReplyGeneratorHash();
-
-  @$internal
-  @override
-  $ProviderElement<SmartReplyGenerator> $createElement(
-    $ProviderPointer pointer,
-  ) => $ProviderElement(pointer);
-
-  @override
-  SmartReplyGenerator create(Ref ref) {
-    return smartReplyGenerator(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(SmartReplyGenerator value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<SmartReplyGenerator>(value),
-    );
-  }
-}
-
-String _$smartReplyGeneratorHash() =>
-    r'd21618ac372cc9bef451c19f19f079d384424931';
-
 /// Provider for generating smart replies for a specific message
 ///
-/// This is a FutureProvider that orchestrates the complete RAG pipeline:
-/// - Embedding generation
-/// - Semantic search
-/// - Style analysis
-/// - Reply generation
+/// This simplified provider calls the unified Cloud Function that handles
+/// the complete RAG pipeline server-side:
+/// - Embedding generation with Vertex AI
+/// - Vector search using Firestore find_nearest()
+/// - User style fetching from Firestore
+/// - Reply generation with GPT-4o-mini
 ///
-/// Parameters (via family):
+/// Parameters:
 /// - conversationId: The conversation context
-/// - incomingMessage: The message to generate replies for
-/// - currentUserId: The user who will be replying
+/// - incomingMessageText: The message text to generate replies for
+/// - userId: The current user's ID
 
 @ProviderFor(generateSmartReplies)
 const generateSmartRepliesProvider = GenerateSmartRepliesFamily._();
 
 /// Provider for generating smart replies for a specific message
 ///
-/// This is a FutureProvider that orchestrates the complete RAG pipeline:
-/// - Embedding generation
-/// - Semantic search
-/// - Style analysis
-/// - Reply generation
+/// This simplified provider calls the unified Cloud Function that handles
+/// the complete RAG pipeline server-side:
+/// - Embedding generation with Vertex AI
+/// - Vector search using Firestore find_nearest()
+/// - User style fetching from Firestore
+/// - Reply generation with GPT-4o-mini
 ///
-/// Parameters (via family):
+/// Parameters:
 /// - conversationId: The conversation context
-/// - incomingMessage: The message to generate replies for
-/// - currentUserId: The user who will be replying
+/// - incomingMessageText: The message text to generate replies for
+/// - userId: The current user's ID
 
 final class GenerateSmartRepliesProvider
     extends
@@ -152,22 +101,23 @@ final class GenerateSmartRepliesProvider
     with $FutureModifier<List<SmartReply>>, $FutureProvider<List<SmartReply>> {
   /// Provider for generating smart replies for a specific message
   ///
-  /// This is a FutureProvider that orchestrates the complete RAG pipeline:
-  /// - Embedding generation
-  /// - Semantic search
-  /// - Style analysis
-  /// - Reply generation
+  /// This simplified provider calls the unified Cloud Function that handles
+  /// the complete RAG pipeline server-side:
+  /// - Embedding generation with Vertex AI
+  /// - Vector search using Firestore find_nearest()
+  /// - User style fetching from Firestore
+  /// - Reply generation with GPT-4o-mini
   ///
-  /// Parameters (via family):
+  /// Parameters:
   /// - conversationId: The conversation context
-  /// - incomingMessage: The message to generate replies for
-  /// - currentUserId: The user who will be replying
+  /// - incomingMessageText: The message text to generate replies for
+  /// - userId: The current user's ID
   const GenerateSmartRepliesProvider._({
     required GenerateSmartRepliesFamily super.from,
     required ({
       String conversationId,
-      Message incomingMessage,
-      String currentUserId,
+      String incomingMessageText,
+      String userId,
     })
     super.argument,
   }) : super(
@@ -200,14 +150,14 @@ final class GenerateSmartRepliesProvider
         this.argument
             as ({
               String conversationId,
-              Message incomingMessage,
-              String currentUserId,
+              String incomingMessageText,
+              String userId,
             });
     return generateSmartReplies(
       ref,
       conversationId: argument.conversationId,
-      incomingMessage: argument.incomingMessage,
-      currentUserId: argument.currentUserId,
+      incomingMessageText: argument.incomingMessageText,
+      userId: argument.userId,
     );
   }
 
@@ -223,30 +173,27 @@ final class GenerateSmartRepliesProvider
 }
 
 String _$generateSmartRepliesHash() =>
-    r'87fde756ba9ffe0e99b16cb8db54a4c3bacc6688';
+    r'73449813feeb62e700025d4644d5f74d9c813417';
 
 /// Provider for generating smart replies for a specific message
 ///
-/// This is a FutureProvider that orchestrates the complete RAG pipeline:
-/// - Embedding generation
-/// - Semantic search
-/// - Style analysis
-/// - Reply generation
+/// This simplified provider calls the unified Cloud Function that handles
+/// the complete RAG pipeline server-side:
+/// - Embedding generation with Vertex AI
+/// - Vector search using Firestore find_nearest()
+/// - User style fetching from Firestore
+/// - Reply generation with GPT-4o-mini
 ///
-/// Parameters (via family):
+/// Parameters:
 /// - conversationId: The conversation context
-/// - incomingMessage: The message to generate replies for
-/// - currentUserId: The user who will be replying
+/// - incomingMessageText: The message text to generate replies for
+/// - userId: The current user's ID
 
 final class GenerateSmartRepliesFamily extends $Family
     with
         $FunctionalFamilyOverride<
           FutureOr<List<SmartReply>>,
-          ({
-            String conversationId,
-            Message incomingMessage,
-            String currentUserId,
-          })
+          ({String conversationId, String incomingMessageText, String userId})
         > {
   const GenerateSmartRepliesFamily._()
     : super(
@@ -259,26 +206,27 @@ final class GenerateSmartRepliesFamily extends $Family
 
   /// Provider for generating smart replies for a specific message
   ///
-  /// This is a FutureProvider that orchestrates the complete RAG pipeline:
-  /// - Embedding generation
-  /// - Semantic search
-  /// - Style analysis
-  /// - Reply generation
+  /// This simplified provider calls the unified Cloud Function that handles
+  /// the complete RAG pipeline server-side:
+  /// - Embedding generation with Vertex AI
+  /// - Vector search using Firestore find_nearest()
+  /// - User style fetching from Firestore
+  /// - Reply generation with GPT-4o-mini
   ///
-  /// Parameters (via family):
+  /// Parameters:
   /// - conversationId: The conversation context
-  /// - incomingMessage: The message to generate replies for
-  /// - currentUserId: The user who will be replying
+  /// - incomingMessageText: The message text to generate replies for
+  /// - userId: The current user's ID
 
   GenerateSmartRepliesProvider call({
     required String conversationId,
-    required Message incomingMessage,
-    required String currentUserId,
+    required String incomingMessageText,
+    required String userId,
   }) => GenerateSmartRepliesProvider._(
     argument: (
       conversationId: conversationId,
-      incomingMessage: incomingMessage,
-      currentUserId: currentUserId,
+      incomingMessageText: incomingMessageText,
+      userId: userId,
     ),
     from: this,
   );

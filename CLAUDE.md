@@ -278,13 +278,42 @@ final result = await functions.httpsCallable('my_function').call({
 - Shows loading indicator during adjustment
 - Updates TextField with adjusted text
 
-### Presence System
+### Presence & Typing Indicators
 
 **Architecture:**
-- Real-time presence tracking in Firestore
-- Automatic online/offline via `presenceController` provider
-- Last seen timestamps
-- Group presence aggregation
+- **Firebase Realtime Database (RTDB)** for ephemeral real-time data (NOT Firestore)
+- **Automatic offline detection** via RTDB `onDisconnect()` server-side callbacks
+- **Connection-based presence** - no app lifecycle tracking needed
+- No heartbeat mechanism needed - RTDB handles connection state automatically
+- Last seen timestamps with millisecond precision
+- Group presence aggregation for "X/Y online" status
+- Typing indicators with automatic cleanup
+
+**How it works (Simple):**
+1. User signs in → `presenceController` calls `setOnline()`
+2. `setOnline()` writes `{isOnline: true}` and configures server-side `onDisconnect()` callback
+3. User signs out → `presenceController` calls `clearPresence()`
+4. Connection drops (any reason: app kill, background, network loss) → RTDB server executes `onDisconnect()` automatically → sets `{isOnline: false}`
+5. **That's it** - connection state IS presence state. No lifecycle tracking needed.
+
+**Key Insight:**
+RTDB is designed for presence. The `onDisconnect()` callback executes **server-side** when the client connection drops for ANY reason. You don't need to manually track app lifecycle - let RTDB handle it via connection state.
+
+**Key Files:**
+- `lib/features/messaging/data/services/rtdb_presence_service.dart` - RTDB presence service
+- `lib/features/messaging/data/services/rtdb_typing_service.dart` - RTDB typing service
+- `lib/features/authentication/presentation/providers/auth_providers.dart` - presenceController (sign-in/out only)
+- `database.rules.json` - RTDB security rules
+
+**Data Structure (RTDB):**
+- `/presence/{userId}` → `{isOnline: bool, lastSeen: timestamp, userName: string}`
+- `/typing/{conversationId}/{userId}` → `{isTyping: bool, userName: string, timestamp: number}`
+
+**Why RTDB instead of Firestore?**
+- RTDB has `onDisconnect()` callbacks that execute server-side when client disconnects
+- Firestore lacks this feature - would require heartbeats and stale data cleanup
+- RTDB optimized for ephemeral real-time data like presence and typing
+- Lower latency and simpler architecture for this use case
 
 ## Common Patterns
 
@@ -420,7 +449,17 @@ This project uses Dart MCP server. Key tools:
 - `/conversations/{conversationId}` - Conversation metadata
 - `/conversations/{conversationId}/messages/{messageId}` - Messages
 - `/conversations/{conversationId}/participants/{participantId}` - Participants
-- `/presence/{uid}` - Real-time presence
+
+### Realtime Database (RTDB)
+
+Used exclusively for ephemeral real-time data (presence and typing indicators):
+
+- `/presence/{userId}` - User presence status (online/offline, last seen)
+- `/typing/{conversationId}/{userId}` - Active typing indicators
+
+**Why separate databases?**
+- Firestore: Permanent data with complex queries (messages, users, conversations)
+- RTDB: Ephemeral data with automatic cleanup via `onDisconnect()` (presence, typing)
 
 ### Cloud Functions Environment
 
@@ -442,3 +481,7 @@ See `.cursor/rules/` for additional guidelines:
 - [drift.mdc](mdc:.cursor/rules/drift.mdc) - Database patterns
 - [dart_flutter_mcp.mdc](mdc:.cursor/rules/dart_flutter_mcp.mdc) - MCP usage
 - [testing.mdc](mdc:.cursor/rules/testing.mdc) - Testing policy (disabled)
+
+## Task Master AI Instructions
+**Import Task Master's development workflow commands and guidelines, treat as if import is in the main CLAUDE.md file.**
+@./.taskmaster/CLAUDE.md

@@ -23,6 +23,7 @@ class SmartReplyBar extends ConsumerStatefulWidget {
     required this.currentUserId,
     required this.onReplySelected,
     required this.incomingMessage,
+    this.isUserTyping = false,
     super.key,
   });
 
@@ -30,6 +31,7 @@ class SmartReplyBar extends ConsumerStatefulWidget {
   final String currentUserId;
   final void Function(String) onReplySelected;
   final Message? incomingMessage;
+  final bool isUserTyping;
 
   @override
   ConsumerState<SmartReplyBar> createState() => _SmartReplyBarState();
@@ -37,7 +39,6 @@ class SmartReplyBar extends ConsumerStatefulWidget {
 
 class _SmartReplyBarState extends ConsumerState<SmartReplyBar>
     with SingleTickerProviderStateMixin {
-
   // Constants
   static const _animationDuration = Duration(milliseconds: 300);
 
@@ -46,6 +47,7 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar>
   late Animation<Offset> _slideAnimation;
   String? _lastMessageId;
   bool _hasSuggestionsForCurrentMessage = false;
+  bool _enableSmartReplies = false; // Defer generation for performance
 
   @override
   void initState() {
@@ -56,16 +58,25 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar>
       duration: _animationDuration,
     );
 
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 1),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeOutCubic,
-        reverseCurve: Curves.easeInCubic,
-      ),
-    );
+    _slideAnimation = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+            reverseCurve: Curves.easeInCubic,
+          ),
+        );
+
+    // PERFORMANCE: Defer smart reply generation by 2 seconds to avoid blocking page load
+    // The RAG pipeline (embedding + semantic search + GPT-4o-mini) takes 2-3 seconds
+    // and should not run during critical page load time
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        setState(() {
+          _enableSmartReplies = true;
+        });
+      }
+    });
   }
 
   @override
@@ -126,15 +137,18 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar>
 
   @override
   Widget build(BuildContext context) {
-    if (widget.incomingMessage == null) {
+    // Hide if no message, smart replies disabled, OR user is typing
+    if (widget.incomingMessage == null ||
+        !_enableSmartReplies ||
+        widget.isUserTyping) {
       return const SizedBox.shrink();
     }
 
     final smartRepliesAsync = ref.watch(
       generateSmartRepliesProvider(
         conversationId: widget.conversationId,
-        incomingMessage: widget.incomingMessage!,
-        currentUserId: widget.currentUserId,
+        incomingMessageText: widget.incomingMessage!.text,
+        userId: widget.currentUserId,
       ),
     );
 
@@ -173,9 +187,7 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar>
     return SlideTransition(
       position: _slideAnimation,
       child: Container(
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-        ),
+        decoration: BoxDecoration(color: colorScheme.surface),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: _buildChipList(context, replies),
       ),
@@ -190,7 +202,8 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar>
           physics: const BouncingScrollPhysics(),
           itemCount: replies.length,
           separatorBuilder: (_, _) => const SizedBox(width: 8),
-          itemBuilder: (context, index) => _buildReplyChip(context, replies[index]),
+          itemBuilder: (context, index) =>
+              _buildReplyChip(context, replies[index]),
         ),
       );
 
@@ -201,10 +214,7 @@ class _SmartReplyBarState extends ConsumerState<SmartReplyBar>
       label: Text(reply.text),
       onPressed: () => _handleReplyTap(reply.text),
       backgroundColor: colorScheme.surfaceContainerHighest,
-      labelStyle: TextStyle(
-        fontSize: 14,
-        color: colorScheme.onSurface,
-      ),
+      labelStyle: TextStyle(fontSize: 14, color: colorScheme.onSurface),
       visualDensity: VisualDensity.compact,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       side: BorderSide.none,

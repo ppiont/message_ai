@@ -9,9 +9,58 @@ import 'package:message_ai/features/authentication/presentation/providers/user_p
 import 'package:message_ai/features/messaging/presentation/pages/chat_page.dart';
 import 'package:message_ai/features/messaging/presentation/pages/conversation_list_page.dart';
 import 'package:message_ai/features/messaging/presentation/providers/messaging_providers.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+part 'app.g.dart';
 
 // Global navigation key for handling notification navigation
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+/// Initializes app services asynchronously without blocking the UI
+///
+/// This provider ensures services are initialized AFTER the widget tree is built,
+/// preventing main thread blocking during app startup.
+@Riverpod(keepAlive: true)
+void servicesInitializer(Ref ref) {
+  // Watch auth state and initialize services when user signs in
+  ref.listen(authStateProvider, (previous, next) {
+    next.whenData((user) {
+      if (user != null) {
+        // Initialize services asynchronously (fire-and-forget)
+        // This runs in a microtask to avoid blocking the current frame
+        Future.microtask(() async {
+          try {
+            // Initialize user sync service
+            ref.read(userSyncServiceProvider).startBackgroundSync();
+
+            // REMOVED: AutoDeliveryMarker (was creating N+1 Firestore listeners)
+            // Messages are marked as delivered when conversation is opened instead
+
+            // Initialize FCM for push notifications
+            await ref.read(fcmServiceProvider).initialize(
+              userId: user.uid,
+              onNotificationTap: ({
+                required String conversationId,
+                required String senderId,
+              }) {
+                final navigator = navigatorKey.currentState;
+                if (navigator != null) {
+                  _handleNotificationNavigation(
+                    conversationId: conversationId,
+                    senderId: senderId,
+                    navigator: navigator,
+                  );
+                }
+              },
+            );
+          } catch (e) {
+            debugPrint('⚠️ Service initialization error: $e');
+          }
+        });
+      }
+    });
+  });
+}
 
 /// Handles notification tap by fetching conversation details and navigating.
 Future<void> _handleNotificationNavigation({
@@ -86,6 +135,11 @@ Future<void> _handleNotificationNavigation({
 /// - Authentication state handling
 /// - Offline-first sync services
 /// - Push notification handling with navigation
+///
+/// **Presence management:**
+/// - Handled automatically by presenceController + RTDB onDisconnect()
+/// - No manual lifecycle tracking needed (causes duplicate writes)
+/// - RTDB handles connection loss, app kill, and network drops automatically
 class App extends ConsumerWidget {
   const App({super.key});
 
@@ -94,57 +148,14 @@ class App extends ConsumerWidget {
     // Watch authentication state FIRST
     final authState = ref.watch(authStateProvider);
 
-    // Only initialize services if user is authenticated
-    // This prevents errors during logout when widget tree is unstable
-    final user = authState.value;
-    if (user != null) {
-      // Initialize offline-first services
-      // These are keepAlive providers, so watching them ensures they start
-      ref
-        ..watch(messageSyncServiceProvider)
-        ..watch(messageQueueProvider)
-        // Initialize presence controller
-        // Automatically manages online/offline status based on auth
-        ..watch(presenceControllerProvider);
+    // Initialize presence controller BEFORE checking user state
+    // This ensures it can handle both sign-in AND sign-out events
+    ref.watch(presenceControllerProvider);
 
-      // Initialize user sync service
-      // Automatically syncs user profiles from Firestore to Drift
-      ref.watch(userSyncServiceProvider).startBackgroundSync();
-
-      // Initialize auto delivery marker
-      // Automatically marks incoming messages as delivered across all conversations
-      try {
-        ref.watch(autoDeliveryMarkerProvider);
-      } catch (e) {
-        // Silently fail if marker can't be initialized
-      }
-
-      // Initialize FCM for push notifications
-      // This is done here (not in sign-in/sign-up pages) to avoid unmounted widget issues
-      try {
-        ref
-            .read(fcmServiceProvider)
-            .initialize(
-              userId: user.uid,
-              onNotificationTap:
-                  ({required String conversationId, required String senderId}) {
-                    // Navigate to chat page when notification is tapped
-                    // Using global navigator key to handle navigation from any app state
-                    final navigator = navigatorKey.currentState;
-                    if (navigator != null) {
-                      _handleNotificationNavigation(
-                        conversationId: conversationId,
-                        senderId: senderId,
-                        navigator: navigator,
-                      );
-                    }
-                  },
-            );
-      } catch (e) {
-        // Silently fail if FCM can't be initialized
-        debugPrint('FCM initialization failed: $e');
-      }
-    }
+    // Initialize services asynchronously (non-blocking)
+    // This provider watches auth state and starts services in a microtask
+    // No blocking operations during build - keeps UI responsive!
+    ref.watch(servicesInitializerProvider);
 
     return MaterialApp(
       navigatorKey: navigatorKey, // For notification navigation

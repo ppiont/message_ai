@@ -51,6 +51,33 @@ abstract class MessageRemoteDataSource {
     String messageId,
     String userId,
   );
+
+  /// Gets status records for a message from Firestore subcollections
+  ///
+  /// Returns a list of status records (userId, status, timestamp) for all users
+  /// who have interacted with the message. Used by senders to see delivery/read status.
+  Future<List<Map<String, dynamic>>> getMessageStatus(
+    String conversationId,
+    String messageId,
+  );
+
+  /// Watches status changes for a message in real-time
+  ///
+  /// Returns a stream of status records that updates whenever recipients mark
+  /// messages as delivered/read. Used by senders for instant status updates.
+  Stream<List<Map<String, dynamic>>> watchMessageStatus(
+    String conversationId,
+    String messageId,
+  );
+
+  /// Watches all status changes for a conversation in real-time
+  ///
+  /// Returns a stream of ALL status records for all messages in the conversation.
+  /// Uses collectionGroup query with conversationId filter for efficient real-time updates.
+  /// Updates whenever any recipient marks any message as delivered/read in this conversation.
+  Stream<List<Map<String, dynamic>>> watchConversationStatus(
+    String conversationId,
+  );
 }
 
 /// Implementation of [MessageRemoteDataSource] using Firebase Firestore.
@@ -59,48 +86,16 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     : _firestore = firestore;
   final FirebaseFirestore _firestore;
 
-  // Cache to track which collection each conversation belongs to
-  final Map<String, String> _conversationTypeCache = {};
-
   static const String _conversationsCollection = 'conversations';
-  static const String _groupConversationsCollection = 'group-conversations';
   static const String _messagesSubcollection = 'messages';
 
   /// Helper to get messages collection reference for a conversation.
-  /// Automatically determines if it's a group or direct conversation.
-  Future<CollectionReference<Map<String, dynamic>>> _messagesRef(
+  CollectionReference<Map<String, dynamic>> _messagesRef(
     String conversationId,
-  ) async {
-    // Check cache first
-    if (_conversationTypeCache.containsKey(conversationId)) {
-      final collection = _conversationTypeCache[conversationId]!;
-      return _firestore
-          .collection(collection)
-          .doc(conversationId)
-          .collection(_messagesSubcollection);
-    }
-
-    // Check group-conversations collection first (most specific)
-    final groupDoc = await _firestore
-        .collection(_groupConversationsCollection)
-        .doc(conversationId)
-        .get();
-
-    if (groupDoc.exists) {
-      _conversationTypeCache[conversationId] = _groupConversationsCollection;
-      return _firestore
-          .collection(_groupConversationsCollection)
-          .doc(conversationId)
-          .collection(_messagesSubcollection);
-    }
-
-    // Fall back to conversations collection
-    _conversationTypeCache[conversationId] = _conversationsCollection;
-    return _firestore
-        .collection(_conversationsCollection)
-        .doc(conversationId)
-        .collection(_messagesSubcollection);
-  }
+  ) => _firestore
+      .collection(_conversationsCollection)
+      .doc(conversationId)
+      .collection(_messagesSubcollection);
 
   @override
   Future<MessageModel> createMessage(
@@ -108,7 +103,7 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     MessageModel message,
   ) async {
     try {
-      final messagesRef = await _messagesRef(conversationId);
+      final messagesRef = _messagesRef(conversationId);
       final docRef = messagesRef.doc(message.id);
 
       // Check if message already exists
@@ -144,7 +139,7 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     String messageId,
   ) async {
     try {
-      final messagesRef = await _messagesRef(conversationId);
+      final messagesRef = _messagesRef(conversationId);
       final docSnapshot = await messagesRef.doc(messageId).get();
 
       if (!docSnapshot.exists) {
@@ -175,7 +170,7 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     DateTime? before,
   }) async {
     try {
-      final messagesRef = await _messagesRef(conversationId);
+      final messagesRef = _messagesRef(conversationId);
       var query = messagesRef
           .orderBy('timestamp', descending: true)
           .limit(limit);
@@ -209,7 +204,7 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     MessageModel message,
   ) async {
     try {
-      final messagesRef = await _messagesRef(conversationId);
+      final messagesRef = _messagesRef(conversationId);
       final docRef = messagesRef.doc(message.id);
 
       // Check if message exists
@@ -244,7 +239,7 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     try {
       // For a chat app, we might prefer soft delete (marking as deleted)
       // For now, we'll do hard delete for simplicity in MVP
-      final messagesRef = await _messagesRef(conversationId);
+      final messagesRef = _messagesRef(conversationId);
       await messagesRef.doc(messageId).delete();
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
@@ -265,21 +260,19 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     int limit = 50,
   }) {
     try {
-      // Convert Future to Stream, then flatten
-      return Stream.fromFuture(_messagesRef(conversationId)).asyncExpand(
-        (messagesRef) => messagesRef
-            .orderBy(
-              'timestamp',
-              descending: false,
-            ) // Oldest first (standard chat order)
-            .limit(limit)
-            .snapshots()
-            .map(
-              (snapshot) => snapshot.docs
-                  .map((doc) => MessageModel.fromJson(doc.data()))
-                  .toList(),
-            ),
-      );
+      final messagesRef = _messagesRef(conversationId);
+      return messagesRef
+          .orderBy(
+            'timestamp',
+            descending: false,
+          ) // Oldest first (standard chat order)
+          .limit(limit)
+          .snapshots()
+          .map(
+            (snapshot) => snapshot.docs
+                .map((doc) => MessageModel.fromJson(doc.data()))
+                .toList(),
+          );
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
@@ -300,12 +293,31 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     String userId,
   ) async {
     try {
-      final messagesRef = await _messagesRef(conversationId);
-      // Update per-user delivery tracking
-      // Uses nested map syntax: 'deliveredTo.userId': timestamp
-      await messagesRef.doc(messageId).update({
-        'deliveredTo.$userId': FieldValue.serverTimestamp(),
-      });
+      final messagesRef = _messagesRef(conversationId);
+
+      // Check current status first - don't downgrade from 'read' to 'delivered'
+      final statusDoc = await messagesRef
+          .doc(messageId)
+          .collection('status')
+          .doc(userId)
+          .get();
+
+      final currentStatus = statusDoc.data()?['status'] as String?;
+
+      // Only mark as delivered if:
+      // 1. No status exists yet (first time)
+      // 2. Current status is 'sent' (upgrade to delivered)
+      // Never downgrade from 'read' to 'delivered'
+      if (currentStatus == null || currentStatus == 'sent') {
+        await messagesRef.doc(messageId).collection('status').doc(userId).set({
+          'status': 'delivered',
+          'timestamp': FieldValue.serverTimestamp(),
+          'userId': userId,
+          'conversationId': conversationId, // For collectionGroup filtering
+          'messageId': messageId, // For collectionGroup filtering
+        });
+      }
+      // If already 'read', do nothing (don't downgrade)
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
@@ -326,12 +338,17 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     String userId,
   ) async {
     try {
-      final messagesRef = await _messagesRef(conversationId);
-      // Update per-user read tracking
-      // Uses nested map syntax: 'readBy.userId': timestamp
-      await messagesRef.doc(messageId).update({
-        'readBy.$userId': FieldValue.serverTimestamp(),
-      });
+      final messagesRef = _messagesRef(conversationId);
+
+      // Use subcollection structure for efficient status tracking:
+      // messages/{messageId}/status/{userId}
+      await messagesRef.doc(messageId).collection('status').doc(userId).set({
+        'status': 'read',
+        'timestamp': FieldValue.serverTimestamp(),
+        'userId': userId,
+        'conversationId': conversationId, // For collectionGroup filtering
+        'messageId': messageId, // For collectionGroup filtering
+      }); // No merge needed for read - it's the final state
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
@@ -340,6 +357,111 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
       }
       throw UnknownException(
         message: 'Failed to mark message as read',
+        originalError: e,
+      );
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getMessageStatus(
+    String conversationId,
+    String messageId,
+  ) async {
+    try {
+      final messagesRef = _messagesRef(conversationId);
+
+      // Query the status subcollection for all users
+      final statusSnapshot = await messagesRef
+          .doc(messageId)
+          .collection('status')
+          .get();
+
+      // Convert to list of maps
+      return statusSnapshot.docs.map((doc) => doc.data()).toList();
+    } on FirebaseException catch (e) {
+      throw _mapFirestoreException(e);
+    } catch (e) {
+      if (e is AppException) {
+        rethrow;
+      }
+      throw UnknownException(
+        message: 'Failed to get message status',
+        originalError: e,
+      );
+    }
+  }
+
+  @override
+  Stream<List<Map<String, dynamic>>> watchMessageStatus(
+    String conversationId,
+    String messageId,
+  ) {
+    try {
+      final messagesRef = _messagesRef(conversationId);
+      return messagesRef
+          .doc(messageId)
+          .collection('status')
+          .snapshots()
+          .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+    } on FirebaseException catch (e) {
+      throw _mapFirestoreException(e);
+    } catch (e) {
+      if (e is AppException) {
+        rethrow;
+      }
+      throw UnknownException(
+        message: 'Failed to watch message status',
+        originalError: e,
+      );
+    }
+  }
+
+  @override
+  Stream<List<Map<String, dynamic>>> watchConversationStatus(
+    String conversationId,
+  ) {
+    try {
+      // FIXED: Instead of collectionGroup (scans entire database),
+      // watch the messages collection and poll status subcollections.
+      // This is more efficient than scanning 25,000+ paths.
+      return _firestore
+          .collection('conversations')
+          .doc(conversationId)
+          .collection('messages')
+          .snapshots()
+          .asyncMap((snapshot) async {
+            // For each message, fetch its status subcollection
+            final allStatus = <Map<String, dynamic>>[];
+
+            // Process in batches to avoid overwhelming Firestore
+            for (final messageDoc in snapshot.docs) {
+              try {
+                final statusSnapshot = await messageDoc.reference
+                    .collection('status')
+                    .get();
+
+                for (final statusDoc in statusSnapshot.docs) {
+                  final data = statusDoc.data();
+                  data['messageId'] = messageDoc.id;
+                  data['conversationId'] = conversationId;
+                  allStatus.add(data);
+                }
+              } catch (e) {
+                // Skip this message's status on error
+                continue;
+              }
+            }
+
+            return allStatus;
+          });
+    } on FirebaseException catch (e) {
+      throw _mapFirestoreException(e);
+    } catch (e) {
+      if (e is AppException) {
+        rethrow;
+      }
+      throw UnknownException(
+        message: 'Failed to watch conversation status',
         originalError: e,
       );
     }

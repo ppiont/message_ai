@@ -4,33 +4,53 @@ import 'package:message_ai/features/formality_adjustment/domain/entities/formali
 /// Formality adjustment state for message composition
 class FormalityAdjustmentState {
   const FormalityAdjustmentState({
-    this.isAdjusting = false,
+    this.originalText,
+    this.cachedVersions = const {},
+    this.currentLevel = FormalityLevel.original,
+    this.loadingLevel,
     this.error,
-    this.adjustedText,
-    this.selectedFormality = FormalityLevel.neutral,
   });
 
-  final bool isAdjusting;
+  final String? originalText;
+  final Map<FormalityLevel, String> cachedVersions;
+  final FormalityLevel currentLevel;
+  final FormalityLevel? loadingLevel; // Which chip is currently loading
   final String? error;
-  final String? adjustedText;
-  final FormalityLevel selectedFormality;
+
+  /// Check if we have a cached version for this level
+  bool hasCachedVersion(FormalityLevel level) {
+    if (level == FormalityLevel.original) {
+      return true; // Always have original
+    }
+    return cachedVersions.containsKey(level);
+  }
+
+  /// Get text for a specific level
+  String? getTextForLevel(FormalityLevel level) {
+    if (level == FormalityLevel.original) {
+      return originalText;
+    }
+    return cachedVersions[level];
+  }
 
   FormalityAdjustmentState copyWith({
-    bool? isAdjusting,
+    String? originalText,
+    Map<FormalityLevel, String>? cachedVersions,
+    FormalityLevel? currentLevel,
+    FormalityLevel? loadingLevel,
     String? error,
-    String? adjustedText,
-    FormalityLevel? selectedFormality,
+    bool clearError = false,
+    bool clearLoadingLevel = false,
   }) => FormalityAdjustmentState(
-    isAdjusting: isAdjusting ?? this.isAdjusting,
-    error: error,
-    adjustedText: adjustedText,
-    selectedFormality: selectedFormality ?? this.selectedFormality,
+    originalText: originalText ?? this.originalText,
+    cachedVersions: cachedVersions ?? this.cachedVersions,
+    currentLevel: currentLevel ?? this.currentLevel,
+    loadingLevel: clearLoadingLevel ? null : loadingLevel ?? this.loadingLevel,
+    error: clearError ? null : error ?? this.error,
   );
 
-  /// Create a fresh state (clears adjusted text and errors)
-  FormalityAdjustmentState clear() => FormalityAdjustmentState(
-    selectedFormality: selectedFormality,
-  );
+  /// Clear when message is sent or text changes significantly
+  FormalityAdjustmentState clear() => const FormalityAdjustmentState();
 }
 
 /// Controller for managing formality adjustment state during message composition
@@ -38,31 +58,42 @@ class FormalityController extends Notifier<FormalityAdjustmentState> {
   @override
   FormalityAdjustmentState build() => const FormalityAdjustmentState();
 
-  /// Set the selected formality level
-  void setSelectedFormality(FormalityLevel formality) {
-    state = state.copyWith(selectedFormality: formality);
+  /// Set original text (when user starts typing new text)
+  /// Clears cache if text changed
+  void setOriginalText(String text) {
+    if (state.originalText != text) {
+      // Text changed → clear cache and reset to original
+      state = FormalityAdjustmentState(originalText: text);
+    }
   }
 
-  /// Set loading state
-  void setAdjusting({required bool isAdjusting}) {
-    state = state.copyWith(isAdjusting: isAdjusting);
-  }
-
-  /// Set adjusted text
-  void setAdjustedText(String text) {
-    state = state.copyWith(adjustedText: text);
-  }
-
-  /// Set error state
-  void setError(String error) {
+  /// Cache a generated version for a specific formality level
+  void cacheVersion(FormalityLevel level, String text) {
     state = state.copyWith(
-      error: error,
+      cachedVersions: {...state.cachedVersions, level: text},
+      clearLoadingLevel: true,
+      clearError: true,
     );
+  }
+
+  /// Switch to a different formality level (instant if cached)
+  void switchToLevel(FormalityLevel level) {
+    state = state.copyWith(currentLevel: level, clearError: true);
+  }
+
+  /// Start loading a specific formality level
+  void setLoadingLevel(FormalityLevel level) {
+    state = state.copyWith(loadingLevel: level, clearError: true);
+  }
+
+  /// Set error message
+  void setError(String error) {
+    state = state.copyWith(error: error, clearLoadingLevel: true);
   }
 
   /// Clear error
   void clearError() {
-    state = state.copyWith();
+    state = state.copyWith(clearError: true);
   }
 
   /// Clear all state (used when message is sent or cleared)
@@ -74,5 +105,5 @@ class FormalityController extends Notifier<FormalityAdjustmentState> {
 /// Provider for FormalityController
 final formalityControllerProvider =
     NotifierProvider<FormalityController, FormalityAdjustmentState>(
-  FormalityController.new,
-);
+      FormalityController.new,
+    );

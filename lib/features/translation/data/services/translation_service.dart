@@ -26,8 +26,8 @@ class TranslationService {
           .httpsCallable('translate_message')
           .call<Map<String, dynamic>>({
             'text': text,
-            'source_language': sourceLanguage,  // Python expects snake_case
-            'target_language': targetLanguage,  // Python expects snake_case
+            'source_language': sourceLanguage, // Python expects snake_case
+            'target_language': targetLanguage, // Python expects snake_case
           });
 
       final data = result.data;

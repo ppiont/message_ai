@@ -47,17 +47,19 @@ class MessageContextService {
       // Validate input
       if (text.trim().isEmpty) {
         debugPrint('MessageContextService: Empty text provided');
-        return const Left(
-          ValidationFailure(message: 'Text cannot be empty'),
-        );
+        return const Left(ValidationFailure(message: 'Text cannot be empty'));
       }
 
       // Detect and sanitize PII before sending to cloud function
       final piiResult = PIIDetector.detectAndSanitize(text);
 
       if (piiResult.containsPII) {
-        debugPrint('MessageContextService: Detected PII - types: ${piiResult.detectedTypes}');
-        debugPrint('MessageContextService: Original text length: ${text.length}, Sanitized: ${piiResult.sanitizedText.length}');
+        debugPrint(
+          'MessageContextService: Detected PII - types: ${piiResult.detectedTypes}',
+        );
+        debugPrint(
+          'MessageContextService: Original text length: ${text.length}, Sanitized: ${piiResult.sanitizedText.length}',
+        );
       }
 
       // Use sanitized text for analysis
@@ -69,7 +71,9 @@ class MessageContextService {
 
       while (attempt < _maxRetries) {
         try {
-          debugPrint('MessageContextService: Attempt ${attempt + 1}/$_maxRetries - Analyzing text (lang: $language)');
+          debugPrint(
+            'MessageContextService: Attempt ${attempt + 1}/$_maxRetries - Analyzing text (lang: $language)',
+          );
 
           final result = await _functions
               .httpsCallable('analyze_message_context')
@@ -100,29 +104,40 @@ class MessageContextService {
 
           // Create MessageContextDetails if any content found
           MessageContextDetails? contextDetails;
-          if (culturalHint != null || formality != null || culturalNote != null || idiomsList.isNotEmpty) {
+          if (culturalHint != null ||
+              formality != null ||
+              culturalNote != null ||
+              idiomsList.isNotEmpty) {
             contextDetails = MessageContextDetails(
               formality: formality,
               culturalNote: culturalNote,
               idioms: idiomsList,
             );
 
-            debugPrint('MessageContextService: Analysis successful - '
-                'formality=${formality ?? "null"}, '
-                'idioms=${idiomsList.length}, '
-                'culturalNote=${culturalNote != null ? "present" : "null"}');
+            debugPrint(
+              'MessageContextService: Analysis successful - '
+              'formality=${formality ?? "null"}, '
+              'idioms=${idiomsList.length}, '
+              'culturalNote=${culturalNote != null ? "present" : "null"}',
+            );
           } else {
-            debugPrint('MessageContextService: Analysis successful - no context needed');
+            debugPrint(
+              'MessageContextService: Analysis successful - no context needed',
+            );
           }
 
           return Right(contextDetails);
         } on FirebaseFunctionsException catch (e) {
           lastException = e;
-          debugPrint('MessageContextService: Firebase Functions error (attempt ${attempt + 1}): ${e.code} - ${e.message}');
+          debugPrint(
+            'MessageContextService: Firebase Functions error (attempt ${attempt + 1}): ${e.code} - ${e.message}',
+          );
 
           // Handle specific error codes
           if (e.code == 'resource-exhausted') {
-            debugPrint('MessageContextService: Rate limit exceeded (non-retryable)');
+            debugPrint(
+              'MessageContextService: Rate limit exceeded (non-retryable)',
+            );
             return Left(
               RateLimitExceededFailure(
                 retryAfter: DateTime.now().add(const Duration(hours: 1)),
@@ -134,10 +149,13 @@ class MessageContextService {
           if (e.code == 'unauthenticated' ||
               e.code == 'permission-denied' ||
               e.code == 'invalid-argument') {
-            debugPrint('MessageContextService: Non-retryable error, failing immediately');
+            debugPrint(
+              'MessageContextService: Non-retryable error, failing immediately',
+            );
             return Left(
               AIServiceFailure(
-                message: 'Message context analysis failed: ${e.message ?? "Unknown error"}',
+                message:
+                    'Message context analysis failed: ${e.message ?? "Unknown error"}',
                 code: e.code,
               ),
             );
@@ -149,12 +167,16 @@ class MessageContextService {
             final backoffDuration = Duration(
               milliseconds: 1000 * (1 << (attempt - 1)), // 1s, 2s, 4s
             );
-            debugPrint('MessageContextService: Retrying after ${backoffDuration.inSeconds}s backoff...');
+            debugPrint(
+              'MessageContextService: Retrying after ${backoffDuration.inSeconds}s backoff...',
+            );
             await Future<void>.delayed(backoffDuration);
           }
         } catch (e) {
           lastException = e is Exception ? e : Exception(e.toString());
-          debugPrint('MessageContextService: Unexpected error (attempt ${attempt + 1}): $e');
+          debugPrint(
+            'MessageContextService: Unexpected error (attempt ${attempt + 1}): $e',
+          );
 
           attempt++;
           if (attempt < _maxRetries) {
@@ -167,18 +189,19 @@ class MessageContextService {
       }
 
       // All retries exhausted
-      debugPrint('MessageContextService: All $attempt retry attempts exhausted');
+      debugPrint(
+        'MessageContextService: All $attempt retry attempts exhausted',
+      );
       return Left(
         AIServiceFailure(
-          message: 'Message context analysis failed after $_maxRetries attempts: ${lastException?.toString() ?? "Unknown error"}',
+          message:
+              'Message context analysis failed after $_maxRetries attempts: ${lastException?.toString() ?? "Unknown error"}',
         ),
       );
     } catch (e) {
       debugPrint('MessageContextService: Fatal error: $e');
       return Left(
-        AIServiceFailure(
-          message: 'Message context analysis failed: $e',
-        ),
+        AIServiceFailure(message: 'Message context analysis failed: $e'),
       );
     }
   }

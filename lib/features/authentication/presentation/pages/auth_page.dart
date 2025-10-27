@@ -28,22 +28,19 @@ class _AuthPageState extends State<AuthPage>
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      appBar: AppBar(
-        title: const Text('MessageAI'),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(text: 'Sign In'),
-            Tab(text: 'Sign Up'),
-          ],
-        ),
-      ),
-      body: TabBarView(
+    appBar: AppBar(
+      title: const Text('MessageAI'),
+      bottom: TabBar(
         controller: _tabController,
-        children: const [
-          SignInPage(),
-          SignUpPage(),
+        tabs: const [
+          Tab(text: 'Sign In'),
+          Tab(text: 'Sign Up'),
         ],
       ),
-    );
+    ),
+    body: TabBarView(
+      controller: _tabController,
+      children: const [SignInPage(), SignUpPage()],
+    ),
+  );
 }

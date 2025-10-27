@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -6,103 +5,77 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:message_ai/app.dart';
 import 'package:message_ai/core/database/app_database.dart';
 import 'package:message_ai/core/error/error_logger.dart';
-import 'package:message_ai/features/messaging/data/datasources/conversation_local_datasource.dart';
-import 'package:message_ai/features/messaging/data/datasources/conversation_remote_datasource.dart';
-import 'package:message_ai/features/messaging/data/datasources/message_local_datasource.dart';
-import 'package:message_ai/features/messaging/data/datasources/message_remote_datasource.dart';
-import 'package:message_ai/features/messaging/data/repositories/conversation_repository_impl.dart';
-import 'package:message_ai/features/messaging/data/repositories/message_repository_impl.dart';
 import 'package:message_ai/features/messaging/data/services/fcm_service.dart';
-import 'package:message_ai/features/messaging/data/services/message_sync_service.dart';
+import 'package:message_ai/workers/delivery_tracking_worker.dart';
+import 'package:message_ai/workers/message_sync_worker.dart';
+import 'package:message_ai/workers/read_receipt_worker.dart';
 import 'package:workmanager/workmanager.dart';
 
-/// Top-level callback dispatcher for WorkManager background tasks.
+/// Unified WorkManager callback dispatcher for all background tasks.
 ///
 /// MUST be a top-level function (cannot be in a class or async).
 /// This is called by the Android/iOS system when a background task runs.
+///
+/// Handles:
+/// - message-sync: Sync pending messages to Firestore
+/// - delivery-tracking: Sync delivery confirmations to Firestore
+/// - read-receipt-sync: Sync read receipts to Firestore
 @pragma('vm:entry-point')
-void callbackDispatcher() {
+void workManagerCallbackDispatcher() {
   Workmanager().executeTask((
     String task,
     Map<String, dynamic>? inputData,
   ) async {
-    try {
-      debugPrint('[WorkManager] Executing task: $task');
+    debugPrint('[WorkManager] Executing task: $task');
 
+    AppDatabase? database;
+
+    try {
+      // Initialize Firebase (required for Firestore access in background isolate)
+      await Firebase.initializeApp();
+
+      // Initialize Drift database
+      database = AppDatabase();
+
+      // Route to appropriate worker based on task name
       switch (task) {
-        case 'syncPendingMessages':
-          await _syncPendingMessagesTask();
+        case 'message-sync':
+          final worker = MessageSyncWorker(database: database);
+          final result = await worker.syncAll();
+          debugPrint(
+            '[WorkManager] message-sync complete: ${result.synced} synced, ${result.failed} failed',
+          );
           return true;
+
+        case 'delivery-tracking':
+          final worker = DeliveryTrackingWorker(database: database);
+          final result = await worker.processDeliveries();
+          debugPrint(
+            '[WorkManager] delivery-tracking complete: ${result.synced} synced, ${result.failed} failed',
+          );
+          return true;
+
+        case 'read-receipt-sync':
+          final worker = ReadReceiptWorker(database: database);
+          final result = await worker.syncReadReceipts();
+          debugPrint(
+            '[WorkManager] read-receipt-sync complete: ${result.synced} synced, ${result.failed} failed',
+          );
+          return true;
+
         default:
           debugPrint('[WorkManager] Unknown task: $task');
           return false;
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       debugPrint('[WorkManager] Task failed: $e');
+      debugPrint('[WorkManager] Stack trace: $stackTrace');
       return false;
+    } finally {
+      // Clean up database connection
+      await database?.close();
     }
   });
-}
-
-/// Background task to sync pending messages.
-///
-/// This runs even when the app is closed, triggered by WorkManager.
-Future<void> _syncPendingMessagesTask() async {
-  debugPrint('[WorkManager] Starting pending messages sync...');
-
-  try {
-    // Initialize Firebase (required for Firestore access)
-    await Firebase.initializeApp();
-
-    // Initialize Drift database
-    final database = AppDatabase();
-
-    // Initialize data sources
-    final messageLocalDataSource = MessageLocalDataSourceImpl(
-      messageDao: database.messageDao,
-    );
-    final messageRemoteDataSource = MessageRemoteDataSourceImpl(
-      firestore: FirebaseFirestore.instance,
-    );
-    final conversationLocalDataSource = ConversationLocalDataSourceImpl(
-      conversationDao: database.conversationDao,
-    );
-    final conversationRemoteDataSource = ConversationRemoteDataSourceImpl(
-      firestore: FirebaseFirestore.instance,
-    );
-
-    // Initialize repositories
-    final messageRepository = MessageRepositoryImpl(
-      remoteDataSource: messageRemoteDataSource,
-      localDataSource: messageLocalDataSource,
-    );
-    final conversationRepository = ConversationRepositoryImpl(
-      remoteDataSource: conversationRemoteDataSource,
-      localDataSource: conversationLocalDataSource,
-    );
-
-    // Initialize sync service
-    final syncService = MessageSyncService(
-      messageLocalDataSource: messageLocalDataSource,
-      messageRepository: messageRepository,
-      conversationLocalDataSource: conversationLocalDataSource,
-      conversationRepository: conversationRepository,
-      messageDao: database.messageDao,
-    );
-
-    // Perform sync
-    final result = await syncService.syncAll();
-
-    debugPrint(
-      '[WorkManager] Sync complete: ${result.messagesSynced} messages, ${result.conversationsSynced} conversations',
-    );
-
-    // Clean up
-    await database.close();
-  } catch (e) {
-    debugPrint('[WorkManager] Sync failed: $e');
-    rethrow;
-  }
 }
 
 /// Application entry point
@@ -121,11 +94,43 @@ void main() async {
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   // Initialize WorkManager for background tasks
-  await Workmanager().initialize(callbackDispatcher);
+  await Workmanager().initialize(workManagerCallbackDispatcher);
+
+  // Register periodic background tasks
+  await _registerPeriodicTasks();
 
   // Initialize error logging
   await ErrorLogger.initialize();
 
   // Run the app with Riverpod
   runApp(const ProviderScope(child: App()));
+}
+
+/// Register periodic WorkManager tasks
+///
+/// These tasks run in the background even when the app is closed.
+/// WorkManager handles scheduling, retries, and battery optimization.
+Future<void> _registerPeriodicTasks() async {
+  // Message sync: Every 15 minutes
+  // Syncs pending messages from Drift to Firestore
+  await Workmanager().registerPeriodicTask(
+    'message-sync',
+    'message-sync',
+    frequency: const Duration(minutes: 15),
+    constraints: Constraints(
+      networkType: NetworkType.connected,
+      requiresBatteryNotLow: true,
+    ),
+  );
+
+  // Delivery tracking: Every 15 minutes (minimum periodic interval)
+  // Syncs message delivery status to Firestore
+  await Workmanager().registerPeriodicTask(
+    'delivery-tracking',
+    'delivery-tracking',
+    frequency: const Duration(minutes: 15),
+    constraints: Constraints(networkType: NetworkType.connected),
+  );
+
+  debugPrint('[WorkManager] Periodic tasks registered');
 }

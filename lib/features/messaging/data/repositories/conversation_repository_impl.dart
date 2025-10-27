@@ -165,13 +165,8 @@ class ConversationRepositoryImpl implements ConversationRepository {
         limit: limit,
       );
 
-      // Filter out groups - they're handled by GroupConversationRepository
-      return localStream.map((conversations) {
-        final directConversations = conversations
-            .where((c) => !c.isGroup)
-            .toList();
-        return Right<Failure, List<Conversation>>(directConversations);
-      });
+      // Return all conversations (both direct and group)
+      return localStream.map(Right<Failure, List<Conversation>>.new);
     } on AppException catch (e) {
       return Stream.value(Left(ErrorMapper.mapExceptionToFailure(e)));
     } catch (e) {
@@ -261,6 +256,95 @@ class ConversationRepositoryImpl implements ConversationRepository {
   ) async {
     try {
       await _remoteDataSource.updateUnreadCount(conversationId, userId, count);
+      return const Right(null);
+    } on AppException catch (e) {
+      return Left(ErrorMapper.mapExceptionToFailure(e));
+    } catch (e) {
+      return Left(UnknownFailure(message: e.toString()));
+    }
+  }
+
+  // ========== Group-specific operations ==========
+
+  @override
+  Future<Either<Failure, void>> addMember(
+    String conversationId,
+    String userId,
+    String userName,
+    String preferredLanguage,
+  ) async {
+    try {
+      await _remoteDataSource.addMember(
+        conversationId,
+        userId,
+        userName,
+        preferredLanguage,
+      );
+      return const Right(null);
+    } on AppException catch (e) {
+      return Left(ErrorMapper.mapExceptionToFailure(e));
+    } catch (e) {
+      return Left(UnknownFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> removeMember(
+    String conversationId,
+    String userId,
+  ) async {
+    try {
+      await _remoteDataSource.removeMember(conversationId, userId);
+      return const Right(null);
+    } on AppException catch (e) {
+      return Left(ErrorMapper.mapExceptionToFailure(e));
+    } catch (e) {
+      return Left(UnknownFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> promoteToAdmin(
+    String conversationId,
+    String userId,
+  ) async {
+    try {
+      await _remoteDataSource.promoteToAdmin(conversationId, userId);
+      return const Right(null);
+    } on AppException catch (e) {
+      return Left(ErrorMapper.mapExceptionToFailure(e));
+    } catch (e) {
+      return Left(UnknownFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> demoteFromAdmin(
+    String conversationId,
+    String userId,
+  ) async {
+    try {
+      await _remoteDataSource.demoteFromAdmin(conversationId, userId);
+      return const Right(null);
+    } on AppException catch (e) {
+      return Left(ErrorMapper.mapExceptionToFailure(e));
+    } catch (e) {
+      return Left(UnknownFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> updateGroupInfo({
+    required String conversationId,
+    String? groupName,
+    String? groupImage,
+  }) async {
+    try {
+      await _remoteDataSource.updateGroupInfo(
+        conversationId: conversationId,
+        groupName: groupName,
+        groupImage: groupImage,
+      );
       return const Right(null);
     } on AppException catch (e) {
       return Left(ErrorMapper.mapExceptionToFailure(e));

@@ -19,12 +19,13 @@ class IdiomExplanation extends Equatable {
   });
 
   /// Create from JSON
-  factory IdiomExplanation.fromJson(Map<String, dynamic> json) => IdiomExplanation(
-      phrase: json['phrase'] as String? ?? '',
-      meaning: json['meaning'] as String? ?? '',
-      culturalNote: json['culturalNote'] as String? ?? '',
-      equivalents: _parseEquivalents(json['equivalents'] as dynamic),
-    );
+  factory IdiomExplanation.fromJson(Map<String, dynamic> json) =>
+      IdiomExplanation(
+        phrase: json['phrase'] as String? ?? '',
+        meaning: json['meaning'] as String? ?? '',
+        culturalNote: json['culturalNote'] as String? ?? '',
+        equivalents: _parseEquivalents(json['equivalents'] as dynamic),
+      );
 
   /// The idiom phrase
   final String phrase;
@@ -54,13 +55,12 @@ class IdiomExplanation extends Equatable {
     String? meaning,
     String? culturalNote,
     Map<String, String>? equivalents,
-  }) =>
-      IdiomExplanation(
-        phrase: phrase ?? this.phrase,
-        meaning: meaning ?? this.meaning,
-        culturalNote: culturalNote ?? this.culturalNote,
-        equivalents: equivalents ?? this.equivalents,
-      );
+  }) => IdiomExplanation(
+    phrase: phrase ?? this.phrase,
+    meaning: meaning ?? this.meaning,
+    culturalNote: culturalNote ?? this.culturalNote,
+    equivalents: equivalents ?? this.equivalents,
+  );
 
   @override
   List<Object?> get props => [phrase, meaning, culturalNote, equivalents];
@@ -69,9 +69,7 @@ class IdiomExplanation extends Equatable {
 /// Parse equivalents from JSON (handles both Map and other formats)
 Map<String, String> _parseEquivalents(dynamic equivalentsData) {
   if (equivalentsData is Map<dynamic, dynamic>) {
-    return Map<String, String>.from(
-      equivalentsData.cast<String, String>(),
-    );
+    return Map<String, String>.from(equivalentsData.cast<String, String>());
   }
   return {};
 }

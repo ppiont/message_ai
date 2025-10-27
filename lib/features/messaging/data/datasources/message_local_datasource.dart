@@ -226,6 +226,10 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
   // ============================================================================
 
   /// Converts a domain Message entity to a Drift MessagesCompanion for insert/update.
+  /// Converts a domain Message to Drift MessagesCompanion for insertion.
+  ///
+  /// Note: status, deliveredToJson, readByJson are deprecated and set to default values.
+  /// Status tracking is now done via MessageStatus table.
   MessagesCompanion _messageToCompanion(
     String conversationId,
     Message message,
@@ -236,7 +240,9 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
     senderId: message.senderId,
     timestamp: message.timestamp,
     messageType: Value(message.type),
-    status: Value(message.status),
+    status: const Value(
+      'sent',
+    ), // Deprecated field, always 'sent' for new messages
     detectedLanguage: Value(message.detectedLanguage),
     translations: Value(
       message.translations != null
@@ -261,28 +267,24 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
           ? jsonEncode(message.contextDetails!.toJson())
           : null,
     ),
-    deliveredToJson: Value(
-      message.deliveredTo != null
-          ? _serializeTimestampMap(message.deliveredTo!)
-          : null,
-    ),
-    readByJson: Value(
-      message.readBy != null
-          ? _serializeTimestampMap(message.readBy!)
-          : null,
-    ),
+    // Deprecated fields - no longer used, set to null
+    deliveredToJson: const Value(null),
+    readByJson: const Value(null),
     syncStatus: const Value('pending'),
     retryCount: const Value(0),
   );
 
   /// Converts a Drift MessageEntity to a domain Message entity.
+  ///
+  /// Note: Ignores deprecated fields (status, deliveredToJson, readByJson).
+  /// Status is now tracked via MessageStatus table.
   Message _entityToMessage(MessageEntity entity) => MessageModel(
     id: entity.id,
     text: entity.messageText,
     senderId: entity.senderId,
     timestamp: entity.timestamp,
     type: entity.messageType,
-    status: entity.status,
+    // Note: entity.status, entity.deliveredToJson, entity.readByJson ignored
     detectedLanguage: entity.detectedLanguage,
     translations: entity.translations != null
         ? _deserializeTranslations(entity.translations!)
@@ -300,12 +302,6 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
     culturalHint: entity.culturalHint,
     contextDetails: entity.contextDetails != null
         ? _deserializeContextDetails(entity.contextDetails!)
-        : null,
-    deliveredTo: entity.deliveredToJson != null
-        ? _deserializeTimestampMap(entity.deliveredToJson!)
-        : null,
-    readBy: entity.readByJson != null
-        ? _deserializeTimestampMap(entity.readByJson!)
         : null,
   );
 
@@ -364,34 +360,6 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
     try {
       final decoded = jsonDecode(json) as List<dynamic>;
       return decoded.map((e) => (e as num).toDouble()).toList();
-    } catch (e) {
-      return null;
-    }
-  }
-
-  /// Serializes a timestamp map to JSON for Drift storage.
-  ///
-  /// Converts `Map<String, DateTime>` to JSON string with ISO 8601 timestamps.
-  String _serializeTimestampMap(Map<String, DateTime> map) {
-    final serialized = map.map((userId, timestamp) =>
-      MapEntry(userId, timestamp.toIso8601String()),
-    );
-    return jsonEncode(serialized);
-  }
-
-  /// Deserializes a timestamp map from JSON stored in Drift.
-  ///
-  /// Converts JSON string back to `Map<String, DateTime>`.
-  Map<String, DateTime>? _deserializeTimestampMap(String json) {
-    try {
-      final decoded = jsonDecode(json) as Map<String, dynamic>;
-      final result = <String, DateTime>{};
-      decoded.forEach((userId, timestamp) {
-        if (timestamp != null) {
-          result[userId] = DateTime.parse(timestamp as String);
-        }
-      });
-      return result;
     } catch (e) {
       return null;
     }
@@ -830,21 +798,7 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
       return true;
     }
 
-    // Check if status differs (but allow progression: sent -> delivered -> read)
-    if (localMessage.status != remoteMessage.status) {
-      // Status progression is not a conflict
-      final statusProgression = ['sent', 'delivered', 'read'];
-      final localIndex = statusProgression.indexOf(localMessage.status);
-      final remoteIndex = statusProgression.indexOf(remoteMessage.status);
-
-      // If remote is further along, it's progression, not conflict
-      if (remoteIndex > localIndex) {
-        return false;
-      }
-
-      // Otherwise it's a conflict
-      return true;
-    }
+    // Note: Status comparison removed - status now tracked separately via MessageStatus table
 
     // Check if timestamps are significantly different (more than 1 second)
     final timeDiff = localMessage.timestamp.difference(remoteMessage.timestamp);
@@ -937,12 +891,7 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
     }
 
     // Use most advanced status (progression: sent -> delivered -> read)
-    final statusProgression = ['sent', 'delivered', 'read'];
-    final localStatusIndex = statusProgression.indexOf(localMessage.status);
-    final remoteStatusIndex = statusProgression.indexOf(remoteMessage.status);
-    final mergedStatus = localStatusIndex > remoteStatusIndex
-        ? localMessage.status
-        : remoteMessage.status;
+    // Note: Status merging removed - status now tracked separately via MessageStatus table
 
     // Merge metadata - OR boolean flags, prefer higher priority
     final mergedMetadata = MessageMetadata(
@@ -963,7 +912,7 @@ class MessageLocalDataSourceImpl implements MessageLocalDataSource {
       senderId: remoteMessage.senderId,
       timestamp: remoteMessage.timestamp, // Server timestamp wins
       type: remoteMessage.type,
-      status: mergedStatus,
+      // Note: status removed - tracked separately
       detectedLanguage: remoteMessage.detectedLanguage,
       translations: mergedTranslations.isNotEmpty ? mergedTranslations : null,
       replyTo: remoteMessage.replyTo,

@@ -55,6 +55,14 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
             ..limit(limit))
           .watch();
 
+  /// Watch ALL messages across all conversations (reactive stream)
+  ///
+  /// Used for background delivery status marking
+  /// Emits whenever any message is added/updated in the local database
+  Stream<List<MessageEntity>> watchAllMessages() => (select(
+    messages,
+  )..orderBy([(m) => OrderingTerm.desc(m.timestamp)])).watch();
+
   /// Get messages that need to be synced
   ///
   /// Returns messages with syncStatus = 'pending' or 'failed'

@@ -5,17 +5,22 @@ import 'package:equatable/equatable.dart';
 /// This entity follows the clean architecture pattern and represents
 /// the core business logic for conversations.
 class Conversation extends Equatable {
-
   const Conversation({
     required this.documentId,
     required this.type,
     required this.participantIds,
     required this.participants,
-    required this.lastUpdatedAt, required this.initiatedAt, required this.unreadCount, required this.translationEnabled, required this.autoDetectLanguage, this.lastMessage,
+    required this.lastUpdatedAt,
+    required this.initiatedAt,
+    required this.unreadCount,
+    required this.translationEnabled,
+    required this.autoDetectLanguage,
+    this.lastMessage,
     this.groupName,
     this.groupImage,
     this.adminIds,
   });
+
   /// Unique identifier for the conversation
   final String documentId;
 
@@ -71,20 +76,20 @@ class Conversation extends Equatable {
     String? groupImage,
     List<String>? adminIds,
   }) => Conversation(
-      documentId: documentId ?? this.documentId,
-      type: type ?? this.type,
-      participantIds: participantIds ?? this.participantIds,
-      participants: participants ?? this.participants,
-      lastMessage: lastMessage ?? this.lastMessage,
-      lastUpdatedAt: lastUpdatedAt ?? this.lastUpdatedAt,
-      initiatedAt: initiatedAt ?? this.initiatedAt,
-      unreadCount: unreadCount ?? this.unreadCount,
-      translationEnabled: translationEnabled ?? this.translationEnabled,
-      autoDetectLanguage: autoDetectLanguage ?? this.autoDetectLanguage,
-      groupName: groupName ?? this.groupName,
-      groupImage: groupImage ?? this.groupImage,
-      adminIds: adminIds ?? this.adminIds,
-    );
+    documentId: documentId ?? this.documentId,
+    type: type ?? this.type,
+    participantIds: participantIds ?? this.participantIds,
+    participants: participants ?? this.participants,
+    lastMessage: lastMessage ?? this.lastMessage,
+    lastUpdatedAt: lastUpdatedAt ?? this.lastUpdatedAt,
+    initiatedAt: initiatedAt ?? this.initiatedAt,
+    unreadCount: unreadCount ?? this.unreadCount,
+    translationEnabled: translationEnabled ?? this.translationEnabled,
+    autoDetectLanguage: autoDetectLanguage ?? this.autoDetectLanguage,
+    groupName: groupName ?? this.groupName,
+    groupImage: groupImage ?? this.groupImage,
+    adminIds: adminIds ?? this.adminIds,
+  );
 
   /// Returns true if this is a direct (1-to-1) conversation
   bool get isDirect => type == 'direct';
@@ -97,30 +102,30 @@ class Conversation extends Equatable {
 
   @override
   List<Object?> get props => [
-        documentId,
-        type,
-        participantIds,
-        participants,
-        lastMessage,
-        lastUpdatedAt,
-        initiatedAt,
-        unreadCount,
-        translationEnabled,
-        autoDetectLanguage,
-        groupName,
-        groupImage,
-        adminIds,
-      ];
+    documentId,
+    type,
+    participantIds,
+    participants,
+    lastMessage,
+    lastUpdatedAt,
+    initiatedAt,
+    unreadCount,
+    translationEnabled,
+    autoDetectLanguage,
+    groupName,
+    groupImage,
+    adminIds,
+  ];
 }
 
 /// Participant details in a conversation
 class Participant extends Equatable {
-
   const Participant({
     required this.uid,
     required this.preferredLanguage,
     this.imageUrl,
   });
+
   /// User ID
   /// Display name is looked up dynamically via UserLookupProvider
   final String uid;
@@ -137,10 +142,10 @@ class Participant extends Equatable {
     String? imageUrl,
     String? preferredLanguage,
   }) => Participant(
-      uid: uid ?? this.uid,
-      imageUrl: imageUrl ?? this.imageUrl,
-      preferredLanguage: preferredLanguage ?? this.preferredLanguage,
-    );
+    uid: uid ?? this.uid,
+    imageUrl: imageUrl ?? this.imageUrl,
+    preferredLanguage: preferredLanguage ?? this.preferredLanguage,
+  );
 
   @override
   List<Object?> get props => [uid, imageUrl, preferredLanguage];
@@ -148,7 +153,6 @@ class Participant extends Equatable {
 
 /// Details of the last message in a conversation
 class LastMessage extends Equatable {
-
   const LastMessage({
     required this.text,
     required this.senderId,
@@ -156,6 +160,7 @@ class LastMessage extends Equatable {
     required this.type,
     this.translations,
   });
+
   /// Message text content
   final String text;
 
@@ -180,19 +185,13 @@ class LastMessage extends Equatable {
     String? type,
     Map<String, String>? translations,
   }) => LastMessage(
-      text: text ?? this.text,
-      senderId: senderId ?? this.senderId,
-      timestamp: timestamp ?? this.timestamp,
-      type: type ?? this.type,
-      translations: translations ?? this.translations,
-    );
+    text: text ?? this.text,
+    senderId: senderId ?? this.senderId,
+    timestamp: timestamp ?? this.timestamp,
+    type: type ?? this.type,
+    translations: translations ?? this.translations,
+  );
 
   @override
-  List<Object?> get props => [
-        text,
-        senderId,
-        timestamp,
-        type,
-        translations,
-      ];
+  List<Object?> get props => [text, senderId, timestamp, type, translations];
 }

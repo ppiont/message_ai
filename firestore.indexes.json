@@ -29,20 +29,6 @@
             ]
         },
         {
-            "collectionGroup": "group-conversations",
-            "queryScope": "COLLECTION",
-            "fields": [
-                {
-                    "fieldPath": "participantIds",
-                    "arrayConfig": "CONTAINS"
-                },
-                {
-                    "fieldPath": "lastUpdatedAt",
-                    "order": "DESCENDING"
-                }
-            ]
-        },
-        {
             "collectionGroup": "messages",
             "queryScope": "COLLECTION_GROUP",
             "fields": [
@@ -65,6 +51,25 @@
                 {
                     "order": "ASCENDING",
                     "queryScope": "COLLECTION"
+                }
+            ]
+        },
+        {
+            "collectionGroup": "messages",
+            "fieldPath": "embedding",
+            "indexes": [],
+            "vectorConfig": {
+                "dimension": 768,
+                "flat": {}
+            }
+        },
+        {
+            "collectionGroup": "status",
+            "fieldPath": "conversationId",
+            "indexes": [
+                {
+                    "order": "ASCENDING",
+                    "queryScope": "COLLECTION_GROUP"
                 }
             ]
         }

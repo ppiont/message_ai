@@ -52,6 +52,32 @@ abstract class ConversationRemoteDataSource {
     String userId,
     int count,
   );
+
+  // ========== Group-specific operations ==========
+
+  /// Adds a member to a group
+  Future<void> addMember(
+    String conversationId,
+    String userId,
+    String userName,
+    String preferredLanguage,
+  );
+
+  /// Removes a member from a group
+  Future<void> removeMember(String conversationId, String userId);
+
+  /// Updates group information (name, image, description)
+  Future<void> updateGroupInfo({
+    required String conversationId,
+    String? groupName,
+    String? groupImage,
+  });
+
+  /// Promotes a member to admin
+  Future<void> promoteToAdmin(String conversationId, String userId);
+
+  /// Demotes an admin to regular member
+  Future<void> demoteFromAdmin(String conversationId, String userId);
 }
 
 /// Implementation of [ConversationRemoteDataSource] using Firebase Firestore.
@@ -60,43 +86,10 @@ class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
     : _firestore = firestore;
   final FirebaseFirestore _firestore;
 
-  // Cache to track which collection each conversation belongs to
-  final Map<String, String> _conversationTypeCache = {};
-
   static const String _conversationsCollection = 'conversations';
-  static const String _groupConversationsCollection = 'group-conversations';
 
   CollectionReference<Map<String, dynamic>> get _conversationsRef =>
       _firestore.collection(_conversationsCollection);
-
-  /// Helper to get the correct conversation document reference.
-  /// Automatically determines if it's a group or direct conversation.
-  Future<DocumentReference<Map<String, dynamic>>> _conversationDoc(
-    String conversationId,
-  ) async {
-    // Check cache first
-    if (_conversationTypeCache.containsKey(conversationId)) {
-      final collection = _conversationTypeCache[conversationId]!;
-      return _firestore.collection(collection).doc(conversationId);
-    }
-
-    // Check group-conversations collection first (most specific)
-    final groupDoc = await _firestore
-        .collection(_groupConversationsCollection)
-        .doc(conversationId)
-        .get();
-
-    if (groupDoc.exists) {
-      _conversationTypeCache[conversationId] = _groupConversationsCollection;
-      return _firestore
-          .collection(_groupConversationsCollection)
-          .doc(conversationId);
-    }
-
-    // Fall back to conversations collection
-    _conversationTypeCache[conversationId] = _conversationsCollection;
-    return _firestore.collection(_conversationsCollection).doc(conversationId);
-  }
 
   @override
   Future<ConversationModel> createConversation(
@@ -323,8 +316,7 @@ class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
     DateTime timestamp,
   ) async {
     try {
-      final conversationDoc = await _conversationDoc(conversationId);
-      await conversationDoc.update({
+      await _conversationsRef.doc(conversationId).update({
         'lastMessage': {
           'text': messageText,
           'senderId': senderId,
@@ -353,8 +345,9 @@ class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
     int count,
   ) async {
     try {
-      final conversationDoc = await _conversationDoc(conversationId);
-      await conversationDoc.update({'unreadCount.$userId': count});
+      await _conversationsRef.doc(conversationId).update({
+        'unreadCount.$userId': count,
+      });
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {
@@ -363,6 +356,177 @@ class ConversationRemoteDataSourceImpl implements ConversationRemoteDataSource {
       }
       throw UnknownException(
         message: 'Failed to update unread count',
+        originalError: e,
+      );
+    }
+  }
+
+  // ========== Group-specific operations ==========
+
+  @override
+  Future<void> addMember(
+    String conversationId,
+    String userId,
+    String userName,
+    String preferredLanguage,
+  ) async {
+    try {
+      final docRef = _conversationsRef.doc(conversationId);
+
+      // Add member to participants array
+      await docRef.update({
+        'participantIds': FieldValue.arrayUnion([userId]),
+        'participants': FieldValue.arrayUnion([
+          {
+            'uid': userId,
+            'name': userName,
+            'preferredLanguage': preferredLanguage,
+          },
+        ]),
+        'lastUpdatedAt': FieldValue.serverTimestamp(),
+      });
+    } on FirebaseException catch (e) {
+      throw _mapFirestoreException(e);
+    } catch (e) {
+      if (e is AppException) {
+        rethrow;
+      }
+      throw UnknownException(
+        message: 'Failed to add member to group',
+        originalError: e,
+      );
+    }
+  }
+
+  @override
+  Future<void> removeMember(String conversationId, String userId) async {
+    try {
+      final docRef = _conversationsRef.doc(conversationId);
+
+      // Get current participants
+      final docSnapshot = await docRef.get();
+      if (!docSnapshot.exists) {
+        throw RecordNotFoundException(
+          recordType: 'Conversation',
+          recordId: conversationId,
+        );
+      }
+
+      final data = docSnapshot.data();
+      if (data == null) {
+        throw RecordNotFoundException(
+          recordType: 'Conversation',
+          recordId: conversationId,
+        );
+      }
+
+      final participants = data['participants'] as List<dynamic>? ?? [];
+      final updatedParticipants = participants
+          .cast<Map<String, dynamic>>()
+          .where((p) => p['uid'] != userId)
+          .toList();
+
+      // Remove member from participants array and their unread count
+      await docRef.update({
+        'participantIds': FieldValue.arrayRemove([userId]),
+        'participants': updatedParticipants,
+        'adminIds': FieldValue.arrayRemove([
+          userId,
+        ]), // Also remove from admins if present
+        'unreadCount.$userId': FieldValue.delete(), // Remove their unread count
+        'lastUpdatedAt': FieldValue.serverTimestamp(),
+      });
+    } on FirebaseException catch (e) {
+      throw _mapFirestoreException(e);
+    } catch (e) {
+      if (e is AppException) {
+        rethrow;
+      }
+      throw UnknownException(
+        message: 'Failed to remove member from group',
+        originalError: e,
+      );
+    }
+  }
+
+  @override
+  Future<void> updateGroupInfo({
+    required String conversationId,
+    String? groupName,
+    String? groupImage,
+  }) async {
+    try {
+      final docRef = _conversationsRef.doc(conversationId);
+
+      // Build update map
+      final updates = <String, dynamic>{
+        'lastUpdatedAt': FieldValue.serverTimestamp(),
+      };
+
+      if (groupName != null) {
+        updates['groupName'] = groupName;
+      }
+
+      if (groupImage != null) {
+        updates['groupImage'] = groupImage;
+      }
+
+      // Update group info
+      await docRef.update(updates);
+    } on FirebaseException catch (e) {
+      throw _mapFirestoreException(e);
+    } catch (e) {
+      if (e is AppException) {
+        rethrow;
+      }
+      throw UnknownException(
+        message: 'Failed to update group info',
+        originalError: e,
+      );
+    }
+  }
+
+  @override
+  Future<void> promoteToAdmin(String conversationId, String userId) async {
+    try {
+      final docRef = _conversationsRef.doc(conversationId);
+
+      // Add user to admins array
+      await docRef.update({
+        'adminIds': FieldValue.arrayUnion([userId]),
+        'lastUpdatedAt': FieldValue.serverTimestamp(),
+      });
+    } on FirebaseException catch (e) {
+      throw _mapFirestoreException(e);
+    } catch (e) {
+      if (e is AppException) {
+        rethrow;
+      }
+      throw UnknownException(
+        message: 'Failed to promote member to admin',
+        originalError: e,
+      );
+    }
+  }
+
+  @override
+  Future<void> demoteFromAdmin(String conversationId, String userId) async {
+    try {
+      final docRef = _conversationsRef.doc(conversationId);
+
+      // Remove user from admins array
+      await docRef.update({
+        'adminIds': FieldValue.arrayRemove([userId]),
+        'lastUpdatedAt': FieldValue.serverTimestamp(),
+      });
+    } on FirebaseException catch (e) {
+      throw _mapFirestoreException(e);
+    } catch (e) {
+      if (e is AppException) {
+        rethrow;
+      }
+      throw UnknownException(
+        message: 'Failed to demote admin',
         originalError: e,
       );
     }

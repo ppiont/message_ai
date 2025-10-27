@@ -79,12 +79,11 @@ class MessageContextDetails extends Equatable {
     String? formality,
     String? culturalNote,
     List<IdiomExplanation>? idioms,
-  }) =>
-      MessageContextDetails(
-        formality: formality ?? this.formality,
-        culturalNote: culturalNote ?? this.culturalNote,
-        idioms: idioms ?? this.idioms,
-      );
+  }) => MessageContextDetails(
+    formality: formality ?? this.formality,
+    culturalNote: culturalNote ?? this.culturalNote,
+    idioms: idioms ?? this.idioms,
+  );
 
   @override
   List<Object?> get props => [formality, culturalNote, idioms];

@@ -26,21 +26,21 @@ sealed class FormalityState extends Equatable {
 
   /// Get the adjusted text if available, otherwise null
   String? get adjustedText => switch (this) {
-        FormalityStateSuccess(adjustedText: final text) => text,
-        _ => null,
-      };
+    FormalityStateSuccess(adjustedText: final text) => text,
+    _ => null,
+  };
 
   /// Get the detected formality level if available, otherwise null
   FormalityLevel? get detectedFormality => switch (this) {
-        FormalityStateSuccess(detectedFormality: final level) => level,
-        _ => null,
-      };
+    FormalityStateSuccess(detectedFormality: final level) => level,
+    _ => null,
+  };
 
   /// Get the failure if available, otherwise null
   Failure? get failure => switch (this) {
-        FormalityStateError(failure: final f) => f,
-        _ => null,
-      };
+    FormalityStateError(failure: final f) => f,
+    _ => null,
+  };
 
   @override
   List<Object?> get props => [];

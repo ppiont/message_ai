@@ -29,9 +29,7 @@ abstract class AuthRepository {
   /// Sends a password reset email
   ///
   /// Returns [Right(Unit)] on success or [Left(Failure)] on error
-  Future<Either<Failure, Unit>> sendPasswordResetEmail({
-    required String email,
-  });
+  Future<Either<Failure, Unit>> sendPasswordResetEmail({required String email});
 
   /// Sends an email verification link to the current user
   ///
@@ -54,7 +52,7 @@ abstract class AuthRepository {
     required String phoneNumber,
     required void Function(String verificationId, int? resendToken) onCodeSent,
     required void Function(firebase_auth.PhoneAuthCredential credential)
-        onVerificationCompleted,
+    onVerificationCompleted,
     Duration timeout = const Duration(seconds: 60),
   });
 

@@ -5,8 +5,8 @@ import 'package:message_ai/features/messaging/domain/entities/message_context_de
 /// Data model for Message that adds serialization capabilities.
 ///
 /// This model extends the domain [Message] entity and adds fromJson/toJson methods
-/// for Firebase Firestore integration. It handles JSON serialization of per-user
-/// read receipt maps and timestamp conversions.
+/// for Firebase Firestore integration. Status tracking is now handled separately
+/// via MessageStatus table/Firestore subcollections.
 class MessageModel extends Message {
   /// Creates a new message model instance.
   const MessageModel({
@@ -23,91 +23,61 @@ class MessageModel extends Message {
     super.aiAnalysis,
     super.culturalHint,
     super.contextDetails,
-    super.deliveredTo,
-    super.readBy,
-    super.status = 'sent',
   });
 
   /// Creates a MessageModel from a domain Message entity
   factory MessageModel.fromEntity(Message message) => MessageModel(
-      id: message.id,
-      text: message.text,
-      senderId: message.senderId,
-      timestamp: message.timestamp,
-      type: message.type,
-      status: message.status,
-      detectedLanguage: message.detectedLanguage,
-      translations: message.translations,
-      replyTo: message.replyTo,
-      metadata: message.metadata,
-      embedding: message.embedding,
-      aiAnalysis: message.aiAnalysis,
-      culturalHint: message.culturalHint,
-      contextDetails: message.contextDetails,
-      deliveredTo: message.deliveredTo,
-      readBy: message.readBy,
-    );
+    id: message.id,
+    text: message.text,
+    senderId: message.senderId,
+    timestamp: message.timestamp,
+    type: message.type,
+    detectedLanguage: message.detectedLanguage,
+    translations: message.translations,
+    replyTo: message.replyTo,
+    metadata: message.metadata,
+    embedding: message.embedding,
+    aiAnalysis: message.aiAnalysis,
+    culturalHint: message.culturalHint,
+    contextDetails: message.contextDetails,
+  );
 
   /// Creates a MessageModel from JSON (Firestore document)
-  factory MessageModel.fromJson(Map<String, dynamic> json) => MessageModel(
-      id: json['id'] as String,
-      text: json['text'] as String,
-      senderId: json['senderId'] as String,
-      timestamp: _parseDateTime(json['timestamp']),
-      type: json['type'] as String,
-      status: json['status'] as String? ?? 'sent',
-      detectedLanguage: json['detectedLanguage'] as String?,
-      translations: json['translations'] != null
-          ? Map<String, String>.from(json['translations'] as Map)
-          : null,
-      replyTo: json['replyTo'] as String?,
-      metadata: MessageMetadataModel.fromJson(
-        json['metadata'] as Map<String, dynamic>,
-      ),
-      embedding: json['embedding'] != null
-          ? List<double>.from(
-              (json['embedding'] as List).map((e) => (e as num).toDouble()),
-            )
-          : null,
-      aiAnalysis: json['aiAnalysis'] != null
-          ? MessageAIAnalysisModel.fromJson(
-              json['aiAnalysis'] as Map<String, dynamic>,
-            )
-          : null,
-      culturalHint: json['culturalHint'] as String?,
-      contextDetails: json['contextDetails'] != null
-          ? MessageContextDetails.fromJson(
-              json['contextDetails'] as Map<String, dynamic>,
-            )
-          : null,
-      // NEW: Parse per-user read receipts
-      deliveredTo: _parseTimestampMap(json['deliveredTo']),
-      readBy: _parseTimestampMap(json['readBy']),
-    );
-
-  /// Parses timestamp map from Firestore JSON.
   ///
-  /// Converts Firestore Timestamp objects to Dart DateTime instances.
-  /// Returns null if the input is null, but returns an empty map if the
-  /// input is an empty map (to maintain consistency with message creation).
-  static Map<String, DateTime>? _parseTimestampMap(final dynamic value) {
-    if (value == null) {
-      return null;
-    }
-
-    final map = value as Map<String, dynamic>;
-    final result = <String, DateTime>{};
-
-    map.forEach((final userId, final timestamp) {
-      // Skip null timestamps (incomplete/corrupted data)
-      if (timestamp != null) {
-        result[userId] = _parseDateTime(timestamp);
-      }
-    });
-
-    // Return empty map instead of null to match message creation behavior
-    return result;
-  }
+  /// Note: Ignores deprecated fields (status, deliveredTo, readBy) for backward compatibility.
+  /// Status is now tracked separately via MessageStatus table/subcollections.
+  factory MessageModel.fromJson(Map<String, dynamic> json) => MessageModel(
+    id: json['id'] as String,
+    text: json['text'] as String,
+    senderId: json['senderId'] as String,
+    timestamp: _parseDateTime(json['timestamp']),
+    type: json['type'] as String,
+    // Note: json['status'], json['deliveredTo'], json['readBy'] are ignored (backward compatibility)
+    detectedLanguage: json['detectedLanguage'] as String?,
+    translations: json['translations'] != null
+        ? Map<String, String>.from(json['translations'] as Map)
+        : null,
+    replyTo: json['replyTo'] as String?,
+    metadata: MessageMetadataModel.fromJson(
+      json['metadata'] as Map<String, dynamic>,
+    ),
+    embedding: json['embedding'] != null
+        ? List<double>.from(
+            (json['embedding'] as List).map((e) => (e as num).toDouble()),
+          )
+        : null,
+    aiAnalysis: json['aiAnalysis'] != null
+        ? MessageAIAnalysisModel.fromJson(
+            json['aiAnalysis'] as Map<String, dynamic>,
+          )
+        : null,
+    culturalHint: json['culturalHint'] as String?,
+    contextDetails: json['contextDetails'] != null
+        ? MessageContextDetails.fromJson(
+            json['contextDetails'] as Map<String, dynamic>,
+          )
+        : null,
+  );
 
   /// Parses a DateTime from Firestore Timestamp or ISO 8601 string.
   ///
@@ -125,60 +95,43 @@ class MessageModel extends Message {
   }
 
   /// Converts this MessageModel to JSON for Firestore
-  Map<String, dynamic> toJson() => {
-      'id': id,
-      'text': text,
-      'senderId': senderId,
-      'timestamp': Timestamp.fromDate(timestamp), // Use Firestore Timestamp
-      'type': type,
-      'status': status,
-      if (detectedLanguage != null) 'detectedLanguage': detectedLanguage,
-      if (translations != null) 'translations': translations,
-      if (replyTo != null) 'replyTo': replyTo,
-      'metadata': MessageMetadataModel.fromEntity(metadata).toJson(),
-      if (embedding != null) 'embedding': embedding,
-      if (aiAnalysis != null)
-        'aiAnalysis': MessageAIAnalysisModel.fromEntity(aiAnalysis!).toJson(),
-      if (culturalHint != null) 'culturalHint': culturalHint,
-      if (contextDetails != null) 'contextDetails': contextDetails!.toJson(),
-      // NEW: Serialize per-user read receipts
-      if (deliveredTo != null) 'deliveredTo': _serializeTimestampMap(deliveredTo!),
-      if (readBy != null) 'readBy': _serializeTimestampMap(readBy!),
-    };
-
-  /// Serializes a timestamp map to Firestore format.
   ///
-  /// Converts Dart DateTime instances to Firestore Timestamp objects
-  /// for proper JSON serialization.
-  static Map<String, dynamic> _serializeTimestampMap(
-    final Map<String, DateTime> map,
-  ) {
-    final result = <String, dynamic>{};
-    map.forEach((final userId, final timestamp) {
-      result[userId] = Timestamp.fromDate(timestamp);
-    });
-    return result;
-  }
+  /// Note: Does not serialize status fields (status, deliveredTo, readBy).
+  /// Status is now tracked separately via Firestore subcollections.
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'text': text,
+    'senderId': senderId,
+    'timestamp': Timestamp.fromDate(timestamp), // Use Firestore Timestamp
+    'type': type,
+    // Note: status, deliveredTo, readBy no longer serialized
+    if (detectedLanguage != null) 'detectedLanguage': detectedLanguage,
+    if (translations != null) 'translations': translations,
+    if (replyTo != null) 'replyTo': replyTo,
+    'metadata': MessageMetadataModel.fromEntity(metadata).toJson(),
+    if (embedding != null) 'embedding': embedding,
+    if (aiAnalysis != null)
+      'aiAnalysis': MessageAIAnalysisModel.fromEntity(aiAnalysis!).toJson(),
+    if (culturalHint != null) 'culturalHint': culturalHint,
+    if (contextDetails != null) 'contextDetails': contextDetails!.toJson(),
+  };
 
   /// Converts this model to a domain entity
   Message toEntity() => Message(
-      id: id,
-      text: text,
-      senderId: senderId,
-      timestamp: timestamp,
-      type: type,
-      status: status,
-      detectedLanguage: detectedLanguage,
-      translations: translations,
-      replyTo: replyTo,
-      metadata: metadata,
-      embedding: embedding,
-      aiAnalysis: aiAnalysis,
-      culturalHint: culturalHint,
-      contextDetails: contextDetails,
-      deliveredTo: deliveredTo,
-      readBy: readBy,
-    );
+    id: id,
+    text: text,
+    senderId: senderId,
+    timestamp: timestamp,
+    type: type,
+    detectedLanguage: detectedLanguage,
+    translations: translations,
+    replyTo: replyTo,
+    metadata: metadata,
+    embedding: embedding,
+    aiAnalysis: aiAnalysis,
+    culturalHint: culturalHint,
+    contextDetails: contextDetails,
+  );
 
   /// Creates a copy of this model with the given fields replaced
   @override
@@ -188,7 +141,6 @@ class MessageModel extends Message {
     String? senderId,
     DateTime? timestamp,
     String? type,
-    String? status,
     String? detectedLanguage,
     Map<String, String>? translations,
     String? replyTo,
@@ -197,26 +149,21 @@ class MessageModel extends Message {
     MessageAIAnalysis? aiAnalysis,
     String? culturalHint,
     MessageContextDetails? contextDetails,
-    Map<String, DateTime>? deliveredTo,
-    Map<String, DateTime>? readBy,
   }) => MessageModel(
-      id: id ?? this.id,
-      text: text ?? this.text,
-      senderId: senderId ?? this.senderId,
-      timestamp: timestamp ?? this.timestamp,
-      type: type ?? this.type,
-      status: status ?? this.status,
-      detectedLanguage: detectedLanguage ?? this.detectedLanguage,
-      translations: translations ?? this.translations,
-      replyTo: replyTo ?? this.replyTo,
-      metadata: metadata ?? this.metadata,
-      embedding: embedding ?? this.embedding,
-      aiAnalysis: aiAnalysis ?? this.aiAnalysis,
-      culturalHint: culturalHint ?? this.culturalHint,
-      contextDetails: contextDetails ?? this.contextDetails,
-      deliveredTo: deliveredTo ?? this.deliveredTo,
-      readBy: readBy ?? this.readBy,
-    );
+    id: id ?? this.id,
+    text: text ?? this.text,
+    senderId: senderId ?? this.senderId,
+    timestamp: timestamp ?? this.timestamp,
+    type: type ?? this.type,
+    detectedLanguage: detectedLanguage ?? this.detectedLanguage,
+    translations: translations ?? this.translations,
+    replyTo: replyTo ?? this.replyTo,
+    metadata: metadata ?? this.metadata,
+    embedding: embedding ?? this.embedding,
+    aiAnalysis: aiAnalysis ?? this.aiAnalysis,
+    culturalHint: culturalHint ?? this.culturalHint,
+    contextDetails: contextDetails ?? this.contextDetails,
+  );
 }
 
 /// Data model for [MessageMetadata] with Firestore serialization.
@@ -249,19 +196,19 @@ class MessageMetadataModel extends MessageMetadata {
 
   /// Converts this model to JSON for Firestore.
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'edited': edited,
-        'deleted': deleted,
-        'priority': priority,
-        'hasIdioms': hasIdioms,
-      };
+    'edited': edited,
+    'deleted': deleted,
+    'priority': priority,
+    'hasIdioms': hasIdioms,
+  };
 
   /// Converts this model to a domain entity.
   MessageMetadata toEntity() => MessageMetadata(
-        edited: edited,
-        deleted: deleted,
-        priority: priority,
-        hasIdioms: hasIdioms,
-      );
+    edited: edited,
+    deleted: deleted,
+    priority: priority,
+    hasIdioms: hasIdioms,
+  );
 }
 
 /// Data model for [MessageAIAnalysis] with Firestore serialization.
@@ -291,15 +238,15 @@ class MessageAIAnalysisModel extends MessageAIAnalysis {
 
   /// Converts this model to JSON for Firestore.
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'priority': priority,
-        'actionItems': actionItems,
-        'sentiment': sentiment,
-      };
+    'priority': priority,
+    'actionItems': actionItems,
+    'sentiment': sentiment,
+  };
 
   /// Converts this model to a domain entity.
   MessageAIAnalysis toEntity() => MessageAIAnalysis(
-        priority: priority,
-        actionItems: actionItems,
-        sentiment: sentiment,
-      );
+    priority: priority,
+    actionItems: actionItems,
+    sentiment: sentiment,
+  );
 }

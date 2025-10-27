@@ -5,10 +5,7 @@ import 'package:equatable/equatable.dart';
 /// Smart replies are AI-generated response suggestions that match the user's
 /// communication style and are contextually relevant to the incoming message.
 class SmartReply extends Equatable {
-  const SmartReply({
-    required this.text,
-    required this.intent,
-  });
+  const SmartReply({required this.text, required this.intent});
 
   /// Creates a SmartReply from JSON data.
   ///
@@ -30,10 +27,7 @@ class SmartReply extends Equatable {
   final String intent;
 
   /// Converts the SmartReply to JSON.
-  Map<String, dynamic> toJson() => {
-    'text': text,
-    'intent': intent,
-  };
+  Map<String, dynamic> toJson() => {'text': text, 'intent': intent};
 
   @override
   List<Object?> get props => [text, intent];
