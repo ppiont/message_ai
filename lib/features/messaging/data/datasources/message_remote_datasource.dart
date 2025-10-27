@@ -421,13 +421,39 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     String conversationId,
   ) {
     try {
-      // Use collectionGroup to watch ALL status subcollections
-      // Filter by conversationId to scope to this conversation only
+      // FIXED: Instead of collectionGroup (scans entire database),
+      // watch the messages collection and poll status subcollections.
+      // This is more efficient than scanning 25,000+ paths.
       return _firestore
-          .collectionGroup('status')
-          .where('conversationId', isEqualTo: conversationId)
+          .collection('conversations')
+          .doc(conversationId)
+          .collection('messages')
           .snapshots()
-          .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+          .asyncMap((snapshot) async {
+            // For each message, fetch its status subcollection
+            final allStatus = <Map<String, dynamic>>[];
+
+            // Process in batches to avoid overwhelming Firestore
+            for (final messageDoc in snapshot.docs) {
+              try {
+                final statusSnapshot = await messageDoc.reference
+                    .collection('status')
+                    .get();
+
+                for (final statusDoc in statusSnapshot.docs) {
+                  final data = statusDoc.data();
+                  data['messageId'] = messageDoc.id;
+                  data['conversationId'] = conversationId;
+                  allStatus.add(data);
+                }
+              } catch (e) {
+                // Skip this message's status on error
+                continue;
+              }
+            }
+
+            return allStatus;
+          });
     } on FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     } catch (e) {

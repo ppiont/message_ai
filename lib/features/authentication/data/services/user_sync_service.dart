@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:message_ai/core/database/app_database.dart';
-import 'package:message_ai/core/utils/performance_monitor.dart';
 import 'package:message_ai/features/authentication/data/services/user_cache_service.dart';
 import 'package:message_ai/features/authentication/domain/repositories/user_repository.dart';
 
@@ -96,15 +95,10 @@ class UserSyncService {
     _lastSyncTime = now;
     _lastSyncedUserIds = userIdSet;
 
-    await PerformanceMonitor.track(
-      'UserSync.syncConversationUsers(${participantIds.length} users)',
-      () async {
-        await _userCacheService.cacheUsers(participantIds);
+    await _userCacheService.cacheUsers(participantIds);
 
-        // Start watching these users for real-time updates
-        participantIds.forEach(_watchUser);
-      },
-    );
+    // Start watching these users for real-time updates
+    participantIds.forEach(_watchUser);
   }
 
   /// Sync user when message arrives
@@ -115,13 +109,8 @@ class UserSyncService {
     final cached = await _database.userDao.getUserByUid(senderId);
     if (cached == null) {
       debugPrint('🔄 UserSync: Syncing new message sender: $senderId');
-      await PerformanceMonitor.track(
-        'UserSync.syncMessageSender($senderId)',
-        () async {
-          await _userCacheService.cacheUser(senderId);
-          _watchUser(senderId);
-        },
-      );
+      await _userCacheService.cacheUser(senderId);
+      _watchUser(senderId);
     }
   }
 

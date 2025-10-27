@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart';
+import 'package:rxdart/rxdart.dart';
 
 /// Service for managing user online/offline presence using Firebase Realtime Database.
 ///
@@ -142,36 +143,38 @@ class RtdbPresenceService {
   /// Watches presence for multiple users.
   ///
   /// Returns a stream of `Map<userId, isOnline>`
+  ///
+  /// **Performance optimized**: O(N) instead of O(N²)
+  /// - Subscribes to individual user presence paths
+  /// - No blocking async get() calls inside stream
+  /// - Only updates when relevant user's presence changes
   Stream<Map<String, bool>> watchUsersPresence({
     required List<String> userIds,
-  }) async* {
+  }) {
     if (userIds.isEmpty) {
-      yield {};
-      return;
+      return Stream.value({});
     }
 
-    // Watch all users and combine results
-    await for (final _ in _database.ref('presence').onValue) {
-      final presenceMap = <String, bool>{};
-
-      for (final userId in userIds) {
-        final ref = _database.ref('presence/$userId');
-        try {
-          final snapshot = await ref.get();
-          if (snapshot.exists) {
-            final data = snapshot.value as Map<Object?, Object?>?;
-            presenceMap[userId] = data?['isOnline'] as bool? ?? false;
-          } else {
-            presenceMap[userId] = false;
-          }
-        } catch (e) {
-          debugPrint('⚠️ Presence: Error watching $userId: $e');
-          presenceMap[userId] = false;
+    // Create individual streams for each user (efficient!)
+    final userStreams = userIds.map((userId) {
+      return _database.ref('presence/$userId').onValue.map((event) {
+        if (!event.snapshot.exists) {
+          return MapEntry(userId, false);
         }
-      }
 
-      yield presenceMap;
-    }
+        final data = event.snapshot.value as Map<Object?, Object?>?;
+        final isOnline = data?['isOnline'] as bool? ?? false;
+        return MapEntry(userId, isOnline);
+      }).handleError((Object error) {
+        debugPrint('⚠️ Presence: Error watching $userId: $error');
+        return MapEntry(userId, false);
+      });
+    }).toList();
+
+    // Combine all user streams into a single Map stream
+    return Rx.combineLatestList(userStreams).map((entries) {
+      return Map.fromEntries(entries);
+    });
   }
 }
 

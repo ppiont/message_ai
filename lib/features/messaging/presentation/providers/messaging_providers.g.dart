@@ -1139,7 +1139,7 @@ final class ConversationMessagesStreamProvider
 }
 
 String _$conversationMessagesStreamHash() =>
-    r'a27693bfa6937bb0b9c64b3f938f830bcf287460';
+    r'00d2b7dd72a6b880372d9e0e6d6ba4d3bae31c1e';
 
 /// Stream provider for watching messages in a conversation in real-time.
 ///
@@ -1189,6 +1189,8 @@ final class ConversationMessagesStreamFamily extends $Family
 /// This provider should be watched in the chat page to automatically
 /// mark messages as read. It runs as a side effect separate from the
 /// message stream to avoid feedback loops.
+///
+/// **FIXED**: Removed keepAlive to prevent memory leak from accumulated instances
 
 @ProviderFor(ConversationReadMarker)
 const conversationReadMarkerProvider = ConversationReadMarkerFamily._();
@@ -1198,6 +1200,8 @@ const conversationReadMarkerProvider = ConversationReadMarkerFamily._();
 /// This provider should be watched in the chat page to automatically
 /// mark messages as read. It runs as a side effect separate from the
 /// message stream to avoid feedback loops.
+///
+/// **FIXED**: Removed keepAlive to prevent memory leak from accumulated instances
 final class ConversationReadMarkerProvider
     extends $NotifierProvider<ConversationReadMarker, void> {
   /// Auto-marks incoming messages as read when the conversation is open.
@@ -1205,13 +1209,15 @@ final class ConversationReadMarkerProvider
   /// This provider should be watched in the chat page to automatically
   /// mark messages as read. It runs as a side effect separate from the
   /// message stream to avoid feedback loops.
+  ///
+  /// **FIXED**: Removed keepAlive to prevent memory leak from accumulated instances
   const ConversationReadMarkerProvider._({
     required ConversationReadMarkerFamily super.from,
     required (String, String) super.argument,
   }) : super(
          retry: null,
          name: r'conversationReadMarkerProvider',
-         isAutoDispose: false,
+         isAutoDispose: true,
          dependencies: null,
          $allTransitiveDependencies: null,
        );
@@ -1251,13 +1257,15 @@ final class ConversationReadMarkerProvider
 }
 
 String _$conversationReadMarkerHash() =>
-    r'03aa950d13ddc340e73cda2beeaccb5f05b94a3d';
+    r'd71b1d07b9b93146584b4933e7f4a9ed59fd0203';
 
 /// Auto-marks incoming messages as read when the conversation is open.
 ///
 /// This provider should be watched in the chat page to automatically
 /// mark messages as read. It runs as a side effect separate from the
 /// message stream to avoid feedback loops.
+///
+/// **FIXED**: Removed keepAlive to prevent memory leak from accumulated instances
 
 final class ConversationReadMarkerFamily extends $Family
     with
@@ -1274,7 +1282,7 @@ final class ConversationReadMarkerFamily extends $Family
         name: r'conversationReadMarkerProvider',
         dependencies: null,
         $allTransitiveDependencies: null,
-        isAutoDispose: false,
+        isAutoDispose: true,
       );
 
   /// Auto-marks incoming messages as read when the conversation is open.
@@ -1282,6 +1290,8 @@ final class ConversationReadMarkerFamily extends $Family
   /// This provider should be watched in the chat page to automatically
   /// mark messages as read. It runs as a side effect separate from the
   /// message stream to avoid feedback loops.
+  ///
+  /// **FIXED**: Removed keepAlive to prevent memory leak from accumulated instances
 
   ConversationReadMarkerProvider call(
     String conversationId,
@@ -1300,6 +1310,8 @@ final class ConversationReadMarkerFamily extends $Family
 /// This provider should be watched in the chat page to automatically
 /// mark messages as read. It runs as a side effect separate from the
 /// message stream to avoid feedback loops.
+///
+/// **FIXED**: Removed keepAlive to prevent memory leak from accumulated instances
 
 abstract class _$ConversationReadMarker extends $Notifier<void> {
   late final _$args = ref.$arg as (String, String);

@@ -285,31 +285,9 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
 
         return statusByMessage;
       })
-      .distinct((prev, next) {
-        // Deep equality check: only emit if status actually changed
-        if (prev.length != next.length) {
-          return false;
-        }
-
-        for (final entry in prev.entries) {
-          final prevRecords = entry.value;
-          final nextRecords = next[entry.key];
-
-          if (nextRecords == null || prevRecords.length != nextRecords.length) {
-            return false;
-          }
-
-          // Check if all status records are the same
-          for (var i = 0; i < prevRecords.length; i++) {
-            if (prevRecords[i].userId != nextRecords[i].userId ||
-                prevRecords[i].status != nextRecords[i].status) {
-              return false;
-            }
-          }
-        }
-
-        return true; // Data is identical, skip emission
-      });
+      // Use debounce instead of complex deep equality check
+      // This reduces CPU overhead from nested loops
+      .debounceTime(const Duration(milliseconds: 100));
 
   // Combine messages and status streams (participantIds is now constant)
   final combinedStream =
@@ -328,13 +306,16 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
                 return <Map<String, dynamic>>[];
               },
               (List<Message> messages) {
-                // Sync all message senders to Drift for offline access (fire-and-forget)
+                // Sync all message senders to Drift for offline access
+                // Use microtask to ensure it doesn't block the stream at all
                 final allSenderIds = messages
                     .map((Message msg) => msg.senderId)
                     .toSet()
                     .toList();
                 if (allSenderIds.isNotEmpty) {
-                  allSenderIds.forEach(userSyncService.syncMessageSender);
+                  Future.microtask(
+                    () => allSenderIds.forEach(userSyncService.syncMessageSender),
+                  );
                 }
 
                 // Build MessageWithStatus objects using real-time status data
@@ -388,7 +369,9 @@ Stream<List<Map<String, dynamic>>> conversationMessagesStream(
 /// This provider should be watched in the chat page to automatically
 /// mark messages as read. It runs as a side effect separate from the
 /// message stream to avoid feedback loops.
-@Riverpod(keepAlive: true)
+///
+/// **FIXED**: Removed keepAlive to prevent memory leak from accumulated instances
+@Riverpod()  // ← REMOVED keepAlive: true
 class ConversationReadMarker extends _$ConversationReadMarker {
   final _markedAsRead = <String>{};
   bool _isMarking = false; // Guard to prevent overlapping operations
