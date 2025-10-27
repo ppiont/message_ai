@@ -65,7 +65,15 @@
       "Bash(./venv/bin/python:*)",
       "Bash(firebase functions:delete:*)",
       "Bash(npx task-master-ai:*)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "mcp__Dart__analyze_files",
+      "mcp__Dart__add_roots",
+      "mcp__Dart__dart_fix",
+      "Bash(chmod:*)",
+      "Bash(pgrep:*)",
+      "Bash(lsof:*)",
+      "Bash(curl:*)",
+      "Bash(firebase projects:list:*)"
     ],
     "deny": [],
     "ask": []

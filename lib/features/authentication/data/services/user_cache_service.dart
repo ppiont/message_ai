@@ -65,11 +65,57 @@ class UserCacheService {
   /// Cache multiple users by IDs
   ///
   /// Useful for caching all conversation participants at once
+  ///
+  /// PERFORMANCE: Fetches users in parallel from Firestore,
+  /// then writes to Drift sequentially to avoid database locks
   Future<void> cacheUsers(List<String> userIds) async {
-    // Cache sequentially to avoid database locks
-    // (SQLite doesn't handle parallel writes well)
-    for (final userId in userIds) {
-      await cacheUser(userId);
+    if (userIds.isEmpty) return;
+
+    try {
+      // Filter out already-cached users
+      final uncachedUserIds = <String>[];
+      for (final userId in userIds) {
+        final cached = await _database.userDao.getUserByUid(userId);
+        if (cached == null) {
+          uncachedUserIds.add(userId);
+        }
+      }
+
+      if (uncachedUserIds.isEmpty) {
+        debugPrint('✅ UserCache: All ${userIds.length} users already cached');
+        return;
+      }
+
+      debugPrint(
+        '🔄 UserCache: Fetching ${uncachedUserIds.length} users in parallel',
+      );
+
+      // Fetch all users in parallel from Firestore (FAST!)
+      final fetchFutures = uncachedUserIds
+          .map(_userRepository.getUserById)
+          .toList();
+
+      final results = await Future.wait(fetchFutures);
+
+      // Save to Drift sequentially (SQLite constraint)
+      for (var i = 0; i < results.length; i++) {
+        final result = results[i];
+        final userId = uncachedUserIds[i];
+
+        await result.fold(
+          (failure) async {
+            debugPrint(
+              '⚠️ UserCache: Failed to fetch $userId: ${failure.message}',
+            );
+          },
+          (user) async {
+            await _saveUserToDrift(user);
+            debugPrint('✅ UserCache: Cached ${user.displayName}');
+          },
+        );
+      }
+    } catch (e) {
+      debugPrint('💥 UserCache: Exception in cacheUsers: $e');
     }
   }
 

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:message_ai/app.dart';
 import 'package:message_ai/core/database/app_database.dart';
 import 'package:message_ai/core/error/error_logger.dart';
+import 'package:message_ai/core/utils/performance_monitor.dart';
 import 'package:message_ai/features/messaging/data/services/fcm_service.dart';
 import 'package:message_ai/workers/delivery_tracking_worker.dart';
 import 'package:message_ai/workers/message_sync_worker.dart';
@@ -83,24 +84,40 @@ void workManagerCallbackDispatcher() {
 /// Initializes Firebase and the Flutter application.
 /// Sets up error handling and runs the root App widget.
 void main() async {
+  final appStartup = Stopwatch()..start();
+  PerformanceMonitor.mark('App startup BEGIN');
+
   // Ensure Flutter bindings are initialized
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Firebase
-  await Firebase.initializeApp();
+  await PerformanceMonitor.track('Firebase.initializeApp', () async {
+    await Firebase.initializeApp();
+  });
 
   // Register background message handler
   // MUST be called AFTER Firebase.initializeApp() and BEFORE runApp()
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   // Initialize WorkManager for background tasks
-  await Workmanager().initialize(workManagerCallbackDispatcher);
+  await PerformanceMonitor.track('WorkManager.initialize', () async {
+    await Workmanager().initialize(workManagerCallbackDispatcher);
+  });
 
   // Register periodic background tasks
-  await _registerPeriodicTasks();
+  await PerformanceMonitor.track('registerPeriodicTasks', () async {
+    await _registerPeriodicTasks();
+  });
 
   // Initialize error logging
-  await ErrorLogger.initialize();
+  await PerformanceMonitor.track('ErrorLogger.initialize', () async {
+    await ErrorLogger.initialize();
+  });
+
+  appStartup.stop();
+  debugPrint(
+    '🚀 App startup complete in ${appStartup.elapsedMilliseconds}ms',
+  );
 
   // Run the app with Riverpod
   runApp(const ProviderScope(child: App()));

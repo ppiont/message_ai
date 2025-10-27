@@ -22,7 +22,7 @@ import 'package:message_ai/features/messaging/data/services/auto_delivery_marker
 import 'package:message_ai/features/messaging/data/services/fcm_service.dart';
 import 'package:message_ai/features/messaging/data/services/message_context_service.dart';
 import 'package:message_ai/features/messaging/data/services/rtdb_presence_service.dart'
-    show RtdbPresenceService, UserPresence;
+    show RtdbPresenceService;
 import 'package:message_ai/features/messaging/data/services/rtdb_typing_service.dart'
     show RtdbTypingService, TypingUser;
 import 'package:message_ai/features/messaging/domain/entities/conversation.dart'
@@ -492,6 +492,9 @@ RtdbTypingService typingIndicatorService(Ref ref) {
 }
 
 /// Watches typing users for a specific conversation.
+///
+/// The service handles permission errors gracefully (returns empty list),
+/// so no auth guard is needed here.
 @riverpod
 Stream<List<TypingUser>> conversationTypingUsers(
   Ref ref,
@@ -511,11 +514,12 @@ Stream<List<TypingUser>> conversationTypingUsers(
 ///
 /// Automatically marks incoming messages as delivered for all conversations.
 @Riverpod(keepAlive: true)
-AutoDeliveryMarker autoDeliveryMarker(Ref ref) {
+AutoDeliveryMarker? autoDeliveryMarker(Ref ref) {
   final currentUser = ref.watch(authStateProvider).value;
 
   if (currentUser == null) {
-    throw Exception('User must be authenticated');
+    // Return null instead of throwing - prevents exceptions during sign-out
+    return null;
   }
 
   final marker =
@@ -621,22 +625,24 @@ FCMService fcmService(Ref ref) {
 
 /// Watches presence status for a specific user.
 ///
-/// Returns a stream of presence data including:
-/// - isOnline: true if user is currently online
-/// - lastSeen: timestamp of last activity
-/// - userName: display name
+/// Returns a stream with presence data:
+/// - isOnline: boolean indicating if user is currently online
+/// - lastSeen: DateTime of last activity (if offline)
 @riverpod
 Stream<Map<String, dynamic>?> userPresence(Ref ref, String userId) {
   final service = ref.watch(presenceServiceProvider);
-  return service.watchUserPresence(userId: userId).map((presence) {
-    if (presence == null) {
-      return null;
+
+  return service.watchUserPresence(userId: userId).asyncMap((isOnline) async {
+    if (isOnline) {
+      return {'isOnline': true};
+    } else {
+      // Get lastSeen timestamp
+      final lastSeen = await service.getLastSeen(userId: userId);
+      return {
+        'isOnline': false,
+        'lastSeen': lastSeen,
+      };
     }
-    return {
-      'isOnline': presence.isOnline,
-      'lastSeen': presence.lastSeen,
-      'userName': presence.userName,
-    };
   });
 }
 
@@ -813,13 +819,13 @@ Stream<Map<String, dynamic>> groupPresenceStatus(
     });
   }
 
-  // Watch presence for all participants using Firestore real-time listener
+  // Watch presence for all participants
   return presenceService.watchUsersPresence(userIds: participantIds).map((
-    Map<String, UserPresence> presenceMap,
+    Map<String, bool> presenceMap,
   ) {
     final onlineMembers = presenceMap.entries
-        .where((MapEntry<String, UserPresence> entry) => entry.value.isOnline)
-        .map((MapEntry<String, UserPresence> entry) => entry.key)
+        .where((MapEntry<String, bool> entry) => entry.value)
+        .map((MapEntry<String, bool> entry) => entry.key)
         .toList();
 
     return <String, dynamic>{

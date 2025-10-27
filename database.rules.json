@@ -1,15 +1,15 @@
 {
   "rules": {
     "presence": {
+      ".read": true,
       "$userId": {
-        ".read": true,
         ".write": "$userId === auth.uid"
       }
     },
     "typing": {
       "$conversationId": {
+        ".read": true,
         "$userId": {
-          ".read": true,
           ".write": "$userId === auth.uid"
         }
       }

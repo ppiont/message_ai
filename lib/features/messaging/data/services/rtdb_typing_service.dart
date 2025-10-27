@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/foundation.dart';
 
 /// Service for managing typing indicators using Firebase Realtime Database.
 ///
@@ -134,6 +135,10 @@ class RtdbTypingService {
       }
 
       return typingUsers;
+    }).handleError((Object error) {
+      // Gracefully handle permission denied errors (e.g., after sign-out)
+      // Log but don't propagate - stream will emit empty list
+      debugPrint('⚠️ TypingService: Error watching typing users: $error');
     });
   }
 

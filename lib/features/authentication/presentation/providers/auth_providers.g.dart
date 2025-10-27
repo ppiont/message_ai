@@ -823,27 +823,30 @@ String _$isAuthenticatedHash() => r'ec341d95b490bda54e8278477e26f7b345844931';
 
 /// Automatically manages user presence based on auth state.
 ///
-/// This provider watches the auth state and:
-/// - Sets user as online when they sign in
-/// - Sets user as offline when they sign out
+/// **Simple pattern**:
+/// - User signs in (or already signed in on startup) → Set online
+/// - User signs out → Clear presence
+/// - App lifecycle observer handles foreground/background
 
 @ProviderFor(presenceController)
 const presenceControllerProvider = PresenceControllerProvider._();
 
 /// Automatically manages user presence based on auth state.
 ///
-/// This provider watches the auth state and:
-/// - Sets user as online when they sign in
-/// - Sets user as offline when they sign out
+/// **Simple pattern**:
+/// - User signs in (or already signed in on startup) → Set online
+/// - User signs out → Clear presence
+/// - App lifecycle observer handles foreground/background
 
 final class PresenceControllerProvider
     extends $FunctionalProvider<void, void, void>
     with $Provider<void> {
   /// Automatically manages user presence based on auth state.
   ///
-  /// This provider watches the auth state and:
-  /// - Sets user as online when they sign in
-  /// - Sets user as offline when they sign out
+  /// **Simple pattern**:
+  /// - User signs in (or already signed in on startup) → Set online
+  /// - User signs out → Clear presence
+  /// - App lifecycle observer handles foreground/background
   const PresenceControllerProvider._()
     : super(
         from: null,
@@ -878,4 +881,4 @@ final class PresenceControllerProvider
 }
 
 String _$presenceControllerHash() =>
-    r'025abd1ac47fb344bae688b1c160715a39d5536d';
+    r'2df10798962da55f1ca08c3d9eba607b35750e1a';

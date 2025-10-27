@@ -84,8 +84,7 @@ class _MessageInputState extends ConsumerState<MessageInput> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -177,7 +176,6 @@ class _MessageInputState extends ConsumerState<MessageInput> {
       ],
     ),
     );
-  }
 
   Future<void> _sendMessage() async {
     final text = _controller.text.trim();

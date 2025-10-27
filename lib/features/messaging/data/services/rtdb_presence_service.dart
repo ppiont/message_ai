@@ -1,277 +1,198 @@
 import 'dart:async';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/foundation.dart';
 
 /// Service for managing user online/offline presence using Firebase Realtime Database.
 ///
-/// Features:
-/// - **Automatic offline detection** via RTDB's `onDisconnect()` server-side callbacks
-/// - **App lifecycle awareness** (set offline when app backgrounds)
-/// - Real-time presence updates with WebSocket connection
-/// - No heartbeat mechanism needed (RTDB handles connection state)
-///
-/// Architecture:
-/// - Uses Firebase Realtime Database (NOT Firestore) for ephemeral presence data
-/// - Data structure: `/presence/{userId}` → `{isOnline, lastSeen, userName}`
-/// - `onDisconnect()` automatically sets user offline when WebSocket connection drops
-/// - Works even if app is force-killed, network lost, or device goes to sleep
-///
-/// This is the standard Firebase pattern used by WhatsApp and similar apps.
+/// **Simple lifecycle-based pattern**:
+/// - setOnline() when user is in foreground
+/// - setOffline() when user goes to background/signs out
+/// - onDisconnect() automatically handles connection drops
 class RtdbPresenceService {
   RtdbPresenceService({FirebaseDatabase? database})
     : _database = database ?? FirebaseDatabase.instance;
 
   final FirebaseDatabase _database;
 
-  /// Sets user as online and configures automatic offline on disconnect.
+  /// Sets user as online in RTDB.
   ///
-  /// **IMPORTANT**: This must be called:
-  /// - When user signs in
-  /// - When app comes to foreground (AppLifecycleState.resumed)
-  ///
-  /// The `onDisconnect()` callback ensures the user is automatically marked
-  /// offline when the WebSocket connection to Firebase drops (app closed,
-  /// network lost, device killed, etc.).
+  /// Writes { isOnline: true, timestamp, userName }
+  /// Also configures onDisconnect() to auto-set offline if connection drops
   Future<void> setOnline({
     required String userId,
     required String userName,
   }) async {
+    debugPrint('🟢 Presence: Setting $userName ONLINE');
     final presenceRef = _database.ref('presence/$userId');
 
-    // First, set up onDisconnect callback (server-side)
-    // This will execute automatically when the client disconnects
-    await presenceRef.onDisconnect().set({
-      'isOnline': false,
-      'lastSeen': ServerValue.timestamp,
-      'userName': userName,
-    });
+    try {
+      // Set up onDisconnect to auto-set offline (handles network drops, app kill)
+      await presenceRef.onDisconnect().set({
+        'isOnline': false,
+        'lastSeen': ServerValue.timestamp,
+        'userName': userName,
+      });
 
-    // Then, set the user as online
-    await presenceRef.set({
-      'isOnline': true,
-      'lastSeen': ServerValue.timestamp,
-      'userName': userName,
-    });
+      // Set user online
+      await presenceRef.set({
+        'isOnline': true,
+        'timestamp': ServerValue.timestamp,
+        'userName': userName,
+      });
+
+      debugPrint('✅ Presence: $userName is ONLINE');
+    } catch (e) {
+      debugPrint('❌ Presence: Failed to set online: $e');
+    }
   }
 
-  /// Sets user as offline and cancels onDisconnect callback.
+  /// Sets user as offline in RTDB.
   ///
-  /// **IMPORTANT**: This should be called:
-  /// - When user explicitly logs out
-  /// - When app goes to background (AppLifecycleState.paused/inactive) as backup
-  /// - When app is about to be killed (AppLifecycleState.detached)
-  ///
-  /// Note: The onDisconnect() callback will still trigger if connection drops
-  /// before this is called, so this is mainly for explicit logout or app backgrounding.
+  /// Writes { isOnline: false, lastSeen, userName }
+  /// Cancels onDisconnect() since we're manually setting offline
   Future<void> setOffline({
     required String userId,
     required String userName,
   }) async {
+    debugPrint('🔴 Presence: Setting $userName OFFLINE');
     final presenceRef = _database.ref('presence/$userId');
 
-    // Cancel any pending onDisconnect operations
-    await presenceRef.onDisconnect().cancel();
+    try {
+      // Cancel onDisconnect since we're manually going offline
+      await presenceRef.onDisconnect().cancel();
 
-    // Set user as offline
-    await presenceRef.set({
-      'isOnline': false,
-      'lastSeen': ServerValue.timestamp,
-      'userName': userName,
-    });
+      // Set user offline with last seen timestamp
+      await presenceRef.set({
+        'isOnline': false,
+        'lastSeen': ServerValue.timestamp,
+        'userName': userName,
+      });
+
+      debugPrint('✅ Presence: $userName is OFFLINE');
+    } catch (e) {
+      debugPrint('❌ Presence: Failed to set offline: $e');
+    }
   }
 
-  /// Watches presence status for a specific user in real-time.
+  /// Clears presence data (for sign out).
   ///
-  /// Returns a stream that emits whenever the user's presence changes.
-  /// The stream will emit `null` if no presence data exists for the user.
-  Stream<UserPresence?> watchUserPresence({required String userId}) {
+  /// Removes all presence data for the user
+  Future<void> clearPresence({required String userId}) async {
+    debugPrint('🔴 Presence: Clearing presence for $userId');
+    final presenceRef = _database.ref('presence/$userId');
+
+    try {
+      await presenceRef.onDisconnect().cancel();
+      await presenceRef.remove();
+      debugPrint('✅ Presence: Cleared');
+    } catch (e) {
+      debugPrint('❌ Presence: Failed to clear: $e');
+    }
+  }
+
+  /// Watches presence for a specific user.
+  ///
+  /// Returns stream of boolean indicating if user is online
+  Stream<bool> watchUserPresence({required String userId}) {
     final presenceRef = _database.ref('presence/$userId');
 
     return presenceRef.onValue.map((event) {
       if (!event.snapshot.exists) {
-        return null;
+        return false;
       }
 
       final data = event.snapshot.value as Map<Object?, Object?>?;
       if (data == null) {
-        return null;
+        return false;
       }
 
-      return UserPresence.fromRtdb(userId, data);
+      final isOnline = data['isOnline'] as bool? ?? false;
+      return isOnline;
+    }).handleError((Object error) {
+      debugPrint('⚠️ Presence: Error watching $userId: $error');
+      return false;
     });
   }
 
-  /// Watches presence status for multiple users in real-time.
-  ///
-  /// Returns a stream of a map from userId → UserPresence.
-  /// Users without presence data will not appear in the map.
-  ///
-  /// Note: This creates individual listeners for each user. For very large
-  /// groups (>50 users), consider implementing a server-side aggregation endpoint.
-  Stream<Map<String, UserPresence>> watchUsersPresence({
-    required List<String> userIds,
-  }) {
-    if (userIds.isEmpty) {
-      return Stream.value({});
+  /// Gets last seen time for a user.
+  Future<DateTime?> getLastSeen({required String userId}) async {
+    final presenceRef = _database.ref('presence/$userId');
+
+    try {
+      final snapshot = await presenceRef.get();
+      if (!snapshot.exists) {
+        return null;
+      }
+
+      final data = snapshot.value as Map<Object?, Object?>?;
+      final lastSeen = data?['lastSeen'] as int?;
+
+      if (lastSeen == null) {
+        return null;
+      }
+
+      return DateTime.fromMillisecondsSinceEpoch(lastSeen);
+    } catch (e) {
+      debugPrint('❌ Presence: Failed to get last seen: $e');
+      return null;
     }
-
-    // Create a stream for each user
-    final streams = userIds
-        .map(
-          (userId) => watchUserPresence(
-            userId: userId,
-          ).map((presence) => MapEntry(userId, presence)),
-        )
-        .toList();
-
-    // Combine all streams into a single stream
-    // This uses RxDart's combineLatest or manual stream merging
-    return _combinePresenceStreams(streams);
   }
 
-  /// Combines multiple presence streams into a single map stream.
-  Stream<Map<String, UserPresence>> _combinePresenceStreams(
-    List<Stream<MapEntry<String, UserPresence?>>> streams,
-  ) async* {
-    final controllers = streams
-        .map(
-          (stream) =>
-              StreamController<MapEntry<String, UserPresence?>>.broadcast(),
-        )
-        .toList();
-
-    // Subscribe to each stream
-    final subscriptions =
-        <StreamSubscription<MapEntry<String, UserPresence?>>>[];
-    for (var i = 0; i < streams.length; i++) {
-      subscriptions.add(
-        streams[i].listen(
-          (entry) => controllers[i].add(entry),
-          onError: (Object error) => controllers[i].addError(error),
-        ),
-      );
+  /// Watches presence for multiple users.
+  ///
+  /// Returns a stream of Map<userId, isOnline>
+  Stream<Map<String, bool>> watchUsersPresence({
+    required List<String> userIds,
+  }) async* {
+    if (userIds.isEmpty) {
+      yield {};
+      return;
     }
 
-    // Combine latest values from all streams
-    final latestValues = <String, UserPresence?>{};
+    // Watch all users and combine results
+    await for (final _ in _database.ref('presence').onValue) {
+      final presenceMap = <String, bool>{};
 
-    await for (final _ in Stream<void>.periodic(
-      const Duration(milliseconds: 100),
-    )) {
-      // Collect latest values from each controller
-      for (var i = 0; i < controllers.length; i++) {
-        if (controllers[i].hasListener && !controllers[i].isClosed) {
-          await for (final entry in controllers[i].stream.take(1)) {
-            latestValues[entry.key] = entry.value;
-            break;
+      for (final userId in userIds) {
+        final ref = _database.ref('presence/$userId');
+        try {
+          final snapshot = await ref.get();
+          if (snapshot.exists) {
+            final data = snapshot.value as Map<Object?, Object?>?;
+            presenceMap[userId] = data?['isOnline'] as bool? ?? false;
+          } else {
+            presenceMap[userId] = false;
           }
+        } catch (e) {
+          debugPrint('⚠️ Presence: Error watching $userId: $e');
+          presenceMap[userId] = false;
         }
       }
 
-      // Emit map with non-null presences
-      final result = <String, UserPresence>{};
-      for (final entry in latestValues.entries) {
-        if (entry.value != null) {
-          result[entry.key] = entry.value!;
-        }
-      }
-      yield result;
-    }
-
-    // Cleanup
-    for (final sub in subscriptions) {
-      await sub.cancel();
-    }
-    for (final controller in controllers) {
-      await controller.close();
+      yield presenceMap;
     }
   }
 }
 
-// ============================================================================
-// Data Classes
-// ============================================================================
-
-/// Represents a user's presence status from Realtime Database.
+/// Simple presence data model.
 class UserPresence {
-  UserPresence({
-    required this.userId,
+  const UserPresence({
+    required this.timestamp,
     required this.userName,
-    required this.isOnline,
-    required this.lastSeen,
   });
 
-  factory UserPresence.fromRtdb(String userId, Map<Object?, Object?> data) {
-    final isOnline = data['isOnline'] as bool? ?? false;
-    final lastSeenValue = data['lastSeen'];
-    final userName = data['userName'] as String? ?? 'Unknown';
-
-    // lastSeen can be either a timestamp (int) or ServerValue.timestamp placeholder
-    DateTime lastSeen;
-    if (lastSeenValue is int) {
-      lastSeen = DateTime.fromMillisecondsSinceEpoch(lastSeenValue);
-    } else {
-      lastSeen = DateTime.now();
-    }
-
-    return UserPresence(
-      userId: userId,
-      userName: userName,
-      isOnline: isOnline,
-      lastSeen: lastSeen,
+  factory UserPresence.fromMap(Map<Object?, Object?> map) => UserPresence(
+      timestamp: DateTime.fromMillisecondsSinceEpoch(map['timestamp']! as int),
+      userName: map['userName'] as String? ?? 'Unknown',
     );
-  }
 
-  final String userId;
+  final DateTime timestamp;
   final String userName;
-  final bool isOnline;
-  final DateTime lastSeen;
 
-  /// Returns a human-readable status string.
-  ///
-  /// Examples:
-  /// - "Online"
-  /// - "Last seen 2 minutes ago"
-  /// - "Last seen today at 3:45 PM"
-  /// - "Last seen yesterday"
-  String getStatusText() {
-    if (isOnline) {
-      return 'Online';
-    }
-
+  /// Check if user is currently online (active in last 60 seconds).
+  bool get isOnline {
     final now = DateTime.now();
-    final difference = now.difference(lastSeen);
-
-    if (difference.inMinutes < 1) {
-      return 'Last seen just now';
-    } else if (difference.inMinutes < 60) {
-      return 'Last seen ${difference.inMinutes} minute${difference.inMinutes > 1 ? 's' : ''} ago';
-    } else if (difference.inHours < 24) {
-      return 'Last seen ${difference.inHours} hour${difference.inHours > 1 ? 's' : ''} ago';
-    } else if (difference.inDays == 1) {
-      return 'Last seen yesterday';
-    } else if (difference.inDays < 7) {
-      return 'Last seen ${difference.inDays} days ago';
-    } else {
-      return 'Last seen ${lastSeen.month}/${lastSeen.day}/${lastSeen.year}';
-    }
+    final difference = now.difference(timestamp);
+    return difference.inSeconds < 60;
   }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) {
-      return true;
-    }
-
-    return other is UserPresence &&
-        other.userId == userId &&
-        other.userName == userName &&
-        other.isOnline == isOnline;
-  }
-
-  @override
-  int get hashCode => userId.hashCode ^ userName.hashCode ^ isOnline.hashCode;
-
-  @override
-  String toString() =>
-      'UserPresence(userId: $userId, userName: $userName, isOnline: $isOnline, lastSeen: $lastSeen)';
 }

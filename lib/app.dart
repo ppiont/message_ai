@@ -113,11 +113,14 @@ class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
 
+    debugPrint('📱 App lifecycle state changed to: $state');
+
     // Get current user for presence updates
     final authState = ref.read(authStateProvider);
     final user = authState.value;
 
     if (user == null) {
+      debugPrint('📱 Skipping presence update - user not authenticated');
       return; // Not authenticated, skip presence updates
     }
 
@@ -127,26 +130,35 @@ class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
     switch (state) {
       case AppLifecycleState.resumed:
         // App came to foreground - set online and configure onDisconnect
+        debugPrint('📱 Setting user ONLINE (resumed)');
         presenceService.setOnline(userId: user.uid, userName: user.displayName);
 
       case AppLifecycleState.paused:
-      case AppLifecycleState.inactive:
-        // App went to background - set offline as backup
+        // App went to background - set offline
         // (onDisconnect will also trigger if connection is lost)
+        debugPrint('📱 Setting user OFFLINE (paused)');
         presenceService.setOffline(
           userId: user.uid,
           userName: user.displayName,
         );
 
+      case AppLifecycleState.inactive:
+        // IMPORTANT: Don't set offline on inactive!
+        // Inactive happens during normal app flow (system dialogs, notifications)
+        // Only set offline when actually backgrounded (paused)
+        debugPrint('📱 App inactive - keeping presence unchanged');
+
       case AppLifecycleState.detached:
         // App is about to be killed - set offline
+        debugPrint('📱 Setting user OFFLINE (detached)');
         presenceService.setOffline(
           userId: user.uid,
           userName: user.displayName,
         );
 
       case AppLifecycleState.hidden:
-        // App is hidden (similar to paused)
+        // App is hidden - set offline
+        debugPrint('📱 Setting user OFFLINE (hidden)');
         presenceService.setOffline(
           userId: user.uid,
           userName: user.displayName,

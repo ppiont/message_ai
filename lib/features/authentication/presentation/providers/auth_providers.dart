@@ -175,31 +175,41 @@ bool isAuthenticated(Ref ref) {
 
 /// Automatically manages user presence based on auth state.
 ///
-/// This provider watches the auth state and:
-/// - Sets user as online when they sign in
-/// - Sets user as offline when they sign out
+/// **Simple pattern**:
+/// - User signs in (or already signed in on startup) → Set online
+/// - User signs out → Clear presence
+/// - App lifecycle observer handles foreground/background
 @Riverpod(keepAlive: true)
 void presenceController(Ref ref) {
   final presenceService = ref.watch(presenceServiceProvider);
 
-  // Watch auth state changes
+  // Handle initial state (user already signed in on app startup)
+  final initialAuthState = ref.read(authStateProvider);
+  initialAuthState.whenData((user) async {
+    if (user != null) {
+      debugPrint('✅ Presence: Initial sign in detected, setting ONLINE');
+      await presenceService.setOnline(
+        userId: user.uid,
+        userName: user.displayName,
+      );
+    }
+  });
+
+  // Watch for auth changes (sign in/out)
   ref.listen(authStateProvider, (previous, next) {
     next.whenData((user) async {
-      if (user != null) {
-        // User logged in - set online
+      if (user != null && previous?.value == null) {
+        // User just signed in - set online
+        debugPrint('✅ Presence: User signed in, setting ONLINE');
         await presenceService.setOnline(
           userId: user.uid,
           userName: user.displayName,
         );
-      } else {
-        // User logged out - set offline
-        final prevUser = previous?.value;
-        if (prevUser != null) {
-          await presenceService.setOffline(
-            userId: prevUser.uid,
-            userName: prevUser.displayName,
-          );
-        }
+      } else if (user == null && previous?.value != null) {
+        // User just signed out - clear presence
+        final prevUser = previous!.value!;
+        debugPrint('🔴 Presence: User signed out, clearing presence');
+        await presenceService.clearPresence(userId: prevUser.uid);
       }
     });
   });

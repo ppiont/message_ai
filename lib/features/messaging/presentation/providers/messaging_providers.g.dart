@@ -1139,7 +1139,7 @@ final class ConversationMessagesStreamProvider
 }
 
 String _$conversationMessagesStreamHash() =>
-    r'16bc322ca3d8a6bbb88df5d58f8829b5e0b0ba28';
+    r'a27693bfa6937bb0b9c64b3f938f830bcf287460';
 
 /// Stream provider for watching messages in a conversation in real-time.
 ///
@@ -1387,11 +1387,17 @@ String _$typingIndicatorServiceHash() =>
     r'dd411505bc3f881c8b040e02e0c558f92396bc62';
 
 /// Watches typing users for a specific conversation.
+///
+/// The service handles permission errors gracefully (returns empty list),
+/// so no auth guard is needed here.
 
 @ProviderFor(conversationTypingUsers)
 const conversationTypingUsersProvider = ConversationTypingUsersFamily._();
 
 /// Watches typing users for a specific conversation.
+///
+/// The service handles permission errors gracefully (returns empty list),
+/// so no auth guard is needed here.
 
 final class ConversationTypingUsersProvider
     extends
@@ -1402,6 +1408,9 @@ final class ConversationTypingUsersProvider
         >
     with $FutureModifier<List<TypingUser>>, $StreamProvider<List<TypingUser>> {
   /// Watches typing users for a specific conversation.
+  ///
+  /// The service handles permission errors gracefully (returns empty list),
+  /// so no auth guard is needed here.
   const ConversationTypingUsersProvider._({
     required ConversationTypingUsersFamily super.from,
     required (String, String) super.argument,
@@ -1451,6 +1460,9 @@ String _$conversationTypingUsersHash() =>
     r'e44bf7227cb75dbf07b826d8c34689c7589d1dd5';
 
 /// Watches typing users for a specific conversation.
+///
+/// The service handles permission errors gracefully (returns empty list),
+/// so no auth guard is needed here.
 
 final class ConversationTypingUsersFamily extends $Family
     with $FunctionalFamilyOverride<Stream<List<TypingUser>>, (String, String)> {
@@ -1464,6 +1476,9 @@ final class ConversationTypingUsersFamily extends $Family
       );
 
   /// Watches typing users for a specific conversation.
+  ///
+  /// The service handles permission errors gracefully (returns empty list),
+  /// so no auth guard is needed here.
 
   ConversationTypingUsersProvider call(
     String conversationId,
@@ -1491,11 +1506,11 @@ const autoDeliveryMarkerProvider = AutoDeliveryMarkerProvider._();
 final class AutoDeliveryMarkerProvider
     extends
         $FunctionalProvider<
-          AutoDeliveryMarker,
-          AutoDeliveryMarker,
-          AutoDeliveryMarker
+          AutoDeliveryMarker?,
+          AutoDeliveryMarker?,
+          AutoDeliveryMarker?
         >
-    with $Provider<AutoDeliveryMarker> {
+    with $Provider<AutoDeliveryMarker?> {
   /// Provides the [AutoDeliveryMarker] service.
   ///
   /// Automatically marks incoming messages as delivered for all conversations.
@@ -1515,26 +1530,26 @@ final class AutoDeliveryMarkerProvider
 
   @$internal
   @override
-  $ProviderElement<AutoDeliveryMarker> $createElement(
+  $ProviderElement<AutoDeliveryMarker?> $createElement(
     $ProviderPointer pointer,
   ) => $ProviderElement(pointer);
 
   @override
-  AutoDeliveryMarker create(Ref ref) {
+  AutoDeliveryMarker? create(Ref ref) {
     return autoDeliveryMarker(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(AutoDeliveryMarker value) {
+  Override overrideWithValue(AutoDeliveryMarker? value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<AutoDeliveryMarker>(value),
+      providerOverride: $SyncValueProvider<AutoDeliveryMarker?>(value),
     );
   }
 }
 
 String _$autoDeliveryMarkerHash() =>
-    r'13ffbba9e7b0a0f169ac826a0aa2d72a643cc8f3';
+    r'df83ba6c61fcf8a41585782cd90d68ee8cea85cb';
 
 /// Marks all messages in a conversation as delivered for the current user.
 ///
@@ -1717,7 +1732,7 @@ final class PresenceServiceProvider
   }
 }
 
-String _$presenceServiceHash() => r'9a06d1006188d687a63a3537a3d844417984a137';
+String _$presenceServiceHash() => r'bde75b02ef096e975b3fda4b4401b36a43492711';
 
 /// Provides the [FCMService] instance for push notifications.
 
@@ -1767,20 +1782,18 @@ String _$fcmServiceHash() => r'f44dd3cee344080597815373251c1d1017a61507';
 
 /// Watches presence status for a specific user.
 ///
-/// Returns a stream of presence data including:
-/// - isOnline: true if user is currently online
-/// - lastSeen: timestamp of last activity
-/// - userName: display name
+/// Returns a stream with presence data:
+/// - isOnline: boolean indicating if user is currently online
+/// - lastSeen: DateTime of last activity (if offline)
 
 @ProviderFor(userPresence)
 const userPresenceProvider = UserPresenceFamily._();
 
 /// Watches presence status for a specific user.
 ///
-/// Returns a stream of presence data including:
-/// - isOnline: true if user is currently online
-/// - lastSeen: timestamp of last activity
-/// - userName: display name
+/// Returns a stream with presence data:
+/// - isOnline: boolean indicating if user is currently online
+/// - lastSeen: DateTime of last activity (if offline)
 
 final class UserPresenceProvider
     extends
@@ -1794,10 +1807,9 @@ final class UserPresenceProvider
         $StreamProvider<Map<String, dynamic>?> {
   /// Watches presence status for a specific user.
   ///
-  /// Returns a stream of presence data including:
-  /// - isOnline: true if user is currently online
-  /// - lastSeen: timestamp of last activity
-  /// - userName: display name
+  /// Returns a stream with presence data:
+  /// - isOnline: boolean indicating if user is currently online
+  /// - lastSeen: DateTime of last activity (if offline)
   const UserPresenceProvider._({
     required UserPresenceFamily super.from,
     required String super.argument,
@@ -1842,14 +1854,13 @@ final class UserPresenceProvider
   }
 }
 
-String _$userPresenceHash() => r'b49e76812a23aaac3acf6a1a3ad87634fc5c3584';
+String _$userPresenceHash() => r'7ab8273aef47b89740398805c661a92caa579baf';
 
 /// Watches presence status for a specific user.
 ///
-/// Returns a stream of presence data including:
-/// - isOnline: true if user is currently online
-/// - lastSeen: timestamp of last activity
-/// - userName: display name
+/// Returns a stream with presence data:
+/// - isOnline: boolean indicating if user is currently online
+/// - lastSeen: DateTime of last activity (if offline)
 
 final class UserPresenceFamily extends $Family
     with $FunctionalFamilyOverride<Stream<Map<String, dynamic>?>, String> {
@@ -1864,10 +1875,9 @@ final class UserPresenceFamily extends $Family
 
   /// Watches presence status for a specific user.
   ///
-  /// Returns a stream of presence data including:
-  /// - isOnline: true if user is currently online
-  /// - lastSeen: timestamp of last activity
-  /// - userName: display name
+  /// Returns a stream with presence data:
+  /// - isOnline: boolean indicating if user is currently online
+  /// - lastSeen: DateTime of last activity (if offline)
 
   UserPresenceProvider call(String userId) =>
       UserPresenceProvider._(argument: userId, from: this);
@@ -2354,7 +2364,7 @@ final class GroupPresenceStatusProvider
 }
 
 String _$groupPresenceStatusHash() =>
-    r'1548d5c934a736b4300a8bd4413af5418fafc4f6';
+    r'1f33954126138ca2306835b06b14506a5568c54e';
 
 /// Provides aggregated online status for a group conversation.
 ///
