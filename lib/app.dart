@@ -86,7 +86,12 @@ Future<void> _handleNotificationNavigation({
 /// - Authentication state handling
 /// - Offline-first sync services
 /// - Push notification handling with navigation
-/// - App lifecycle management for presence tracking
+/// - App lifecycle management for presence
+///
+/// **Hybrid presence approach:**
+/// - App lifecycle: immediate offline when backgrounded
+/// - RTDB onDisconnect: backup for connection loss/app kill
+/// - Both can coexist (setting offline is idempotent)
 class App extends ConsumerStatefulWidget {
   const App({super.key});
 
@@ -98,13 +103,11 @@ class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    // Register lifecycle observer to handle app backgrounding/foregrounding
     WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose() {
-    // Unregister lifecycle observer
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -113,56 +116,35 @@ class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
 
-    debugPrint('📱 App lifecycle state changed to: $state');
-
-    // Get current user for presence updates
     final authState = ref.read(authStateProvider);
     final user = authState.value;
 
     if (user == null) {
-      debugPrint('📱 Skipping presence update - user not authenticated');
-      return; // Not authenticated, skip presence updates
+      return;
     }
 
-    // Get presence service
     final presenceService = ref.read(presenceServiceProvider);
 
     switch (state) {
       case AppLifecycleState.resumed:
-        // App came to foreground - set online and configure onDisconnect
-        debugPrint('📱 Setting user ONLINE (resumed)');
+        // App foregrounded - set online
+        debugPrint('📱 Lifecycle: RESUMED → Setting ONLINE');
         presenceService.setOnline(userId: user.uid, userName: user.displayName);
 
       case AppLifecycleState.paused:
-        // App went to background - set offline
-        // (onDisconnect will also trigger if connection is lost)
-        debugPrint('📱 Setting user OFFLINE (paused)');
+      case AppLifecycleState.hidden:
+      case AppLifecycleState.detached:
+        // App backgrounded/killed - set offline immediately
+        // onDisconnect remains as backup for connection loss
+        debugPrint('📱 Lifecycle: $state → Setting OFFLINE');
         presenceService.setOffline(
           userId: user.uid,
           userName: user.displayName,
         );
 
       case AppLifecycleState.inactive:
-        // IMPORTANT: Don't set offline on inactive!
-        // Inactive happens during normal app flow (system dialogs, notifications)
-        // Only set offline when actually backgrounded (paused)
-        debugPrint('📱 App inactive - keeping presence unchanged');
-
-      case AppLifecycleState.detached:
-        // App is about to be killed - set offline
-        debugPrint('📱 Setting user OFFLINE (detached)');
-        presenceService.setOffline(
-          userId: user.uid,
-          userName: user.displayName,
-        );
-
-      case AppLifecycleState.hidden:
-        // App is hidden - set offline
-        debugPrint('📱 Setting user OFFLINE (hidden)');
-        presenceService.setOffline(
-          userId: user.uid,
-          userName: user.displayName,
-        );
+        // Ignore - happens during normal transitions
+        break;
     }
   }
 
@@ -171,16 +153,17 @@ class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
     // Watch authentication state FIRST
     final authState = ref.watch(authStateProvider);
 
-    // Only initialize services if user is authenticated
+    // Initialize presence controller BEFORE checking user state
+    // This ensures it can handle both sign-in AND sign-out events
+    ref.watch(presenceControllerProvider);
+
+    // Only initialize other services if user is authenticated
     // This prevents errors during logout when widget tree is unstable
     final user = authState.value;
     if (user != null) {
       // Initialize offline-first services
       // These are keepAlive providers, so watching them ensures they start
       // Note: MessageSyncService and MessageQueue removed - now handled by WorkManager
-      // Initialize presence controller
-      // Automatically manages online/offline status based on auth
-      ref.watch(presenceControllerProvider);
 
       // Initialize user sync service
       // Automatically syncs user profiles from Firestore to Drift

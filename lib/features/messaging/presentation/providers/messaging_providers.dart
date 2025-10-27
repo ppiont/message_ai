@@ -638,10 +638,7 @@ Stream<Map<String, dynamic>?> userPresence(Ref ref, String userId) {
     } else {
       // Get lastSeen timestamp
       final lastSeen = await service.getLastSeen(userId: userId);
-      return {
-        'isOnline': false,
-        'lastSeen': lastSeen,
-      };
+      return {'isOnline': false, 'lastSeen': lastSeen};
     }
   });
 }

@@ -60,7 +60,8 @@ SignInWithEmail signInWithEmailUseCase(Ref ref) {
 @riverpod
 SignOut signOutUseCase(Ref ref) {
   final repository = ref.watch(authRepositoryProvider);
-  return SignOut(repository);
+  final presenceService = ref.watch(presenceServiceProvider);
+  return SignOut(repository, presenceService);
 }
 
 /// Provider for get current user use case
@@ -173,43 +174,38 @@ bool isAuthenticated(Ref ref) {
 
 // ========== Presence Management ==========
 
-/// Automatically manages user presence based on auth state.
+/// Manages user presence for auth events.
 ///
-/// **Simple pattern**:
-/// - User signs in (or already signed in on startup) → Set online
-/// - User signs out → Clear presence
-/// - App lifecycle observer handles foreground/background
+/// **Hybrid presence approach** (works with app lifecycle observer in app.dart):
+/// - This controller: Auth events (initial setup, sign-in)
+/// - SignOut use case: Clears presence BEFORE signing out (to avoid permission issues)
+/// - App lifecycle: Foreground/background (immediate offline when backgrounded)
+/// - RTDB onDisconnect: Backup for connection loss/app kill
+///
+/// **Why hybrid works:**
+/// - setOffline() doesn't cancel onDisconnect (both can coexist)
+/// - Calling setOnline() multiple times is idempotent
+/// - Lifecycle provides immediate feedback, onDisconnect is safety net
 @Riverpod(keepAlive: true)
 void presenceController(Ref ref) {
   final presenceService = ref.watch(presenceServiceProvider);
 
   // Handle initial state (user already signed in on app startup)
-  final initialAuthState = ref.read(authStateProvider);
-  initialAuthState.whenData((user) async {
+  ref.read(authStateProvider).whenData((user) {
     if (user != null) {
-      debugPrint('✅ Presence: Initial sign in detected, setting ONLINE');
-      await presenceService.setOnline(
-        userId: user.uid,
-        userName: user.displayName,
-      );
+      debugPrint('✅ Presence Controller: Initial auth state - user signed in');
+      presenceService.setOnline(userId: user.uid, userName: user.displayName);
     }
   });
 
-  // Watch for auth changes (sign in/out)
+  // Watch for auth changes (sign in only)
+  // Note: Sign-out is handled by SignOut use case (clears presence BEFORE signing out)
   ref.listen(authStateProvider, (previous, next) {
-    next.whenData((user) async {
+    next.whenData((user) {
       if (user != null && previous?.value == null) {
-        // User just signed in - set online
-        debugPrint('✅ Presence: User signed in, setting ONLINE');
-        await presenceService.setOnline(
-          userId: user.uid,
-          userName: user.displayName,
-        );
-      } else if (user == null && previous?.value != null) {
-        // User just signed out - clear presence
-        final prevUser = previous!.value!;
-        debugPrint('🔴 Presence: User signed out, clearing presence');
-        await presenceService.clearPresence(userId: prevUser.uid);
+        // User just signed in
+        debugPrint('✅ Presence Controller: User signed in');
+        presenceService.setOnline(userId: user.uid, userName: user.displayName);
       }
     });
   });

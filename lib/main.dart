@@ -115,9 +115,7 @@ void main() async {
   });
 
   appStartup.stop();
-  debugPrint(
-    '🚀 App startup complete in ${appStartup.elapsedMilliseconds}ms',
-  );
+  debugPrint('🚀 App startup complete in ${appStartup.elapsedMilliseconds}ms');
 
   // Run the app with Riverpod
   runApp(const ProviderScope(child: App()));

@@ -85,41 +85,41 @@ class _MessageInputState extends ConsumerState<MessageInput> {
 
   @override
   Widget build(BuildContext context) => Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      padding: EdgeInsets.only(
-        left: 8,
-        right: 8,
-        top: 8,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 8,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Formality adjuster (shown only when typing)
-          FormalityAdjuster(
-            text: _currentText,
-            language: 'auto',
-            onTextAdjusted: (adjustedText) {
-              _controller.text = adjustedText;
-              // Move cursor to end
-              _controller.selection = TextSelection.fromPosition(
-                TextPosition(offset: adjustedText.length),
-              );
-              // Update current text state
-              setState(() {
-                _currentText = adjustedText;
-              });
-            },
-          ),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.05),
+          blurRadius: 10,
+          offset: const Offset(0, -2),
+        ),
+      ],
+    ),
+    padding: EdgeInsets.only(
+      left: 8,
+      right: 8,
+      top: 8,
+      bottom: MediaQuery.of(context).viewInsets.bottom + 8,
+    ),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Formality adjuster (shown only when typing)
+        FormalityAdjuster(
+          text: _currentText,
+          language: 'auto',
+          onTextAdjusted: (adjustedText) {
+            _controller.text = adjustedText;
+            // Move cursor to end
+            _controller.selection = TextSelection.fromPosition(
+              TextPosition(offset: adjustedText.length),
+            );
+            // Update current text state
+            setState(() {
+              _currentText = adjustedText;
+            });
+          },
+        ),
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
@@ -175,7 +175,7 @@ class _MessageInputState extends ConsumerState<MessageInput> {
         ),
       ],
     ),
-    );
+  );
 
   Future<void> _sendMessage() async {
     final text = _controller.text.trim();

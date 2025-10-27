@@ -41,14 +41,13 @@ class FormalityAdjustmentState {
     String? error,
     bool clearError = false,
     bool clearLoadingLevel = false,
-  }) =>
-      FormalityAdjustmentState(
-        originalText: originalText ?? this.originalText,
-        cachedVersions: cachedVersions ?? this.cachedVersions,
-        currentLevel: currentLevel ?? this.currentLevel,
-        loadingLevel: clearLoadingLevel ? null : loadingLevel ?? this.loadingLevel,
-        error: clearError ? null : error ?? this.error,
-      );
+  }) => FormalityAdjustmentState(
+    originalText: originalText ?? this.originalText,
+    cachedVersions: cachedVersions ?? this.cachedVersions,
+    currentLevel: currentLevel ?? this.currentLevel,
+    loadingLevel: clearLoadingLevel ? null : loadingLevel ?? this.loadingLevel,
+    error: clearError ? null : error ?? this.error,
+  );
 
   /// Clear when message is sent or text changes significantly
   FormalityAdjustmentState clear() => const FormalityAdjustmentState();
@@ -79,26 +78,17 @@ class FormalityController extends Notifier<FormalityAdjustmentState> {
 
   /// Switch to a different formality level (instant if cached)
   void switchToLevel(FormalityLevel level) {
-    state = state.copyWith(
-      currentLevel: level,
-      clearError: true,
-    );
+    state = state.copyWith(currentLevel: level, clearError: true);
   }
 
   /// Start loading a specific formality level
   void setLoadingLevel(FormalityLevel level) {
-    state = state.copyWith(
-      loadingLevel: level,
-      clearError: true,
-    );
+    state = state.copyWith(loadingLevel: level, clearError: true);
   }
 
   /// Set error message
   void setError(String error) {
-    state = state.copyWith(
-      error: error,
-      clearLoadingLevel: true,
-    );
+    state = state.copyWith(error: error, clearLoadingLevel: true);
   }
 
   /// Clear error
@@ -115,5 +105,5 @@ class FormalityController extends Notifier<FormalityAdjustmentState> {
 /// Provider for FormalityController
 final formalityControllerProvider =
     NotifierProvider<FormalityController, FormalityAdjustmentState>(
-  FormalityController.new,
-);
+      FormalityController.new,
+    );

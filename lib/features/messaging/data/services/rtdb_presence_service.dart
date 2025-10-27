@@ -49,7 +49,7 @@ class RtdbPresenceService {
   /// Sets user as offline in RTDB.
   ///
   /// Writes { isOnline: false, lastSeen, userName }
-  /// Cancels onDisconnect() since we're manually setting offline
+  /// DOES NOT cancel onDisconnect() - keeps it as backup for connection loss
   Future<void> setOffline({
     required String userId,
     required String userName,
@@ -58,10 +58,9 @@ class RtdbPresenceService {
     final presenceRef = _database.ref('presence/$userId');
 
     try {
-      // Cancel onDisconnect since we're manually going offline
-      await presenceRef.onDisconnect().cancel();
-
       // Set user offline with last seen timestamp
+      // NOTE: We do NOT cancel onDisconnect here - it remains as backup
+      // If connection drops later, onDisconnect will fire again (idempotent)
       await presenceRef.set({
         'isOnline': false,
         'lastSeen': ServerValue.timestamp,
@@ -96,22 +95,24 @@ class RtdbPresenceService {
   Stream<bool> watchUserPresence({required String userId}) {
     final presenceRef = _database.ref('presence/$userId');
 
-    return presenceRef.onValue.map((event) {
-      if (!event.snapshot.exists) {
-        return false;
-      }
+    return presenceRef.onValue
+        .map((event) {
+          if (!event.snapshot.exists) {
+            return false;
+          }
 
-      final data = event.snapshot.value as Map<Object?, Object?>?;
-      if (data == null) {
-        return false;
-      }
+          final data = event.snapshot.value as Map<Object?, Object?>?;
+          if (data == null) {
+            return false;
+          }
 
-      final isOnline = data['isOnline'] as bool? ?? false;
-      return isOnline;
-    }).handleError((Object error) {
-      debugPrint('⚠️ Presence: Error watching $userId: $error');
-      return false;
-    });
+          final isOnline = data['isOnline'] as bool? ?? false;
+          return isOnline;
+        })
+        .handleError((Object error) {
+          debugPrint('⚠️ Presence: Error watching $userId: $error');
+          return false;
+        });
   }
 
   /// Gets last seen time for a user.
@@ -140,7 +141,7 @@ class RtdbPresenceService {
 
   /// Watches presence for multiple users.
   ///
-  /// Returns a stream of Map<userId, isOnline>
+  /// Returns a stream of `Map<userId, isOnline>`
   Stream<Map<String, bool>> watchUsersPresence({
     required List<String> userIds,
   }) async* {
@@ -176,15 +177,12 @@ class RtdbPresenceService {
 
 /// Simple presence data model.
 class UserPresence {
-  const UserPresence({
-    required this.timestamp,
-    required this.userName,
-  });
+  const UserPresence({required this.timestamp, required this.userName});
 
   factory UserPresence.fromMap(Map<Object?, Object?> map) => UserPresence(
-      timestamp: DateTime.fromMillisecondsSinceEpoch(map['timestamp']! as int),
-      userName: map['userName'] as String? ?? 'Unknown',
-    );
+    timestamp: DateTime.fromMillisecondsSinceEpoch(map['timestamp']! as int),
+    userName: map['userName'] as String? ?? 'Unknown',
+  );
 
   final DateTime timestamp;
   final String userName;

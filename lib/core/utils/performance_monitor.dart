@@ -69,10 +69,8 @@ class PerformanceMonitor {
   ///   );
   /// }
   /// ```
-  static T trackBuild<T>(String widgetName, T Function() fn) => trackSync(
-      'Build: $widgetName',
-      fn,
-    );
+  static T trackBuild<T>(String widgetName, T Function() fn) =>
+      trackSync('Build: $widgetName', fn);
 
   /// Logs a performance marker without tracking.
   ///

@@ -85,61 +85,63 @@ class RtdbTypingService {
   }) {
     final typingRef = _database.ref('typing/$conversationId');
 
-    return typingRef.onValue.map((event) {
-      if (!event.snapshot.exists) {
-        return <TypingUser>[];
-      }
+    return typingRef.onValue
+        .map((event) {
+          if (!event.snapshot.exists) {
+            return <TypingUser>[];
+          }
 
-      final data = event.snapshot.value as Map<Object?, Object?>?;
-      if (data == null) {
-        return <TypingUser>[];
-      }
+          final data = event.snapshot.value as Map<Object?, Object?>?;
+          if (data == null) {
+            return <TypingUser>[];
+          }
 
-      final typingUsers = <TypingUser>[];
+          final typingUsers = <TypingUser>[];
 
-      for (final entry in data.entries) {
-        final userId = entry.key! as String;
+          for (final entry in data.entries) {
+            final userId = entry.key! as String;
 
-        // Exclude current user
-        if (userId == currentUserId) {
-          continue;
-        }
+            // Exclude current user
+            if (userId == currentUserId) {
+              continue;
+            }
 
-        final userData = entry.value as Map<Object?, Object?>?;
-        if (userData == null) {
-          continue;
-        }
+            final userData = entry.value as Map<Object?, Object?>?;
+            if (userData == null) {
+              continue;
+            }
 
-        final isTyping = userData['isTyping'] as bool? ?? false;
-        if (!isTyping) {
-          continue;
-        }
+            final isTyping = userData['isTyping'] as bool? ?? false;
+            if (!isTyping) {
+              continue;
+            }
 
-        final userName = userData['userName'] as String? ?? 'Unknown';
-        final timestampValue = userData['timestamp'];
+            final userName = userData['userName'] as String? ?? 'Unknown';
+            final timestampValue = userData['timestamp'];
 
-        DateTime timestamp;
-        if (timestampValue is int) {
-          timestamp = DateTime.fromMillisecondsSinceEpoch(timestampValue);
-        } else {
-          timestamp = DateTime.now();
-        }
+            DateTime timestamp;
+            if (timestampValue is int) {
+              timestamp = DateTime.fromMillisecondsSinceEpoch(timestampValue);
+            } else {
+              timestamp = DateTime.now();
+            }
 
-        typingUsers.add(
-          TypingUser(
-            userId: userId,
-            userName: userName,
-            lastUpdated: timestamp,
-          ),
-        );
-      }
+            typingUsers.add(
+              TypingUser(
+                userId: userId,
+                userName: userName,
+                lastUpdated: timestamp,
+              ),
+            );
+          }
 
-      return typingUsers;
-    }).handleError((Object error) {
-      // Gracefully handle permission denied errors (e.g., after sign-out)
-      // Log but don't propagate - stream will emit empty list
-      debugPrint('⚠️ TypingService: Error watching typing users: $error');
-    });
+          return typingUsers;
+        })
+        .handleError((Object error) {
+          // Gracefully handle permission denied errors (e.g., after sign-out)
+          // Log but don't propagate - stream will emit empty list
+          debugPrint('⚠️ TypingService: Error watching typing users: $error');
+        });
   }
 
   /// Clears typing status for a user in a conversation.

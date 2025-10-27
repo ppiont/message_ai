@@ -299,7 +299,7 @@ final class SignOutUseCaseProvider
   }
 }
 
-String _$signOutUseCaseHash() => r'ac928a2ce7ed2b117473e5c7edaecede4f8e137f';
+String _$signOutUseCaseHash() => r'3d8549959cefd4808d96ea4017534808ae71b618';
 
 /// Provider for get current user use case
 
@@ -821,32 +821,50 @@ final class IsAuthenticatedProvider
 
 String _$isAuthenticatedHash() => r'ec341d95b490bda54e8278477e26f7b345844931';
 
-/// Automatically manages user presence based on auth state.
+/// Manages user presence for auth events.
 ///
-/// **Simple pattern**:
-/// - User signs in (or already signed in on startup) → Set online
-/// - User signs out → Clear presence
-/// - App lifecycle observer handles foreground/background
+/// **Hybrid presence approach** (works with app lifecycle observer in app.dart):
+/// - This controller: Auth events (initial setup, sign-in)
+/// - SignOut use case: Clears presence BEFORE signing out (to avoid permission issues)
+/// - App lifecycle: Foreground/background (immediate offline when backgrounded)
+/// - RTDB onDisconnect: Backup for connection loss/app kill
+///
+/// **Why hybrid works:**
+/// - setOffline() doesn't cancel onDisconnect (both can coexist)
+/// - Calling setOnline() multiple times is idempotent
+/// - Lifecycle provides immediate feedback, onDisconnect is safety net
 
 @ProviderFor(presenceController)
 const presenceControllerProvider = PresenceControllerProvider._();
 
-/// Automatically manages user presence based on auth state.
+/// Manages user presence for auth events.
 ///
-/// **Simple pattern**:
-/// - User signs in (or already signed in on startup) → Set online
-/// - User signs out → Clear presence
-/// - App lifecycle observer handles foreground/background
+/// **Hybrid presence approach** (works with app lifecycle observer in app.dart):
+/// - This controller: Auth events (initial setup, sign-in)
+/// - SignOut use case: Clears presence BEFORE signing out (to avoid permission issues)
+/// - App lifecycle: Foreground/background (immediate offline when backgrounded)
+/// - RTDB onDisconnect: Backup for connection loss/app kill
+///
+/// **Why hybrid works:**
+/// - setOffline() doesn't cancel onDisconnect (both can coexist)
+/// - Calling setOnline() multiple times is idempotent
+/// - Lifecycle provides immediate feedback, onDisconnect is safety net
 
 final class PresenceControllerProvider
     extends $FunctionalProvider<void, void, void>
     with $Provider<void> {
-  /// Automatically manages user presence based on auth state.
+  /// Manages user presence for auth events.
   ///
-  /// **Simple pattern**:
-  /// - User signs in (or already signed in on startup) → Set online
-  /// - User signs out → Clear presence
-  /// - App lifecycle observer handles foreground/background
+  /// **Hybrid presence approach** (works with app lifecycle observer in app.dart):
+  /// - This controller: Auth events (initial setup, sign-in)
+  /// - SignOut use case: Clears presence BEFORE signing out (to avoid permission issues)
+  /// - App lifecycle: Foreground/background (immediate offline when backgrounded)
+  /// - RTDB onDisconnect: Backup for connection loss/app kill
+  ///
+  /// **Why hybrid works:**
+  /// - setOffline() doesn't cancel onDisconnect (both can coexist)
+  /// - Calling setOnline() multiple times is idempotent
+  /// - Lifecycle provides immediate feedback, onDisconnect is safety net
   const PresenceControllerProvider._()
     : super(
         from: null,
@@ -881,4 +899,4 @@ final class PresenceControllerProvider
 }
 
 String _$presenceControllerHash() =>
-    r'2df10798962da55f1ca08c3d9eba607b35750e1a';
+    r'6ef5ff6e1dfdc0062cb60fbcbe24774201221547';

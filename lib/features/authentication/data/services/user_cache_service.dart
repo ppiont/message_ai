@@ -69,7 +69,9 @@ class UserCacheService {
   /// PERFORMANCE: Fetches users in parallel from Firestore,
   /// then writes to Drift sequentially to avoid database locks
   Future<void> cacheUsers(List<String> userIds) async {
-    if (userIds.isEmpty) return;
+    if (userIds.isEmpty) {
+      return;
+    }
 
     try {
       // Filter out already-cached users

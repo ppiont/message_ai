@@ -283,23 +283,26 @@ final result = await functions.httpsCallable('my_function').call({
 **Architecture:**
 - **Firebase Realtime Database (RTDB)** for ephemeral real-time data (NOT Firestore)
 - **Automatic offline detection** via RTDB `onDisconnect()` server-side callbacks
-- **App lifecycle awareness** via `WidgetsBindingObserver` in `app.dart`
+- **Connection-based presence** - no app lifecycle tracking needed
 - No heartbeat mechanism needed - RTDB handles connection state automatically
 - Last seen timestamps with millisecond precision
 - Group presence aggregation for "X/Y online" status
 - Typing indicators with automatic cleanup
 
-**How it works:**
-1. When user signs in: `presenceController` sets user online via `RtdbPresenceService.setOnline()`
-2. `setOnline()` configures `onDisconnect()` callback to auto-mark offline when connection drops
-3. App lifecycle observer detects backgrounding/foregrounding and updates presence accordingly
-4. When user closes app, backgrounds it, or loses network: `onDisconnect()` executes **automatically server-side**
-5. Typing indicators use same pattern - auto-cleared on disconnect
+**How it works (Simple):**
+1. User signs in → `presenceController` calls `setOnline()`
+2. `setOnline()` writes `{isOnline: true}` and configures server-side `onDisconnect()` callback
+3. User signs out → `presenceController` calls `clearPresence()`
+4. Connection drops (any reason: app kill, background, network loss) → RTDB server executes `onDisconnect()` automatically → sets `{isOnline: false}`
+5. **That's it** - connection state IS presence state. No lifecycle tracking needed.
+
+**Key Insight:**
+RTDB is designed for presence. The `onDisconnect()` callback executes **server-side** when the client connection drops for ANY reason. You don't need to manually track app lifecycle - let RTDB handle it via connection state.
 
 **Key Files:**
 - `lib/features/messaging/data/services/rtdb_presence_service.dart` - RTDB presence service
 - `lib/features/messaging/data/services/rtdb_typing_service.dart` - RTDB typing service
-- `lib/app.dart` - App lifecycle observer for presence management
+- `lib/features/authentication/presentation/providers/auth_providers.dart` - presenceController (sign-in/out only)
 - `database.rules.json` - RTDB security rules
 
 **Data Structure (RTDB):**
